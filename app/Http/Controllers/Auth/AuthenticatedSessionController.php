@@ -28,8 +28,26 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
+        $request->session()->regenerate();
 
-        return redirect()->intended(RouteServiceProvider::HOME);
+        $user = Auth::user();
+
+        // Redirect berdasarkan role
+        if ($user->role == 'admin') {
+            return redirect()->route('admin.dashboard');
+        } elseif ($user->role == 'mahasiswa') {
+            return redirect()->route('student.dashboard');
+        } elseif ($user->role == 'dosen') {
+            return redirect()->route('lecturer.dashboard');
+        } elseif ($user->role == 'pimpinan') {
+            return redirect()->route('director.dashboard');
+        } else {
+            // fallback kalau role tidak dikenal
+            Auth::logout();
+            return redirect('/login')->withErrors(['role' => 'Role tidak dikenali.']);
+        }
+        // return redirect()->intended(RouteServiceProvider::HOME);
+        return redirect()->intended(route('dashboard', absolute: false));
     }
 
     /**
@@ -43,6 +61,6 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect('/login');
     }
 }

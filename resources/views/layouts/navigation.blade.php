@@ -27,6 +27,16 @@
                         {{ __('Dashboard') }}
                     </x-nav-link>
                 </div>
+                 <!-- User Management Links -->
+                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                    @if ($user ->role === 'admin')
+                        <x-nav-link :href="route('admin.mahasiswa.create')" :active="request()->routeIs('admin.mahasiswa.*')">
+                            {{ __('User Management') }}
+                        </x-nav-link>
+                    @else
+                        
+                    @endif
+                </div>
             </div>
 
             <!-- Settings Dropdown -->

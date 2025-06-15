@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Student;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
+use Illuminate\Validation\ValidationException;
 
 class RegisteredUserController extends Controller
 {
@@ -28,25 +30,49 @@ class RegisteredUserController extends Controller
      *
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request)
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
-        $user = User::create([
+        // Cek apakah user dengan email sudah ada
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            // Kalau belum ada, tolak karena mahasiswa seharusnya diimport oleh admin
+            throw ValidationException::withMessages([
+                'email' => 'Email ini tidak terdaftar dalam sistem. Silakan hubungi admin.',
+            ]);
+        }
+
+        // Cek apakah sudah pernah registrasi (sudah punya password)
+        if ($user->password !== null) {
+            throw ValidationException::withMessages([
+                'email' => 'Email ini sudah pernah digunakan untuk registrasi.',
+            ]);
+        }
+
+        // Validasi: apakah NIM di email cocok dengan tabel students
+        $emailNim = explode('_', $request->email)[0];
+
+        $student = Student::where('user_id', $user->id)->where('nim', $emailNim)->first();
+
+        if (!$student) {
+            throw ValidationException::withMessages([
+                'email' => 'Format email tidak cocok dengan NIM yang terdaftar.',
+            ]);
+        }
+
+        // Update user
+        $user->update([
             'name' => $request->name,
-            'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'mahasiswa',
+            'email_verified_at' => now(),
         ]);
 
-        event(new Registered($user));
-
-        Auth::login($user);
-
-        return redirect(RouteServiceProvider::HOME);
+        return redirect()->route('login')->with('success', 'Registrasi berhasil. Silakan login.');
     }
 }

@@ -2,26 +2,15 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AdminController;
-use App\Http\Controllers\StudentController;
+//admin 
+use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\UserController;
+//dashboard
+use App\Http\Controllers\Student\StudentController;
 use App\Http\Controllers\LecturerController;
 use App\Http\Controllers\DirectorController;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
-|
-*/
 
-
-// Route::get('/dashboard', function () {
-//     return view('dashboard');
-// })->middleware(['auth'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -29,9 +18,25 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// Admin
-Route::middleware(['auth', 'admin'])->group(function () {
-    Route::get('/admin', [AdminController::class, 'index'])->name('admin.dashboard');
+// ==============================
+// Admin Routes
+// ==============================
+
+Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(function () {
+    Route::get('/', [AdminController::class, 'index'])->name('dashboard');
+    // ───── USER MANAGEMENT STUDENT─────
+    Route::get('/users/students', [UserController::class, 'indexStudents'])->name('users.students');
+    Route::post('/users/students', [UserController::class, 'storeStudent'])->name('users.students.store');
+    Route::post('/users/students/import', [UserController::class, 'import'])->name('users.students.import');
+    Route::get('/users/students/{id}/edit', [UserController::class, 'editStudent'])->name('users.students.edit');
+    Route::put('/users/students/{id}', [UserController::class, 'updateStudent'])->name('users.students.update');
+    Route::delete('/users/students/{id}', [UserController::class, 'destroyStudent'])->name('users.students.destroy');
+
+    // ───── USER MANAGEMENT LECTURE─────
+    Route::get('/users/lecturers', [UserController::class, 'indexLecturers'])->name('users.lecturers');
+    Route::post('/users/lecturers', [UserController::class, 'storeLecturer'])->name('users.lecturers.store');
+    Route::put('/users/lecturers/{id}', [UserController::class, 'updateLecturer'])->name('users.lecturers.update');
+    Route::delete('/users/lecturers/{id}', [UserController::class, 'destroyLecturer'])->name('users.lecturers.destroy');
 });
 
 // Mahasiswa

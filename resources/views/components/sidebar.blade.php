@@ -66,7 +66,7 @@
                   </g>
                 </svg>
               </span>
-              <span class="app-brand-text demo menu-text fw-bolder ms-2">Sneat</span>
+              <span class="app-brand-text demo menu-text fw-bolder ms-2">Kiw</span>
             </a>
 
             <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none">
@@ -87,33 +87,30 @@
                   </li>
               @endif
 
-            <!-- Layouts -->
-            <li class="menu-item">
-              <a href="javascript:void(0);" class="menu-link menu-toggle">
-                <i class="menu-icon tf-icons bx bx-layout"></i>
-                <div data-i18n="Layouts">User</div>
-              </a>
+  <!-- Sidebar khusus admin -->
+  @if ($user && $user->role === 'admin')
+    <li class="menu-item">
+      <a href="javascript:void(0);" class="menu-link menu-toggle">
+        <i class="menu-icon tf-icons bx bx-layout"></i>
+        <div data-i18n="Layouts">User</div>
+      </a>
 
-              <ul class="menu-sub">
-                <li class="menu-item">
-                  <a href="layouts-without-menu.html" class="menu-link">
-                    <div data-i18n="Without menu">Master</div>
-                  </a>
-                </li>
-                <li class="menu-item">
-                  <a href="layouts-without-navbar.html" class="menu-link">
-                    <div data-i18n="Without navbar">Mahasiswa</div>
-                  </a>
-                </li>
-                <li class="menu-item">
-                  <a href="layouts-container.html" class="menu-link">
-                    <div data-i18n="Container">Dosen</div>
-                  </a>
-                </li>
-              </ul>
-            </li>
+      <ul class="menu-sub">
+        <li class="menu-item {{ request()->routeIs('admin.users.students') ? 'active' : '' }}">
+          <a href="{{ route('admin.users.students') }}" class="menu-link">
+            <div data-i18n="Without navbar">Mahasiswa</div>
+          </a>
+        </li>
+        <li class="menu-item {{ request()->routeIs('admin.users.lecturers') ? 'active' : '' }}">
+          <a href="{{ route('admin.users.lecturers') }}" class="menu-link">
+            <div data-i18n="Container">Dosen</div>
+          </a>
+        </li>
+      </ul>
+    </li>
+  @endif
 
-            <li class="menu-header small text-uppercase">
+            {{-- <li class="menu-header small text-uppercase">
               <span class="menu-header-text">Pages</span>
             </li>
             <li class="menu-item">
@@ -388,90 +385,6 @@
                 <i class="menu-icon tf-icons bx bx-file"></i>
                 <div data-i18n="Documentation">Documentation</div>
               </a>
-            </li>
+            </li> --}}
           </ul>
         </aside>
-
-
-{{-- <!-- Sidebar Layout -->
-<aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
-    <div class="app-brand demo">
-        <a href="/" class="app-brand-link">
-            <span class="app-brand-logo">
-                <i class="bx bxs-circle"></i>
-            </span>
-            <span class="app-brand-text demo menu-text fw-bolder ms-2">MyApp</span>
-        </a>
-    </div>
-
-    <div class="menu-inner-shadow"></div>
-
-    <ul class="menu-inner py-1">
-        <!-- Universal Dashboard -->
-        @if (isset($dashboardRoutes[$user->role]))
-            <li class="menu-item {{ request()->routeIs($dashboardRoutes[$user->role]) ? 'active' : '' }}">
-                <a href="{{ route($dashboardRoutes[$user->role]) }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-home-circle"></i>
-                    <div>Dashboard</div>
-                </a>
-            </li>
-        @endif
-
-        <!-- Menu Tambahan Berdasarkan Role -->
-        @if ($user->role === 'admin')
-            <li class="menu-header small text-uppercase"><span class="menu-header-text">Admin</span></li>
-
-            <li class="menu-item {{ request()->routeIs('admin.mahasiswa.create') ? 'active' : '' }}">
-                <a href="{{ route('admin.mahasiswa.create') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-user-plus"></i>
-                    <div>Tambah Mahasiswa</div>
-                </a>
-            </li>
-
-            <li class="menu-item {{ request()->routeIs('admin.mahasiswa.store') ? 'active' : '' }}">
-                <a href="{{ route('admin.mahasiswa.store') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-save"></i>
-                    <div>Simpan Mahasiswa</div>
-                </a>
-            </li>
-        @elseif ($user->role === 'mahasiswa')
-            <li class="menu-header small text-uppercase"><span class="menu-header-text">Mahasiswa</span></li>
-
-            <li class="menu-item">
-                <a href="#" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-book"></i>
-                    <div>Jadwal Kuliah</div>
-                </a>
-            </li>
-        @elseif ($user->role === 'dosen')
-            <li class="menu-header small text-uppercase"><span class="menu-header-text">Dosen</span></li>
-
-            <li class="menu-item">
-                <a href="#" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-chalkboard"></i>
-                    <div>Daftar Kelas</div>
-                </a>
-            </li>
-        @elseif ($user->role === 'pimpinan')
-            <li class="menu-header small text-uppercase"><span class="menu-header-text">Pimpinan</span></li>
-
-            <li class="menu-item">
-                <a href="#" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-bar-chart-square"></i>
-                    <div>Laporan Akademik</div>
-                </a>
-            </li>
-        @endif
-
-        <!-- Logout -->
-        <li class="menu-item">
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <a href="#" class="menu-link" onclick="event.preventDefault(); this.closest('form').submit();">
-                    <i class="menu-icon tf-icons bx bx-log-out"></i>
-                    <div>Logout</div>
-                </a>
-            </form>
-        </li>
-    </ul>
-</aside> --}}

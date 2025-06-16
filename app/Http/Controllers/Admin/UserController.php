@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\StudentsImport;
+use App\Imports\LecturersImport;
+use App\Models\Lecturer;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
@@ -41,7 +43,7 @@ class UserController extends Controller
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make('password'), // default password, nanti bisa reset
-            'role' => $validated['role'],
+            'role' => 'dosen',
         ]);
 
         // 2. Simpan ke tabel students (jika role = mahasiswa)
@@ -101,6 +103,7 @@ class UserController extends Controller
     }
     public function destroyStudent($id)
     {
+
         $student = Student::findOrFail($id);
         $user = $student->user;
 
@@ -110,5 +113,82 @@ class UserController extends Controller
         }
 
         return response()->json(['message' => 'Berhasil dihapus']);
+    }
+
+    public function indexLecturers()
+    {
+        $lecturers = Lecturer::with('user')->paginate(5);
+        return view('user.lecturers.index', compact('lecturers'));
+    }
+
+    public function storeLecturer(Request $request)
+    {
+        $request->validate([
+            'name' => 'required',
+            'email' => 'required|email|unique:users,email',
+            'nip' => 'required|unique:lecturers,nip',
+            'role' => 'required|in:dosen,pimpinan,admin,mahasiswa',
+        ]);
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => null,
+            'role' => $request->role
+        ]);
+
+
+        Lecturer::create([
+            'user_id' => $user->id,
+            'nip' => $request->nip,
+
+        ]);
+
+        return redirect()->route('admin.users.lecturers')->with('success', 'Dosen berhasil ditambahkan.');
+    }
+
+    public function editLecturer($id)
+    {
+        $lecturer_data = Lecturer::with('user')->findOrFail($id);
+        return response()->json($lecturer_data);
+    }
+
+    public function updateLecturer(Request $request, $id)
+    {
+        $lecturer = Lecturer::findOrFail($id);
+        $user = $lecturer->user;
+
+        $user->update([
+            'name' => $request->name,
+            'email' => $request->email,
+            'role' => $request->role,
+        ]);
+
+        $lecturer->update([
+            'nip' => $request->nip,
+        ]);
+
+        return redirect()->route('admin.users.lecturers')->with('success', 'Data dosen berhasil diperbarui.');
+    }
+    public function destroyLecturer($id)
+    {
+        $lecturer = Lecturer::findOrFail($id);
+        $user = $lecturer->user;
+
+        $lecturer->delete();
+        $user->delete();
+
+        return response()->json(['message' => 'Data dosen berhasil dihapus.']);
+    }
+
+    public function importLecturers(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xls,xlsx'
+        ]);
+
+        Excel::import(new LecturersImport, $request->file('file'));
+
+        return redirect()->back()->with('success', 'Data dosen berhasil diimport!');
     }
 }

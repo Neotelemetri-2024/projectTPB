@@ -55,15 +55,18 @@ class RegisteredUserController extends Controller
             ]);
         }
 
-        // Validasi: apakah NIM di email cocok dengan tabel students
-        $emailNim = explode('_', $request->email)[0];
+        // Cek role user
+        if ($user->role === 'mahasiswa') {
+            // Validasi cocokkan nim dari email dan tabel student
+            $emailNim = explode('_', $request->email)[0];
 
-        $student = Student::where('user_id', $user->id)->where('nim', $emailNim)->first();
+            $student = Student::where('user_id', $user->id)->where('nim', $emailNim)->first();
 
-        if (!$student) {
-            throw ValidationException::withMessages([
-                'email' => 'Format email tidak cocok dengan NIM yang terdaftar.',
-            ]);
+            if (!$student) {
+                throw ValidationException::withMessages([
+                    'email' => 'Format email tidak cocok dengan NIM yang terdaftar.',
+                ]);
+            }
         }
 
         // Update user

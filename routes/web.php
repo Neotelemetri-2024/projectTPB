@@ -32,11 +32,13 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::put('/users/students/{id}', [UserController::class, 'updateStudent'])->name('users.students.update');
     Route::delete('/users/students/{id}', [UserController::class, 'destroyStudent'])->name('users.students.destroy');
 
-    // ───── USER MANAGEMENT LECTURE─────
+    // ───── USER MANAGEMENT LECTURER AND DIRECTOR─────
     Route::get('/users/lecturers', [UserController::class, 'indexLecturers'])->name('users.lecturers');
     Route::post('/users/lecturers', [UserController::class, 'storeLecturer'])->name('users.lecturers.store');
+    Route::get('/users/lecturers/{id}/edit', [UserController::class, 'editLecturer'])->name('users.lecturers.edit');
     Route::put('/users/lecturers/{id}', [UserController::class, 'updateLecturer'])->name('users.lecturers.update');
     Route::delete('/users/lecturers/{id}', [UserController::class, 'destroyLecturer'])->name('users.lecturers.destroy');
+    Route::post('/users/lecturers/import', [UserController::class, 'importLecturers'])->name('users.lecturers.import');
 });
 
 // Mahasiswa

@@ -5,10 +5,9 @@
 @endsection
 @section('content')
 <!-- Tombol Tambah -->
-    <div class="my-2 d-flex  justify-content-end gap-3">
-        <button type="button" class="btn btn-outline-warning">Filter</button>
-        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalTambahUser">Tambah </button>
-        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalImportExcel">Import Excel </button>
+    <div class="my-2 d-flex  justify-content-end gap-3 mb-3">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahUser" > <i class="fa-solid fa-plus"></i> Tambah </button>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalImportExcel">Import Excel </button>
     </div>
 <!-- Basic Bootstrap Table -->
     <div class="card">

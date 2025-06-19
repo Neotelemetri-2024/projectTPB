@@ -1,0 +1,196 @@
+/* Tombol Filter */
+#btnFilter {
+    background-color: transparent;
+    color: #9b5a00;
+    border: 1px solid #9b5a00;
+    border-radius: 8px;
+    padding: 8px 16px; /* Sesuai button SNEAT */
+    height: 40px; /* Selaras dengan tombol SNEAT */
+    font-size: 15px; /* Font-size tombol di SNEAT */
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+}
+
+#btnFilter:hover,
+#btnFilter:focus {
+    background-color: transparent;
+    color: #643a00;
+    border-color: #643a00;
+}
+
+/* Dropdown filter */
+#filterDropdown {
+    display: none;
+    position: absolute;
+    top: 50px;
+    right: 198px;
+    width: 230px;
+    height: auto;
+    padding: 12px 16px;
+    border-radius: 8px;
+    background-color: #ffffff;
+    z-index: 1000;
+    box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.08);
+    border: 1px solid #d6c3aa;
+}
+
+/* Form-check layout */
+#filterDropdown .form-check {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #d6c3aa;
+}
+
+/* Remove border on last */
+#filterDropdown .form-check:last-child {
+    border-bottom: none;
+}
+
+/* Label styling */
+#filterDropdown label {
+    font-size: 14px; /* Sesuai font SNEAT */
+    font-weight: 500;
+    color: #643a00;
+    margin-bottom: 0;
+}
+
+/* Radio button custom */
+#filterDropdown input[type="radio"] {
+    width: 16px;
+    height: 16px;
+    margin-left: 8px;
+    margin-right: 0;
+    appearance: none;
+    background-color: #fff;
+    border: 2px solid #9b5a00;
+    border-radius: 50%;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+
+#filterDropdown input[type="radio"]::before {
+    content: "";
+    display: block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #9b5a00;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transform: scale(0);
+    transition: transform 0.2s ease-in-out;
+}
+
+#filterDropdown input[type="radio"]:checked::before {
+    transform: scale(1);
+}
+
+/* Hover effect */
+#filterDropdown input[type="radio"]:hover,
+#filterDropdown label:hover {
+    cursor: pointer;
+}
+
+/* =========================== */
+/* 🌈 CUSTOM COLOR VARIABLES   */
+/* =========================== */
+:root {
+    --bs-primary: #643a00;
+    --bs-primary-rgb: 100, 58, 0;
+
+    --bs-secondary: #9b5a00;
+    --bs-secondary-rgb: 155, 90, 0;
+
+    --bs-danger: #c21747;
+    --bs-danger-rgb: 194, 23, 71;
+}
+
+/* =========================== */
+/* 🎯 SIDEBAR STYLE           */
+/* =========================== */
+
+/* Teks & ikon menu */
+.layout-menu .menu-inner .menu-link,
+.layout-menu .menu-inner .menu-link i {
+    color: #643a00 !important;
+}
+
+/* ICON BAR DI SAMPING MENU */
+a.menu-link::before {
+    background-color: #643a00 !important;
+}
+
+/* BACKGROUND SAAT ACTIVE / HOVER */
+.layout-menu .menu-inner > .menu-item.active > .menu-link {
+    background-color: #ffe9cc !important;
+}
+
+/* JUDUL MENU (HEADER DI SIDEBAR) */
+.menu-header {
+    color: #643a00 !important;
+    font-weight: 600;
+}
+
+.layout-menu .app-brand {
+    margin-bottom: 2rem; /* atau coba 2rem kalau masih terlalu sempit */
+}
+
+/* Tambahkan jarak atas agar sidebar tidak terlalu mepet ke atas */
+.layout-menu {
+    padding-top: 1rem;
+}
+
+.menu-inner > .menu-item {
+    margin-bottom: 0.75rem; /* Atur sesuai selera (misal 1rem kalau mau lebih renggang) */
+}
+
+/* Tambahkan sedikit padding vertikal pada link menu agar tidak terlalu padat */
+.menu-link {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+/* =========================== */
+/* 🔘 BUTTON STYLE            */
+/* =========================== */
+
+/* PRIMARY */
+.btn-primary {
+    background-color: #643a00 !important;
+    border-color: #643a00;
+    color: #fff;
+}
+
+/* DELETE SOLID */
+.btn-danger {
+    background-color: #c21747;
+    border-color: #c21747;
+    color: #fff;
+}
+
+/* DELETE SOFT */
+.btn-danger-soft {
+    background-color: #ffdfe8;
+    color: #c21747;
+    border: 1px solid #c21747;
+}
+.btn-danger-soft:hover {
+    background-color: #c21747;
+    color: #fff;
+}
+
+/* =========================== */
+/* 📋 TABLE HEADER COLOR      */
+/* =========================== */
+.table thead th {
+    background-color: #fff3e3 !important;
+}
+
+/* =========================== */
+/* 🧪 MISC                    */
+/* =========================== */
+/* Tambahan icon atau teks yang spesifik bisa ditambahkan di sini */

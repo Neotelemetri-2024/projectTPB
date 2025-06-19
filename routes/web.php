@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 //admin 
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\CplController;
 //dashboard
 use App\Http\Controllers\Student\StudentController;
 use App\Http\Controllers\LecturerController;
@@ -39,6 +40,13 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::put('/users/lecturers/{id}', [UserController::class, 'updateLecturer'])->name('users.lecturers.update');
     Route::delete('/users/lecturers/{id}', [UserController::class, 'destroyLecturer'])->name('users.lecturers.destroy');
     Route::post('/users/lecturers/import', [UserController::class, 'importLecturers'])->name('users.lecturers.import');
+
+    // ───── CPL MANAGEMENT─────
+    Route::get('/cpl', [CplController::class, 'indexCpl'])->name('cpl');
+    Route::post('/cpl/storeCpl', [CplController::class, 'storeCpl'])->name('cpl.storeCpl');
+    Route::get('/cpl/{id}/edit', [CplController::class, 'editCpl'])->name('cpl.edit');
+    Route::put('/cpl/{id}', [CplController::class, 'updateCpl'])->name('cpl.update');
+    Route::delete('/cpl/{id}', [CplController::class, 'destroyCpl'])->name('cpl.destroy');
 });
 
 // Mahasiswa

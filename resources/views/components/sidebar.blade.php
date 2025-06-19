@@ -8,7 +8,7 @@
         'pimpinan' => 'director.dashboard',
     ];
 @endphp
-        <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
+<aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
           <div class="app-brand demo">
             <a href="index.html" class="app-brand-link">
               <span class="app-brand-logo demo">
@@ -66,7 +66,7 @@
                   </g>
                 </svg>
               </span>
-              <span class="app-brand-text demo menu-text fw-bolder ms-2">Kiw</span>
+              <span class="app-brand-text demo menu-text fw-bolder ms-2">Portal TPB</span>
             </a>
 
             <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none">
@@ -87,28 +87,38 @@
                   </li>
               @endif
 
-  <!-- Sidebar khusus admin -->
-  @if ($user && $user->role === 'admin')
-    <li class="menu-item">
-      <a href="javascript:void(0);" class="menu-link menu-toggle">
-        <i class="menu-icon tf-icons bx bx-layout"></i>
-        <div data-i18n="Layouts">User</div>
-      </a>
+              <!-- Sidebar khusus admin -->
+              @if ($user && $user->role === 'admin')
+              @php
+                $isUserMenuOpen = request()->routeIs('admin.users.students') || request()->routeIs('admin.users.lecturers');
+              @endphp
+                <li class="menu-item {{ $isUserMenuOpen ? 'open' : '' }}">
+                  <a href="javascript:void(0);" class="menu-link menu-toggle">
+                    <i class="menu-icon tf-icons bx bx-layout"></i>
+                    <div data-i18n="Layouts">User</div>
+                  </a>
 
-      <ul class="menu-sub">
-        <li class="menu-item {{ request()->routeIs('admin.users.students') ? 'active' : '' }}">
-          <a href="{{ route('admin.users.students') }}" class="menu-link">
-            <div data-i18n="Without navbar">Mahasiswa</div>
-          </a>
-        </li>
-        <li class="menu-item {{ request()->routeIs('admin.users.lecturers') ? 'active' : '' }}">
-          <a href="{{ route('admin.users.lecturers') }}" class="menu-link">
-            <div data-i18n="Container">Dosen</div>
-          </a>
-        </li>
-      </ul>
-    </li>
-  @endif
+                  <ul class="menu-sub {{ $isUserMenuOpen ? 'show' : '' }}">
+                    <li class="menu-item {{ request()->routeIs('admin.users.students') ? 'active' : '' }}">
+                      <a href="{{ route('admin.users.students') }}" class="menu-link">
+                        <div data-i18n="Without navbar">Mahasiswa</div>
+                      </a>
+                    </li>
+                    <li class="menu-item {{ request()->routeIs('admin.users.lecturers') ? 'active' : '' }}">
+                      <a href="{{ route('admin.users.lecturers') }}" class="menu-link">
+                        <div data-i18n="Container">Dosen</div>
+                      </a>
+                    </li>
+                  </ul>
+                </li>
+
+                <li class="menu-item {{ request()->routeIs('admin.cpl.*') ? 'active' : '' }}">
+                  <a href="{{ route('admin.cpl') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-book-reader"></i>
+                    <div>Capaian Pembelajaran</div>
+                  </a>
+                </li>
+              @endif
 
             {{-- <li class="menu-header small text-uppercase">
               <span class="menu-header-text">Pages</span>
@@ -387,4 +397,4 @@
               </a>
             </li> --}}
           </ul>
-        </aside>
+</aside>

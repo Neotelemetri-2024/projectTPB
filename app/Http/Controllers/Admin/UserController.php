@@ -19,15 +19,15 @@ class UserController extends Controller
     // 1. Mahasiswa
     public function indexStudents()
     {
-        // $all = Student::with('user')->paginate(5);
-        $students = Student::with('user') // get data relasi user
-            ->whereHas('user', function ($q) {
-                $q->where('role', 'mahasiswa');
+        $students = Student::with('user')
+            ->whereHas('user', function ($query) {
+                $query->where('role', 'mahasiswa'); // hanya ambil user yang role-nya mahasiswa
             })
-            ->paginate(5);
+            ->paginate(10);
 
         return view('user.students.index', compact('students'));
     }
+
 
     public function storeStudent(Request $request)
     {
@@ -42,8 +42,8 @@ class UserController extends Controller
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'password' => Hash::make('password'), // default password, nanti bisa reset
-            'role' => 'dosen',
+            'password' => null, // default password, nanti bisa reset
+            'role' => $validated['role'],
         ]);
 
         // 2. Simpan ke tabel students (jika role = mahasiswa)
@@ -115,9 +115,17 @@ class UserController extends Controller
         return response()->json(['message' => 'Berhasil dihapus']);
     }
 
-    public function indexLecturers()
+    public function indexLecturers(Request $request)
     {
-        $lecturers = Lecturer::with('user')->paginate(5);
+
+        $query = Lecturer::with('user');
+
+        if ($request->has('role')) {
+            $query->whereHas('user', function ($q) use ($request) {
+                $q->where('role', $request->role);
+            });
+        }
+        $lecturers = $query->paginate(5);
         return view('user.lecturers.index', compact('lecturers'));
     }
 

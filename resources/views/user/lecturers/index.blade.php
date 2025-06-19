@@ -7,15 +7,37 @@
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
-<!-- Tombol Tambah -->
-<div class="my-2 d-flex  justify-content-end gap-3">
-    <button type="button" class="btn btn-outline-warning">Filter</button>
-    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalTambahLecturer">Tambah </button>
-    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalImportExcel">Import Excel </button>
+<!-- Tombol -->
+<div class="my-2 d-flex justify-content-end gap-3 position-relative mb-4">
+    <!-- Tombol Filter -->
+    <div id="btnFilter" class="btn btn-outline-warning" style="cursor: pointer;">
+        Filter
+    </div>
+
+    <!-- Tombol Lainnya -->
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahLecturer">Tambah</button>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalImportExcel">Import Excel</button>
+
+    <!-- Dropdown Filter -->
+    <form id="filterDropdown" action="{{ route('admin.users.lecturers') }}" method="GET">
+        <div class="form-check">
+            <label class="form-check-label d-flex justify-content-between align-items-center w-100">
+                <span>Dosen</span>
+                <input class="form-check-input" type="radio" name="role" value="dosen" onchange="this.form.submit()" {{ request('role') == 'dosen' ? 'checked' : '' }}>
+            </label>
+        </div>
+        <div class="form-check">
+            <label class="form-check-label d-flex justify-content-between align-items-center w-100">
+                <span>Pimpinan</span>
+                <input class="form-check-input" type="radio" name="role" value="pimpinan" onchange="this.form.submit()" {{ request('role') == 'pimpinan' ? 'checked' : '' }}>
+            </label>
+        </div>
+    </form>
 </div>
+
     <div class="card">
         <div class="table-responsive text-nowrap table-striped table-bordered align-middle">
-           <table class="table ">
+           <table class="table">
                 <thead>
                     <tr>
                         <th>No</th>
@@ -122,6 +144,18 @@
     </div>
   </div>
 </div>
+    
+<!-- Dropdown Filter -->
+<div id="filterDropdown" class="card shadow position-absolute" style="display: none; width: 230px; top: 50px; right: 0; border-radius: 8px; padding: 12px 16px; gap: 8px; z-index: 1000;">
+    <div class="form-check mb-2">
+        <input class="form-check-input" type="radio" name="roleFilter" id="filterDosen" value="dosen">
+        <label class="form-check-label" for="filterDosen">Dosen</label>
+    </div>
+    <div class="form-check">
+        <input class="form-check-input" type="radio" name="roleFilter" id="filterPimpinan" value="pimpinan">
+        <label class="form-check-label" for="filterPimpinan">Pimpinan</label>
+    </div>
+</div>
 
 @include('user.lecturers.edit')
 
@@ -209,6 +243,22 @@
                 });
             });
         });
+
+        // ==== FILTER ====
+        const btnFilter = document.getElementById('btnFilter');
+        const dropdown = document.getElementById('filterDropdown');
+
+        btnFilter.addEventListener('click', function (e) {
+            e.stopPropagation();
+            dropdown.style.display = (dropdown.style.display === 'none' || dropdown.style.display === '') ? 'block' : 'none';
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!btnFilter.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });    
+
 
     });
 </script>

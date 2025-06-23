@@ -111,8 +111,15 @@
 
             <li class="menu-item {{ request()->routeIs('admin.tahunajaran.*') ? 'active' : '' }}">
                 <a href="{{ route('admin.tahunajaran') }}" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-book-reader"></i>
+                    <i class="menu-icon tf-icons bx bx-calendar"></i>
                     <div>Tahun Ajaran</div>
+                </a>
+            </li>
+
+            <li class="menu-item {{ request()->routeIs('admin.matakuliah.*') ? 'active' : '' }}">
+                <a href="{{ route('admin.matakuliah') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-book"></i>
+                    <div>matakuliah</div>
                 </a>
             </li>
         @endif

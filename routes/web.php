@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\CplController;
 use App\Http\Controllers\Admin\TahunAjaranController;
+use App\Http\Controllers\Admin\MatkulController;
 //dashboard
 use App\Http\Controllers\Student\StudentController;
 use App\Http\Controllers\LecturerController;
@@ -54,6 +55,9 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::get('/tahunajaran/{id}/get', [TahunAjaranController::class, 'getTahunAjaran'])->name('tahunajaran.get');
     Route::put('/tahunajaran/{id}', [TahunAjaranController::class, 'updateTahunAjaran'])->name('tahunajaran.update');
     Route::delete('/tahunajaran/{id}', [TahunAjaranController::class, 'destroyTahunAjaran'])->name('tahunajaran.destroy');
+
+    // ───── MATKUL MANAGEMENT─────
+    Route::get('/matakuliah', [MatkulController::class, 'indexMatkul'])->name('matakuliah');
 });
 
 // Mahasiswa

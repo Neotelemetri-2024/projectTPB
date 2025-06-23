@@ -118,7 +118,7 @@
 
 @endsection
 
-<!-- Pastikan di layout utama sudah ada ini: -->
+
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {

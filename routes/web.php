@@ -11,8 +11,7 @@ use App\Http\Controllers\Admin\TahunAjaranController;
 use App\Http\Controllers\Student\StudentController;
 use App\Http\Controllers\LecturerController;
 use App\Http\Controllers\DirectorController;
-
-
+use App\Models\TahunAjaran;
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -52,6 +51,9 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     // ───── TAHUN AJARAN MANAGEMENT─────
     Route::get('/tahunajaran', [TahunAjaranController::class, 'indexTahunAjaran'])->name('tahunajaran');
     Route::post('/tahunajaran/storeTahunAjaran', [TahunAjaranController::class, 'storeTahunAjaran'])->name('admin.tahunajaran.storeTahunAjaran');
+    Route::get('/tahunajaran/{id}/get', [TahunAjaranController::class, 'getTahunAjaran'])->name('tahunajaran.get');
+    Route::put('/tahunajaran/{id}', [TahunAjaranController::class, 'updateTahunAjaran'])->name('tahunajaran.update');
+    Route::delete('/tahunajaran/{id}', [TahunAjaranController::class, 'destroyTahunAjaran'])->name('tahunajaran.destroy');
 });
 
 // Mahasiswa

@@ -58,7 +58,6 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
 
     // ───── MATKUL MANAGEMENT─────
     Route::get('/matakuliah', [MatkulController::class, 'indexMatkul'])->name('matakuliah');
-
 });
 
 // Mahasiswa

@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\CplController;
+use App\Http\Controllers\Admin\TahunAjaranController;
 //dashboard
 use App\Http\Controllers\Student\StudentController;
 use App\Http\Controllers\LecturerController;
@@ -47,6 +48,10 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::get('/cpl/{id}/edit', [CplController::class, 'editCpl'])->name('cpl.edit');
     Route::put('/cpl/{id}', [CplController::class, 'updateCpl'])->name('cpl.update');
     Route::delete('/cpl/{id}', [CplController::class, 'destroyCpl'])->name('cpl.destroy');
+
+    // ───── TAHUN AJARAN MANAGEMENT─────
+    Route::get('/tahunajaran', [TahunAjaranController::class, 'indexTahunAjaran'])->name('tahunajaran');
+    Route::post('/tahunajaran/storeTahunAjaran', [TahunAjaranController::class, 'storeTahunAjaran'])->name('admin.tahunajaran.storeTahunAjaran');
 });
 
 // Mahasiswa

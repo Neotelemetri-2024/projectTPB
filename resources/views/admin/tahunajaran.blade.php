@@ -32,6 +32,12 @@
         <!-- Dropdown Filter -->
         <form id="filterDropdown" method="GET" action="{{ route('admin.tahunajaran') }}" class="card shadow position-absolute" style="display: none; width: 230px; top: 50px; right: 0; border-radius: 8px; padding: 12px 16px; gap: 8px; z-index: 1000;">
             <div class="form-check mb-2">
+                <label class="form-check-label d-flex justify-content-between align-items-center w-100" for="filterAll">
+                    <span>Semua</span>
+                    <input class="form-check-input" type="radio" name="semester" value="" id="filterAll" onchange="this.form.submit()" {{ request('semester') == '' ? 'checked' : '' }}>
+                </label>
+            </div>
+            <div class="form-check mb-2">
                 <label class="form-check-label d-flex justify-content-between align-items-center w-100">
                     <span>Ganjil</span>
                     <input class="form-check-input" type="radio" name="semester" value="Ganjil" onchange="this.form.submit()" {{ request('semester') == 'Ganjil' ? 'checked' : '' }}>
@@ -47,11 +53,11 @@
     </div>
     <!-- Basic Bootstrap Table -->
     <div class="card">
-        <div class="table-responsive text-nowrap table-striped table-bordered ">
-            <table class="table table-bordered text-center align-middle ">
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped text-center align-middle ">
                 <thead class="text-center">
                     <tr>
-                        <th class="w-16">No</th>
+                        <th class="w-10">No</th>
                         <th>Tahun Ajaran</th>
                         <th class="w-40">Aksi</th>
                     </tr>

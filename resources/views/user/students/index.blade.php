@@ -13,7 +13,7 @@
     <div class="card">
         <div class="table-responsive text-nowrap table-striped table-bordered align-middle">
             <table class="table ">
-                <thead>
+                <thead class="text-center">
                     <tr>
                         <th>No</th>
                         <th>Nama</th>
@@ -82,7 +82,7 @@
                 <input type="text" class="form-control" id="tahun_masuk" name="tahun_masuk" required>
                 </div>
                 {{-- Role --}}
-                <div class="mb-3">
+                {{-- <div class="mb-3">
                     <label for="role" class="form-label">Role</label>
                     <select id="role" name="role" class="form-select" required>
                         <option value="" disabled selected>Pilih Role</option>
@@ -91,7 +91,7 @@
                         <option value="pimpinan">Pimpinan</option>
                         <option value="admin">Admin</option>
                     </select>
-                </div>
+                </div> --}}
             </div>
             <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
@@ -152,7 +152,7 @@
                         document.getElementById('edit_email').value = data.user.email;
                         document.getElementById('edit_nim').value = data.nim;
                         document.getElementById('edit_tahun_masuk').value = data.tahun_masuk;
-                        document.getElementById('edit_role').value = data.user.role;
+                        // document.getElementById('edit_role').value = data.user.role;
 
                         document.getElementById('editForm').action = `/admin/users/students/${data.id}`;
 

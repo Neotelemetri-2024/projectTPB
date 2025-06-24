@@ -31,7 +31,7 @@
                     <div class="mb-3">
                         <label for="edit_role" class="form-label">Role</label>
                         <select id="edit_role" name="role" class="form-select" required>
-                            <option value="mahasiswa">Mahasiswa</option>
+                            {{-- <option value="mahasiswa">Mahasiswa</option> --}}
                             <option value="dosen">Dosen</option>
                             <option value="pimpinan">Pimpinan</option>
                             <option value="admin">Admin</option>

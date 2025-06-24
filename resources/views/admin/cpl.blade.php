@@ -12,12 +12,11 @@
     <div class="card">
         <div class="table-responsive text-nowrap table-striped table-bordered align-middle">
             <table class="table ">
-                <thead>
+                <thead class="text-center">
                     <tr>
                         <th>No</th>
                         <th>Kode CP</th>
                         <th>Nama CP</th>
-                        <th>Bobot</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -27,7 +26,6 @@
                         <td>{{ $loop->iteration + ($cpls->currentPage() - 1) * $cpls->perPage() }}</td>
                         <td>{{ $cpl->kode_cpl ?? '-'}}</td>
                         <td>{{ $cpl->deskripsi ?? '-' }}</td>
-                        <td>{{ $cpl->bobot ?? '-'}}</td>
                         <td class="d-flex  justify-content-end gap-3">
                             <button type="button" class="btn btn-outline-warning btnEditCpl" data-id="{{ $cpl->id }}">Edit</button>
 
@@ -56,21 +54,16 @@
                 {{-- Kode CP --}}
                 <div class="mb-3">
                 <label for="kode_cpl" class="form-label">Kode CP</label>
-                <input type="text" class="form-control" id="kode_cpl" name="kode_cpl" required>
+                <input type="text" class="form-control @error('kode_cpl') is-invalid @enderror" id="kode_cpl" name="kode_cpl" value="{{ old('kode_cpl') }}" required>
+                @error('kode_cpl')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
                 </div>
                 {{-- Deskripsi CPL --}}
                 <div class="mb-3">
                     <label for="deskripsi" class="form-label">Deskripsi CPL</label>
                     <textarea class="form-control" id="deskripsi" name="deskripsi" rows="5" required></textarea>
                 </div>
-
-                {{-- Bobot --}}
-
-                <div class="mb-3">
-                    <label for="bobot" class="form-label">Bobot (%)</label>
-                    <input type="number" class="form-control" id="bobot" name="bobot" min="0" max="100" required>
-                </div>
-
             </div>
             <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
@@ -95,15 +88,13 @@
         <div class="modal-body">
           <div class="mb-3">
             <label class="form-label">Kode CPL</label>
-            <input type="text" class="form-control" id="edit_kode_cpl" name="kode_cpl" required>
-          </div>
+            <input type="text" class="form-control @error('kode_cpl') is-invalid @enderror" id="edit_kode_cpl" name="kode_cpl" value="{{ old('kode_cpl') }}" required>
+            @error('kode_cpl')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
           <div class="mb-3">
-            <label class="form-label">Deskripsi</label>
+            <label class="form-label mt-4">Deskripsi</label>
             <textarea class="form-control" id="edit_deskripsi" name="deskripsi" required rows="4"></textarea>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Bobot (%)</label>
-            <input type="number" class="form-control" id="edit_bobot" name="bobot" required min="0" max="100">
           </div>
         </div>
         <div class="modal-footer">
@@ -134,7 +125,6 @@
                     .then(data => {
                         document.getElementById('edit_kode_cpl').value = data.kode_cpl;
                         document.getElementById('edit_deskripsi').value = data.deskripsi;
-                        document.getElementById('edit_bobot').value = data.bobot;
                         document.getElementById('editForm').action = `{{ url('admin/cpl') }}/${data.id}`;
                         new bootstrap.Modal(document.getElementById('modalEditCpl')).show();
                     })
@@ -176,7 +166,7 @@
                                 icon: 'success',
                                 title: 'Berhasil!',
                                 text: data.message,
-                                timer: 1500,
+                                timer: 1000,
                                 showConfirmButton: false
                             }).then(() => location.reload());
                         })
@@ -188,6 +178,21 @@
                 });
             });
         });
+
+    @if(session('success'))
+    Swal.fire({
+        icon: 'success',
+        title: 'Berhasil!',
+        text: '{{ session('success') }}',
+        timer: 1000,
+        showConfirmButton: false
+    });
+    @endif
+
+    @if ($errors->any())
+        const modalTambah = new bootstrap.Modal(document.getElementById('modalTambahCpl'));
+        modalTambah.show();
+    @endif
     });
 </script>
 

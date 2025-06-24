@@ -17,12 +17,21 @@ class CplController extends Controller
     public function storeCpl(Request $request)
     {
         $data = $request->validate([
-            'kode_cpl' => 'required|unique:cpl,kode_cpl',
+            'kode_cpl' => [
+                'required',
+                'regex:/^CP-\d+$/',
+                'unique:cpl,kode_cpl'
+            ],
             'deskripsi' => 'required',
-            'bobot'      => 'required|integer|min:0|max:100',
+        ], [
+            'kode_cpl.required' => 'Kode CPL wajib diisi.',
+            'kode_cpl.regex' => 'Format kode harus seperti CP-1, CP-2, dst.',
+            'kode_cpl.unique' => 'Kode CPL sudah digunakan.',
+            'deskripsi.required' => 'Deskripsi wajib diisi.',
         ]);
+
         Cpl::create($data);
-        return redirect()->back()->with('success', 'Data cpl berhasil ditambahkan.');
+        return redirect()->back()->with('success', 'Data CPL Berhasil Ditambahkan.');
     }
 
     public function editCpl($id)
@@ -35,13 +44,21 @@ class CplController extends Controller
     public function updateCpl(Request $request, $id)
     {
         $request->validate([
-            'kode_cpl' => 'required|unique:cpl,kode_cpl,' . $id,
+            'kode_cpl' => [
+                'required',
+                'regex:/^CP-\d+$/',
+                'unique:cpl,kode_cpl,' . $id
+            ],
             'deskripsi' => 'required',
-            'bobot' => 'required|integer|min:0|max:100',
+        ], [
+            'kode_cpl.required' => 'Kode CPL wajib diisi.',
+            'kode_cpl.regex' => 'Format kode harus seperti CP-1',
+            'kode_cpl.unique' => 'Kode CPL sudah digunakan.',
+            'deskripsi.required' => 'Deskripsi wajib diisi.',
         ]);
 
         Cpl::findOrFail($id)->update($request->only('kode_cpl', 'deskripsi', 'bobot'));
-        return back()->with('success', 'Data CPL berhasil diperbarui.');
+        return redirect()->back()->with('success', 'Data CPL Berhasil Diperbarui.');
     }
     public function destroyCpl($id)
     {

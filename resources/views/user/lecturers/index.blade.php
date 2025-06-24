@@ -20,6 +20,12 @@
 
     <!-- Dropdown Filter -->
     <form id="filterDropdown" action="{{ route('admin.users.lecturers') }}" method="GET">
+        <div class="form-check mb-2">
+            <label class="form-check-label d-flex justify-content-between align-items-center w-100" for="filterAll">
+                <span>Semua</span>
+                <input class="form-check-input" type="radio" name="role" value="" id="filterAll" onchange="this.form.submit()" {{ request('role') == '' ? 'checked' : '' }}>
+            </label>
+        </div>
         <div class="form-check">
             <label class="form-check-label d-flex justify-content-between align-items-center w-100">
                 <span>Dosen</span>
@@ -38,7 +44,7 @@
     <div class="card">
         <div class="table-responsive text-nowrap table-striped table-bordered align-middle">
            <table class="table">
-                <thead>
+                <thead class="text-center">
                     <tr>
                         <th>No</th>
                         <th>Nama</th>
@@ -106,7 +112,7 @@
                     <label for="role" class="form-label">Role</label>
                     <select id="role" name="role" class="form-select" required>
                         <option value="" disabled selected>Pilih Role</option>
-                        <option value="mahasiswa">Mahasiswa</option>
+                        {{-- <option value="mahasiswa">Mahasiswa</option> --}}
                         <option value="dosen">Dosen</option>
                         <option value="pimpinan">Pimpinan</option>
                         <option value="admin">Admin</option>
@@ -147,6 +153,12 @@
     
 <!-- Dropdown Filter -->
 <div id="filterDropdown" class="card shadow position-absolute" style="display: none; width: 230px; top: 50px; right: 0; border-radius: 8px; padding: 12px 16px; gap: 8px; z-index: 1000;">
+        <div class="form-check">
+        <label class="form-check-label d-flex justify-content-between align-items-center w-100">
+            <span>Semua</span>
+            <input class="form-check-input" type="radio" name="role" value="" onchange="this.form.submit()" {{ request('role') == '' ? 'checked' : '' }}>
+        </label>
+    </div>
     <div class="form-check mb-2">
         <input class="form-check-input" type="radio" name="roleFilter" id="filterDosen" value="dosen">
         <label class="form-check-label" for="filterDosen">Dosen</label>

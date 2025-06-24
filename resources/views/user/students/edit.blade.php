@@ -34,7 +34,7 @@
                     </div>
 
                     {{-- Role --}}
-                    <div class="mb-3">
+                    {{-- <div class="mb-3">
                         <label for="edit_role" class="form-label">Role</label>
                         <select id="edit_role" name="role" class="form-select" required>
                             <option value="mahasiswa">Mahasiswa</option>
@@ -42,7 +42,7 @@
                             <option value="pimpinan">Pimpinan</option>
                             <option value="admin">Admin</option>
                         </select>
-                    </div>
+                    </div> --}}
                 </div>
                 <div class="modal-footer">
                     <button type="submit" class="btn btn-primary">Simpan Perubahan</button>

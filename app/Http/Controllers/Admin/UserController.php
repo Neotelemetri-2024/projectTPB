@@ -36,27 +36,26 @@ class UserController extends Controller
             'email' => 'required|email|unique:users,email',
             'nim' => 'required|string|unique:students,nim',
             'tahun_masuk' => 'required|numeric',
-            'role' => 'required|string|in:admin,dosen,pimpinan,mahasiswa',
         ]);
+
         // 1. Simpan ke tabel users
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'password' => null, // default password, nanti bisa reset
-            'role' => $validated['role'],
+            'password' => null, // default password
+            'role' => 'mahasiswa',
         ]);
 
-        // 2. Simpan ke tabel students (jika role = mahasiswa)
-        if ($validated['role'] === 'mahasiswa') {
-            Student::create([
-                'user_id' => $user->id,
-                'nim' => $validated['nim'],
-                'tahun_masuk' => $validated['tahun_masuk'],
-            ]);
-        }
+        // 2. Simpan ke tabel students (langsung aja)
+        Student::create([
+            'user_id' => $user->id,
+            'nim' => $validated['nim'],
+            'tahun_masuk' => $validated['tahun_masuk'],
+        ]);
 
-        return redirect()->back()->with('success', 'Data user berhasil ditambahkan.');
+        return redirect()->back()->with('success', 'Data mahasiswa berhasil ditambahkan.');
     }
+
 
     public function import(Request $request)
     {
@@ -89,7 +88,7 @@ class UserController extends Controller
         $student->user->update([
             'name' => $request->name,
             'email' => $request->email,
-            'role' => $request->role,
+            // 'role' => $request->role,
         ]);
 
         // Update tabel student 
@@ -120,7 +119,7 @@ class UserController extends Controller
 
         $query = Lecturer::with('user');
 
-        if ($request->has('role')) {
+        if ($request->filled('role')) {
             $query->whereHas('user', function ($q) use ($request) {
                 $q->where('role', $request->role);
             });
@@ -135,7 +134,7 @@ class UserController extends Controller
             'name' => 'required',
             'email' => 'required|email|unique:users,email',
             'nip' => 'required|unique:lecturers,nip',
-            'role' => 'required|in:dosen,pimpinan,admin,mahasiswa',
+            'role' => 'required|in:dosen,pimpinan,admin',
         ]);
 
         $user = User::create([

@@ -12,6 +12,5 @@ class Cpl extends Model
     protected $fillable = [
         'kode_cpl',
         'deskripsi',
-        'bobot',
     ];
 }

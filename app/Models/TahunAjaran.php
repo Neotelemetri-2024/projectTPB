@@ -15,8 +15,23 @@ class TahunAjaran extends Model
         'semester',
     ];
 
+    // Di model TahunAjaran.php
+    // Relasi many-to-many dengan Matkul melalui pivot tahun_ajaran_matkul
+    public function matkul()
+    {
+        return $this->belongsToMany(Matkul::class, 'tahun_ajaran_matkul')
+            ->withPivot('sks', 'semester_studi')
+            ->withTimestamps();
+    }
+
+    // Relasi one-to-many ke tabel pivot
     public function tahunAjaranMatkuls()
     {
-        return $this->hasMany(TahunAjaranMatkul::class, 'id_tahun_ajaran');
+        return $this->hasMany(TahunAjaranMatkul::class);
     }
+
+    // public function tahunAjaranMatkuls()
+    // {
+    //     return $this->hasMany(TahunAjaranMatkul::class, 'tahun_ajaran_id');
+    // }
 }

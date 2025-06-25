@@ -119,7 +119,7 @@
             <li class="menu-item {{ request()->routeIs('admin.matakuliah.*') ? 'active' : '' }}">
                 <a href="{{ route('admin.matakuliah') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-book"></i>
-                    <div>matakuliah</div>
+                    <div>Matakuliah</div>
                 </a>
             </li>
         @endif

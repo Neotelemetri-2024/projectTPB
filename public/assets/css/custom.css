@@ -165,11 +165,23 @@ a.menu-link::before {
     color: #fff;
 }
 
+.btn-blue {
+    background-color: #1755c1 !important;
+    border-color: #1755c1;
+    color: #fff;
+}
+
 /* DELETE SOLID */
 .btn-danger {
     background-color: #c21747;
     border-color: #c21747;
     color: #fff;
+}
+
+.btn-danger-light {
+    background-color: #FFDFE8;
+    border-color: none;
+    color: #a12121;
 }
 
 /* DELETE SOFT */

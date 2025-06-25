@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\CplController;
 use App\Http\Controllers\Admin\TahunAjaranController;
 use App\Http\Controllers\Admin\MatkulController;
+use App\Http\Controllers\Admin\KelasController;
 //dashboard
 use App\Http\Controllers\Student\StudentController;
 use App\Http\Controllers\LecturerController;
@@ -58,6 +59,14 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
 
     // ───── MATKUL MANAGEMENT─────
     Route::get('/matakuliah', [MatkulController::class, 'indexMatkul'])->name('matakuliah');
+    Route::post('/matakuliah/storematkul', [MatkulController::class, 'store'])->name('matakuliah.storematkul');
+    Route::get('/matakuliah/{id}/get', [MatkulController::class, 'getMatkul'])->name('matakuliah.get');
+    Route::put('/matakuliah/{id}', [MatkulController::class, 'updateMatkul'])->name('matakuliah.update');
+    Route::delete('/matakuliah/{id}', [MatkulController::class, 'destroyMatkul'])->name('matakuliah.destroy');
+
+    // ───── KELAS MANAGEMENT─────
+    Route::get('/kelas/matakuliah/{matkulId}', [KelasController::class, 'showByMatkul'])->name('kelas.showByMatkul');
+    Route::get('/kelas', [KelasController::class, 'indexKelas'])->name('kelas');
 });
 
 // Mahasiswa
@@ -74,6 +83,5 @@ Route::middleware(['auth', 'lecturer'])->group(function () {
 Route::middleware(['auth', 'director'])->group(function () {
     Route::get('/director', [DirectorController::class, 'index'])->name('director.dashboard');
 });
-
 
 require __DIR__ . '/auth.php';

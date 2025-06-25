@@ -30,17 +30,21 @@
         </button>
 
         <!-- Dropdown Filter -->
-        <form id="filterDropdown" method="GET" action="{{ route('admin.tahunajaran') }}" class="card shadow position-absolute" style="display: none; width: 230px; top: 50px; right: 0; border-radius: 8px; padding: 12px 16px; gap: 8px; z-index: 1000;">
+        <form id="filterDropdown" method="GET" action="{{ route('admin.tahunajaran') }}"
+            class="card shadow position-absolute"
+            style="display: none; width: 230px; top: 50px; right: 0; border-radius: 8px; padding: 12px 16px; gap: 8px; z-index: 1000;">
             <div class="form-check mb-2">
                 <label class="form-check-label d-flex justify-content-between align-items-center w-100">
                     <span>Ganjil</span>
-                    <input class="form-check-input" type="radio" name="semester" value="Ganjil" onchange="this.form.submit()" {{ request('semester') == 'Ganjil' ? 'checked' : '' }}>
+                    <input class="form-check-input" type="radio" name="semester" value="Ganjil"
+                        onchange="this.form.submit()" {{ request('semester') == 'Ganjil' ? 'checked' : '' }}>
                 </label>
             </div>
             <div class="form-check">
                 <label class="form-check-label d-flex justify-content-between align-items-center w-100">
                     <span>Genap</span>
-                    <input class="form-check-input" type="radio" name="semester" value="Genap" onchange="this.form.submit()" {{ request('semester') == 'Genap' ? 'checked' : '' }}>
+                    <input class="form-check-input" type="radio" name="semester" value="Genap"
+                        onchange="this.form.submit()" {{ request('semester') == 'Genap' ? 'checked' : '' }}>
                 </label>
             </div>
         </form>
@@ -59,13 +63,16 @@
                 <tbody class="table-border-bottom-0">
                     @foreach ($thnajaran as $thajaran)
                         <tr>
-                            <td class="px-4 py-3 border text-center align-middle">{{ $loop->iteration + ($thnajaran->currentPage() - 1) * $thnajaran->perPage() }}</td>
+                            <td class="px-4 py-3 border text-center align-middle">
+                                {{ $loop->iteration + ($thnajaran->currentPage() - 1) * $thnajaran->perPage() }}</td>
                             <td>{{ $thajaran->semester . ' ' . $thajaran->tahun ?? '-' }}</td>
 
                             <td class="d-flex  justify-content-center gap-3">
                                 <button type="button" class="btn btn-outline-warning btnEditTahunAjaran"
-                                data-id="{{ $thajaran->id }}" data-bs-toggle="modal" data-bs-target="#modalEditTahunAjaran">Edit</button>
-                                <button type="button" class="btn btn-danger btnDeleteTahunAjaran" data-id="{{ $thajaran->id }}">Hapus</button>
+                                    data-id="{{ $thajaran->id }}" data-bs-toggle="modal"
+                                    data-bs-target="#modalEditTahunAjaran">Edit</button>
+                                <button type="button" class="btn btn-danger btnDeleteTahunAjaran"
+                                    data-id="{{ $thajaran->id }}">Hapus</button>
                             </td>
                         </tr>
                     @endforeach
@@ -144,10 +151,10 @@
 @endsection
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
+    document.addEventListener("DOMContentLoaded", function() {
         // ==== EDIT TAHUN AJARAN ====
         document.querySelectorAll('.btnEditTahunAjaran').forEach(button => {
-            button.addEventListener('click', function () {
+            button.addEventListener('click', function() {
                 const id = this.getAttribute('data-id');
                 fetch(`/admin/tahunajaran/${id}/get`)
                     .then(response => {
@@ -160,7 +167,8 @@
                         document.getElementById('edit-tahun').value = data.tahun;
 
                         // set form action ke route update
-                        document.getElementById('formEdit').action = `/admin/tahunajaran/${data.id}`;
+                        document.getElementById('formEdit').action =
+                            `/admin/tahunajaran/${data.id}`;
                     })
                     .catch(error => {
                         console.error('Gagal:', error);
@@ -171,7 +179,7 @@
 
         // ==== HAPUS TAHUN AJARAN ====
         document.querySelectorAll('.btnDeleteTahunAjaran').forEach(button => {
-            button.addEventListener('click', function () {
+            button.addEventListener('click', function() {
                 const id = this.getAttribute('data-id');
 
                 Swal.fire({
@@ -185,29 +193,32 @@
                 }).then((result) => {
                     if (result.isConfirmed) {
                         fetch(`/admin/tahunajaran/${id}`, {
-                            method: 'DELETE',
-                            headers: {
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                'Content-Type': 'application/json'
-                            }
-                        })
-                        .then(response => {
-                            if (!response.ok) throw new Error('Gagal menghapus');
-                            return response.json();
-                        })
-                        .then(data => {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Berhasil!',
-                                text: data.message,
-                                timer: 1500,
-                                showConfirmButton: false
-                            }).then(() => location.reload());
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            Swal.fire('Oops', 'Terjadi kesalahan saat menghapus.', 'error');
-                        });
+                                method: 'DELETE',
+                                headers: {
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Content-Type': 'application/json'
+                                }
+                            })
+                            .then(response => {
+                                if (!response.ok) throw new Error(
+                                'Gagal menghapus');
+                                return response.json();
+                            })
+                            .then(data => {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Berhasil!',
+                                    text: data.message,
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                }).then(() => location.reload());
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                Swal.fire('Oops',
+                                    'Terjadi kesalahan saat menghapus.', 'error'
+                                    );
+                            });
                     }
                 });
             });
@@ -216,21 +227,16 @@
         const btnFilter = document.getElementById('btnFilter');
         const dropdown = document.getElementById('filterDropdown');
 
-        btnFilter.addEventListener('click', function (e) {
+        btnFilter.addEventListener('click', function(e) {
             e.stopPropagation();
-            dropdown.style.display = (dropdown.style.display === 'none' || dropdown.style.display === '') ? 'block' : 'none';
+            dropdown.style.display = (dropdown.style.display === 'none' || dropdown.style.display ===
+                '') ? 'block' : 'none';
         });
 
-        document.addEventListener('click', function (e) {
+        document.addEventListener('click', function(e) {
             if (!btnFilter.contains(e.target) && !dropdown.contains(e.target)) {
                 dropdown.style.display = 'none';
             }
-        });   
+        });
     });
-
-    
 </script>
-
-
-
-

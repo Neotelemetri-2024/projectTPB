@@ -9,6 +9,8 @@ use App\Http\Controllers\Admin\CplController;
 use App\Http\Controllers\Admin\TahunAjaranController;
 use App\Http\Controllers\Admin\MatkulController;
 use App\Http\Controllers\Admin\KelasController;
+//dosen 
+use App\Http\Controllers\Lecturer\CpmkController;
 //dashboard
 use App\Http\Controllers\Student\StudentController;
 use App\Http\Controllers\LecturerController;
@@ -77,6 +79,13 @@ Route::middleware(['auth', 'student'])->group(function () {
 // Dosen
 Route::middleware(['auth', 'lecturer'])->group(function () {
     Route::get('/lecturer', [LecturerController::class, 'index'])->name('lecturer.dashboard');
+
+    // ───── CPMK MANAGEMENT─────
+    Route::get('/cpmk', [CpmkController::class, 'index'])->name('cpmk');
+    Route::post('/cpmk/storeCpmk', [CpmkController::class, 'storeCpmk'])->name('cpmk.store');
+    Route::get('/cpmk/{id}/edit', [CpmkController::class, 'editCpmk'])->name('cpmk.edit');
+    Route::put('/cpmk/{id}', [CpmkController::class, 'updateCpmk'])->name('cpmk.update');
+    Route::delete('/cpmk/{id}', [CpmkController::class, 'destroyCpmk'])->name('cpmk.destroy');
 });
 
 // Pimpinan

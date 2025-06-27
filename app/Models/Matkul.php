@@ -32,4 +32,9 @@ class Matkul extends Model
     // {
     //     return $this->hasMany(TahunAjaranMatkul::class, 'matkul_id');
     // }
+
+    public function cpmks()
+    {
+        return $this->hasMany(Cpmk::class, 'id_matkul');
+    }
 }

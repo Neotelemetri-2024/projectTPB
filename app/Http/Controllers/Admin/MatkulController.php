@@ -86,6 +86,7 @@ class MatkulController extends Controller
      */
     public function store(Request $request)
     {
+
         try {
             // dd($request->all());
             $request->validate([

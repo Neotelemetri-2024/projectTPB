@@ -124,6 +124,15 @@
             </li>
         @endif
 
+        @if ($user && $user->role === 'dosen')
+             <li class="menu-item {{ request()->routeIs('cpmk.*') ? 'active' : '' }}">
+                <a href="{{ route('cpmk') }}" class="menu-link">
+                    <i class=" menu-icon fas fa-graduation-cap"></i>
+                    <div>CPMK</div>
+                </a>
+            </li>       
+        @endif
+
         {{-- <li class="menu-header small text-uppercase">
               <span class="menu-header-text">Pages</span>
             </li>

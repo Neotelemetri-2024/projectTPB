@@ -82,6 +82,9 @@
                 $isUserMenuOpen =
                     request()->routeIs('admin.users.students') || request()->routeIs('admin.users.lecturers');
             @endphp
+
+            {{-- Menu User  --}}
+
             <li class="menu-item {{ $isUserMenuOpen ? 'open' : '' }}">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons bx bx-layout"></i>
@@ -102,11 +105,26 @@
                 </ul>
             </li>
 
-            <li class="menu-item {{ request()->routeIs('admin.cpl.*') ? 'active' : '' }}">
-                <a href="{{ route('admin.cpl') }}" class="menu-link">
+            {{-- Menu Master --}}
+
+            <li class="menu-item {{ $isUserMenuOpen ? 'open' : '' }}">
+                <a href="javascript:void(0);" class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons bx bx-book-reader"></i>
-                    <div>Capaian Pembelajaran</div>
+                    <div data-i18n="Layouts">Data Master</div>
                 </a>
+
+                <ul class="menu-sub {{ $isUserMenuOpen ? 'show' : '' }}">
+                    <li class="menu-item {{ request()->routeIs('admin.users.students') ? 'active' : '' }}">
+                        <a href="{{ route('admin.cpl') }}" class="menu-link">
+                            <div data-i18n="Without navbar">CPL</div>
+                        </a>
+                    </li>
+                    <li class="menu-item {{ request()->routeIs('admin.users.lecturers') ? 'active' : '' }}">
+                        <a href="{{ route('admin.cpmk') }}" class="menu-link">
+                            <div data-i18n="Container">CPMK</div>
+                        </a>
+                    </li>
+                </ul>
             </li>
 
             <li class="menu-item {{ request()->routeIs('admin.tahunajaran.*') ? 'active' : '' }}">
@@ -125,12 +143,12 @@
         @endif
 
         @if ($user && $user->role === 'dosen')
-             <li class="menu-item {{ request()->routeIs('cpmk.*') ? 'active' : '' }}">
+             {{-- <li class="menu-item {{ request()->routeIs('cpmk.*') ? 'active' : '' }}">
                 <a href="{{ route('cpmk') }}" class="menu-link">
                     <i class=" menu-icon fas fa-graduation-cap"></i>
                     <div>CPMK</div>
                 </a>
-            </li>       
+            </li>        --}}
         @endif
 
         {{-- <li class="menu-header small text-uppercase">

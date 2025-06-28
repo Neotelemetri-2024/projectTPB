@@ -1,7 +1,7 @@
 @extends('layouts.layout')
-@section('title', 'Management User')
+@section('title', 'Managemen CPL')
 @section ('header')
-    <h5 class="mb-4">Student List</h5>
+    <h5 class="mb-4">List Capaian Pembelajaran</h5>
 @endsection
 @section('content')
 <!-- Tombol Tambah -->

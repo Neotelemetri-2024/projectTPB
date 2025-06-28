@@ -1,7 +1,7 @@
 @extends('layouts.layout')
 @section('title', 'Management User')
 @section ('header')
-    <h5 class="mb-4">Student List</h5>
+    <h5 class="mb-4">List CPMK</h5>
 @endsection
 @section('content')
 <!-- Tombol Tambah -->
@@ -23,10 +23,10 @@
                 <tbody class="table-border-bottom-0">
                     @foreach ($allCpmk as $cpmk)
                     <tr>
-                        <td>{{ $loop->iteration + ($allCpmk->currentPage() - 1) * $allCpmk->perPage() }}</td>
-                        <td>{{ $cpmk->kode_cpmk ?? '-'}}</td>
-                        <td>{{ $cpmk->nama_cpmk ?? '-' }}</td>
-                        <td class="d-flex  justify-content-end gap-3">
+                        <td class="text-center">{{ $loop->iteration + ($allCpmk->currentPage() - 1) * $allCpmk->perPage() }}</td>
+                        <td class="text-center">{{ $cpmk->kode_cpmk ?? '-'}}</td>
+                        <td class="text-center">{{ $cpmk->nama_cpmk ?? '-' }}</td>
+                        <td class="d-flex  justify-content-center gap-3">
                             <button type="button" class="btn btn-outline-warning btnEditCpmk" data-id="{{ $cpmk->id }}" >Edit</button>
 
                             <button type="button" class="btn btn-danger btnDeleteCpmk" data-id="{{ $cpmk->id }}">Hapus</button>
@@ -48,7 +48,7 @@
             <h5 class="modal-title" id="modalTambahCpmkLabel">Tambah Data Cpmk</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <form method="POST" action="{{ route('cpmk.store') }}">
+        <form method="POST" action="{{ route('admin.cpmk.store') }}">
             @csrf
             <div class="modal-body">
                 {{-- Kode CPMK --}}
@@ -97,7 +97,10 @@
                 {{-- Deskripsi Cpmk --}}
                 <div class="mb-3">
                     <label class="form-label mt-4">Nama CPMK</label>
-                    <textarea class="form-control" id="edit_nama_cpmk" name="nama_cpmk" required rows="4"></textarea>
+                    <textarea class="form-control @error('nama_cpmk') is-invalid @enderror" id="edit_nama_cpmk" name="nama_cpmk" rows="5" required>{{ old('nama_cpmk') }}</textarea>
+                    @error('nama_cpmk')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
                 </div>
             </div>
             <div class="modal-footer">
@@ -120,7 +123,7 @@
         document.querySelectorAll('.btnEditCpmk').forEach(button => {
             button.addEventListener('click', function () {
                 const id = this.getAttribute('data-id');
-                fetch(`{{ url('/cpmk') }}/${id}/edit`)
+                fetch(`{{ url('admin/cpmk') }}/${id}/edit`)
                     .then(response => {
                         if (!response.ok) throw new Error('Gagal fetch data');
                         return response.json();
@@ -128,7 +131,7 @@
                     .then(data => {
                         document.getElementById('edit_kode_cpmk').value = data.kode_cpmk;
                         document.getElementById('edit_nama_cpmk').value = data.nama_cpmk;
-                        document.getElementById('editForm').action = `{{ url('cpmk') }}/${data.id}`;
+                        document.getElementById('editForm').action = `/admin/cpmk/${data.id}`;
                         new bootstrap.Modal(document.getElementById('modalEditCpmk')).show();
                     })
                     .catch(error => {
@@ -153,7 +156,7 @@
                     confirmButtonText: 'Ya, hapus!'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        fetch(`{{ url('cpmk') }}/${id}`, {
+                        fetch(`{{ url('admin.cpmk') }}/${id}`, {
                             method: 'DELETE',
                             headers: {
                                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -198,6 +201,7 @@
         modalTambah.show();
     @endif
     });
+    
 </script>
 
 

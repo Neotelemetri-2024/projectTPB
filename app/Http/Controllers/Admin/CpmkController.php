@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Lecturer;
+namespace App\Http\Controllers\Admin;
 
 
 use App\Models\Cpmk;
@@ -12,7 +12,7 @@ class CpmkController extends Controller
     public function index()
     {
         $allCpmk = Cpmk::with('matkul')->paginate(10);
-        return view('lecturer.cpmk', compact('allCpmk'));
+        return view('admin.cpmk', compact('allCpmk'));
     }
 
     public function storeCpmk(Request $request)
@@ -40,18 +40,15 @@ class CpmkController extends Controller
     public function updateCpmk(Request $request, $id)
     {
         $validate = $request->validate([
-            'kode_cpmk' => 'required|string|max:255|unique:cpmk,kode_cpmk',
+            'kode_cpmk' => 'required|string|max:255|unique:cpmk,kode_cpmk,' . $id,
             'nama_cpmk' => 'required|string',
         ]);
 
+        // jika lolos validasi, baru update
         $data = Cpmk::findOrFail($id);
+        $data->update($validate);
 
-        $data->update([
-            'kode_cpmk' => $validate['kode_cpmk'],
-            'nama_cpmk' => $validate['nama_cpmk'],
-        ]);
-        Cpmk::findOrFail($id)->update($request->only('kode_cpmk', 'nama_cpmk'));
-        return redirect()->back()->with('success', 'Data CPL Berhasil Diperbarui.');
+        return redirect()->back()->with('success', 'Data CPMK Berhasil Diperbarui.');
     }
 
     public function destroyCpmk($id)

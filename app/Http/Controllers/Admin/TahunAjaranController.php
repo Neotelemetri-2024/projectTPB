@@ -25,7 +25,7 @@ class TahunAjaranController extends Controller
     // {
     //     $thnajaran = TahunAjaran::Paginate(10);
     //     return view('admin.tahunajaran', compact('thnajaran'));
-    // }
+    // } 
 
     public function storeTahunAjaran(Request $request)
     {

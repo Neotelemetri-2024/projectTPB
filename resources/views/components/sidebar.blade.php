@@ -124,6 +124,11 @@
                             <div data-i18n="Container">CPMK</div>
                         </a>
                     </li>
+                    <li class="menu-item {{ request()->routeIs('admin.komponen*') ? 'active' : '' }}">
+                        <a href="{{ route('admin.komponen.index') }}" class="menu-link">
+                            <div data-i18n="Komponen Penilaian">Komponen Penilaian</div>
+                        </a>
+                    </li>
                 </ul>
             </li>
 
@@ -143,12 +148,29 @@
         @endif
 
         @if ($user && $user->role === 'dosen')
-             {{-- <li class="menu-item {{ request()->routeIs('cpmk.*') ? 'active' : '' }}">
-                <a href="{{ route('cpmk') }}" class="menu-link">
-                    <i class=" menu-icon fas fa-graduation-cap"></i>
-                    <div>CPMK</div>
+            @php
+              $isUserMenuOpen = request()->routeIs('lecturer.*');
+            @endphp
+            {{-- Menu Kelola Penilian  --}}
+            <li class="menu-item {{ $isUserMenuOpen ? 'open' : '' }}">
+                <a href="javascript:void(0);" class="menu-link menu-toggle">
+                    <i class="menu-icon tf-icons bx bx-layout"></i>
+                    <div data-i18n="Layouts">Penilaian</div>
                 </a>
-            </li>        --}}
+
+                <ul class="menu-sub {{ $isUserMenuOpen ? 'show' : '' }}">
+                    <li class="menu-item {{ request()->routeIs('lecturer.komponen') ? 'active' : '' }}">
+                        <a href="{{ route('lecturer.komponen') }}" class="menu-link">
+                            <div data-i18n="Without navbar">Kelola Komponen</div>
+                        </a>
+                    </li>
+                    {{-- <li class="menu-item {{ request()->routeIs('admin.users.lecturers') ? 'active' : '' }}">
+                        <a href="{{ route('') }}" class="menu-link">
+                            <div data-i18n="Container">Input Nilai</div>
+                        </a>
+                    </li> --}}
+                </ul>
+            </li>  
         @endif
 
         {{-- <li class="menu-header small text-uppercase">

@@ -283,6 +283,12 @@ button.list-group-item-primary.active {
     box-shadow: none;
 }
 
+.btn-outline-newprimary {
+    color: #643a00;
+    border-color: #643a00;
+    background: transparent;
+}
+
 .btn-outline-primary {
     color: #696cff;
     border-color: #696cff;

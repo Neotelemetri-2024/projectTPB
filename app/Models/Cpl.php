@@ -13,4 +13,13 @@ class Cpl extends Model
         'kode_cpl',
         'deskripsi',
     ];
+    public function matkuls()
+    {
+        return $this->belongsToMany(Matkul::class, 'matkul_cpl_cpmk')->withTimestamps();
+    }
+
+    public function cpmks()
+    {
+        return $this->belongsToMany(Cpmk::class, 'matkul_cpl_cpmk')->withTimestamps();
+    }
 }

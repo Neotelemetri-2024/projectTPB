@@ -35,7 +35,7 @@ class StudentsImport implements ToCollection, WithHeadingRow
                 'name' => $row['nama'],
                 'email' => $row['email'],
                 'role' => 'mahasiswa',
-                'status' => 'aktif'
+                // 'status' => 'aktif'
             ]);
 
             Student::create([

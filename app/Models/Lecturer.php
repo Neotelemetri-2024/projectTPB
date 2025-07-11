@@ -18,4 +18,12 @@ class Lecturer extends Model
     {
         return $this->belongsTo(User::class);
     }
+    public function matkuls()
+    {
+        return $this->hasMany(Matkul::class, 'lecturer_id');
+    }
+    public function lecturer()
+    {
+        return $this->belongsTo(Lecturer::class, 'lecturer_id');
+    }
 }

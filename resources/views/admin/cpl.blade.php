@@ -11,8 +11,8 @@
 <!-- Basic Bootstrap Table -->
     <div class="card">
         <div class="table-responsive text-nowrap table-striped table-bordered align-middle">
-            <table class="table ">
-                <thead class="text-center">
+            <table class="table table-custom">
+                <thead class="text-center ">
                     <tr>
                         <th>No</th>
                         <th>Kode CP</th>

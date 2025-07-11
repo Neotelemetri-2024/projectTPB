@@ -184,15 +184,39 @@
             document.getElementById('edit_id').value = id;
             document.getElementById('edit_cpl_id').value = cplId;
 
+            // Reset pilihan dulu
             const cpmkSelect = document.getElementById('edit_cpmk_ids');
             [...cpmkSelect.options].forEach(option => {
-                option.selected = cpmkIds.includes(parseInt(option.value));
+                option.selected = false;
             });
 
-            new MultiSelectTag('edit_cpmk_ids', {
-                placeholder: 'Pilih CPMK'
+            // Pilih CPMK yang sesuai
+            [...cpmkSelect.options].forEach(option => {
+                if (cpmkIds.includes(parseInt(option.value))) {
+                    option.selected = true;
+                }
             });
+            const container = cpmkSelect.nextElementSibling;
+            if (!container || !container.classList.contains('multi-select-tag')) {
+                new MultiSelectTag('edit_cpmk_ids', {
+                    placeholder: 'Pilih CPMK'
+                });
+            }
+
         });
+
+            // Reset saat modal edit ditutup agar tidak dobel
+    modalEdit.addEventListener('hidden.bs.modal', function () {
+        const cpmkSelect = document.getElementById('edit_cpmk_ids');
+        [...cpmkSelect.options].forEach(option => option.selected = false);
+
+        // Hapus tampilan plugin jika ada
+        const container = cpmkSelect.nextElementSibling;
+        if (container && container.classList.contains('multi-select-tag')) {
+            container.remove();
+            cpmkSelect.classList.remove('multi-select-tag');
+        }
+    });
 
         // DELETE
         document.querySelectorAll('.btn-delete-relasi').forEach(button => {

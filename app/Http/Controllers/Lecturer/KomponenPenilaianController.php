@@ -73,35 +73,36 @@ class KomponenPenilaianController extends Controller
 
     public function updateCplCpmk(Request $request, $id)
     {
-        // Validasi input
         $request->validate([
             'cpl_id' => 'required|exists:cpl,id',
             'cpmk_ids' => 'required|array',
         ]);
 
-        // Ambil data lama
+        // Ambil relasi lama
         $relasiLama = MatkulCplCpmk::findOrFail($id);
         $matkul_id = $relasiLama->matkul_id;
         $cplBaru = $request->cpl_id;
         $cpmkBaru = $request->cpmk_ids;
 
-        // CEK apakah relasi baru sudah ada di database (selain relasi yang sedang diupdate)
+        // Hapus semua relasi lama dengan CPL yang sama dan matkul sama
+        MatkulCplCpmk::where('matkul_id', $matkul_id)
+            ->where('cpl_id', $relasiLama->cpl_id)
+            ->delete();
+
+        // Cek apakah relasi baru sudah ada semua (untuk mencegah duplikasi setelah update)
         foreach ($cpmkBaru as $cpmk_id) {
             $duplikat = MatkulCplCpmk::where('matkul_id', $matkul_id)
                 ->where('cpl_id', $cplBaru)
                 ->where('cpmk_id', $cpmk_id)
-                ->where('id', '!=', $id) // abaikan relasi yang sedang diupdate
                 ->exists();
 
             if ($duplikat) {
-                return redirect()->back()->with('error', 'Data CPL yang kamu masukkan sudah ada!');
+                return redirect()->route('lecturer.komponen.show', $matkul_id)
+                    ->with('error', 'Beberapa relasi CPMK yang kamu pilih sudah ada dalam CPL ini.');
             }
         }
 
-        // Jika aman, hapus semua relasi lama untuk ID ini
-        MatkulCplCpmk::where('id', $id)->delete();
-
-        // Simpan relasi baru (bisa lebih dari 1 karena multiselect)
+        // Simpan relasi baru
         foreach ($cpmkBaru as $cpmk_id) {
             MatkulCplCpmk::create([
                 'matkul_id' => $matkul_id,
@@ -113,6 +114,7 @@ class KomponenPenilaianController extends Controller
         return redirect()->route('lecturer.komponen.show', $matkul_id)
             ->with('success', 'Relasi CPL dan CPMK berhasil diperbarui!');
     }
+
 
 
     public function deleteCplCpmk($id)

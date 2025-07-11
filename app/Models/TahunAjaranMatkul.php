@@ -35,6 +35,20 @@ class TahunAjaranMatkul extends Model
         return $this->belongsTo(TahunAjaran::class);
     }
 
+
+    // Relasi Many-to-One: TahunAjaranMatkul dimiliki oleh satu Matkul
+    // public function matkul()
+    // {
+    //     return $this->belongsTo(Matkul::class, 'matkul_id');
+    // }
+
+    // // Relasi Many-to-One: TahunAjaranMatkul dimiliki oleh satu TahunAjaran
+    // public function tahunAjaran()
+    // {
+    //     return $this->belongsTo(TahunAjaran::class, 'tahun_ajaran_id');
+    // }
+
+
     // Relasi One-to-Many: Satu TahunAjaranMatkul bisa punya banyak Kelas
     public function kelas()
     {

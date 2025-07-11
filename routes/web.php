@@ -10,8 +10,11 @@ use App\Http\Controllers\Admin\TahunAjaranController;
 use App\Http\Controllers\Admin\MatkulController;
 use App\Http\Controllers\Admin\KelasController;
 use App\Http\Controllers\Admin\CpmkController;
-//dosen 
-
+use App\Http\Controllers\Admin\KomponenController;
+//dosen
+use App\Http\Controllers\Lecturer\KomponenPenilaianController;
+use App\Http\Controllers\Lecturer\KomponenPerCpmkController;
+use App\Http\Controllers\Lecturer\CplCpmkController;
 //dashboard
 use App\Http\Controllers\Student\StudentController;
 use App\Http\Controllers\LecturerController;
@@ -60,6 +63,14 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::put('/cpmk/{id}', [CpmkController::class, 'updateCpmk'])->name('cpmk.update');
     Route::delete('/cpmk/{id}', [CpmkController::class, 'destroyCpmk'])->name('cpmk.destroy');
 
+    // ───── KOMPONEN  ─────
+    Route::get('/komponen', [KomponenController::class, 'index'])->name('komponen.index');
+    Route::post('/komponen', [KomponenController::class, 'store'])->name('komponen.store');
+    Route::get('/komponen/{id}/edit', [KomponenController::class, 'edit'])->name('komponen.edit');
+    Route::put('/komponen/{id}', [KomponenController::class, 'update'])->name('komponen.update');
+    Route::delete('/komponen/{id}', [KomponenController::class, 'destroy'])->name('komponen.destroy');
+
+
     // ───── TAHUN AJARAN MANAGEMENT─────
     Route::get('/tahunajaran', [TahunAjaranController::class, 'indexTahunAjaran'])->name('tahunajaran');
     Route::post('/tahunajaran/storeTahunAjaran', [TahunAjaranController::class, 'storeTahunAjaran'])->name('admin.tahunajaran.storeTahunAjaran');
@@ -85,10 +96,27 @@ Route::middleware(['auth', 'student'])->group(function () {
     Route::get('/student', [StudentController::class, 'index'])->name('student.dashboard');
 });
 
+
 // Dosen
-Route::middleware(['auth', 'lecturer'])->group(function () {
-    Route::get('/lecturer', [LecturerController::class, 'index'])->name('lecturer.dashboard');
+Route::prefix('lecturer')->middleware('auth')->group(function () {
+    Route::get('/', [LecturerController::class, 'index'])->name('lecturer.dashboard');
+    // CPL-CPMK MANAJEMEN
+    Route::get('komponen', [KomponenPenilaianController::class, 'index'])->name('lecturer.komponen');
+    Route::get('komponen/{matkul_id}', [KomponenPenilaianController::class, 'show'])->name('lecturer.komponen.show');
+    Route::post('komponen/{matkul_id}/store', [KomponenPenilaianController::class, 'storeCplCpmk'])->name('lecturer.komponen.store');
+    Route::get('komponen/cpl-cpmk/edit/{id}', [KomponenPenilaianController::class, 'editCplCpmk'])->name('lecturer.cplcpmk.edit');
+    Route::put('komponen/cpl-cpmk/update/{id}', [KomponenPenilaianController::class, 'updateCplCpmk'])->name('lecturer.cplcpmk.update');
+    Route::delete('komponen/cpl-cpmk/delete/{id}', [KomponenPenilaianController::class, 'deleteCplCpmk'])->name('lecturer.cplcpmk.delete');
+
+    //Komponen per CPMK ==
+    Route::get('komponen/cpl/{matkul_id}/{cpl_id}/kelola', [KomponenPerCpmkController::class, 'kelola'])->name('lecturer.komponen.kelola');
+    Route::post('komponen/cpmk/{matkul_cpl_cpmk_id}/store', [KomponenPerCpmkController::class, 'store'])->name('lecturer.komponen.storeCpmkKomponen');
+    Route::put('komponen/cpmk/{matkul_cpl_cpmk_id}/update', [KomponenPerCpmkController::class, 'update'])->name('lecturer.komponen.updateByCpmk');
+    Route::delete('komponen/cpmk/{id}/deleteAll', [KomponenPerCpmkController::class, 'destroyByCpmk'])->name('lecturer.komponen.deleteAllByCpmk');
 });
+
+
+
 
 // Pimpinan
 Route::middleware(['auth', 'director'])->group(function () {

@@ -2019,6 +2019,12 @@ progress {
 .table > thead {
     vertical-align: bottom;
 }
+
+.table thead th {
+    background-color: #fff3e3 !important;
+    color: #643a00;
+}
+
 .table > :not(:first-child) {
     border-top: 2px solid #d9dee3;
 }

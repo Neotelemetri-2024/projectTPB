@@ -107,6 +107,9 @@
 
     --bs-danger: #c21747;
     --bs-danger-rgb: 194, 23, 71;
+
+    --table-thead-bg: #fff3e3;
+    --table-thead-text: #643a00;
 }
 
 /* =========================== */
@@ -179,7 +182,7 @@ a.menu-link::before {
 }
 
 .btn-danger-light {
-    background-color: #FFDFE8;
+    background-color: #ffdfe8;
     border-color: none;
     color: #a12121;
 }
@@ -195,11 +198,46 @@ a.menu-link::before {
     color: #fff;
 }
 
+.btn-custom-edit {
+    border: 2px solid #f59e0b;
+    color: #d97706;
+    background-color: white;
+    font-weight: 500;
+}
+
+.btn-custom-edit:hover {
+    background-color: #fff7ed;
+}
+
+.btn-custom-delete {
+    background-color: #ffe4e6;
+    color: #be123c;
+    font-weight: 500;
+}
+
+.btn-custom-delete:hover {
+    background-color: #fecdd3;
+}
+
+.btn-custom-manage {
+    background-color: #1d4ed8;
+    color: white;
+    font-weight: 500;
+}
+
+.btn-custom-manage:hover {
+    background-color: #1e40af;
+}
+s
+
 /* =========================== */
 /* 📋 TABLE HEADER COLOR      */
 /* =========================== */
-.table thead th {
-    background-color: #fff3e3 !important;
+/* Lebih spesifik dari Bootstrap */
+.table-custom thead th {
+    background-color: var(--table-thead-bg) !important;
+    color: var(--table-thead-text) !important;
+    font-weight: 600;
 }
 
 /* =========================== */

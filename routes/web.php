@@ -65,8 +65,9 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     Route::delete('/matakuliah/{id}', [MatkulController::class, 'destroyMatkul'])->name('matakuliah.destroy');
 
     // ───── KELAS MANAGEMENT─────
-    Route::get('/kelas/matakuliah/{matkulId}', [KelasController::class, 'showByMatkul'])->name('kelas.showByMatkul');
-    Route::get('/kelas', [KelasController::class, 'indexKelas'])->name('kelas');
+    Route::get('/kelas/matakuliah/{matkulId}', [KelasController::class, 'indexKelas'])->name('kelas');
+    Route::get('/kelas/matakuliah/{matkulId}/storekelas', [KelasController::class, 'store'])->name('kelas.storekelas');
+    // Route::get('/kelas', [KelasController::class, 'indexKelas'])->name('kelas');
 });
 
 // Mahasiswa

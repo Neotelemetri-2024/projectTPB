@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Matkul;
 use App\Models\TahunAjaran;
 use App\Models\Kelas;
+use App\Models\Dosen;
 
 class TahunAjaranMatkul extends Model
 {
@@ -34,21 +35,20 @@ class TahunAjaranMatkul extends Model
         return $this->belongsTo(TahunAjaran::class);
     }
 
-    // Relasi Many-to-One: TahunAjaranMatkul dimiliki oleh satu Matkul
-    // public function matkul()
-    // {
-    //     return $this->belongsTo(Matkul::class, 'matkul_id');
-    // }
-
-    // // Relasi Many-to-One: TahunAjaranMatkul dimiliki oleh satu TahunAjaran
-    // public function tahunAjaran()
-    // {
-    // return $this->belongsTo(TahunAjaran::class, 'tahun_ajaran_id');
-    // }
-
     // Relasi One-to-Many: Satu TahunAjaranMatkul bisa punya banyak Kelas
     public function kelas()
     {
-        return $this->hasMany(Kelas::class, 'tahun_ajaran_matkul_id');
+        return $this->hasMany(Kelas::class, 'id_tahun_ajaran_matkul');
     }
+
+    // Relasi Many-to-Many: TahunAjaranMatkul diampu oleh banyak Dosen
+    // public function dosenPengampus()
+    // {
+    //     return $this->belongsToMany(
+    //         Dosen::class,
+    //         'tahun_ajaran_matkul_dosen',
+    //         'id_tahun_ajaran_matkul', // FK dari model ini di tabel pivot
+    //         'id_dosen'                // FK dari model Dosen di tabel pivot
+    //     )->using(TahunAjaranMatkulDosen::class); // Menggunakan custom pivot model (karena PFK)
+    // }
 }

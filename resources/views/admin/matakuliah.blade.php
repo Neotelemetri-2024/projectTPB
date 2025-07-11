@@ -63,8 +63,8 @@
                         <th>Kode Matakuliah</th>
                         <th>Nama Matakuliah</th>
                         <th>Status</th>
-                        {{-- <th>Tahun Ajaran</th>
-                        <th>Semester</th> --}}
+                        <th>Tahun Ajaran</th>
+                        {{-- <th>Semester</th> --}}
                         <th>SKS</th>
                         <th>Aksi</th>
                     </tr>
@@ -77,15 +77,16 @@
                             <td>{{ $pivot->matkul->kode_matkul ?? '-' }}</td>
                             <td>{{ $pivot->matkul->nama_matkul ?? '-' }}</td>
                             <td>{{ $pivot->matkul->jenis ?? '-' }}</td>
-                            {{-- <td>{{ $pivot->tahunAjaran->tahun ?? '-' }}</td>
-                            <td>{{ $pivot->semester_studi ?? '-' }}</td> --}}
+                            {{-- <td>{{ $pivot->$tahunAjaran->tahun . ' ' . $pivot->$tahunAjaran->tahun ?? '-' }}</td> --}}
+                            <td>{{ $pivot->tahunAjaran->semester . ' ' . $pivot->tahunAjaran->tahun ?? '-' }}</td>
+                            {{-- <td>{{ $pivot->semester_studi ?? '-' }}</td>  --}}
                             <td>{{ $pivot->sks ?? '-' }}</td>
                             <td class="d-flex justify-content-end gap-3">
                                 <button type="button" class="btn btn-outline-warning btnEditMatkul" data-bs-toggle="modal"
                                     data-bs-target="#modalEditMatkul" data-id="{{ $pivot->matkul->id }}">Edit</button>
                                 <button type="button" class="btn btn-danger-light btnDeleteMatkul"
                                     data-id="{{ $pivot->matkul->id }}">Hapus</button>
-                                <a href="{{ route('admin.kelas.showByMatkul', $pivot->matkul->id) }}" class="btn btn-blue">
+                                <a href="{{ route('admin.kelas', $pivot->matkul->id) }}" class="btn btn-blue">
                                     Kelas
                                 </a>
                             </td>

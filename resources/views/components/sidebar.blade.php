@@ -92,13 +92,13 @@
                 </a>
 
                 <ul class="menu-sub {{ $isUserMenuOpen ? 'show' : '' }}">
-                    <li class="menu-item {{ request()->routeIs('admin.users.students') ? 'active' : '' }}">
-                        <a href="{{ route('admin.users.students') }}" class="menu-link">
+                    <li class="menu-item {{ request()->routeIs('admin.mahasiswa.*') ? 'active' : '' }}">
+                        <a href="{{ route('admin.mahasiswa.index') }}" class="menu-link">
                             <div data-i18n="Without navbar">Mahasiswa</div>
                         </a>
                     </li>
-                    <li class="menu-item {{ request()->routeIs('admin.users.lecturers') ? 'active' : '' }}">
-                        <a href="{{ route('admin.users.lecturers') }}" class="menu-link">
+                    <li class="menu-item {{ request()->routeIs('admin.dosen.*') ? 'active' : '' }}">
+                        <a href="{{ route('admin.dosen.index') }}" class="menu-link">
                             <div data-i18n="Container">Dosen</div>
                         </a>
                     </li>
@@ -106,21 +106,24 @@
             </li>
 
             {{-- Menu Master --}}
+            @php
+                $isDataMasterMenuOpen = request()->routeIs('admin.cpl.*') || request()->routeIs('admin.cpmk.*') || request()->routeIs('admin.komponen.*');
+            @endphp
 
-            <li class="menu-item {{ $isUserMenuOpen ? 'open' : '' }}">
+            <li class="menu-item {{ $isDataMasterMenuOpen ? 'open' : '' }}">
                 <a href="javascript:void(0);" class="menu-link menu-toggle">
                     <i class="menu-icon tf-icons bx bx-book-reader"></i>
                     <div data-i18n="Layouts">Data Master</div>
                 </a>
 
-                <ul class="menu-sub {{ $isUserMenuOpen ? 'show' : '' }}">
-                    <li class="menu-item {{ request()->routeIs('admin.users.students') ? 'active' : '' }}">
-                        <a href="{{ route('admin.cpl') }}" class="menu-link">
+                <ul class="menu-sub {{ $isDataMasterMenuOpen ? 'show' : '' }}">
+                    <li class="menu-item {{ request()->routeIs('admin.cpl.*') ? 'active' : '' }}">
+                        <a href="{{ route('admin.cpl.index') }}" class="menu-link">
                             <div data-i18n="Without navbar">CPL</div>
                         </a>
                     </li>
-                    <li class="menu-item {{ request()->routeIs('admin.users.lecturers') ? 'active' : '' }}">
-                        <a href="{{ route('admin.cpmk') }}" class="menu-link">
+                    <li class="menu-item {{ request()->routeIs('admin.cpmk.*') ? 'active' : '' }}">
+                        <a href="{{ route('admin.cpmk.index') }}" class="menu-link">
                             <div data-i18n="Container">CPMK</div>
                         </a>
                     </li>
@@ -132,17 +135,24 @@
                 </ul>
             </li>
 
-            <li class="menu-item {{ request()->routeIs('admin.tahunajaran.*') ? 'active' : '' }}">
-                <a href="{{ route('admin.tahunajaran') }}" class="menu-link">
+            <li class="menu-item {{ request()->routeIs('admin.tahun-ajaran.*') ? 'active' : '' }}">
+                <a href="{{ route('admin.tahun-ajaran.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-calendar"></i>
                     <div>Tahun Ajaran</div>
                 </a>
             </li>
 
-            <li class="menu-item {{ request()->routeIs('admin.matakuliah.*') ? 'active' : '' }}">
-                <a href="{{ route('admin.matakuliah') }}" class="menu-link">
+            <li class="menu-item {{ request()->routeIs('admin.mata-kuliah.*') ? 'active' : '' }}">
+                <a href="{{ route('admin.mata-kuliah.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-book"></i>
-                    <div>Matakuliah</div>
+                    <div>Mata Kuliah</div>
+                </a>
+            </li>
+
+            <li class="menu-item {{ request()->routeIs('admin.tahun-ajaran-matkul.*') ? 'active' : '' }}">
+                <a href="{{ route('admin.tahun-ajaran-matkul.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-calendar-event"></i>
+                    <div>Tahun Ajaran Matkul</div>
                 </a>
             </li>
         @endif
@@ -172,6 +182,17 @@
                 </ul>
             </li>  
         @endif
+
+        {{-- Profile Menu --}}
+        <li class="menu-header small text-uppercase">
+            <span class="menu-header-text">Akun</span>
+        </li>
+        <li class="menu-item {{ request()->routeIs('profile.*') ? 'active' : '' }}">
+            <a href="{{ route('profile.edit') }}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-user"></i>
+                <div>Profil Saya</div>
+            </a>
+        </li>
 
         {{-- <li class="menu-header small text-uppercase">
               <span class="menu-header-text">Pages</span>

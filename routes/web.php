@@ -6,6 +6,9 @@ use App\Http\Controllers\Admin\MahasiswaController;
 use App\Http\Controllers\Admin\DosenController;
 use App\Http\Controllers\Admin\TahunAjaranController;
 use App\Http\Controllers\Admin\MataKuliahController;
+use App\Http\Controllers\Admin\CplController;
+use App\Http\Controllers\Admin\KomponenController;
+use App\Http\Controllers\Admin\TahunAjaranMatkulController;
 use Illuminate\Support\Facades\Route;
 
 // Default route
@@ -59,6 +62,41 @@ Route::middleware('auth')->group(function () {
             'update' => 'admin.mata-kuliah.update',
             'destroy' => 'admin.mata-kuliah.destroy',
         ]);
+        
+        Route::resource('admin/cpl', CplController::class)->except(['show'])->names([
+            'index' => 'admin.cpl.index',
+            'create' => 'admin.cpl.create',
+            'store' => 'admin.cpl.store',
+            'edit' => 'admin.cpl.edit',
+            'update' => 'admin.cpl.update',
+            'destroy' => 'admin.cpl.destroy',
+        ]);
+        Route::resource('admin/komponen', KomponenController::class)->names([
+            'index' => 'admin.komponen.index',
+            'store' => 'admin.komponen.store',
+            'show' => 'admin.komponen.show',
+            'update' => 'admin.komponen.update',
+            'destroy' => 'admin.komponen.destroy',
+        ]);
+        
+        // Tahun Ajaran Matkul Routes
+        Route::resource('admin/tahun-ajaran-matkul', TahunAjaranMatkulController::class)->names([
+            'index' => 'admin.tahun-ajaran-matkul.index',
+            'create' => 'admin.tahun-ajaran-matkul.create',
+            'store' => 'admin.tahun-ajaran-matkul.store',
+            'show' => 'admin.tahun-ajaran-matkul.show',
+            'edit' => 'admin.tahun-ajaran-matkul.edit',
+            'update' => 'admin.tahun-ajaran-matkul.update',
+            'destroy' => 'admin.tahun-ajaran-matkul.destroy',
+        ]);
+        
+        // Additional routes for managing students and lecturers
+        Route::get('admin/tahun-ajaran-matkul/{id}/manage-mahasiswa', [TahunAjaranMatkulController::class, 'manageMahasiswa'])->name('admin.tahun-ajaran-matkul.manage-mahasiswa');
+        Route::post('admin/tahun-ajaran-matkul/{id}/bulk-add-mahasiswa', [TahunAjaranMatkulController::class, 'bulkAddMahasiswa'])->name('admin.tahun-ajaran-matkul.bulk-add-mahasiswa');
+        Route::post('admin/tahun-ajaran-matkul/{id}/add-mahasiswa', [TahunAjaranMatkulController::class, 'addMahasiswa'])->name('admin.tahun-ajaran-matkul.add-mahasiswa');
+        Route::delete('admin/tahun-ajaran-matkul/{id}/remove-mahasiswa/{mahasiswaId}', [TahunAjaranMatkulController::class, 'removeMahasiswa'])->name('admin.tahun-ajaran-matkul.remove-mahasiswa');
+        Route::post('admin/tahun-ajaran-matkul/{id}/add-dosen', [TahunAjaranMatkulController::class, 'addDosen'])->name('admin.tahun-ajaran-matkul.add-dosen');
+        Route::delete('admin/tahun-ajaran-matkul/{id}/remove-dosen/{dosenId}', [TahunAjaranMatkulController::class, 'removeDosen'])->name('admin.tahun-ajaran-matkul.remove-dosen');
     });
     
     // Dosen Dashboard

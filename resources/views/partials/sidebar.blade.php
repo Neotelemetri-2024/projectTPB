@@ -34,10 +34,10 @@
           <!-- Admin Menu - Data Master -->
           <li class="relative">
              <button type="button"
-                     class="flex items-center w-full p-2 text-base rounded-lg group transition duration-200 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('admin.tahun-ajaran.*', 'admin.mata-kuliah.*') ? 'bg-amber-100 text-amber-700' : '' }}"
+                     class="flex items-center w-full p-2 text-base rounded-lg group transition duration-200 text-gray-900 hover:bg-gray-100"
                      data-collapse-toggle="dropdown-master"
                      aria-expanded="false">
-                <svg class="flex-shrink-0 w-5 h-5 transition duration-75 text-gray-500 group-hover:text-gray-900 {{ request()->routeIs('admin.tahun-ajaran.*', 'admin.mata-kuliah.*') ? 'text-amber-700' : '' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <svg class="flex-shrink-0 w-5 h-5 transition duration-75 text-gray-500 group-hover:text-gray-900" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
                 </svg>
                 <span class="flex-1 ml-3 text-left whitespace-nowrap">Data Master</span>
@@ -45,25 +45,43 @@
                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
                 </svg>
              </button>
-             <ul id="dropdown-master" class="hidden py-2 space-y-1">
+             <ul id="dropdown-master" class="py-2 space-y-1 {{ request()->routeIs('admin.tahun-ajaran.*', 'admin.mata-kuliah.*', 'admin.cpl.*', 'admin.komponen.*', 'admin.tahun-ajaran-matkul.*') ? '' : 'hidden' }}">
                 <li>
                    <a href="{{ route('admin.tahun-ajaran.index') }}" class="flex items-center w-full p-2 rounded-lg pl-11 transition duration-75 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('admin.tahun-ajaran.*') ? 'bg-amber-100 text-amber-700' : '' }}">
-                      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                      </svg>
+                  
                       Tahun Ajaran
                    </a>
                 </li>
                 <li>
                    <a href="{{ route('admin.mata-kuliah.index') }}" class="flex items-center w-full p-2 rounded-lg pl-11 transition duration-75 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('admin.mata-kuliah.*') ? 'bg-amber-100 text-amber-700' : '' }}">
-                      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                      </svg>
+                
                       Mata Kuliah
                    </a>
                 </li>
+                <li>
+                   <a href="{{ route('admin.cpl.index') }}" class="flex items-center w-full p-2 rounded-lg pl-11 transition duration-75 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('admin.cpl.*') ? 'bg-amber-100 text-amber-700' : '' }}">
+             
+                      CPL
+                   </a>
+                </li>
+                <li>
+                   <a href="{{ route('admin.komponen.index') }}" class="flex items-center w-full p-2 rounded-lg pl-11 transition duration-75 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('admin.komponen.*') ? 'bg-amber-100 text-amber-700' : '' }}">
+        
+                      Komponen
+                   </a>
+                </li>
+            
              </ul>
           </li>
+
+          <li>
+            <a href="{{ route('admin.tahun-ajaran-matkul.index') }}" class="flex items-center p-2 rounded-lg group transition-colors duration-200 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('admin.tahun-ajaran-matkul.*') ? 'bg-amber-100 text-amber-700' : '' }}">
+               <svg class="w-5 h-5 transition duration-75 text-gray-500 group-hover:text-gray-900 {{ request()->routeIs('admin.dosen.*') ? 'text-amber-700' : '' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
+               </svg>
+               <span class="ml-3">Mata Kuliah Per TA</span>
+            </a>
+         </li>
           @endif
        </ul>
     </div>

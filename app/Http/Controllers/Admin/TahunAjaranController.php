@@ -2,64 +2,135 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\TahunAjaran;
 use App\Http\Controllers\Controller;
+use App\Models\TahunAjaran;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class TahunAjaranController extends Controller
 {
-
-    public function indexTahunAjaran(Request $request)
+    public function __construct()
     {
-        $query = TahunAjaran::query();
+        $this->middleware('admin');
+    }
+    
+    public function index()
+    {
+        $tahunAjaran = TahunAjaran::orderBy('tahun', 'desc')->paginate(10);
+        return view('admin.tahun-ajaran.index', compact('tahunAjaran'));
+    }
 
-        if ($request->filled('semester')) {
-            $query->where('semester', $request->semester);
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'tahun' => 'required|integer|min:2000|max:' . (date('Y') + 5),
+            'periode' => 'required|string|max:50',
+        ], [
+            'tahun.required' => 'Tahun ajaran wajib diisi',
+            'tahun.integer' => 'Tahun ajaran harus berupa angka',
+            'tahun.min' => 'Tahun ajaran minimal 2000',
+            'tahun.max' => 'Tahun ajaran maksimal ' . (date('Y') + 5),
+            'periode.required' => 'Periode wajib diisi',
+            'periode.max' => 'Periode maksimal 50 karakter',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
         }
 
-        $thnajaran = $query->orderBy('tahun', 'desc')->paginate(10);
+        try {
+            // Check if tahun ajaran already exists
+            $existing = TahunAjaran::where('tahun', $request->tahun)
+                                  ->where('periode', $request->periode)
+                                  ->first();
+            
+            if ($existing) {
+                return redirect()->back()
+                    ->with('error', 'Tahun ajaran dengan periode tersebut sudah ada')
+                    ->withInput();
+            }
 
-        return view('admin.tahunajaran', compact('thnajaran'));
+            TahunAjaran::create([
+                'tahun' => $request->tahun,
+                'periode' => $request->periode,
+            ]);
+
+            return redirect()->route('admin.tahun-ajaran.index')
+                ->with('success', 'Tahun ajaran berhasil ditambahkan');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage())
+                ->withInput();
+        }
     }
-    // public function indexTahunAjaran()
-    // {
-    //     $thnajaran = TahunAjaran::Paginate(10);
-    //     return view('admin.tahunajaran', compact('thnajaran'));
-    // } 
 
-    public function storeTahunAjaran(Request $request)
+    public function show(TahunAjaran $tahunAjaran)
     {
-        $data = $request->validate([
-            'semester' => 'required|string|in:Ganjil,Genap',
-            'tahun' => 'required|string|max:255',
-
-        ]);
-        TahunAjaran::create($data);
-        return redirect()->back()->with('success', 'Data Tahun Ajaran berhasil ditambahkan.');
-    }
-
-    public function getTahunAjaran($id)
-    {
-        return response()->json(TahunAjaran::findOrFail($id));
-    }
-
-    public function updateTahunAjaran(Request $request, $id)
-    {
-        $data = $request->validate([
-            'semester' => 'required',
-            'tahun' => 'required',
-        ]);
-
-        TahunAjaran::findOrFail($id)->update($data);
-        return back()->with('success', 'Data berhasil diperbarui.');
-    }
-    public function destroyTahunAjaran($id)
-    {
-        $ta = TahunAjaran::findOrFail($id);
-        $ta->delete();
-
         return response()->json([
-            'message' => 'Data Tahun Ajaran berhasil dihapus.'
+            'status' => 'success',
+            'data' => $tahunAjaran
         ]);
     }
-}
+
+    public function update(Request $request, TahunAjaran $tahunAjaran)
+    {
+        $validator = Validator::make($request->all(), [
+            'tahun' => 'required|integer|min:2000|max:' . (date('Y') + 5),
+            'periode' => 'required|string|max:50',
+        ], [
+            'tahun.required' => 'Tahun ajaran wajib diisi',
+            'tahun.integer' => 'Tahun ajaran harus berupa angka',
+            'tahun.min' => 'Tahun ajaran minimal 2000',
+            'tahun.max' => 'Tahun ajaran maksimal ' . (date('Y') + 5),
+            'periode.required' => 'Periode wajib diisi',
+            'periode.max' => 'Periode maksimal 50 karakter',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        try {
+            // Check if tahun ajaran already exists (excluding current record)
+            $existing = TahunAjaran::where('tahun', $request->tahun)
+                                  ->where('periode', $request->periode)
+                                  ->where('id', '!=', $tahunAjaran->id)
+                                  ->first();
+            
+            if ($existing) {
+                return redirect()->back()
+                    ->with('error', 'Tahun ajaran dengan periode tersebut sudah ada')
+                    ->withInput();
+            }
+
+            $tahunAjaran->update([
+                'tahun' => $request->tahun,
+                'periode' => $request->periode,
+            ]);
+
+            return redirect()->route('admin.tahun-ajaran.index')
+                ->with('success', 'Tahun ajaran berhasil diperbarui');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
+    public function destroy(TahunAjaran $tahunAjaran)
+    {
+        try {
+            $tahunAjaran->delete();
+            
+            return redirect()->route('admin.tahun-ajaran.index')
+                ->with('success', 'Tahun ajaran berhasil dihapus');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+} 

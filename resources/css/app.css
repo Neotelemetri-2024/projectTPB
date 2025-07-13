@@ -1,3 +1,6 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@import "flowbite/src/themes/default";
+
+/* Toastify styles */
+@import "toastify-js/src/toastify.css";

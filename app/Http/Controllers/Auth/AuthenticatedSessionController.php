@@ -36,11 +36,11 @@ class AuthenticatedSessionController extends Controller
         if ($user->role == 'admin') {
             return redirect()->route('admin.dashboard');
         } elseif ($user->role == 'mahasiswa') {
-            return redirect()->route('student.dashboard');
+            return redirect()->route('mahasiswa.dashboard');
         } elseif ($user->role == 'dosen') {
-            return redirect()->route('lecturer.dashboard');
+            return redirect()->route('dosen.dashboard');
         } elseif ($user->role == 'pimpinan') {
-            return redirect()->route('director.dashboard');
+            return redirect()->route('pimpinan.dashboard');
         } else {
             // fallback kalau role tidak dikenal
             Auth::logout();

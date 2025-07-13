@@ -8,14 +8,15 @@ use Illuminate\Database\Eloquent\Model;
 class Komponen extends Model
 {
     use HasFactory;
+
     protected $table = 'komponen';
 
     protected $fillable = [
-        'nama',
+        'nama'
     ];
 
-    public function komponenPerCpmk()
+    public function nilai()
     {
-        return $this->hasMany(KomponenPerCpmk::class);
+        return $this->hasMany(Nilai::class, 'komponenId');
     }
 }

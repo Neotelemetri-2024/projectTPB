@@ -16,7 +16,7 @@ class StudentMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::User()->role == 'mahasiswa') {
+        if (Auth::check() && Auth::user()->role == 'mahasiswa') {
             return $next($request);
         }
         abort(403, 'Access denied');

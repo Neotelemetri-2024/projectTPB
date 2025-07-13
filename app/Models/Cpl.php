@@ -8,18 +8,16 @@ use Illuminate\Database\Eloquent\Model;
 class Cpl extends Model
 {
     use HasFactory;
-    protected $table = 'cpl';
-    protected $fillable = [
-        'kode_cpl',
-        'deskripsi',
-    ];
-    public function matkuls()
-    {
-        return $this->belongsToMany(Matkul::class, 'matkul_cpl_cpmk')->withTimestamps();
-    }
 
-    public function cpmks()
+    protected $table = 'cpl';
+
+    protected $fillable = [
+        'kodeCpl',
+        'deskripsi'
+    ];
+
+    public function cpmk()
     {
-        return $this->belongsToMany(Cpmk::class, 'matkul_cpl_cpmk')->withTimestamps();
+        return $this->hasMany(Cpmk::class, 'idCpl');
     }
 }

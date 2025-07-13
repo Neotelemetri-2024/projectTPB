@@ -4,65 +4,45 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Matkul;
-use App\Models\TahunAjaran;
-use App\Models\Kelas;
-use App\Models\Dosen;
 
 class TahunAjaranMatkul extends Model
 {
     use HasFactory;
-    // Nama tabel yang sesuai dengan database
-    protected $table = 'tahun_ajaran_matkuls';
 
-    // Kolom yang boleh diisi secara massal (mass assignable)
+    protected $table = 'tahun_ajaran_matkul';
+
     protected $fillable = [
-        'matkul_id',
-        'tahun_ajaran_id',
-        'semester_studi', // Kolom tambahan di pivot
-        'sks',      // Kolom tambahan di pivot
+        'tahunAjaranId',
+        'mataKuliahId',
+        'kelas'
     ];
 
-    // Relasi ke Matkul
-    public function matkul()
-    {
-        return $this->belongsTo(Matkul::class);
-    }
+    protected $casts = [
+        'kelas' => 'integer'
+    ];
 
-    // Relasi ke TahunAjaran
     public function tahunAjaran()
     {
-        return $this->belongsTo(TahunAjaran::class);
+        return $this->belongsTo(TahunAjaran::class, 'tahunAjaranId');
     }
 
-
-    // Relasi Many-to-One: TahunAjaranMatkul dimiliki oleh satu Matkul
-    // public function matkul()
-    // {
-    //     return $this->belongsTo(Matkul::class, 'matkul_id');
-    // }
-
-    // // Relasi Many-to-One: TahunAjaranMatkul dimiliki oleh satu TahunAjaran
-    // public function tahunAjaran()
-    // {
-    //     return $this->belongsTo(TahunAjaran::class, 'tahun_ajaran_id');
-    // }
-
-
-    // Relasi One-to-Many: Satu TahunAjaranMatkul bisa punya banyak Kelas
-    public function kelas()
+    public function mataKuliah()
     {
-        return $this->hasMany(Kelas::class, 'id_tahun_ajaran_matkul');
+        return $this->belongsTo(MataKuliah::class, 'mataKuliahId');
     }
 
-    // Relasi Many-to-Many: TahunAjaranMatkul diampu oleh banyak Dosen
-    // public function dosenPengampus()
-    // {
-    //     return $this->belongsToMany(
-    //         Dosen::class,
-    //         'tahun_ajaran_matkul_dosen',
-    //         'id_tahun_ajaran_matkul', // FK dari model ini di tabel pivot
-    //         'id_dosen'                // FK dari model Dosen di tabel pivot
-    //     )->using(TahunAjaranMatkulDosen::class); // Menggunakan custom pivot model (karena PFK)
-    // }
+    public function dosenPengampu()
+    {
+        return $this->hasMany(DosenPengampu::class, 'tahunAjaranMatkulId');
+    }
+
+    public function kelasMahasiswa()
+    {
+        return $this->hasMany(KelasMahasiswa::class, 'tahunAjaranMatkulId');
+    }
+
+    public function nilai()
+    {
+        return $this->hasMany(Nilai::class, 'tahunAjaranMatkulId');
+    }
 }

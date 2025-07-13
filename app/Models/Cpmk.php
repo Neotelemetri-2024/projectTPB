@@ -10,23 +10,25 @@ class Cpmk extends Model
     use HasFactory;
 
     protected $table = 'cpmk';
+
     protected $fillable = [
-        'id_matkul',
-        'kode_cpmk',
-        'nama_cpmk',
+        'idCpl',
+        'kodeCpmk',
+        'deskripsi'
     ];
 
-    public function matkuls()
+    public function cpl()
     {
-        return $this->belongsToMany(Matkul::class, 'matkul_cpl_cpmk')->withTimestamps();
+        return $this->belongsTo(Cpl::class, 'idCpl');
     }
 
-    public function cpls()
+    public function cpmkMatKul()
     {
-        return $this->belongsToMany(Cpl::class, 'matkul_cpl_cpmk')->withTimestamps();
+        return $this->hasMany(CpmkMatKul::class, 'cpmkId');
     }
-    public function matkul()
+
+    public function nilai()
     {
-        return $this->belongsTo(Matkul::class, 'id_matkul');
+        return $this->hasMany(Nilai::class, 'cpmkId');
     }
 }

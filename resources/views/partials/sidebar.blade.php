@@ -1,6 +1,6 @@
 <aside id="sidebar" class="fixed top-0 left-0 z-30 h-screen pt-14 transition-all duration-300 ease-in-out bg-white border-r border-gray-200 w-64" aria-label="Sidebar">
-    <div class="h-full px-3 pb-4 overflow-y-auto bg-white">
-       <ul class="space-y-2 font-medium mt-8">
+    <div class="h-full px-3 pb-4 overflow-y-auto bg-white flex flex-col">
+       <ul class="space-y-2 font-medium mt-8 flex-1">
           <li>
              <a href="{{ route('dashboard') }}" class="flex items-center p-2 rounded-lg group transition-colors duration-200 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('dashboard', 'admin.dashboard', 'dosen.dashboard', 'mahasiswa.dashboard', 'pimpinan.dashboard') ? 'bg-amber-100 text-amber-700' : '' }}">
                 <svg class="w-5 h-5 transition duration-75 text-gray-500 group-hover:text-gray-900 {{ request()->routeIs('dashboard', 'admin.dashboard', 'dosen.dashboard', 'mahasiswa.dashboard', 'pimpinan.dashboard') ? 'text-amber-700' : '' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -48,29 +48,29 @@
              <ul id="dropdown-master" class="py-2 space-y-1 {{ request()->routeIs('admin.tahun-ajaran.*', 'admin.mata-kuliah.*', 'admin.cpl.*', 'admin.komponen.*', 'admin.tahun-ajaran-matkul.*') ? '' : 'hidden' }}">
                 <li>
                    <a href="{{ route('admin.tahun-ajaran.index') }}" class="flex items-center w-full p-2 rounded-lg pl-11 transition duration-75 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('admin.tahun-ajaran.*') ? 'bg-amber-100 text-amber-700' : '' }}">
-                  
+
                       Tahun Ajaran
                    </a>
                 </li>
                 <li>
                    <a href="{{ route('admin.mata-kuliah.index') }}" class="flex items-center w-full p-2 rounded-lg pl-11 transition duration-75 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('admin.mata-kuliah.*') ? 'bg-amber-100 text-amber-700' : '' }}">
-                
+
                       Mata Kuliah
                    </a>
                 </li>
                 <li>
                    <a href="{{ route('admin.cpl.index') }}" class="flex items-center w-full p-2 rounded-lg pl-11 transition duration-75 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('admin.cpl.*') ? 'bg-amber-100 text-amber-700' : '' }}">
-             
+
                       CPL
                    </a>
                 </li>
                 <li>
                    <a href="{{ route('admin.komponen.index') }}" class="flex items-center w-full p-2 rounded-lg pl-11 transition duration-75 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('admin.komponen.*') ? 'bg-amber-100 text-amber-700' : '' }}">
-        
+
                       Komponen
                    </a>
                 </li>
-            
+
              </ul>
           </li>
 
@@ -83,6 +83,29 @@
             </a>
          </li>
           @endif
+          @if (auth()->user()->role === 'dosen')
+             <li>
+                <a href="{{ route('dosen.mata-kuliah.index') }}" class="flex items-center p-2 rounded-lg group transition-colors duration-200 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('dosen.mata-kuliah.*', 'dosen.cpmk.*', 'dosen.bobot-komponen.*') ? 'bg-amber-100 text-amber-700' : '' }}">
+                   <svg class="w-5 h-5 transition duration-75 text-gray-500 group-hover:text-gray-900 {{ request()->routeIs('dosen.mata-kuliah.*', 'dosen.cpmk.*', 'dosen.komponen-penilaian.*') ? 'text-amber-700' : '' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0118 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                   </svg>
+                   <span class="ml-3">Mata Kuliah</span>
+                </a>
+             </li>
+          @endif
        </ul>
+
+       <!-- Logout Button -->
+       <div class="pt-4 border-t border-gray-200">
+          <form method="POST" action="{{ route('logout') }}">
+             @csrf
+             <button type="submit" class="flex items-center w-full p-2 rounded-lg group transition-colors duration-200 text-red-500 hover:bg-red-50 hover:text-red-600">
+                <svg class="w-5 h-5 transition duration-75 text-red-500 group-hover:text-red-600" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                   <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+                </svg>
+                <span class="ml-3">Logout</span>
+             </button>
+          </form>
+       </div>
     </div>
  </aside>

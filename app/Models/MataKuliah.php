@@ -26,9 +26,4 @@ class MataKuliah extends Model
     {
         return $this->hasMany(TahunAjaranMatkul::class, 'mataKuliahId');
     }
-
-    public function cpmkMatKul()
-    {
-        return $this->hasMany(CpmkMatKul::class, 'mataKuliahId');
-    }
 }

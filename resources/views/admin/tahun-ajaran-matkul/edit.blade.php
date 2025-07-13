@@ -29,8 +29,8 @@
                         <label for="tahunAjaranId" class="block text-sm font-medium text-gray-700 mb-2">
                             Tahun Ajaran <span class="text-red-500">*</span>
                         </label>
-                        <select name="tahunAjaranId" id="tahunAjaranId" 
-                                class="bg-gray-50 border {{ $errors->has('tahunAjaranId') ? 'border-red-500' : 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5" 
+                        <select name="tahunAjaranId" id="tahunAjaranId"
+                                class="bg-gray-50 border {{ $errors->has('tahunAjaranId') ? 'border-red-500' : 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5"
                                 required>
                             <option value="">Pilih Tahun Ajaran</option>
                             @foreach($tahunAjarans as $tahunAjaran)
@@ -48,8 +48,8 @@
                         <label for="mataKuliahId" class="block text-sm font-medium text-gray-700 mb-2">
                             Mata Kuliah <span class="text-red-500">*</span>
                         </label>
-                        <select name="mataKuliahId" id="mataKuliahId" 
-                                class="bg-gray-50 border {{ $errors->has('mataKuliahId') ? 'border-red-500' : 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5" 
+                        <select name="mataKuliahId" id="mataKuliahId"
+                                class="bg-gray-50 border {{ $errors->has('mataKuliahId') ? 'border-red-500' : 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5"
                                 required>
                             <option value="">Pilih Mata Kuliah</option>
                             @foreach($mataKuliahs as $mataKuliah)
@@ -63,7 +63,7 @@
                         @enderror
                     </div>
                 </div>
-                
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                          <div>
                          <label for="kelas" class="block text-sm font-medium text-gray-700 mb-2">
@@ -72,7 +72,7 @@
                          <select name="kelas" id="kelas" class="bg-gray-50 border {{ $errors->has('kelas') ? 'border-red-500' : 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5" required>
                              <option value="">Pilih Kelas</option>
                              @for($i = 1; $i <= 26; $i++)
-                                 <option value="{{ $i }}" {{ (old('kelas') ?? $tahunAjaranMatkul->kelas) == $i ? 'selected' : '' }}>{{ chr(64 + $i) }}</option>
+                                 <option value="{{ $i }}" {{ (old('kelas') ?? $tahunAjaranMatkul->kelas) == $i ? 'selected' : '' }}>{{ \App\Models\TahunAjaranMatkul::convertKelasToHuruf(collect([$i]))->first() }}</option>
                              @endfor
                          </select>
                          @error('kelas')
@@ -88,10 +88,10 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         @foreach($dosens as $dosen)
                             <div class="flex items-center">
-                                <input type="checkbox" 
-                                       name="dosenIds[]" 
-                                       value="{{ $dosen->id }}" 
-                                       id="dosen_{{ $dosen->id }}" 
+                                <input type="checkbox"
+                                       name="dosenIds[]"
+                                       value="{{ $dosen->id }}"
+                                       id="dosen_{{ $dosen->id }}"
                                        class="rounded border-gray-300 text-amber-600 shadow-sm focus:border-amber-300 focus:ring focus:ring-amber-200 focus:ring-opacity-50 {{ $errors->has('dosenIds') ? 'border-red-500' : '' }}"
                                        {{ in_array($dosen->id, old('dosenIds', $tahunAjaranMatkul->dosenPengampu->pluck('dosenId')->toArray())) ? 'checked' : '' }}>
                                 <label for="dosen_{{ $dosen->id }}" class="ml-2 text-sm text-gray-700">
@@ -106,14 +106,14 @@
                 </div>
 
                 <div class="flex justify-between pt-6 border-t border-gray-200">
-                    <a href="{{ request('back_url', route('admin.tahun-ajaran-matkul.index')) }}" 
+                    <a href="{{ request('back_url', route('admin.tahun-ajaran-matkul.index')) }}"
                        class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                         </svg>
                         Kembali
                     </a>
-                    <button type="submit" 
+                    <button type="submit"
                             class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg flex items-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -125,4 +125,4 @@
         </div>
     </div>
 </div>
-@endsection 
+@endsection

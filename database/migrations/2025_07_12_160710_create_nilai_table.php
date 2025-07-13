@@ -14,12 +14,11 @@ return new class extends Migration
         Schema::create('nilai', function (Blueprint $table) {
             $table->id();
             $table->foreignId('cpmkId')->constrained('cpmk')->onDelete('cascade');
-            $table->foreignId('komponenId')->constrained('komponen')->onDelete('cascade');
             $table->foreignId('mahasiswaId')->constrained('mahasiswa')->onDelete('cascade');
             $table->foreignId('dosenPengampuId')->constrained('dosen_pengampu')->onDelete('cascade');
             $table->foreignId('tahunAjaranMatkulId')->constrained('tahun_ajaran_matkul')->onDelete('cascade');
+            $table->foreignId('bobotId')->constrained('bobot')->onDelete('cascade');
             $table->float('nilai');
-            $table->float('bobot');
             $table->timestamps();
         });
     }

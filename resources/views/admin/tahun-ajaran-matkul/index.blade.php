@@ -8,7 +8,7 @@
         <div class="p-6 border-b border-gray-200">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <h2 class="text-lg font-semibold text-gray-900">Mata Kuliah Tahun Ajaran</h2>
-                <a href="{{ route('admin.tahun-ajaran-matkul.create') }}?back_url={{ urlencode(request()->fullUrl()) }}" 
+                <a href="{{ route('admin.tahun-ajaran-matkul.create') }}?back_url={{ urlencode(request()->fullUrl()) }}"
                    class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg flex items-center w-fit">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -95,13 +95,13 @@
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $tahunAjaranMatkuls->firstItem() + $loop->index }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                             
+
                                     {{-- <div class="font-medium text-gray-900">{{ $item->mataKuliah->kodeMatkul }}</div> --}}
                                     <div class="text-gray-500">{{ $item->mataKuliah->namaMatkul }}</div>
                                     {{-- <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                         {{ $item->tahunAjaran->tahun }} - {{ $item->tahunAjaran->periode }}
                                     </span> --}}
-                             
+
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -110,7 +110,7 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                    {{ chr(64 + $item->kelas) }}
+                                    {{ $item->kelasHuruf }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -133,20 +133,20 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <div class="flex space-x-2">
-                                    <a href="{{ route('admin.tahun-ajaran-matkul.show', $item->id) }}?back_url={{ urlencode(request()->fullUrl()) }}" 
+                                    <a href="{{ route('admin.tahun-ajaran-matkul.show', $item->id) }}?back_url={{ urlencode(request()->fullUrl()) }}"
                                        class="text-blue-600 hover:text-blue-900" title="Detail">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                         </svg>
                                     </a>
-                                    <a href="{{ route('admin.tahun-ajaran-matkul.edit', $item->id) }}?back_url={{ urlencode(request()->fullUrl()) }}" 
+                                    <a href="{{ route('admin.tahun-ajaran-matkul.edit', $item->id) }}?back_url={{ urlencode(request()->fullUrl()) }}"
                                        class="text-yellow-600 hover:text-yellow-900" title="Edit">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                         </svg>
                                     </a>
-                                    <button type="button" 
+                                    <button type="button"
                                             data-modal-toggle="modal-confirm-hapus-{{ $item->id }}"
                                             class="text-red-600 hover:text-red-900" title="Hapus">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -174,7 +174,7 @@
         <!-- Pagination -->
         <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
             <div class="text-sm text-gray-700">
-                Menampilkan {{ $tahunAjaranMatkuls->firstItem() ?? 0 }} sampai {{ $tahunAjaranMatkuls->lastItem() ?? 0 }} 
+                Menampilkan {{ $tahunAjaranMatkuls->firstItem() ?? 0 }} sampai {{ $tahunAjaranMatkuls->lastItem() ?? 0 }}
                 dari {{ $tahunAjaranMatkuls->total() }} data
             </div>
             <div>
@@ -186,10 +186,10 @@
 
 <!-- Modal Konfirmasi Hapus -->
 @foreach($tahunAjaranMatkuls as $item)
-<x-confirm-modal 
+<x-confirm-modal
     :id="'modal-confirm-hapus-' . $item->id"
     title="Konfirmasi Hapus Mata Kuliah Tahun Ajaran"
-    :message="'Apakah Anda yakin ingin menghapus mata kuliah ' . $item->mataKuliah->namaMatkul . ' kelas ' . chr(64 + $item->kelas) . '?'"
+    :message="'Apakah Anda yakin ingin menghapus mata kuliah ' . $item->mataKuliah->namaMatkul . ' kelas ' . $item->kelasHuruf . '?'"
     :action="route('admin.tahun-ajaran-matkul.destroy', $item->id)"
     method="DELETE"
 />

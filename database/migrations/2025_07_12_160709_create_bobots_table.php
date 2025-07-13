@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('cpmk_mat_kul', function (Blueprint $table) {
+        Schema::create('bobot', function (Blueprint $table) {
             $table->id();
+            $table->float('bobot');
             $table->foreignId('tahunAjaranMatkulId')->constrained('tahun_ajaran_matkul')->onDelete('cascade');
+            $table->foreignId('komponenId')->constrained('komponen')->onDelete('cascade');
             $table->foreignId('cpmkId')->constrained('cpmk')->onDelete('cascade');
             $table->timestamps();
         });
@@ -24,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('cpmk_mat_kul');
+        Schema::dropIfExists('bobot');
     }
 };

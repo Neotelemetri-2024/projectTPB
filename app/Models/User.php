@@ -47,16 +47,6 @@ class User extends Authenticatable
         'isAktif' => 'boolean',
     ];
 
-    public function Student()
-    {
-        return $this->hasOne(Student::class);
-    }
-
-    public function Lecturer()
-    {
-        return $this->hasOne(Lecturer::class);
-    }
-
     public function mahasiswa()
     {
         return $this->hasOne(Mahasiswa::class, 'userId');

@@ -13,17 +13,15 @@ class Nilai extends Model
 
     protected $fillable = [
         'cpmkId',
-        'komponenId',
         'mahasiswaId',
         'dosenPengampuId',
         'tahunAjaranMatkulId',
+        'bobotId',
         'nilai',
-        'bobot'
     ];
 
     protected $casts = [
         'nilai' => 'float',
-        'bobot' => 'float'
     ];
 
     public function cpmk()
@@ -31,9 +29,9 @@ class Nilai extends Model
         return $this->belongsTo(Cpmk::class, 'cpmkId');
     }
 
-    public function komponen()
+    public function bobot()
     {
-        return $this->belongsTo(Komponen::class, 'komponenId');
+        return $this->belongsTo(Bobot::class, 'bobotId');
     }
 
     public function mahasiswa()
@@ -49,5 +47,11 @@ class Nilai extends Model
     public function tahunAjaranMatkul()
     {
         return $this->belongsTo(TahunAjaranMatkul::class, 'tahunAjaranMatkulId');
+    }
+
+    // Helper method untuk mendapatkan komponen melalui bobot
+    public function getKomponenAttribute()
+    {
+        return $this->bobot->komponen ?? null;
     }
 }

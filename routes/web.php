@@ -9,6 +9,10 @@ use App\Http\Controllers\Admin\MataKuliahController;
 use App\Http\Controllers\Admin\CplController;
 use App\Http\Controllers\Admin\KomponenController;
 use App\Http\Controllers\Admin\TahunAjaranMatkulController;
+use App\Http\Controllers\Dosen\MataKuliahController as DosenMataKuliahController;
+use App\Http\Controllers\Dosen\CpmkController as DosenCpmkController;
+use App\Http\Controllers\Dosen\KomponenPenilaianController as DosenKomponenPenilaianController;
+use App\Http\Controllers\Dosen\BobotKomponenController;
 use Illuminate\Support\Facades\Route;
 
 // Default route
@@ -19,11 +23,11 @@ Route::get('/', function () {
 // Dashboard Routes
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
+
     // Admin Dashboard
     Route::middleware('admin')->group(function () {
         Route::get('/admin/dashboard', [DashboardController::class, 'adminDashboard'])->name('admin.dashboard');
-        
+
         // Mahasiswa CRUD Routes
         Route::resource('admin/mahasiswa', MahasiswaController::class)->names([
             'index' => 'admin.mahasiswa.index',
@@ -34,7 +38,7 @@ Route::middleware('auth')->group(function () {
             'update' => 'admin.mahasiswa.update',
             'destroy' => 'admin.mahasiswa.destroy',
         ]);
-        
+
         // Dosen CRUD Routes
         Route::resource('admin/dosen', DosenController::class)->names([
             'index' => 'admin.dosen.index',
@@ -45,7 +49,7 @@ Route::middleware('auth')->group(function () {
             'update' => 'admin.dosen.update',
             'destroy' => 'admin.dosen.destroy',
         ]);
-        
+
         // Data Master Routes
         Route::resource('admin/tahun-ajaran', TahunAjaranController::class)->names([
             'index' => 'admin.tahun-ajaran.index',
@@ -54,7 +58,7 @@ Route::middleware('auth')->group(function () {
             'update' => 'admin.tahun-ajaran.update',
             'destroy' => 'admin.tahun-ajaran.destroy',
         ]);
-        
+
         Route::resource('admin/mata-kuliah', MataKuliahController::class)->names([
             'index' => 'admin.mata-kuliah.index',
             'store' => 'admin.mata-kuliah.store',
@@ -62,7 +66,7 @@ Route::middleware('auth')->group(function () {
             'update' => 'admin.mata-kuliah.update',
             'destroy' => 'admin.mata-kuliah.destroy',
         ]);
-        
+
         Route::resource('admin/cpl', CplController::class)->except(['show'])->names([
             'index' => 'admin.cpl.index',
             'create' => 'admin.cpl.create',
@@ -78,7 +82,7 @@ Route::middleware('auth')->group(function () {
             'update' => 'admin.komponen.update',
             'destroy' => 'admin.komponen.destroy',
         ]);
-        
+
         // Tahun Ajaran Matkul Routes
         Route::resource('admin/tahun-ajaran-matkul', TahunAjaranMatkulController::class)->names([
             'index' => 'admin.tahun-ajaran-matkul.index',
@@ -89,7 +93,7 @@ Route::middleware('auth')->group(function () {
             'update' => 'admin.tahun-ajaran-matkul.update',
             'destroy' => 'admin.tahun-ajaran-matkul.destroy',
         ]);
-        
+
         // Additional routes for managing students and lecturers
         Route::get('admin/tahun-ajaran-matkul/{id}/manage-mahasiswa', [TahunAjaranMatkulController::class, 'manageMahasiswa'])->name('admin.tahun-ajaran-matkul.manage-mahasiswa');
         Route::post('admin/tahun-ajaran-matkul/{id}/bulk-add-mahasiswa', [TahunAjaranMatkulController::class, 'bulkAddMahasiswa'])->name('admin.tahun-ajaran-matkul.bulk-add-mahasiswa');
@@ -98,17 +102,41 @@ Route::middleware('auth')->group(function () {
         Route::post('admin/tahun-ajaran-matkul/{id}/add-dosen', [TahunAjaranMatkulController::class, 'addDosen'])->name('admin.tahun-ajaran-matkul.add-dosen');
         Route::delete('admin/tahun-ajaran-matkul/{id}/remove-dosen/{dosenId}', [TahunAjaranMatkulController::class, 'removeDosen'])->name('admin.tahun-ajaran-matkul.remove-dosen');
     });
-    
+
     // Dosen Dashboard
     Route::middleware('dosen')->group(function () {
         Route::get('/dosen/dashboard', [DashboardController::class, 'dosenDashboard'])->name('dosen.dashboard');
+
+        // Mata Kuliah yang Diampu
+        Route::get('/dosen/mata-kuliah', [DosenMataKuliahController::class, 'index'])->name('dosen.mata-kuliah.index');
+        Route::get('/dosen/mata-kuliah/{id}', [DosenMataKuliahController::class, 'show'])->name('dosen.mata-kuliah.show');
+
+        // CPMK Management untuk Mata Kuliah
+        Route::get('/dosen/mata-kuliah/{mataKuliahId}/cpmk', [DosenCpmkController::class, 'index'])->name('dosen.cpmk.index');
+        Route::get('/dosen/mata-kuliah/{mataKuliahId}/cpmk/create', [DosenCpmkController::class, 'create'])->name('dosen.cpmk.create');
+        Route::post('/dosen/mata-kuliah/{mataKuliahId}/cpmk', [DosenCpmkController::class, 'store'])->name('dosen.cpmk.store');
+        Route::get('/dosen/mata-kuliah/{mataKuliahId}/cpmk/{id}', [DosenCpmkController::class, 'show'])->name('dosen.cpmk.show');
+        Route::get('/dosen/mata-kuliah/{mataKuliahId}/cpmk/{id}/edit', [DosenCpmkController::class, 'edit'])->name('dosen.cpmk.edit');
+        Route::put('/dosen/mata-kuliah/{mataKuliahId}/cpmk/{id}', [DosenCpmkController::class, 'update'])->name('dosen.cpmk.update');
+        Route::delete('/dosen/mata-kuliah/{mataKuliahId}/cpmk/{id}', [DosenCpmkController::class, 'destroy'])->name('dosen.cpmk.destroy');
+        Route::post('/dosen/mata-kuliah/{mataKuliahId}/cpmk/bulk-action', [DosenCpmkController::class, 'bulkAction'])->name('dosen.cpmk.bulk-action');
+        // Bobot Komponen Penilaian Management untuk Mata Kuliah
+        Route::get('/dosen/mata-kuliah/{mataKuliahId}/bobot-komponen', [BobotKomponenController::class, 'index'])->name('dosen.bobot-komponen.index');
+        Route::get('/dosen/mata-kuliah/{mataKuliahId}/bobot-komponen/create', [BobotKomponenController::class, 'create'])->name('dosen.bobot-komponen.create');
+        Route::post('/dosen/mata-kuliah/{mataKuliahId}/bobot-komponen', [BobotKomponenController::class, 'store'])->name('dosen.bobot-komponen.store');
+        Route::get('/dosen/mata-kuliah/{mataKuliahId}/bobot-komponen/{id}', [BobotKomponenController::class, 'show'])->name('dosen.bobot-komponen.show');
+        Route::get('/dosen/mata-kuliah/{mataKuliahId}/bobot-komponen/{id}/edit', [BobotKomponenController::class, 'edit'])->name('dosen.bobot-komponen.edit');
+        Route::put('/dosen/mata-kuliah/{mataKuliahId}/bobot-komponen/{id}', [BobotKomponenController::class, 'update'])->name('dosen.bobot-komponen.update');
+        Route::delete('/dosen/mata-kuliah/{mataKuliahId}/bobot-komponen/{id}', [BobotKomponenController::class, 'destroy'])->name('dosen.bobot-komponen.destroy');
+        Route::get('/dosen/mata-kuliah/{mataKuliahId}/bobot-komponen/bulk/create', [BobotKomponenController::class, 'bulkCreate'])->name('dosen.bobot-komponen.bulk-create');
+        Route::post('/dosen/mata-kuliah/{mataKuliahId}/bobot-komponen/bulk', [BobotKomponenController::class, 'bulkStore'])->name('dosen.bobot-komponen.bulk-store');
     });
-    
+
     // Mahasiswa Dashboard
     Route::middleware('mahasiswa')->group(function () {
         Route::get('/mahasiswa/dashboard', [DashboardController::class, 'mahasiswaDashboard'])->name('mahasiswa.dashboard');
     });
-    
+
     // Pimpinan Dashboard
     Route::middleware('pimpinan')->group(function () {
         Route::get('/pimpinan/dashboard', [DashboardController::class, 'pimpinanDashboard'])->name('pimpinan.dashboard');

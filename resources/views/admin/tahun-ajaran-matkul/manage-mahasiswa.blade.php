@@ -12,12 +12,12 @@
                     <p class="text-sm text-gray-600 mt-1">
                         {{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }} - {{ $tahunAjaranMatkul->mataKuliah->namaMatkul }}
                         <span class="mx-2">•</span>
-                        Kelas {{ chr(64 + $tahunAjaranMatkul->kelas) }}
+                        Kelas {{ $tahunAjaranMatkul->kelasHuruf }}
                         <span class="mx-2">•</span>
                         {{ $tahunAjaranMatkul->tahunAjaran->tahun }} - {{ $tahunAjaranMatkul->tahunAjaran->periode }}
                     </p>
                 </div>
-                <a href="{{ request('back_url', route('admin.tahun-ajaran-matkul.show', $tahunAjaranMatkul->id)) }}" 
+                <a href="{{ request('back_url', route('admin.tahun-ajaran-matkul.show', $tahunAjaranMatkul->id)) }}"
                    class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
@@ -83,7 +83,7 @@
         <!-- Bulk Add Form -->
         <form method="POST" action="{{ route('admin.tahun-ajaran-matkul.bulk-add-mahasiswa', $tahunAjaranMatkul->id) }}" id="bulkAddForm">
             @csrf
-            
+
             <!-- Action Bar -->
             <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
                 <div class="flex items-center justify-between">
@@ -94,7 +94,7 @@
                         </label>
                         <span class="text-sm text-gray-600" id="selectedCount">0 mahasiswa dipilih</span>
                     </div>
-                    <button type="button" 
+                    <button type="button"
                             data-modal-toggle="confirmAddModal"
                             class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center" id="addSelectedBtn" disabled>
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,7 +153,7 @@
         <!-- Pagination -->
         <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
             <div class="text-sm text-gray-700">
-                Menampilkan {{ $availableMahasiswas->firstItem() ?? 0 }} sampai {{ $availableMahasiswas->lastItem() ?? 0 }} 
+                Menampilkan {{ $availableMahasiswas->firstItem() ?? 0 }} sampai {{ $availableMahasiswas->lastItem() ?? 0 }}
                 dari {{ $availableMahasiswas->total() }} mahasiswa tersedia
             </div>
             <div>
@@ -164,7 +164,7 @@
 </div>
 
 <!-- Confirm Add Modal -->
-<x-confirm-modal 
+<x-confirm-modal
     id="confirmAddModal"
     title="Konfirmasi Tambah Mahasiswa"
     message="Apakah Anda yakin ingin menambahkan mahasiswa yang dipilih ke kelas ini?"
@@ -186,14 +186,14 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateUI() {
         const checked = document.querySelectorAll('.mahasiswa-checkbox:checked');
         const count = checked.length;
-        
+
         selectedCount.textContent = `${count} mahasiswa dipilih`;
         addSelectedBtn.disabled = count === 0;
-        
+
         // Update select all checkboxes
         const allChecked = count === checkboxes.length && checkboxes.length > 0;
         const someChecked = count > 0;
-        
+
         selectAll.checked = allChecked;
         selectAllHeader.checked = allChecked;
         selectAll.indeterminate = someChecked && !allChecked;
@@ -223,19 +223,19 @@ document.addEventListener('DOMContentLoaded', function() {
             alert('Pilih minimal satu mahasiswa untuk ditambahkan.');
             return;
         }
-        
+
         // Update modal message with count
         const modal = document.getElementById('confirmAddModal');
         const messageElement = modal.querySelector('p');
         messageElement.textContent = `Apakah Anda yakin ingin menambahkan ${checked.length} mahasiswa ke kelas ini?`;
-        
+
         // Update form to include selected mahasiswa
         const form = modal.querySelector('form');
-        
+
         // Clear existing hidden inputs
         const existingInputs = form.querySelectorAll('input[name="mahasiswa_ids[]"]');
         existingInputs.forEach(input => input.remove());
-        
+
         // Add selected mahasiswa IDs to modal form
         checked.forEach(checkbox => {
             const hiddenInput = document.createElement('input');
@@ -249,4 +249,4 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 @endpush
 
-@endsection 
+@endsection

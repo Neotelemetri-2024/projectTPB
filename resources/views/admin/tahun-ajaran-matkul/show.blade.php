@@ -7,7 +7,7 @@
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <h2 class="text-lg font-semibold text-gray-900">Detail Mata Kuliah Tahun Ajaran</h2>
-                <a href="{{ request('back_url', route('admin.tahun-ajaran-matkul.index')) }}" 
+                <a href="{{ request('back_url', route('admin.tahun-ajaran-matkul.index')) }}"
                    class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
@@ -46,7 +46,7 @@
                         <div class="space-y-3">
                             <div class="flex">
                                 <span class="w-16 text-sm font-medium text-gray-600">Kelas:</span>
-                                <span class="text-sm text-gray-900">{{ chr(64 + $tahunAjaranMatkul->kelas) }}</span>
+                                <span class="text-sm text-gray-900">{{ $tahunAjaranMatkul->kelasHuruf }}</span>
                             </div>
                             <div class="flex">
                                 <span class="w-16 text-sm font-medium text-gray-600">SKS:</span>
@@ -79,8 +79,8 @@
                 <div class="bg-white rounded-lg border border-gray-200">
                     <div class="p-4 border-b border-gray-200 flex justify-between items-center">
                         <h3 class="text-md font-semibold text-gray-900">Dosen Pengampu</h3>
-                        <button type="button" 
-                                data-modal-target="addDosenModal" 
+                        <button type="button"
+                                data-modal-target="addDosenModal"
                                 data-modal-toggle="addDosenModal"
                                 class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded text-sm flex items-center">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -110,8 +110,8 @@
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $dosenPengampu->dosen->nama }}</td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $dosenPengampu->dosen->user->email ?? '-' }}</td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                    <button type="button" 
-                                                            data-modal-target="modal-confirm-hapus-dosen-{{ $dosenPengampu->dosen->id }}" 
+                                                    <button type="button"
+                                                            data-modal-target="modal-confirm-hapus-dosen-{{ $dosenPengampu->dosen->id }}"
                                                             data-modal-toggle="modal-confirm-hapus-dosen-{{ $dosenPengampu->dosen->id }}"
                                                             class="text-red-600 hover:text-red-900" title="Hapus">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -145,8 +145,8 @@
                                     </svg>
                                     Kelola Mahasiswa
                                 </a>
-                                <button type="button" 
-                                        data-modal-target="addMahasiswaModal" 
+                                <button type="button"
+                                        data-modal-target="addMahasiswaModal"
                                         data-modal-toggle="addMahasiswaModal"
                                         class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded text-sm flex items-center">
                                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -156,27 +156,27 @@
                                 </button>
                             </div>
                         </div>
-                        
+
                         <!-- Search Form -->
                         <form method="GET" action="{{ route('admin.tahun-ajaran-matkul.show', $tahunAjaranMatkul->id) }}">
                             <div class="flex gap-2 items-end">
                                 <div class="flex-1">
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Cari Mahasiswa</label>
-                                    <input type="text" 
-                                           name="search" 
-                                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5" 
-                                           placeholder="Cari nama atau NIM mahasiswa..." 
+                                    <input type="text"
+                                           name="search"
+                                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5"
+                                           placeholder="Cari nama atau NIM mahasiswa..."
                                            value="{{ request('search') }}">
                                 </div>
                                 <div class="flex-shrink-0 flex space-x-2">
-                                    <button type="submit" 
+                                    <button type="submit"
                                             class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2.5 rounded-lg flex items-center">
                                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                         </svg>
                                         Cari
                                     </button>
-                                    <a href="{{ route('admin.tahun-ajaran-matkul.show', $tahunAjaranMatkul->id) }}" 
+                                    <a href="{{ route('admin.tahun-ajaran-matkul.show', $tahunAjaranMatkul->id) }}"
                                        class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2.5 rounded-lg flex items-center">
                                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
@@ -208,8 +208,8 @@
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $kelasMahasiswaItem->mahasiswa->nama }}</td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $kelasMahasiswaItem->mahasiswa->user->email ?? '-' }}</td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                    <button type="button" 
-                                                            data-modal-target="modal-confirm-hapus-mahasiswa-{{ $kelasMahasiswaItem->mahasiswa->id }}" 
+                                                    <button type="button"
+                                                            data-modal-target="modal-confirm-hapus-mahasiswa-{{ $kelasMahasiswaItem->mahasiswa->id }}"
                                                             data-modal-toggle="modal-confirm-hapus-mahasiswa-{{ $kelasMahasiswaItem->mahasiswa->id }}"
                                                             class="text-red-600 hover:text-red-900" title="Hapus">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -222,11 +222,11 @@
                                     </tbody>
                                 </table>
                             </div>
-                            
+
                             <!-- Pagination -->
                             <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
                                 <div class="text-sm text-gray-700">
-                                    Menampilkan {{ $kelasMahasiswa->firstItem() ?? 0 }} sampai {{ $kelasMahasiswa->lastItem() ?? 0 }} 
+                                    Menampilkan {{ $kelasMahasiswa->firstItem() ?? 0 }} sampai {{ $kelasMahasiswa->lastItem() ?? 0 }}
                                     dari {{ $kelasMahasiswa->total() }} mahasiswa
                                     @if(request('search'))
                                         <span class="text-amber-600">(hasil pencarian: "{{ request('search') }}")</span>
@@ -253,7 +253,7 @@
 </div>
 
 <!-- Modal Tambah Dosen -->
-<x-form-modal 
+<x-form-modal
     id="addDosenModal"
     title="Tambah Dosen Pengampu"
     :action="route('admin.tahun-ajaran-matkul.add-dosen', $tahunAjaranMatkul->id)"
@@ -265,9 +265,9 @@
             <div class="max-h-48 overflow-y-auto">
                 @foreach($dosens as $dosen)
                     <label class="flex items-center mb-2">
-                        <input type="checkbox" 
-                               name="dosenIds[]" 
-                               value="{{ $dosen->id }}" 
+                        <input type="checkbox"
+                               name="dosenIds[]"
+                               value="{{ $dosen->id }}"
                                class="rounded border-gray-300 text-amber-600 shadow-sm focus:border-amber-300 focus:ring focus:ring-amber-200 focus:ring-opacity-50">
                         <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
                             {{ $dosen->nama }}
@@ -280,7 +280,7 @@
 </x-form-modal>
 
 <!-- Modal Tambah Mahasiswa -->
-<x-form-modal 
+<x-form-modal
     id="addMahasiswaModal"
     title="Tambah Mahasiswa ke Kelas"
     :action="route('admin.tahun-ajaran-matkul.add-mahasiswa', $tahunAjaranMatkul->id)"
@@ -292,9 +292,9 @@
             <div class="max-h-48 overflow-y-auto">
                 @foreach($mahasiswas as $mahasiswa)
                     <label class="flex items-center mb-2">
-                        <input type="checkbox" 
-                               name="mahasiswaIds[]" 
-                               value="{{ $mahasiswa->id }}" 
+                        <input type="checkbox"
+                               name="mahasiswaIds[]"
+                               value="{{ $mahasiswa->id }}"
                                class="rounded border-gray-300 text-amber-600 shadow-sm focus:border-amber-300 focus:ring focus:ring-amber-200 focus:ring-opacity-50">
                         <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
                             {{ $mahasiswa->nama }} ({{ $mahasiswa->nim }})
@@ -308,7 +308,7 @@
 
 <!-- Modal Konfirmasi Hapus Dosen -->
 @foreach($tahunAjaranMatkul->dosenPengampu as $dosenPengampu)
-    <x-confirm-modal 
+    <x-confirm-modal
         :id="'modal-confirm-hapus-dosen-' . $dosenPengampu->dosen->id"
         title="Konfirmasi Hapus Dosen Pengampu"
         :message="'Apakah Anda yakin ingin menghapus ' . $dosenPengampu->dosen->nama . ' dari dosen pengampu?'"
@@ -319,7 +319,7 @@
 
 <!-- Modal Konfirmasi Hapus Mahasiswa -->
 @foreach($kelasMahasiswa as $kelasMahasiswaItem)
-    <x-confirm-modal 
+    <x-confirm-modal
         :id="'modal-confirm-hapus-mahasiswa-' . $kelasMahasiswaItem->mahasiswa->id"
         title="Konfirmasi Hapus Mahasiswa"
         :message="'Apakah Anda yakin ingin menghapus ' . $kelasMahasiswaItem->mahasiswa->nama . ' dari kelas?'"
@@ -328,4 +328,4 @@
     />
 @endforeach
 
-@endsection 
+@endsection

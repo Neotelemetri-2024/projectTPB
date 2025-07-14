@@ -31,4 +31,9 @@ class Cpmk extends Model
     {
         return $this->hasMany(Nilai::class, 'cpmkId');
     }
+
+    public function bobot()
+    {
+        return $this->hasMany(Bobot::class, 'cpmkId');
+    }
 }

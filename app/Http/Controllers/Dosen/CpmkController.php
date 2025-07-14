@@ -18,9 +18,100 @@ class CpmkController extends Controller
     }
 
     /**
+     * Display a listing of mata kuliah for CPMK management.
+     */
+    public function index(Request $request)
+    {
+        $user = Auth::user();
+        $dosen = $user->dosen;
+
+        if (!$dosen) {
+            return redirect()->back()->with('error', 'Data dosen tidak ditemukan.');
+        }
+
+        // Start with base query
+        $query = TahunAjaranMatkul::whereHas('dosenPengampu', function ($q) use ($dosen) {
+            $q->where('dosenId', $dosen->id);
+        });
+
+        // Apply filters
+        if ($request->filled('tahun_ajaran_id')) {
+            $query->where('tahunAjaranId', $request->tahun_ajaran_id);
+        }
+
+        if ($request->filled('jenis')) {
+            $query->whereHas('mataKuliah', function ($q) use ($request) {
+                $q->where('jenis', $request->jenis);
+            });
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('mataKuliah', function ($subQ) use ($search) {
+                    $subQ->where('namaMatkul', 'like', "%{$search}%")
+                         ->orWhere('kodeMatkul', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        // Get results with relationships
+        $mataKuliahData = $query->with([
+            'mataKuliah',
+            'tahunAjaran',
+            'dosenPengampu.dosen',
+            'kelasMahasiswa.mahasiswa',
+            'cpmkMatKul'
+        ])
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+        // Group by mata kuliah and tahun ajaran to avoid duplicate cards
+        $mataKuliahDiampu = $mataKuliahData->groupBy(function($item) {
+            return $item->mataKuliahId . '_' . $item->tahunAjaranId;
+        })->map(function($group) {
+            // Take the first item as representative
+            $representative = $group->first();
+
+            // Aggregate data from all classes
+            $allKelasMahasiswa = collect();
+            $allDosenPengampu = collect();
+            $allKelas = collect();
+            $allCpmkMatKul = collect();
+
+            foreach($group as $item) {
+                $allKelasMahasiswa = $allKelasMahasiswa->merge($item->kelasMahasiswa);
+                $allDosenPengampu = $allDosenPengampu->merge($item->dosenPengampu);
+                $allKelas->push($item->kelas);
+                $allCpmkMatKul = $allCpmkMatKul->merge($item->cpmkMatKul);
+            }
+
+            // Set aggregated data to representative
+            $representative->setRelation('kelasMahasiswa', $allKelasMahasiswa->unique('id'));
+            $representative->setRelation('dosenPengampu', $allDosenPengampu->unique('id'));
+            $representative->setRelation('cpmkMatKul', $allCpmkMatKul->unique('id'));
+            $representative->allKelas = $allKelas->unique()->sort()->values();
+            $representative->groupedItems = $group;
+
+            return $representative;
+        })->values();
+
+        // Get data for filters
+        $tahunAjaranList = \App\Models\TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->get();
+        $jenisList = ['wajib', 'pilihan'];
+
+        return view('dosen.cpmk.index', compact(
+            'mataKuliahDiampu',
+            'dosen',
+            'tahunAjaranList',
+            'jenisList'
+        ));
+    }
+
+    /**
      * Display a listing of CPMK for a specific mata kuliah.
      */
-    public function index(Request $request, $tahunAjaranMatkulId)
+    public function showMataKuliah(Request $request, $tahunAjaranMatkulId)
     {
         $user = Auth::user();
         $dosen = $user->dosen;
@@ -34,10 +125,22 @@ class CpmkController extends Controller
             $query->where('dosenId', $dosen->id);
         })->with(['mataKuliah', 'tahunAjaran'])->findOrFail($tahunAjaranMatkulId);
 
-        // Get CPMK related to this mata kuliah through CpmkMatKul
-        $query = Cpmk::whereHas('cpmkMatKul', function ($q) use ($tahunAjaranMatkulId) {
-            $q->where('tahunAjaranMatkulId', $tahunAjaranMatkulId);
-        })->with(['cpl', 'cpmkMatKul']);
+        // Get all TahunAjaranMatkul records for the same mata kuliah and tahun ajaran
+        $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
+            ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
+            ->whereHas('dosenPengampu', function ($query) use ($dosen) {
+                $query->where('dosenId', $dosen->id);
+            })
+            ->pluck('id');
+
+        // Get CPMK related to this mata kuliah through CpmkMatKul from all classes
+        $query = Cpmk::whereHas('cpmkMatKul', function ($q) use ($allTahunAjaranMatkulIds) {
+            $q->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
+        })->with(['cpl', 'cpmkMatKul', 'bobot' => function($q) use ($allTahunAjaranMatkulIds) {
+            $q->whereHas('tahunAjaranMatkul', function($subQ) use ($allTahunAjaranMatkulIds) {
+                $subQ->whereIn('id', $allTahunAjaranMatkulIds);
+            });
+        }]);
 
         // Apply search filter
         if ($request->filled('search')) {
@@ -58,7 +161,7 @@ class CpmkController extends Controller
         // Get CPL list for filter
         $cplList = Cpl::orderBy('kodeCpl')->get();
 
-        return view('dosen.cpmk.index', compact('cpmkList', 'tahunAjaranMatkul', 'cplList'));
+        return view('dosen.cpmk.show', compact('cpmkList', 'tahunAjaranMatkul', 'cplList'));
     }
 
     /**
@@ -134,7 +237,7 @@ class CpmkController extends Controller
                 'tahunAjaranMatkulId' => $tahunAjaranMatkulId,
             ]);
 
-            return redirect()->route('dosen.cpmk.index', $tahunAjaranMatkulId)
+            return redirect()->route('dosen.cpmk.show', $tahunAjaranMatkulId)
                 ->with('success', 'CPMK berhasil ditambahkan.');
 
         } catch (\Exception $e) {
@@ -161,20 +264,28 @@ class CpmkController extends Controller
             $query->where('dosenId', $dosen->id);
         })->with(['mataKuliah', 'tahunAjaran'])->findOrFail($tahunAjaranMatkulId);
 
+        // Get all TahunAjaranMatkul records for the same mata kuliah and tahun ajaran
+        $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
+            ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
+            ->whereHas('dosenPengampu', function ($query) use ($dosen) {
+                $query->where('dosenId', $dosen->id);
+            })
+            ->pluck('id');
+
         $cpmk = Cpmk::with(['cpl', 'cpmkMatKul', 'nilai.mahasiswa'])
-            ->whereHas('cpmkMatKul', function ($q) use ($tahunAjaranMatkulId) {
-                $q->where('tahunAjaranMatkulId', $tahunAjaranMatkulId);
+            ->whereHas('cpmkMatKul', function ($q) use ($allTahunAjaranMatkulIds) {
+                $q->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
             })
             ->findOrFail($id);
 
-        // Hitung statistik
-        $totalCpmk = Cpmk::whereHas('cpmkMatKul', function ($q) use ($tahunAjaranMatkulId) {
-            $q->where('tahunAjaranMatkulId', $tahunAjaranMatkulId);
-        })->count();
+        // Hitung statistik dari semua kelas
+        $totalCpmk = Cpmk::whereHas('cpmkMatKul', function ($q) use ($allTahunAjaranMatkulIds) {
+            $q->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
+        })->distinct()->count();
 
-        $sameCplCount = Cpmk::whereHas('cpmkMatKul', function ($q) use ($tahunAjaranMatkulId) {
-            $q->where('tahunAjaranMatkulId', $tahunAjaranMatkulId);
-        })->where('idCpl', $cpmk->idCpl)->count();
+        $sameCplCount = Cpmk::whereHas('cpmkMatKul', function ($q) use ($allTahunAjaranMatkulIds) {
+            $q->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
+        })->where('idCpl', $cpmk->idCpl)->distinct()->count();
 
         return view('dosen.cpmk.show', compact('cpmk', 'tahunAjaranMatkul', 'totalCpmk', 'sameCplCount'));
     }
@@ -196,8 +307,16 @@ class CpmkController extends Controller
             $query->where('dosenId', $dosen->id);
         })->with(['mataKuliah', 'tahunAjaran'])->findOrFail($tahunAjaranMatkulId);
 
-        $cpmk = Cpmk::whereHas('cpmkMatKul', function ($q) use ($tahunAjaranMatkulId) {
-            $q->where('tahunAjaranMatkulId', $tahunAjaranMatkulId);
+        // Get all TahunAjaranMatkul records for the same mata kuliah and tahun ajaran
+        $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
+            ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
+            ->whereHas('dosenPengampu', function ($query) use ($dosen) {
+                $query->where('dosenId', $dosen->id);
+            })
+            ->pluck('id');
+
+        $cpmk = Cpmk::whereHas('cpmkMatKul', function ($q) use ($allTahunAjaranMatkulIds) {
+            $q->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
         })->findOrFail($id);
 
         // Get CPL list
@@ -281,8 +400,16 @@ class CpmkController extends Controller
             $query->where('dosenId', $dosen->id);
         })->findOrFail($tahunAjaranMatkulId);
 
-        $cpmk = Cpmk::whereHas('cpmkMatKul', function ($q) use ($tahunAjaranMatkulId) {
-            $q->where('tahunAjaranMatkulId', $tahunAjaranMatkulId);
+        // Get all TahunAjaranMatkul records for the same mata kuliah and tahun ajaran
+        $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
+            ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
+            ->whereHas('dosenPengampu', function ($query) use ($dosen) {
+                $query->where('dosenId', $dosen->id);
+            })
+            ->pluck('id');
+
+        $cpmk = Cpmk::whereHas('cpmkMatKul', function ($q) use ($allTahunAjaranMatkulIds) {
+            $q->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
         })->findOrFail($id);
 
         try {
@@ -293,14 +420,14 @@ class CpmkController extends Controller
             }
 
             // Delete related CpmkMatKul records first
-            $cpmk->cpmkMatKul()->where('tahunAjaranMatkulId', $tahunAjaranMatkulId)->delete();
+            $cpmk->cpmkMatKul()->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds)->delete();
 
             // Delete CPMK if no other mata kuliah uses it
             if (!$cpmk->cpmkMatKul()->exists()) {
                 $cpmk->delete();
             }
 
-            return redirect()->route('dosen.cpmk.index', $tahunAjaranMatkulId)
+            return redirect()->route('dosen.cpmk.show', $tahunAjaranMatkulId)
                 ->with('success', 'CPMK berhasil dihapus.');
 
         } catch (\Exception $e) {
@@ -325,6 +452,14 @@ class CpmkController extends Controller
         $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('dosenPengampu', function ($query) use ($dosen) {
             $query->where('dosenId', $dosen->id);
         })->findOrFail($tahunAjaranMatkulId);
+
+        // Get all TahunAjaranMatkul records for the same mata kuliah and tahun ajaran
+        $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
+            ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
+            ->whereHas('dosenPengampu', function ($query) use ($dosen) {
+                $query->where('dosenId', $dosen->id);
+            })
+            ->pluck('id');
 
         $validator = Validator::make($request->all(), [
             'action' => 'required|in:delete',
@@ -353,13 +488,13 @@ class CpmkController extends Controller
 
                 $deletedCount = 0;
                 foreach ($cpmkIds as $cpmkId) {
-                    $cpmk = Cpmk::whereHas('cpmkMatKul', function ($q) use ($tahunAjaranMatkulId) {
-                        $q->where('tahunAjaranMatkulId', $tahunAjaranMatkulId);
+                    $cpmk = Cpmk::whereHas('cpmkMatKul', function ($q) use ($allTahunAjaranMatkulIds) {
+                        $q->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
                     })->find($cpmkId);
 
                     if ($cpmk) {
                         // Delete related CpmkMatKul records first
-                        $cpmk->cpmkMatKul()->where('tahunAjaranMatkulId', $tahunAjaranMatkulId)->delete();
+                        $cpmk->cpmkMatKul()->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds)->delete();
 
                         // Delete CPMK if no other mata kuliah uses it
                         if (!$cpmk->cpmkMatKul()->exists()) {
@@ -378,5 +513,48 @@ class CpmkController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => 'Terjadi kesalahan saat memproses data.'], 500);
         }
+    }
+
+    /**
+     * Show the detail of a specific CPMK.
+     */
+    public function showDetail($tahunAjaranMatkulId, $id)
+    {
+        $user = Auth::user();
+        $dosen = $user->dosen;
+
+        if (!$dosen) {
+            return redirect()->back()->with('error', 'Data dosen tidak ditemukan.');
+        }
+
+        // Verify that this dosen teaches this mata kuliah
+        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('dosenPengampu', function ($query) use ($dosen) {
+            $query->where('dosenId', $dosen->id);
+        })->with(['mataKuliah', 'tahunAjaran'])->findOrFail($tahunAjaranMatkulId);
+
+        // Get all TahunAjaranMatkul records for the same mata kuliah and tahun ajaran
+        $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
+            ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
+            ->whereHas('dosenPengampu', function ($query) use ($dosen) {
+                $query->where('dosenId', $dosen->id);
+            })
+            ->pluck('id');
+
+        // Get CPMK with all related data
+        $cpmk = Cpmk::with(['cpl', 'cpmkMatKul.tahunAjaranMatkul.mataKuliah'])
+            ->whereHas('cpmkMatKul', function ($q) use ($allTahunAjaranMatkulIds) {
+                $q->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
+            })
+            ->findOrFail($id);
+
+        // Get related bobot komponen for this CPMK
+        $bobotKomponen = \App\Models\Bobot::where('cpmkId', $cpmk->id)
+            ->whereHas('tahunAjaranMatkul', function ($q) use ($allTahunAjaranMatkulIds) {
+                $q->whereIn('id', $allTahunAjaranMatkulIds);
+            })
+            ->with('komponen')
+            ->get();
+
+        return view('dosen.cpmk.detail', compact('cpmk', 'tahunAjaranMatkul', 'bobotKomponen'));
     }
 }

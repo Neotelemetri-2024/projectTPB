@@ -13,6 +13,7 @@ use App\Http\Controllers\Dosen\MataKuliahController as DosenMataKuliahController
 use App\Http\Controllers\Dosen\CpmkController as DosenCpmkController;
 use App\Http\Controllers\Dosen\KomponenPenilaianController as DosenKomponenPenilaianController;
 use App\Http\Controllers\Dosen\BobotKomponenController;
+use App\Http\Controllers\Dosen\NilaiController as DosenNilaiController;
 use Illuminate\Support\Facades\Route;
 
 // Default route
@@ -107,25 +108,23 @@ Route::middleware('auth')->group(function () {
     Route::middleware('dosen')->group(function () {
         Route::get('/dosen/dashboard', [DashboardController::class, 'dosenDashboard'])->name('dosen.dashboard');
 
-        // Mata Kuliah yang Diampu
-        Route::get('/dosen/mata-kuliah', [DosenMataKuliahController::class, 'index'])->name('dosen.mata-kuliah.index');
-        Route::get('/dosen/mata-kuliah/{id}', [DosenMataKuliahController::class, 'show'])->name('dosen.mata-kuliah.show');
-
-        // CPMK Management untuk Mata Kuliah
-        Route::get('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk', [DosenCpmkController::class, 'index'])->name('dosen.cpmk.index');
+        // Kelola CPMK - List Mata Kuliah
+        Route::get('/dosen/mata-kuliah/cpmk', [DosenCpmkController::class, 'index'])->name('dosen.cpmk.index');
+        Route::get('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk', [DosenCpmkController::class, 'showMataKuliah'])->name('dosen.cpmk.show');
         Route::get('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk/create', [DosenCpmkController::class, 'create'])->name('dosen.cpmk.create');
         Route::post('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk', [DosenCpmkController::class, 'store'])->name('dosen.cpmk.store');
-        Route::get('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk/{id}', [DosenCpmkController::class, 'show'])->name('dosen.cpmk.show');
+        Route::get('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk/{id}', [DosenCpmkController::class, 'showDetail'])->name('dosen.cpmk.detail');
         Route::get('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk/{id}/edit', [DosenCpmkController::class, 'edit'])->name('dosen.cpmk.edit');
         Route::put('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk/{id}', [DosenCpmkController::class, 'update'])->name('dosen.cpmk.update');
         Route::delete('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk/{id}', [DosenCpmkController::class, 'destroy'])->name('dosen.cpmk.destroy');
         Route::post('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk/bulk-action', [DosenCpmkController::class, 'bulkAction'])->name('dosen.cpmk.bulk-action');
-        // Bobot Komponen Penilaian Management untuk Mata Kuliah
-        Route::get('/dosen/mata-kuliah/{tahunAjaranMatkulId}/bobot-komponen', [BobotKomponenController::class, 'index'])->name('dosen.bobot-komponen.index');
-        Route::get('/dosen/mata-kuliah/{tahunAjaranMatkulId}/bobot-komponen/{id}', [BobotKomponenController::class, 'show'])->name('dosen.bobot-komponen.show');
-        Route::delete('/dosen/mata-kuliah/{tahunAjaranMatkulId}/bobot-komponen/{id}', [BobotKomponenController::class, 'destroy'])->name('dosen.bobot-komponen.destroy');
-        Route::get('/dosen/mata-kuliah/{tahunAjaranMatkulId}/bobot-komponen/bulk/create', [BobotKomponenController::class, 'bulkCreate'])->name('dosen.bobot-komponen.bulk-create');
-        Route::post('/dosen/mata-kuliah/{tahunAjaranMatkulId}/bobot-komponen/bulk', [BobotKomponenController::class, 'bulkStore'])->name('dosen.bobot-komponen.bulk-store');
+        // Bobot Komponen Penilaian Management untuk CPMK
+        Route::get('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk/bobot-komponen/bulk/create', [BobotKomponenController::class, 'bulkCreate'])->name('dosen.bobot-komponen.bulk-create');
+        Route::post('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk/bobot-komponen/bulk', [BobotKomponenController::class, 'bulkStore'])->name('dosen.bobot-komponen.bulk-store');
+
+        // Kelola Nilai Mahasiswa - List Mata Kuliah
+        Route::get('/dosen/nilai', [DosenNilaiController::class, 'index'])->name('dosen.nilai.index');
+        Route::get('/dosen/nilai/{id}', [DosenNilaiController::class, 'show'])->name('dosen.nilai.show');
     });
 
     // Mahasiswa Dashboard

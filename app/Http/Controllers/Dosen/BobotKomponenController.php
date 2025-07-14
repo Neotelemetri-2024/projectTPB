@@ -21,38 +21,6 @@ class BobotKomponenController extends Controller
     }
 
     /**
-     * Display a listing of bobot komponen for specific mata kuliah
-     */
-    public function index($tahunAjaranMatkulId)
-    {
-        // Verify that the authenticated dosen has access to this mata kuliah
-        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('dosenPengampu', function($query) {
-            $query->where('dosenId', Auth::user()->dosen->id);
-        })->findOrFail($tahunAjaranMatkulId);
-
-        // Get all komponen
-        $komponenList = Komponen::orderBy('nama')->get();
-
-        // Get existing bobot for this mata kuliah with relationships
-        $bobotKomponen = Bobot::where('tahunAjaranMatkulId', $tahunAjaranMatkulId)
-            ->with(['komponen', 'cpmk', 'nilai'])
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        // Calculate total bobot
-        $totalBobot = $bobotKomponen->sum('bobot');
-
-        // Get CPMK that are assigned to this mata kuliah
-        $cpmkList = CpmkMatKul::where('tahunAjaranMatkulId', $tahunAjaranMatkulId)
-            ->with('cpmk')
-            ->get()
-            ->pluck('cpmk')
-            ->unique('id');
-
-        return view('dosen.bobot-komponen.index', compact('tahunAjaranMatkul', 'bobotKomponen', 'totalBobot', 'cpmkList'));
-    }
-
-    /**
      * Bulk create/edit bobot for all available CPMK-Komponen combinations
      */
     public function bulkCreate($tahunAjaranMatkulId)
@@ -67,8 +35,10 @@ class BobotKomponenController extends Controller
             ->with('cpmk')
             ->get();
 
+        // dd($cpmkList);
+
         if ($cpmkList->isEmpty()) {
-            return redirect()->route('dosen.bobot-komponen.index', $tahunAjaranMatkulId)
+            return redirect()->route('dosen.cpmk.show', $tahunAjaranMatkulId)
                 ->with('error', 'Tidak dapat mengatur bobot karena belum ada CPMK yang ditetapkan untuk mata kuliah ini.');
         }
 
@@ -97,6 +67,9 @@ class BobotKomponenController extends Controller
             return [$key => true];
         })->toArray();
 
+        // Get unique component IDs that are already used in existing bobot
+        $usedKomponenIds = $existingBobot->pluck('komponenId')->unique()->toArray();
+
         return view('dosen.bobot-komponen.bulk-create', compact(
             'tahunAjaranMatkul',
             'cpmkList',
@@ -104,34 +77,9 @@ class BobotKomponenController extends Controller
             'existingBobot',
             'existingCombinations',
             'usedBobot',
-            'bobotWithNilai'
+            'bobotWithNilai',
+            'usedKomponenIds'
         ));
-    }
-
-    /**
-     * Display the specified bobot komponen
-     */
-    public function show($tahunAjaranMatkulId, $bobotId)
-    {
-        // Verify access
-        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('dosenPengampu', function($query) {
-            $query->where('dosenId', Auth::user()->dosen->id);
-        })->findOrFail($tahunAjaranMatkulId);
-
-        $bobot = Bobot::where('tahunAjaranMatkulId', $tahunAjaranMatkulId)
-            ->with(['komponen', 'cpmk', 'nilai.mahasiswa'])
-            ->findOrFail($bobotId);
-
-        // Get total bobot for this mata kuliah
-        $totalBobot = Bobot::where('tahunAjaranMatkulId', $tahunAjaranMatkulId)->sum('bobot');
-
-        // Get other komponen bobot for this mata kuliah (excluding current)
-        $komponenLain = Bobot::where('tahunAjaranMatkulId', $tahunAjaranMatkulId)
-            ->where('id', '!=', $bobotId)
-            ->with(['komponen', 'cpmk'])
-            ->get();
-
-        return view('dosen.bobot-komponen.show', compact('tahunAjaranMatkul', 'bobot', 'totalBobot', 'komponenLain'));
     }
 
     /**
@@ -154,6 +102,7 @@ class BobotKomponenController extends Controller
             return $value > 0;
         }));
 
+        // Only check if total exceeds 100%, allow saving even if less than 100%
         if ($newTotalBobot > 100) {
             return redirect()->back()
                 ->withInput()
@@ -209,48 +158,13 @@ class BobotKomponenController extends Controller
             }
 
             DB::commit();
-            return redirect()->route('dosen.bobot-komponen.index', $tahunAjaranMatkulId)
+            return redirect()->route('dosen.cpmk.show', $tahunAjaranMatkulId)
                 ->with('success', 'Bobot komponen berhasil disimpan.');
         } catch (\Exception $e) {
             DB::rollback();
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'Terjadi kesalahan saat menyimpan data: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Remove the specified bobot komponen from storage
-     */
-    public function destroy($tahunAjaranMatkulId, $bobotId)
-    {
-        // Verify access
-        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('dosenPengampu', function($query) {
-            $query->where('dosenId', Auth::user()->dosen->id);
-        })->findOrFail($tahunAjaranMatkulId);
-
-        $bobot = Bobot::where('tahunAjaranMatkulId', $tahunAjaranMatkulId)->findOrFail($bobotId);
-
-        try {
-            DB::beginTransaction();
-
-            // Check if there are nilai records using this bobot
-            $nilaiCount = $bobot->nilai()->count();
-
-            if ($nilaiCount > 0) {
-                return redirect()->back()
-                    ->with('error', 'Tidak dapat menghapus bobot komponen karena sudah ada nilai yang menggunakan bobot ini.');
-            }
-
-            $bobot->delete();
-
-            DB::commit();
-            return redirect()->route('dosen.bobot-komponen.index', $tahunAjaranMatkulId)
-                ->with('success', 'Bobot komponen berhasil dihapus.');
-        } catch (\Exception $e) {
-            DB::rollback();
-            return redirect()->back()
-                ->with('error', 'Terjadi kesalahan saat menghapus data: ' . $e->getMessage());
         }
     }
 

@@ -9,12 +9,16 @@ use App\Models\TahunAjaran;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-class MataKuliahController extends Controller
+class NilaiController extends Controller
 {
     public function __construct()
     {
         $this->middleware('dosen');
     }
+
+    /**
+     * Display a listing of mata kuliah for nilai management.
+     */
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -31,9 +35,7 @@ class MataKuliahController extends Controller
 
         // Apply filters
         if ($request->filled('tahun_ajaran_id')) {
-            $query->whereHas('tahunAjaran', function ($q) use ($request) {
-                $q->where('id', $request->tahun_ajaran_id);
-            });
+            $query->where('tahunAjaranId', $request->tahun_ajaran_id);
         }
 
         if ($request->filled('jenis')) {
@@ -93,7 +95,7 @@ class MataKuliahController extends Controller
         $tahunAjaranList = TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->get();
         $jenisList = ['wajib', 'pilihan'];
 
-        return view('dosen.mata-kuliah.index', compact(
+        return view('dosen.nilai.index', compact(
             'mataKuliahDiampu',
             'dosen',
             'tahunAjaranList',
@@ -102,7 +104,7 @@ class MataKuliahController extends Controller
     }
 
     /**
-     * Display the specified course details.
+     * Display students list for a specific mata kuliah.
      */
     public function show($id)
     {
@@ -163,7 +165,7 @@ class MataKuliahController extends Controller
         // Get lecturer's role in this course
         $dosenPengampu = $allDosenPengampu->where('dosenId', $dosen->id)->first();
 
-        return view('dosen.mata-kuliah.show', compact(
+        return view('dosen.nilai.show', compact(
             'mataKuliahDiampu',
             'mataKuliahClasses',
             'mahasiswa',

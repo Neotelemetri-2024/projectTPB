@@ -1,6 +1,6 @@
 @extends('layouts.main')
 
-@section('title', 'Tambah CPMK - ' . $mataKuliah->mataKuliah->namaMatkul)
+@section('title', 'Tambah CPMK - ' . $tahunAjaranMatkul->mataKuliah->namaMatkul)
 
 @section('content')
 <div class="p-6">
@@ -10,9 +10,9 @@
             <div class="flex items-center justify-between">
                 <div>
                     <h1 class="text-2xl font-bold text-gray-900">Tambah CPMK</h1>
-                    <p class="text-gray-600 mt-1">{{ $mataKuliah->mataKuliah->namaMatkul }} • {{ $mataKuliah->mataKuliah->kodeMatkul }}</p>
+                    <p class="text-gray-600 mt-1">{{ $tahunAjaranMatkul->mataKuliah->namaMatkul }} • {{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }}</p>
                 </div>
-                <a href="{{ route('dosen.cpmk.index', $mataKuliah->id) }}"
+                <a href="{{ route('dosen.cpmk.index', $tahunAjaranMatkul->id) }}"
                    class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
@@ -30,7 +30,7 @@
             <p class="text-sm text-gray-600 mt-1">Lengkapi informasi CPMK baru</p>
         </div>
 
-        <form action="{{ route('dosen.cpmk.store', $mataKuliah->id) }}" method="POST" class="p-6">
+        <form action="{{ route('dosen.cpmk.store', $tahunAjaranMatkul->id) }}" method="POST" class="p-6">
             @csrf
 
             <div class="grid grid-cols-1 gap-6">
@@ -89,7 +89,7 @@
 
             <!-- Action Buttons -->
             <div class="flex items-center justify-end gap-4 mt-8 pt-6 border-t border-gray-200">
-                <a href="{{ route('dosen.cpmk.index', $mataKuliah->id) }}"
+                <a href="{{ route('dosen.cpmk.index', $tahunAjaranMatkul->id) }}"
                    class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-2.5 rounded-lg font-medium transition-colors duration-200">
                     Batal
                 </a>

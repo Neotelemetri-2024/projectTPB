@@ -16,7 +16,7 @@
                 </svg>
             </li>
             <li>
-                <a href="{{ route('dosen.mata-kuliah.show', $mataKuliah->id) }}" class="hover:text-gray-700">{{ $mataKuliah->mataKuliah->namaMatkul }}</a>
+                <a href="{{ route('dosen.mata-kuliah.show', $tahunAjaranMatkul->id) }}" class="hover:text-gray-700">{{ $tahunAjaranMatkul->mataKuliah->namaMatkul }}</a>
             </li>
             <li>
                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -24,7 +24,7 @@
                 </svg>
             </li>
             <li>
-                <a href="{{ route('dosen.cpmk.index', $mataKuliah->id) }}" class="hover:text-gray-700">CPMK</a>
+                <a href="{{ route('dosen.cpmk.index', $tahunAjaranMatkul->id) }}" class="hover:text-gray-700">CPMK</a>
             </li>
             <li>
                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -41,10 +41,10 @@
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div class="mb-4 sm:mb-0">
                     <h1 class="text-2xl font-bold text-gray-900">Detail CPMK</h1>
-                    <p class="text-gray-600 mt-1">{{ $mataKuliah->mataKuliah->namaMatkul }} • {{ $mataKuliah->mataKuliah->kodeMatkul }}</p>
+                    <p class="text-gray-600 mt-1">{{ $tahunAjaranMatkul->mataKuliah->namaMatkul }} • {{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }}</p>
                 </div>
                 <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
-                    <a href="{{ route('dosen.cpmk.index', $mataKuliah->id) }}"
+                    <a href="{{ route('dosen.cpmk.index', $tahunAjaranMatkul->id) }}"
                        class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center w-full sm:w-auto justify-center">
                         <svg class="w-4 h-4 mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
@@ -124,7 +124,7 @@
                 </div>
                 <div class="p-4 sm:p-6">
                     <div class="space-y-3">
-                        <a href="{{ route('dosen.cpmk.edit', [$mataKuliah->id, $cpmk->id]) }}"
+                        <a href="{{ route('dosen.cpmk.edit', [$tahunAjaranMatkul->id, $cpmk->id]) }}"
                            class="w-full bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg flex items-center justify-center text-sm font-medium transition-colors duration-200">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
@@ -140,7 +140,7 @@
                             Hapus CPMK
                         </button>
 
-                        <a href="{{ route('dosen.cpmk.create', $mataKuliah->id) }}"
+                        <a href="{{ route('dosen.cpmk.create', $tahunAjaranMatkul->id) }}"
                            class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center justify-center text-sm font-medium transition-colors duration-200">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const modalForm = deleteModal.querySelector('form');
         const modalMessage = deleteModal.querySelector('p');
         if (modalForm && modalMessage) {
-            modalForm.action = `{{ url('/dosen/mata-kuliah/' . $mataKuliah->id . '/cpmk') }}/${currentDeleteId}`;
+            modalForm.action = `{{ url('/dosen/tahun-ajaran-matkul/' . $tahunAjaranMatkul->id . '/cpmk') }}/${currentDeleteId}`;
             modalMessage.textContent = `Apakah Anda yakin ingin menghapus CPMK "${kodeCpmk}"? Tindakan ini tidak dapat dibatalkan.`;
         }
     });

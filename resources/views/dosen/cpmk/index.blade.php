@@ -1,6 +1,6 @@
 @extends('layouts.main')
 
-@section('title', 'CPMK - ' . $mataKuliah->mataKuliah->namaMatkul)
+@section('title', 'CPMK - ' . $tahunAjaranMatkul->mataKuliah->namaMatkul)
 
 @section('content')
 <div class="p-6">
@@ -16,7 +16,7 @@
                 </svg>
             </li>
             <li>
-                <a href="{{ route('dosen.mata-kuliah.show', $mataKuliah->id) }}" class="hover:text-gray-700">{{ $mataKuliah->mataKuliah->namaMatkul }}</a>
+                <a href="{{ route('dosen.mata-kuliah.show', $tahunAjaranMatkul->id) }}" class="hover:text-gray-700">{{ $tahunAjaranMatkul->mataKuliah->namaMatkul }}</a>
             </li>
             <li>
                 <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -32,18 +32,18 @@
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900">CPMK - {{ $mataKuliah->mataKuliah->namaMatkul }}</h1>
-                    <p class="text-gray-600 mt-1">{{ $mataKuliah->mataKuliah->kodeMatkul }} • {{ $mataKuliah->tahunAjaran->nama }}</p>
+                    <h1 class="text-2xl font-bold text-gray-900">CPMK - {{ $tahunAjaranMatkul->mataKuliah->namaMatkul }}</h1>
+                    <p class="text-gray-600 mt-1">{{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }} • {{ $tahunAjaranMatkul->tahunAjaran->nama }}</p>
                 </div>
                 <div class="flex items-center gap-3">
-                    <a href="{{ route('dosen.mata-kuliah.show', $mataKuliah->id) }}"
+                    <a href="{{ route('dosen.mata-kuliah.show', $tahunAjaranMatkul->id) }}"
                        class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                         </svg>
                         Kembali
                     </a>
-                    <a href="{{ route('dosen.cpmk.create', $mataKuliah->id) }}"
+                    <a href="{{ route('dosen.cpmk.create', $tahunAjaranMatkul->id) }}"
                        class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg flex items-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
@@ -56,7 +56,7 @@
 
         <!-- Filter dan Search Form -->
         <div class="p-6 border-b border-gray-200">
-            <form method="GET" action="{{ route('dosen.cpmk.index', $mataKuliah->id) }}">
+            <form method="GET" action="{{ route('dosen.cpmk.index', $tahunAjaranMatkul->id) }}">
                 <div class="flex flex-col lg:flex-row gap-4 lg:items-end">
                     <!-- Filter CPL -->
                     <div class="flex flex-col sm:flex-row gap-4">
@@ -84,7 +84,7 @@
                                 </svg>
                                 Cari
                             </button>
-                            <a href="{{ route('dosen.cpmk.index', $mataKuliah->id) }}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2.5 rounded-lg flex items-center justify-center whitespace-nowrap">
+                            <a href="{{ route('dosen.cpmk.index', $tahunAjaranMatkul->id) }}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2.5 rounded-lg flex items-center justify-center whitespace-nowrap">
                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                                 </svg>
@@ -116,7 +116,7 @@
                     </svg>
                     <h3 class="text-lg font-medium text-gray-900 mb-2">Belum Ada CPMK</h3>
                     <p class="text-gray-500 mb-4">Tambahkan CPMK untuk mata kuliah ini agar dapat melakukan penilaian.</p>
-                    <a href="{{ route('dosen.cpmk.create', $mataKuliah->id) }}"
+                    <a href="{{ route('dosen.cpmk.create', $tahunAjaranMatkul->id) }}"
                        class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg inline-flex items-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
@@ -192,14 +192,14 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex items-center justify-center space-x-2">
-                                        <a href="{{ route('dosen.cpmk.show', [$mataKuliah->id, $cpmk->id]) }}"
+                                        <a href="{{ route('dosen.cpmk.show', [$tahunAjaranMatkul->id, $cpmk->id]) }}"
                                            class="text-blue-600 hover:text-blue-700 p-1" title="Lihat Detail">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                             </svg>
                                         </a>
-                                        <a href="{{ route('dosen.cpmk.edit', [$mataKuliah->id, $cpmk->id]) }}"
+                                        <a href="{{ route('dosen.cpmk.edit', [$tahunAjaranMatkul->id, $cpmk->id]) }}"
                                            class="text-amber-600 hover:text-amber-700 p-1" title="Edit">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
@@ -264,7 +264,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const modalForm = deleteModal.querySelector('form');
             const modalMessage = deleteModal.querySelector('p');
             if (modalForm && modalMessage) {
-                modalForm.action = `{{ url('/dosen/mata-kuliah/' . $mataKuliah->id . '/cpmk') }}/${currentDeleteId}`;
+                modalForm.action = `{{ url('/dosen/tahun-ajaran-matkul/' . $tahunAjaranMatkul->id . '/cpmk') }}/${currentDeleteId}`;
                 modalMessage.textContent = `Apakah Anda yakin ingin menghapus CPMK "${kodeCpmk}"? Tindakan ini tidak dapat dibatalkan.`;
             }
         });
@@ -343,7 +343,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 e.preventDefault();
 
                 // Bulk delete via fetch
-                fetch(`{{ route('dosen.cpmk.bulk-action', $mataKuliah->id) }}`, {
+                fetch(`{{ route('dosen.cpmk.bulk-action', $tahunAjaranMatkul->id) }}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

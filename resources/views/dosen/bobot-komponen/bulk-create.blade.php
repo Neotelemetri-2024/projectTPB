@@ -74,7 +74,7 @@
                     <!-- Available Komponen -->
                     <div>
                         <label class="text-sm font-medium text-gray-700 mb-2 block">Pilih Komponen Penilaian:</label>
-                        <div id="available-komponen" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-w-2xl">
+                        <div id="available-komponen" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
                             @foreach($komponen as $komponenItem)
                                 <div class="komponen-card border border-gray-300 rounded-lg p-3 cursor-pointer hover:border-green-500 hover:bg-green-50 transition-all duration-200"
                                      data-id="{{ $komponenItem->id }}"
@@ -226,7 +226,7 @@ window.cpmkListData = {!! json_encode($cpmkList) !!};
 window.komponenListData = {!! json_encode($komponen) !!};
 window.existingCombinationsData = {!! json_encode($existingCombinations) !!};
 window.bobotWithNilaiData = {!! json_encode($bobotWithNilai) !!};
-window.usedKomponenIdsData = {!! json_encode($usedKomponenIds) !!};
+window.usedKomponenIdsData = {!! json_encode($allExistingBobot->pluck('komponenId')->unique()->values()) !!};
 </script>
 <script src="{{ asset('assets/js/bobot-bulk-create.js') }}"></script>
 @endsection

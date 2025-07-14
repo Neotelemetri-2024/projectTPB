@@ -19,4 +19,9 @@ class Komponen extends Model
     {
         return $this->hasMany(Nilai::class, 'komponenId');
     }
+
+    public function bobot()
+    {
+        return $this->hasMany(Bobot::class, 'komponenId');
+    }
 }

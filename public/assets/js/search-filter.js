@@ -176,6 +176,13 @@ class SearchFilter {
 
         this.filterAndSort();
     }
+
+    updateVisibleItems() {
+        // Re-query items to get current visibility state
+        this.items = document.querySelectorAll(this.itemSelector);
+        // Trigger filter to work with currently visible items
+        this.filterAndSort();
+    }
 }
 
 // View Toggle utility

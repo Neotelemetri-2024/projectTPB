@@ -30,10 +30,14 @@ class BobotKomponenController extends Controller
             $query->where('dosenId', Auth::user()->dosen->id);
         })->findOrFail($tahunAjaranMatkulId);
 
-        // Get CPMK that are assigned to this mata kuliah
-        $cpmkList = CpmkMatKul::where('tahunAjaranMatkulId', $tahunAjaranMatkulId)
-            ->with('cpmk')
-            ->get();
+        // Get CPMK that are assigned to this mata kuliah (from all classes)
+        $cpmkList = CpmkMatKul::whereHas('tahunAjaranMatkul', function($query) use ($tahunAjaranMatkul) {
+            $query->where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
+                  ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId);
+        })
+        ->with('cpmk')
+        ->get()
+        ->unique('cpmkId'); // Remove duplicates based on cpmkId
 
         // dd($cpmkList);
 
@@ -49,6 +53,14 @@ class BobotKomponenController extends Controller
         $existingBobot = Bobot::where('tahunAjaranMatkulId', $tahunAjaranMatkulId)
             ->with(['komponen', 'cpmk', 'nilai'])
             ->get();
+
+        // Get existing bobot from all classes with same mataKuliahId and tahunAjaranId for usedKomponenIds
+        $allExistingBobot = Bobot::whereHas('tahunAjaranMatkul', function($query) use ($tahunAjaranMatkul) {
+            $query->where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
+                  ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId);
+        })
+        ->with(['komponen', 'cpmk', 'nilai'])
+        ->get();
 
         // Create array of existing combinations for easier lookup
         $existingCombinations = $existingBobot->mapWithKeys(function($bobot) {
@@ -67,14 +79,15 @@ class BobotKomponenController extends Controller
             return [$key => true];
         })->toArray();
 
-        // Get unique component IDs that are already used in existing bobot
-        $usedKomponenIds = $existingBobot->pluck('komponenId')->unique()->toArray();
+        // Get unique component IDs that are already used in existing bobot (from all classes)
+        $usedKomponenIds = $allExistingBobot->pluck('komponenId')->unique()->toArray();
 
         return view('dosen.bobot-komponen.bulk-create', compact(
             'tahunAjaranMatkul',
             'cpmkList',
             'komponen',
             'existingBobot',
+            'allExistingBobot',
             'existingCombinations',
             'usedBobot',
             'bobotWithNilai',

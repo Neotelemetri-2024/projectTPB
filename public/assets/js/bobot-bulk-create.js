@@ -1,10 +1,11 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Get data from window object (set by Blade)
-    const cpmkListData = window.cpmkListData || [];
-    const komponenListData = window.komponenListData || [];
-    const existingCombinationsData = window.existingCombinationsData || {};
-    const bobotWithNilaiData = window.bobotWithNilaiData || {};
-    const usedKomponenIdsData = window.usedKomponenIdsData || [];
+    try {
+        // Get data from window object (set by Blade)
+        const cpmkListData = window.cpmkListData || [];
+        const komponenListData = window.komponenListData || [];
+        const existingCombinationsData = window.existingCombinationsData || {};
+        const bobotWithNilaiData = window.bobotWithNilaiData || {};
+        const usedKomponenIdsData = window.usedKomponenIdsData || [];
     // DOM elements
     const availableKomponenDiv = document.getElementById('available-komponen');
     const bobotTable = document.getElementById('bobot-table');
@@ -244,8 +245,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize with existing used components
     function initializeUsedKomponen() {
-
-        if (usedKomponenIdsData.length > 0) {
+        if (usedKomponenIdsData && usedKomponenIdsData.length > 0) {
             usedKomponenIdsData.forEach(komponenId => {
                 const komponenIdStr = komponenId.toString();
                 const komponenData = komponenListData.find(k => k.id.toString() === komponenIdStr);
@@ -257,8 +257,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }
             });
-        } else {
-            console.log('No used komponen IDs to initialize');
         }
     }
 
@@ -268,4 +266,8 @@ document.addEventListener('DOMContentLoaded', function() {
         updateKomponenCardsState();
         renderTable();
     }, 100);
+
+    } catch (error) {
+        console.error('Error in bobot-bulk-create script:', error);
+    }
 });

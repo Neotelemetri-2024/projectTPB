@@ -125,6 +125,9 @@ Route::middleware('auth')->group(function () {
         // Kelola Nilai Mahasiswa - List Mata Kuliah
         Route::get('/dosen/nilai', [DosenNilaiController::class, 'index'])->name('dosen.nilai.index');
         Route::get('/dosen/nilai/{id}', [DosenNilaiController::class, 'show'])->name('dosen.nilai.show');
+        Route::get('/dosen/nilai/{matkul}/mahasiswa/{mahasiswa}/input', [DosenNilaiController::class, 'input'])->name('dosen.nilai.input');
+        Route::post('/dosen/nilai/{matkul}/mahasiswa/{mahasiswa}/store', [DosenNilaiController::class, 'store'])->name('dosen.nilai.store');
+        Route::post('/dosen/nilai/{id}/bulk-store', [DosenNilaiController::class, 'bulkStore'])->name('dosen.nilai.bulk-store');
     });
 
     // Mahasiswa Dashboard

@@ -289,7 +289,8 @@
                                                            placeholder="0"
                                                            data-mahasiswa-id="{{ $mhs->id }}"
                                                            data-komponen-id="{{ $komponen->id }}"
-                                                           data-original-value="{{ $nilaiKomponen !== null ? number_format($nilaiKomponen, 2, '.', '') : '' }}">
+                                                           data-original-value="{{ $nilaiKomponen !== null ? number_format($nilaiKomponen, 2, '.', '') : '' }}"
+                                                           value="{{ $nilaiKomponen !== null ? number_format($nilaiKomponen, 2, '.', '') : '' }}">
                                                 </td>
                                             @endforeach
                                             <td class="px-6 py-4 whitespace-nowrap text-center">
@@ -425,7 +426,6 @@
                                                            step="0.01"
                                                            class="individual-input w-20 px-2 py-1 border-0 bg-transparent text-sm text-center focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-gray-300 focus:bg-white focus:rounded"
                                                            placeholder="0"
-                                                           readonly
                                                            data-original-value="{{ $nilaiKomponen !== null ? number_format($nilaiKomponen, 2, '.', '') : '' }}">
                                                 </td>
                                             @endforeach
@@ -491,11 +491,187 @@
     </div>
 </div>
 
+<!-- Modal Peringatan Perubahan Belum Disimpan -->
+<x-confirm-modal
+    id="unsaved-changes-modal"
+    title="Perubahan Belum Disimpan"
+    message="Anda memiliki perubahan nilai yang belum disimpan. Jika Anda meninggalkan halaman ini, semua perubahan akan hilang."
+    type="warning"
+    action="#"
+    confirmText="Tinggalkan Halaman"
+    cancelText="Tetap di Halaman"
+/>
+
 @endsection
 
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Variables to track changes
+    let hasUnsavedChanges = false;
+    let allowNavigation = false;
+    let pendingNavigation = null;
+
+    // Function to check for unsaved changes
+    function checkForUnsavedChanges() {
+        const inputs = document.querySelectorAll('.individual-input, .bulk-input');
+        hasUnsavedChanges = false;
+
+        inputs.forEach(input => {
+            const originalValue = input.getAttribute('data-original-value') || '';
+            const currentValue = input.value || '';
+
+            if (originalValue !== currentValue) {
+                hasUnsavedChanges = true;
+            }
+        });
+
+        // Update UI indicators if needed
+        updateSaveButtonStates();
+    }
+
+    // Function to update save button states
+    function updateSaveButtonStates() {
+        // For bulk mode
+        const bulkSaveBtn = document.getElementById('bulk-save-btn');
+        const confirmCheckbox = document.getElementById('confirm-bulk-save');
+
+        if (bulkSaveBtn && confirmCheckbox) {
+            const canSave = hasUnsavedChanges && confirmCheckbox.checked;
+            bulkSaveBtn.disabled = !canSave;
+
+            if (canSave) {
+                bulkSaveBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                bulkSaveBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+            } else {
+                bulkSaveBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                bulkSaveBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+            }
+        }
+
+        // For individual mode
+        const individualSaveBtns = document.querySelectorAll('.individual-save-btn');
+        individualSaveBtns.forEach(btn => {
+            const mahasiswaId = btn.id.replace('bulk-save-btn-', '');
+            const hasDataForStudent = checkForData(mahasiswaId);
+            const hasChangesForStudent = checkForChanges(mahasiswaId);
+
+            btn.disabled = !hasDataForStudent || !hasChangesForStudent;
+
+            if (hasDataForStudent && hasChangesForStudent) {
+                btn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                btn.classList.add('bg-green-600', 'hover:bg-green-700');
+            } else {
+                btn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                btn.classList.remove('bg-green-600', 'hover:bg-green-700');
+            }
+        });
+    }
+
+    // Function to show unsaved changes modal
+    function showUnsavedChangesModal() {
+        const modal = document.getElementById('unsaved-changes-modal');
+        const modalContent = modal.querySelector('[data-modal-content]');
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        // Trigger animation
+        setTimeout(() => {
+            modal.classList.remove('bg-opacity-0');
+            modal.classList.add('bg-opacity-10');
+            modalContent.classList.remove('scale-95', 'opacity-0');
+            modalContent.classList.add('scale-100', 'opacity-100');
+        }, 10);
+    }
+
+    // Function to hide unsaved changes modal
+    function hideUnsavedChangesModal() {
+        const modal = document.getElementById('unsaved-changes-modal');
+        const modalContent = modal.querySelector('[data-modal-content]');
+
+        modalContent.classList.add('scale-95', 'opacity-0');
+        modalContent.classList.remove('scale-100', 'opacity-100');
+        modal.classList.remove('bg-opacity-10');
+        modal.classList.add('bg-opacity-0');
+
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }, 300);
+    }
+
+    // Handle beforeunload event (page refresh, close tab, etc.)
+    window.addEventListener('beforeunload', function(e) {
+        if (hasUnsavedChanges && !allowNavigation) {
+            e.preventDefault();
+            e.returnValue = 'Anda memiliki perubahan yang belum disimpan. Yakin ingin meninggalkan halaman?';
+            return e.returnValue;
+        }
+    });
+
+    // Handle navigation attempts (internal links)
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('a');
+        if (link && link.href && hasUnsavedChanges && !allowNavigation) {
+            e.preventDefault();
+            pendingNavigation = link.href;
+            showUnsavedChangesModal();
+        }
+    });    // Handle form submissions that might navigate away
+    document.addEventListener('submit', function(e) {
+        // Skip if it's our save forms
+        if (e.target.id === 'bulk-nilai-form' || e.target.id.startsWith('form-')) {
+            return;
+        }
+
+        // Handle modal form submission (Tinggalkan Halaman)
+        if (e.target.closest('#unsaved-changes-modal')) {
+            e.preventDefault();
+            allowNavigation = true;
+            hideUnsavedChangesModal();
+
+            if (pendingNavigation) {
+                window.location.href = pendingNavigation;
+            }
+            return;
+        }
+
+        if (hasUnsavedChanges && !allowNavigation) {
+            e.preventDefault();
+            pendingNavigation = e.target.action;
+            showUnsavedChangesModal();
+        }
+    });    // Modal button handlers
+    document.addEventListener('click', function(e) {
+        // Handle cancel button (Tetap di Halaman)
+        if (e.target.matches('[data-modal-hide="unsaved-changes-modal"]')) {
+            hideUnsavedChangesModal();
+            pendingNavigation = null;
+        }
+    });
+
+    // Listen for input changes
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('individual-input') || e.target.classList.contains('bulk-input')) {
+            checkForUnsavedChanges();
+        }
+    });
+
+    // Listen for successful saves to reset the unsaved changes flag
+    document.addEventListener('valuesSaved', function() {
+        hasUnsavedChanges = false;
+        allowNavigation = false;
+
+        // Update original values
+        const inputs = document.querySelectorAll('.individual-input, .bulk-input');
+        inputs.forEach(input => {
+            input.setAttribute('data-original-value', input.value || '');
+        });
+
+        updateSaveButtonStates();
+    });
+
     // Tab functionality for students
     const tabButtons = document.querySelectorAll('.tab-button');
     const mahasiswaRows = document.querySelectorAll('.mahasiswa-row');
@@ -597,7 +773,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Bulk mode functionality
     if (bulkForm) {
         const bulkInputs = bulkForm.querySelectorAll('input[type="number"]');
-        let hasChanges = false;
 
         // Listen for changes
         bulkInputs.forEach(input => {
@@ -614,18 +789,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         function checkForBulkChanges() {
-            hasChanges = false;
-            bulkInputs.forEach(input => {
-                if (input.value !== input.getAttribute('data-original-value')) {
-                    hasChanges = true;
-                }
-            });
-
+            checkForUnsavedChanges(); // Use the global function
             updateBulkSaveState();
         }
 
         function updateBulkSaveState() {
-            const canSave = hasChanges && confirmCheckbox.checked;
+            const canSave = hasUnsavedChanges && confirmCheckbox.checked;
             bulkSaveBtn.disabled = !canSave;
 
             if (canSave) {
@@ -645,7 +814,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Bulk save button
         if (bulkSaveBtn) {
             bulkSaveBtn.addEventListener('click', function() {
-                if (hasChanges && confirmCheckbox && confirmCheckbox.checked) {
+                if (hasUnsavedChanges && confirmCheckbox && confirmCheckbox.checked) {
                     // Show loading state
                     bulkSaveBtn.disabled = true;
                     bulkSaveBtn.innerHTML = `
@@ -655,6 +824,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         </svg>
                         Menyimpan...
                     `;
+
+                    // Dispatch custom event to reset unsaved changes flag
+                    document.dispatchEvent(new CustomEvent('valuesSaved'));
+
+                    // Allow navigation since we're saving
+                    allowNavigation = true;
 
                     // Submit the form
                     bulkForm.submit();
@@ -674,6 +849,8 @@ document.addEventListener('DOMContentLoaded', function() {
             // Add event listener for input changes (prevent duplicate listeners)
             if (!input.hasAttribute('data-listener-added')) {
                 input.addEventListener('input', function() {
+                    checkForUnsavedChanges(); // Use global function
+
                     const mahasiswaId = this.getAttribute('data-mahasiswa-id');
                     const bulkSaveBtn = document.getElementById('bulk-save-btn-' + mahasiswaId);
 
@@ -792,8 +969,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Show success message
                 showNotification('Nilai berhasil disimpan!', 'success');
 
+                // Dispatch custom event to reset unsaved changes flag
+                document.dispatchEvent(new CustomEvent('valuesSaved'));
+
                 // Refresh the page to update total nilai and grade
                 setTimeout(() => {
+                    allowNavigation = true;
                     window.location.reload();
                 }, 1000);
             } else {
@@ -833,6 +1014,9 @@ document.addEventListener('DOMContentLoaded', function() {
             notification.remove();
         }, 3000);
     }
+
+    // Initial check for unsaved changes
+    checkForUnsavedChanges();
 });
 </script>
 @endpush

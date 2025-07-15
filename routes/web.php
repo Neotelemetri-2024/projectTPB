@@ -128,6 +128,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/dosen/nilai/{matkul}/mahasiswa/{mahasiswa}/input', [DosenNilaiController::class, 'input'])->name('dosen.nilai.input');
         Route::post('/dosen/nilai/{matkul}/mahasiswa/{mahasiswa}/store', [DosenNilaiController::class, 'store'])->name('dosen.nilai.store');
         Route::post('/dosen/nilai/{id}/bulk-store', [DosenNilaiController::class, 'bulkStore'])->name('dosen.nilai.bulk-store');
+        Route::post('/dosen/nilai/{id}/individual-store', [DosenNilaiController::class, 'storeIndividual'])->name('dosen.nilai.individual-store');
     });
 
     // Mahasiswa Dashboard

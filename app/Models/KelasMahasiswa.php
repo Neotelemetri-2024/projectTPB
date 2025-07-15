@@ -13,8 +13,17 @@ class KelasMahasiswa extends Model
 
     protected $fillable = [
         'mahasiswaId',
-        'tahunAjaranMatkulId'
+        'tahunAjaranMatkulId',
+        'totalNilai',
+        'grade'
     ];
+
+    protected $casts = [
+        'grade' => 'string'
+    ];
+
+    // Define the available grades
+    const GRADES = ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'D', 'E'];
 
     public function mahasiswa()
     {

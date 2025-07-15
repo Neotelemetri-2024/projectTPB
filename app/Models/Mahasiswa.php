@@ -36,4 +36,5 @@ class Mahasiswa extends Model
     {
         return $this->hasMany(Nilai::class, 'mahasiswaId');
     }
+
 }

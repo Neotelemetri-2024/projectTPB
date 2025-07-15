@@ -185,7 +185,7 @@
                         <!-- Bulk Input Form (Hidden by default) -->
                         <form id="bulk-nilai-form" action="{{ route('dosen.nilai.bulk-store', $mataKuliahDiampu->id) }}" method="POST" class="hidden">
                             @csrf
-                            <table class="min-w-full divide-y divide-gray-200">
+                            <table id="bulk-input-table" class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50">
@@ -238,18 +238,8 @@
                                         @endphp
                                         <tr class="mahasiswa-row hover:bg-gray-50" data-kelas="kelas-{{ Str::slug($kelasHuruf) }}" data-mahasiswa-id="{{ $mhs->id }}">
                                             <td class="px-6 py-4 whitespace-nowrap sticky left-0 bg-white">
-                                                <div class="flex items-center">
-                                                    <div class="h-10 w-10 flex-shrink-0">
-                                                        <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                                                            <span class="text-sm font-medium text-gray-700">
-                                                                {{ strtoupper(substr($mhs->nama, 0, 2)) }}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <div class="ml-4">
-                                                        <div class="text-sm font-medium text-gray-900">{{ $mhs->nama }}</div>
-                                                        <div class="text-sm text-gray-500">{{ $mhs->user->email ?? 'Email tidak tersedia' }}</div>
-                                                    </div>
+                                                <div class="flex items-left">
+                                                    <div class="text-sm font-medium text-gray-900">{{ $mhs->nama }}</div>
                                                 </div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
@@ -297,18 +287,24 @@
                                                            step="0.01"
                                                            class="bulk-input w-20 px-2 py-1 border border-gray-300 rounded text-sm text-left focus:ring-amber-500 focus:border-amber-500"
                                                            placeholder="0"
+                                                           data-mahasiswa-id="{{ $mhs->id }}"
+                                                           data-komponen-id="{{ $komponen->id }}"
                                                            data-original-value="{{ $nilaiKomponen !== null ? number_format($nilaiKomponen, 2, '.', '') : '' }}">
                                                 </td>
                                             @endforeach
                                             <td class="px-6 py-4 whitespace-nowrap text-center">
-                                                <button type="button"
-                                                        class="reset-row-btn text-gray-400 hover:text-red-600 transition-colors duration-200"
-                                                        data-mahasiswa-id="{{ $mhs->id }}"
-                                                        title="Reset nilai mahasiswa ini">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                                                    </svg>
-                                                </button>
+                                                <div class="flex items-center justify-center space-x-2">
+                                                    <button type="button"
+                                                            onclick="saveIndividualNilai({{ $mhs->id }})"
+                                                            class="individual-save-btn px-3 py-1 bg-gray-400 text-white text-xs font-medium rounded-lg transition-colors duration-200 cursor-not-allowed"
+                                                            id="bulk-save-btn-{{ $mhs->id }}"
+                                                            disabled>
+                                                        <svg class="w-3 h-3 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                        </svg>
+                                                        Simpan
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -341,8 +337,11 @@
                                             </div>
                                         </th>
                                     @endforeach
-                                    <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Aksi
+                                    <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Total Nilai
+                                    </th>
+                                    <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Grade
                                     </th>
                                 </tr>
                             </thead>
@@ -367,21 +366,14 @@
 
                                         // Get existing grades for this student
                                         $studentNilai = $existingNilai->get($mhs->id, collect());
+
+                                        // Get final grade from kelasMahasiswa table (passed from controller)
+                                        $finalGrade = $nilaiMahasiswa->get($mhs->id);
                                     @endphp
                                     <tr class="mahasiswa-row hover:bg-gray-50" data-kelas="kelas-{{ Str::slug($kelasHuruf) }}" data-mahasiswa-id="{{ $mhs->id }}">
-                                        <td class="px-6 py-4 whitespace-nowrap sticky left-0 bg-white">
-                                            <div class="flex items-center">
-                                                <div class="h-10 w-10 flex-shrink-0">
-                                                    <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                                                        <span class="text-sm font-medium text-gray-700">
-                                                            {{ strtoupper(substr($mhs->nama, 0, 2)) }}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <div class="ml-4">
-                                                    <div class="text-sm font-medium text-gray-900">{{ $mhs->nama }}</div>
-                                                    <div class="text-sm text-gray-500">{{ $mhs->user->email ?? 'Email tidak tersedia' }}</div>
-                                                </div>
+                                        <td class="px-6 py-4 whitespace-nowrap sticky bg-white">
+                                            <div class="flex items-left">
+                                                <div class="text-sm font-medium text-gray-900">{{ $mhs->nama }}</div>
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
@@ -431,7 +423,7 @@
                                                            min="0"
                                                            max="100"
                                                            step="0.01"
-                                                           class="individual-input w-16 px-2 py-1 border border-gray-300 rounded text-sm text-center focus:ring-amber-500 focus:border-amber-500 bg-gray-50"
+                                                           class="individual-input w-20 px-2 py-1 border-0 bg-transparent text-sm text-center focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-gray-300 focus:bg-white focus:rounded"
                                                            placeholder="0"
                                                            readonly
                                                            data-original-value="{{ $nilaiKomponen !== null ? number_format($nilaiKomponen, 2, '.', '') : '' }}">
@@ -439,37 +431,28 @@
                                             @endforeach
                                         </form>
 
-                                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                                            <div class="flex items-center justify-center space-x-2">
-                                                <!-- Edit Button -->
-                                                <button type="button"
-                                                        class="edit-btn text-blue-600 hover:text-blue-800 transition-colors duration-200"
-                                                        data-mahasiswa-id="{{ $mhs->id }}"
-                                                        title="Edit nilai mahasiswa ini">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                                    </svg>
-                                                </button>
-                                                <!-- Save Button (Hidden by default) -->
-                                                <button type="submit"
-                                                        form="form-{{ $mhs->id }}"
-                                                        class="save-btn hidden text-green-600 hover:text-green-800 transition-colors duration-200"
-                                                        title="Simpan nilai mahasiswa ini">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                                    </svg>
-                                                </button>
-                                                <!-- Cancel Button (Hidden by default) -->
-                                                <button type="button"
-                                                        class="cancel-btn hidden text-red-600 hover:text-red-800 transition-colors duration-200"
-                                                        data-mahasiswa-id="{{ $mhs->id }}"
-                                                        title="Batal edit">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                                    </svg>
-                                                </button>
+                                        <td class="px-4 py-4 whitespace-nowrap text-center">
+                                            <div class="text-sm font-medium text-gray-900">
+                                                {{ $finalGrade && $finalGrade->totalNilai !== null ? number_format($finalGrade->totalNilai, 2) : '-' }}
                                             </div>
                                         </td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-center">
+                                            @if($finalGrade && $finalGrade->grade)
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                                    @if(in_array($finalGrade->grade, ['A', 'A-'])) bg-green-100 text-green-800
+                                                    @elseif(in_array($finalGrade->grade, ['B+', 'B', 'B-'])) bg-blue-100 text-blue-800
+                                                    @elseif(in_array($finalGrade->grade, ['C+', 'C'])) bg-yellow-100 text-yellow-800
+                                                    @elseif($finalGrade->grade == 'D') bg-orange-100 text-orange-800
+                                                    @elseif($finalGrade->grade == 'E') bg-red-100 text-red-800
+                                                    @else bg-gray-100 text-gray-800
+                                                    @endif">
+                                                    {{ $finalGrade->grade }}
+                                                </span>
+                                            @else
+                                                <span class="text-gray-400">-</span>
+                                            @endif
+                                        </td>
+                                        </form>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -554,6 +537,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize with "all" tab active
     switchTab('all');
 
+
+
     // Mode Toggle Functionality
     const toggleBulkBtn = document.getElementById('toggle-bulk-input');
     const bulkForm = document.getElementById('bulk-nilai-form');
@@ -564,49 +549,55 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let isBulkMode = false;
 
-    toggleBulkBtn.addEventListener('click', function() {
-        isBulkMode = !isBulkMode;
+    if (toggleBulkBtn) {
+        toggleBulkBtn.addEventListener('click', function() {
+            console.log('Toggle button clicked! Current mode:', isBulkMode);
+            isBulkMode = !isBulkMode;
 
-        if (isBulkMode) {
-            // Switch to bulk mode
-            individualTable.classList.add('hidden');
-            bulkForm.classList.remove('hidden');
-            bulkActions.classList.remove('hidden');
-            toggleBulkBtn.innerHTML = `
-                <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                </svg>
-                Lihat Mode Individual
-            `;
-            toggleBulkBtn.classList.remove('bg-amber-600', 'hover:bg-amber-700');
-            toggleBulkBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
-        } else {
-            // Switch to individual mode
-            individualTable.classList.remove('hidden');
-            bulkForm.classList.add('hidden');
-            bulkActions.classList.add('hidden');
-            toggleBulkBtn.innerHTML = `
-                <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                </svg>
-                Aktifkan Input Sekaligus
-            `;
-            toggleBulkBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-            toggleBulkBtn.classList.add('bg-amber-600', 'hover:bg-amber-700');
-        }
-    });
+            if (isBulkMode) {
+                console.log('Switching to bulk mode...');
+                // Switch to bulk mode
+                if (individualTable) individualTable.classList.add('hidden');
+                if (bulkForm) bulkForm.classList.remove('hidden');
+                if (bulkActions) bulkActions.classList.remove('hidden');
+
+                toggleBulkBtn.innerHTML = `
+                    <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                    </svg>
+                    Lihat Mode Individual
+                `;
+                toggleBulkBtn.classList.remove('bg-amber-600', 'hover:bg-amber-700');
+                toggleBulkBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+
+                // Initialize bulk input functionality
+                initializeBulkInput();
+            } else {
+                console.log('Switching to individual mode...');
+                // Switch to individual mode
+                if (individualTable) individualTable.classList.remove('hidden');
+                if (bulkForm) bulkForm.classList.add('hidden');
+                if (bulkActions) bulkActions.classList.add('hidden');
+
+                toggleBulkBtn.innerHTML = `
+                    <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                    </svg>
+                    Aktifkan Input Sekaligus
+                `;
+                toggleBulkBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                toggleBulkBtn.classList.add('bg-amber-600', 'hover:bg-amber-700');
+            }
+        });
+    } else {
+        console.log('Toggle button not found!');
+    }
 
     // Bulk mode functionality
     if (bulkForm) {
         const bulkInputs = bulkForm.querySelectorAll('input[type="number"]');
         let hasChanges = false;
-
-        // Store original values
-        const originalValues = new Map();
-        bulkInputs.forEach(input => {
-            originalValues.set(input.name, input.value);
-        });
 
         // Listen for changes
         bulkInputs.forEach(input => {
@@ -625,7 +616,7 @@ document.addEventListener('DOMContentLoaded', function() {
         function checkForBulkChanges() {
             hasChanges = false;
             bulkInputs.forEach(input => {
-                if (input.value !== originalValues.get(input.name)) {
+                if (input.value !== input.getAttribute('data-original-value')) {
                     hasChanges = true;
                 }
             });
@@ -647,114 +638,201 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Checkbox change listener
-        confirmCheckbox.addEventListener('change', updateBulkSaveState);
+        if (confirmCheckbox) {
+            confirmCheckbox.addEventListener('change', updateBulkSaveState);
+        }
 
         // Bulk save button
-        bulkSaveBtn.addEventListener('click', function() {
-            if (hasChanges && confirmCheckbox.checked) {
-                // Show loading state
-                bulkSaveBtn.disabled = true;
-                bulkSaveBtn.innerHTML = `
-                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Menyimpan...
-                `;
+        if (bulkSaveBtn) {
+            bulkSaveBtn.addEventListener('click', function() {
+                if (hasChanges && confirmCheckbox && confirmCheckbox.checked) {
+                    // Show loading state
+                    bulkSaveBtn.disabled = true;
+                    bulkSaveBtn.innerHTML = `
+                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Menyimpan...
+                    `;
 
-                // Submit the form
-                bulkForm.submit();
-            }
-        });
+                    // Submit the form
+                    bulkForm.submit();
+                }
+            });
+        }
 
         // Initialize
         checkForBulkChanges();
     }
 
-    // Individual mode functionality
-    const editButtons = document.querySelectorAll('.edit-btn');
-    const saveButtons = document.querySelectorAll('.save-btn');
-    const cancelButtons = document.querySelectorAll('.cancel-btn');
+    // Initialize bulk input functionality when switching to bulk mode
+    function initializeBulkInput() {
+        const bulkInputs = document.querySelectorAll('#bulk-input-table .bulk-input');
 
-    console.log('Found edit buttons:', editButtons.length);
-    console.log('Found save buttons:', saveButtons.length);
-    console.log('Found cancel buttons:', cancelButtons.length);
+        bulkInputs.forEach(input => {
+            // Add event listener for input changes (prevent duplicate listeners)
+            if (!input.hasAttribute('data-listener-added')) {
+                input.addEventListener('input', function() {
+                    const mahasiswaId = this.getAttribute('data-mahasiswa-id');
+                    const bulkSaveBtn = document.getElementById('bulk-save-btn-' + mahasiswaId);
 
-    // Edit button functionality
-    editButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            console.log('Edit button clicked for mahasiswa:', this.dataset.mahasiswaId);
-            const mahasiswaId = this.dataset.mahasiswaId;
-            const row = document.querySelector(`tr[data-mahasiswa-id="${mahasiswaId}"]`);
+                    if (bulkSaveBtn) {
+                        const hasChanges = checkForChanges(mahasiswaId);
+                        const hasData = checkForData(mahasiswaId);
 
-            if (row) {
-                // Enable inputs for editing
-                row.querySelectorAll('.individual-input').forEach(input => {
-                    input.readOnly = false;
-                    input.classList.remove('bg-gray-50');
-                    input.classList.add('bg-white');
-                    console.log('Input enabled:', input);
+                        if (hasChanges || hasData) {
+                            bulkSaveBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-gray-400');
+                            bulkSaveBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                            bulkSaveBtn.disabled = false;
+                        } else {
+                            bulkSaveBtn.classList.add('opacity-50', 'cursor-not-allowed', 'bg-gray-400');
+                            bulkSaveBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                            bulkSaveBtn.disabled = true;
+                        }
+                    }
                 });
+                input.setAttribute('data-listener-added', 'true');
+            }
+        });
+    }
 
-                // Toggle buttons
-                this.classList.add('hidden');
-                const saveBtn = row.querySelector('.save-btn');
-                const cancelBtn = row.querySelector('.cancel-btn');
+    function checkForData(mahasiswaId) {
+        const row = document.querySelector(`#bulk-input-table tr[data-mahasiswa-id="${mahasiswaId}"]`);
+        if (!row) return false;
 
-                if (saveBtn) saveBtn.classList.remove('hidden');
-                if (cancelBtn) cancelBtn.classList.remove('hidden');
+        const inputs = row.querySelectorAll('.bulk-input');
+        let hasData = false;
 
-                console.log('Buttons toggled for row:', mahasiswaId);
+        inputs.forEach(input => {
+            if (input.value && input.value.trim() !== '') {
+                hasData = true;
+            }
+        });
+
+        return hasData;
+    }
+
+    function checkForChanges(mahasiswaId) {
+        const row = document.querySelector(`#bulk-input-table tr[data-mahasiswa-id="${mahasiswaId}"]`);
+        if (!row) return false;
+
+        const inputs = row.querySelectorAll('.bulk-input');
+        let hasChanges = false;
+
+        inputs.forEach(input => {
+            const originalValue = input.getAttribute('data-original-value') || '';
+            const currentValue = input.value || '';
+
+            if (originalValue !== currentValue) {
+                hasChanges = true;
+            }
+        });
+
+        return hasChanges;
+    }
+
+// Function to save individual student grades
+    window.saveIndividualNilai = function(mahasiswaId) {
+        const row = document.querySelector(`#bulk-input-table tr[data-mahasiswa-id="${mahasiswaId}"]`);
+        const saveBtn = document.getElementById('bulk-save-btn-' + mahasiswaId);
+
+        if (!row || !saveBtn) return;
+
+        // Get all inputs for this student
+        const inputs = row.querySelectorAll('.bulk-input');
+        let hasData = false;
+
+        // Check if there's any data to save
+        inputs.forEach(input => {
+            if (input.value && input.value.trim() !== '') {
+                hasData = true;
+            }
+        });
+
+        if (!hasData) {
+            alert('Tidak ada nilai yang diinput untuk mahasiswa ini.');
+            return;
+        }
+
+        // Show loading state
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = `
+            <svg class="animate-spin -ml-1 mr-1 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Menyimpan...
+        `;
+
+        // Create FormData with only this student's data
+        const formData = new FormData();
+        formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+
+        // Add nilai array for this specific student using the correct format
+        inputs.forEach(input => {
+            if (input.value && input.value.trim() !== '') {
+                const komponenId = input.getAttribute('data-komponen-id');
+                const fieldName = `nilai[${mahasiswaId}][${komponenId}]`;
+                formData.append(fieldName, input.value);
+            }
+        });
+
+        // Send AJAX request
+        fetch('{{ route("dosen.nilai.individual-store", $mataKuliahDiampu->id) }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                showNotification('Nilai berhasil disimpan!', 'success');
+
+                // Refresh the page to update total nilai and grade
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
             } else {
-                console.error('Row not found for mahasiswa:', mahasiswaId);
+                showNotification(data.message || 'Terjadi kesalahan saat menyimpan nilai.', 'error');
             }
-        });
-    });
-
-    // Cancel button functionality
-    cancelButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            console.log('Cancel button clicked for mahasiswa:', this.dataset.mahasiswaId);
-            const mahasiswaId = this.dataset.mahasiswaId;
-            const row = document.querySelector(`tr[data-mahasiswa-id="${mahasiswaId}"]`);
-
-            if (row) {
-                // Disable inputs and reset values
-                row.querySelectorAll('.individual-input').forEach(input => {
-                    input.readOnly = true;
-                    input.classList.remove('bg-white');
-                    input.classList.add('bg-gray-50');
-                    input.value = input.dataset.originalValue;
-                });
-
-                // Toggle buttons
-                this.classList.add('hidden');
-                const saveBtn = row.querySelector('.save-btn');
-                const editBtn = row.querySelector('.edit-btn');
-
-                if (saveBtn) saveBtn.classList.add('hidden');
-                if (editBtn) editBtn.classList.remove('hidden');
-
-                console.log('Edit cancelled for row:', mahasiswaId);
-            }
-        });
-    });
-
-    // Individual form submission
-    document.querySelectorAll('form[id^="form-"]').forEach(form => {
-        form.addEventListener('submit', function(e) {
-            const submitBtn = this.querySelector('.save-btn');
-
-            // Show loading state
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = `
-                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Terjadi kesalahan saat menyimpan nilai.', 'error');
+        })
+        .finally(() => {
+            // Reset button state
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = `
+                <svg class="w-3 h-3 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                 </svg>
+                Simpan
             `;
         });
-    });
+    };
+
+    // Function to show notification
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg text-white font-medium ${
+            type === 'success' ? 'bg-green-500' :
+            type === 'error' ? 'bg-red-500' :
+            'bg-blue-500'
+        }`;
+        notification.textContent = message;
+
+        document.body.appendChild(notification);
+
+        // Remove notification after 3 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
 });
 </script>
 @endpush

@@ -30,11 +30,16 @@ class BobotKomponenController extends Controller
             $query->where('dosenId', Auth::user()->dosen->id);
         })->findOrFail($tahunAjaranMatkulId);
 
-        // Get CPMK that are assigned to this mata kuliah (from all classes)
-        $cpmkList = CpmkMatKul::whereHas('tahunAjaranMatkul', function($query) use ($tahunAjaranMatkul) {
-            $query->where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
-                  ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId);
-        })
+        // Get all TahunAjaranMatkul records for the same mata kuliah, tahun ajaran, and dosen
+        $relatedTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
+            ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
+            ->whereHas('dosenPengampu', function($query) {
+                $query->where('dosenId', Auth::user()->dosen->id);
+            })
+            ->pluck('id');
+
+        // Get CPMK that are assigned to this mata kuliah (from all classes with same dosen)
+        $cpmkList = CpmkMatKul::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
         ->with('cpmk')
         ->get()
         ->unique('cpmkId'); // Remove duplicates based on cpmkId
@@ -49,16 +54,13 @@ class BobotKomponenController extends Controller
         // Get all komponen
         $komponen = Komponen::orderBy('nama')->get();
 
-        // Get existing bobot with all necessary relationships
-        $existingBobot = Bobot::where('tahunAjaranMatkulId', $tahunAjaranMatkulId)
+        // Get existing bobot with all necessary relationships (from all related classes)
+        $existingBobot = Bobot::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
             ->with(['komponen', 'cpmk', 'nilai'])
             ->get();
 
-        // Get existing bobot from all classes with same mataKuliahId and tahunAjaranId for usedKomponenIds
-        $allExistingBobot = Bobot::whereHas('tahunAjaranMatkul', function($query) use ($tahunAjaranMatkul) {
-            $query->where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
-                  ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId);
-        })
+        // Get existing bobot from all classes with same mataKuliahId, tahunAjaranId, and dosen for usedKomponenIds
+        $allExistingBobot = Bobot::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
         ->with(['komponen', 'cpmk', 'nilai'])
         ->get();
 
@@ -91,7 +93,8 @@ class BobotKomponenController extends Controller
             'existingCombinations',
             'usedBobot',
             'bobotWithNilai',
-            'usedKomponenIds'
+            'usedKomponenIds',
+            'relatedTahunAjaranMatkulIds'
         ));
     }
 
@@ -104,6 +107,14 @@ class BobotKomponenController extends Controller
         $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('dosenPengampu', function($query) {
             $query->where('dosenId', Auth::user()->dosen->id);
         })->findOrFail($tahunAjaranMatkulId);
+
+        // Get all TahunAjaranMatkul records for the same mata kuliah, tahun ajaran, and dosen
+        $relatedTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
+            ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
+            ->whereHas('dosenPengampu', function($query) {
+                $query->where('dosenId', Auth::user()->dosen->id);
+            })
+            ->pluck('id');
 
         $request->validate([
             'bobot' => 'required|array',
@@ -125,8 +136,8 @@ class BobotKomponenController extends Controller
         try {
             DB::beginTransaction();
 
-            // Get existing bobot that have nilai (cannot be deleted/modified)
-            $bobotWithNilai = Bobot::where('tahunAjaranMatkulId', $tahunAjaranMatkulId)
+            // Get existing bobot that have nilai (cannot be deleted/modified) from all related classes
+            $bobotWithNilai = Bobot::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
                 ->whereHas('nilai')
                 ->get()
                 ->mapWithKeys(function($bobot) {
@@ -134,12 +145,12 @@ class BobotKomponenController extends Controller
                     return [$key => $bobot];
                 });
 
-            // Delete existing bobot that don't have nilai and are not in the new input
-            Bobot::where('tahunAjaranMatkulId', $tahunAjaranMatkulId)
+            // Delete existing bobot that don't have nilai and are not in the new input from all related classes
+            Bobot::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
                 ->whereDoesntHave('nilai')
                 ->delete();
 
-            // Create/Update bobot from form
+            // Create/Update bobot from form - apply to all related classes
             foreach ($request->bobot as $combination => $bobotValue) {
                 if ($bobotValue > 0) {
                     // Skip if this combination has nilai (locked)
@@ -150,22 +161,25 @@ class BobotKomponenController extends Controller
                     // Parse combination (format: cpmkId_komponenId)
                     list($cpmkId, $komponenId) = explode('_', $combination);
 
-                    // Verify CPMK is assigned to this mata kuliah
-                    $cpmkMatKul = CpmkMatKul::where('tahunAjaranMatkulId', $tahunAjaranMatkulId)
-                        ->where('cpmkId', $cpmkId)
-                        ->first();
+                    // Create bobot for all related tahunAjaranMatkulId
+                    foreach ($relatedTahunAjaranMatkulIds as $relatedId) {
+                        // Verify CPMK is assigned to this mata kuliah
+                        $cpmkMatKul = CpmkMatKul::where('tahunAjaranMatkulId', $relatedId)
+                            ->where('cpmkId', $cpmkId)
+                            ->first();
 
-                    if ($cpmkMatKul) {
-                        Bobot::updateOrCreate(
-                            [
-                                'tahunAjaranMatkulId' => $tahunAjaranMatkulId,
-                                'cpmkId' => $cpmkId,
-                                'komponenId' => $komponenId,
-                            ],
-                            [
-                                'bobot' => $bobotValue,
-                            ]
-                        );
+                        if ($cpmkMatKul) {
+                            Bobot::updateOrCreate(
+                                [
+                                    'tahunAjaranMatkulId' => $relatedId,
+                                    'cpmkId' => $cpmkId,
+                                    'komponenId' => $komponenId,
+                                ],
+                                [
+                                    'bobot' => $bobotValue,
+                                ]
+                            );
+                        }
                     }
                 }
             }

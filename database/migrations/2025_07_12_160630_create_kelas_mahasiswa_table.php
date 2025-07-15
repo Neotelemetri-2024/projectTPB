@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('mahasiswaId')->constrained('mahasiswa')->onDelete('cascade');
             $table->foreignId('tahunAjaranMatkulId')->constrained('tahun_ajaran_matkul')->onDelete('cascade');
+            $table->float('totalNilai')->nullable()->after('tahunAjaranMatkulId');
+            $table->enum('grade', ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'D', 'E'])->nullable()->after('totalNilai');
             $table->timestamps();
         });
     }

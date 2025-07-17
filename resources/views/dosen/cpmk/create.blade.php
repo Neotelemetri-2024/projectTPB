@@ -58,22 +58,34 @@
             <div class="grid grid-cols-1 gap-6">
                 <!-- CPL Selection -->
                 <div>
-                    <label for="idCpl" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
                         Capaian Pembelajaran Lulusan (CPL) <span class="text-red-500">*</span>
                     </label>
-                    <select name="idCpl" id="idCpl" required
-                            class="bg-gray-50 border text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-3 {{ $errors->has('idCpl') ? 'border-red-500' : 'border-gray-300' }}">
-                        <option value="">Pilih CPL</option>
-                        @foreach($cplList as $cpl)
-                            <option value="{{ $cpl->id }}" {{ old('idCpl') == $cpl->id ? 'selected' : '' }}>
-                                {{ $cpl->kodeCpl }} - {{ $cpl->deskripsi }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('idCpl')
+                    <div class="bg-gray-50 border rounded-lg p-4 {{ $errors->has('cpl_ids') ? 'border-red-500' : 'border-gray-300' }}">
+                        <div class="space-y-3 max-h-60 overflow-y-auto">
+                            @foreach($cplList as $cpl)
+                                <div class="flex items-start">
+                                    <input type="checkbox"
+                                           name="cpl_ids[]"
+                                           value="{{ $cpl->id }}"
+                                           id="cpl_{{ $cpl->id }}"
+                                           class="mt-1 mr-3 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                                           {{ in_array($cpl->id, old('cpl_ids', [])) ? 'checked' : '' }}>
+                                    <label for="cpl_{{ $cpl->id }}" class="text-sm text-gray-700 cursor-pointer">
+                                        <span class="font-medium">{{ $cpl->kodeCpl }}</span>
+                                        <span class="text-gray-600"> - {{ $cpl->deskripsi }}</span>
+                                    </label>
+                                </div>
+                            @endforeach
+                        </div>
+                        @if($cplList->isEmpty())
+                            <p class="text-sm text-gray-500 text-center py-4">Belum ada CPL yang tersedia</p>
+                        @endif
+                    </div>
+                    @error('cpl_ids')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
-                    <p class="mt-1 text-sm text-gray-500">Pilih CPL yang akan dicapai melalui CPMK ini</p>
+                    <p class="mt-1 text-sm text-gray-500">Pilih satu atau lebih CPL yang akan dicapai melalui CPMK ini</p>
                 </div>
 
                 <!-- Kode CPMK -->
@@ -164,11 +176,15 @@ document.addEventListener('DOMContentLoaded', function() {
     form.addEventListener('submit', function(e) {
         const kodeCpmk = kodeCpmkInput.value.trim();
         const deskripsi = deskripsiTextarea.value.trim();
-        const idCpl = document.getElementById('idCpl').value;
+        const selectedCpls = document.querySelectorAll('input[name="cpl_ids[]"]:checked');
 
-        if (!kodeCpmk || !deskripsi || !idCpl) {
+        if (!kodeCpmk || !deskripsi || selectedCpls.length === 0) {
             e.preventDefault();
-            alert('Harap lengkapi semua field yang wajib diisi');
+            if (selectedCpls.length === 0) {
+                alert('Harap pilih minimal satu CPL');
+            } else {
+                alert('Harap lengkapi semua field yang wajib diisi');
+            }
             return false;
         }
 
@@ -179,6 +195,26 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
     });
+
+    // CPL selection helper
+    const cplCheckboxes = document.querySelectorAll('input[name="cpl_ids[]"]');
+    const cplContainer = document.querySelector('.space-y-3');
+
+    // Add select all / deselect all functionality
+    if (cplCheckboxes.length > 0) {
+        const selectAllBtn = document.createElement('button');
+        selectAllBtn.type = 'button';
+        selectAllBtn.className = 'text-sm text-amber-600 hover:text-amber-700 font-medium mb-2';
+        selectAllBtn.textContent = 'Pilih Semua';
+
+        selectAllBtn.addEventListener('click', function() {
+            const allChecked = Array.from(cplCheckboxes).every(cb => cb.checked);
+            cplCheckboxes.forEach(cb => cb.checked = !allChecked);
+            this.textContent = allChecked ? 'Pilih Semua' : 'Batal Pilih Semua';
+        });
+
+        cplContainer.parentNode.insertBefore(selectAllBtn, cplContainer);
+    }
 });
 </script>
 @endsection

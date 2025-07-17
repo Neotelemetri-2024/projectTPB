@@ -153,7 +153,9 @@ class CpmkController extends Controller
 
         // Apply CPL filter
         if ($request->filled('cpl_id')) {
-            $query->where('idCpl', $request->cpl_id);
+            $query->whereHas('cpl', function($q) use ($request) {
+                $q->where('cpl.id', $request->cpl_id);
+            });
         }
 
         $cpmkList = $query->orderBy('kodeCpmk')->paginate(10);
@@ -205,12 +207,14 @@ class CpmkController extends Controller
         })->findOrFail($tahunAjaranMatkulId);
 
         $validator = Validator::make($request->all(), [
-            'idCpl' => 'required|exists:cpl,id',
+            'cpl_ids' => 'required|array',
+            'cpl_ids.*' => 'exists:cpl,id',
             'kodeCpmk' => 'required|string|max:20|unique:cpmk,kodeCpmk',
             'deskripsi' => 'required|string|max:1000',
         ], [
-            'idCpl.required' => 'CPL harus dipilih.',
-            'idCpl.exists' => 'CPL yang dipilih tidak valid.',
+            'cpl_ids.required' => 'Minimal satu CPL harus dipilih.',
+            'cpl_ids.array' => 'Format CPL tidak valid.',
+            'cpl_ids.*.exists' => 'CPL yang dipilih tidak valid.',
             'kodeCpmk.required' => 'Kode CPMK harus diisi.',
             'kodeCpmk.unique' => 'Kode CPMK sudah digunakan.',
             'kodeCpmk.max' => 'Kode CPMK maksimal 20 karakter.',
@@ -227,10 +231,12 @@ class CpmkController extends Controller
         try {
             // Create CPMK
             $cpmk = Cpmk::create([
-                'idCpl' => $request->idCpl,
                 'kodeCpmk' => $request->kodeCpmk,
                 'deskripsi' => $request->deskripsi,
             ]);
+
+            // Attach CPL relationships
+            $cpmk->cpl()->attach($request->cpl_ids);
 
             // Create relation to mata kuliah through CpmkMatKul
             $cpmk->cpmkMatKul()->create([
@@ -285,7 +291,9 @@ class CpmkController extends Controller
 
         $sameCplCount = Cpmk::whereHas('cpmkMatKul', function ($q) use ($allTahunAjaranMatkulIds) {
             $q->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
-        })->where('idCpl', $cpmk->idCpl)->distinct()->count();
+        })->whereHas('cpl', function ($q) use ($cpmk) {
+            $q->whereIn('cpl.id', $cpmk->cpl->pluck('id'));
+        })->distinct()->count();
 
         return view('dosen.cpmk.show', compact('cpmk', 'tahunAjaranMatkul', 'totalCpmk', 'sameCplCount'));
     }
@@ -315,7 +323,7 @@ class CpmkController extends Controller
             })
             ->pluck('id');
 
-        $cpmk = Cpmk::whereHas('cpmkMatKul', function ($q) use ($allTahunAjaranMatkulIds) {
+        $cpmk = Cpmk::with('cpl')->whereHas('cpmkMatKul', function ($q) use ($allTahunAjaranMatkulIds) {
             $q->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
         })->findOrFail($id);
 
@@ -347,12 +355,14 @@ class CpmkController extends Controller
         })->findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'idCpl' => 'required|exists:cpl,id',
+            'cpl_ids' => 'required|array',
+            'cpl_ids.*' => 'exists:cpl,id',
             'kodeCpmk' => 'required|string|max:20|unique:cpmk,kodeCpmk,' . $id,
             'deskripsi' => 'required|string|max:1000',
         ], [
-            'idCpl.required' => 'CPL harus dipilih.',
-            'idCpl.exists' => 'CPL yang dipilih tidak valid.',
+            'cpl_ids.required' => 'Minimal satu CPL harus dipilih.',
+            'cpl_ids.array' => 'Format CPL tidak valid.',
+            'cpl_ids.*.exists' => 'CPL yang dipilih tidak valid.',
             'kodeCpmk.required' => 'Kode CPMK harus diisi.',
             'kodeCpmk.unique' => 'Kode CPMK sudah digunakan.',
             'kodeCpmk.max' => 'Kode CPMK maksimal 20 karakter.',
@@ -368,12 +378,14 @@ class CpmkController extends Controller
 
         try {
             $cpmk->update([
-                'idCpl' => $request->idCpl,
                 'kodeCpmk' => $request->kodeCpmk,
                 'deskripsi' => $request->deskripsi,
             ]);
 
-            return redirect()->route('dosen.cpmk.index', $tahunAjaranMatkulId)
+            // Sync CPL relationships
+            $cpmk->cpl()->sync($request->cpl_ids);
+
+            return redirect()->route('dosen.cpmk.show', $tahunAjaranMatkulId)
                 ->with('success', 'CPMK berhasil diperbarui.');
 
         } catch (\Exception $e) {

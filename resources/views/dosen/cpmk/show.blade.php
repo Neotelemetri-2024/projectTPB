@@ -160,7 +160,7 @@
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Deskripsi
                                 </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-64">
                                     CPL Terkait
                                 </th>
                                 <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -189,10 +189,12 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap hidden md:table-cell">
-                                        <div class="flex flex-col space-y-1">
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
-                                                {{ $cpmk->cpl->kodeCpl }}
-                                            </span>
+                                        <div class="grid grid-cols-3 gap-1">
+                                            @foreach($cpmk->cpl as $cpl)
+                                                <span class="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                    {{ $cpl->kodeCpl }}
+                                                </span>
+                                            @endforeach
                                         </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

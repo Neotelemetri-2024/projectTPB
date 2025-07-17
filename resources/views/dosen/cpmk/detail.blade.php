@@ -61,13 +61,17 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">CPL Terkait</label>
                             <div class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-3">
-                                <div class="flex items-start gap-3">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                        {{ $cpmk->cpl->kodeCpl }}
-                                    </span>
-                                    <div class="flex-1">
-                                        <p class="text-sm text-gray-900">{{ $cpmk->cpl->deskripsi }}</p>
-                                    </div>
+                                <div class="space-y-3">
+                                    @foreach($cpmk->cpl as $cpl)
+                                        <div class="flex items-start gap-3">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                {{ $cpl->kodeCpl }}
+                                            </span>
+                                            <div class="flex-1">
+                                                <p class="text-sm text-gray-900">{{ $cpl->deskripsi }}</p>
+                                            </div>
+                                        </div>
+                                    @endforeach
                                 </div>
                             </div>
                         </div>

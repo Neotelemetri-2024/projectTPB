@@ -11,11 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('cpmk', function (Blueprint $table) {
+        Schema::create('cpmk_cpl', function (Blueprint $table) {
             $table->id();
-            $table->string('kodeCpmk', 20);
-            $table->text('deskripsi');
+            $table->foreignId('cplId')->constrained('cpl')->onDelete('cascade');
+            $table->foreignId('cpmkId')->constrained('cpmk')->onDelete('cascade');
             $table->timestamps();
+
+            // Add unique constraint to prevent duplicate relationships
+            $table->unique(['cplId', 'cpmkId']);
         });
     }
 
@@ -24,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('cpmk');
+        Schema::dropIfExists('cpmk_cpl');
     }
 };

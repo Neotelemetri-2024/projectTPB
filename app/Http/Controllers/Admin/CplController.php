@@ -13,10 +13,10 @@ class CplController extends Controller
     {
         $this->middleware('admin');
     }
-    
+
     public function index(Request $request)
     {
-        $query = Cpl::query();
+        $query = Cpl::with('cpmk');
 
         // Search by code or description
         if ($request->filled('q')) {
@@ -28,17 +28,17 @@ class CplController extends Controller
         }
 
         // Sort
-        $sortField = $request->filled('sort') && in_array($request->sort, ['kodeCpl', 'deskripsi']) 
-            ? $request->sort 
+        $sortField = $request->filled('sort') && in_array($request->sort, ['kodeCpl', 'deskripsi'])
+            ? $request->sort
             : 'kodeCpl';
-        $sortDir = $request->filled('dir') && in_array($request->dir, ['asc', 'desc']) 
-            ? $request->dir 
+        $sortDir = $request->filled('dir') && in_array($request->dir, ['asc', 'desc'])
+            ? $request->dir
             : 'asc';
-        
+
         $query->orderBy($sortField, $sortDir);
 
-        $cpl = $query->paginate(10)->withQueryString();
-        
+        $cpl = $query->paginate(10)->appends(request()->query());
+
         return view('admin.cpl.index', compact('cpl'));
     }
 
@@ -128,7 +128,7 @@ class CplController extends Controller
             }
 
             $cpl->delete();
-            
+
             return redirect()->route('admin.cpl.index')
                 ->with('success', 'CPL berhasil dihapus');
         } catch (\Exception $e) {

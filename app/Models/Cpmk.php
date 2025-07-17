@@ -12,14 +12,13 @@ class Cpmk extends Model
     protected $table = 'cpmk';
 
     protected $fillable = [
-        'idCpl',
         'kodeCpmk',
         'deskripsi'
     ];
 
     public function cpl()
     {
-        return $this->belongsTo(Cpl::class, 'idCpl');
+        return $this->belongsToMany(Cpl::class, 'cpmk_cpl', 'cpmkId', 'cplId');
     }
 
     public function cpmkMatKul()

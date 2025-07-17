@@ -92,12 +92,30 @@
     </div>
 
     <!-- Grafik Nilai Per CPL (Bar Chart per CPL) -->
-    @foreach($cpl_cpmk_data as $idx => $cpl)
-    <div class="bg-white rounded-lg shadow p-6 mb-8">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Capaian {{ $cpl['cpl_label'] }}</h3>
-        <canvas id="cplBarChart{{ $idx }}"></canvas>
+    @php
+        $chartCount = count($cpl_cpmk_data);
+    @endphp
+    @if($chartCount > 0)
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
+        @foreach($cpl_cpmk_data as $idx => $cpl)
+        <div class="bg-white rounded-lg shadow p-6 flex flex-col justify-between h-full">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Capaian {{ $cpl['cpl_label'] }}</h3>
+            <div class="flex flex-col gap-4 items-stretch">
+                <div class="w-full flex flex-col">
+                    <div class="flex-1 flex items-center justify-center">
+                        <canvas id="cplRadarChart{{ $idx }}" class="w-full" style="max-width:100%; min-height:320px; height:320px;"></canvas>
+                    </div>
+                </div>
+                <div class="w-full flex flex-col">
+                    <div class="flex-1 flex items-center justify-center">
+                        <canvas id="cplBarChart{{ $idx }}" class="w-full" style="max-width:100%; min-height:320px; height:320px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endforeach
     </div>
-    @endforeach
+    @endif
 
     <!-- Aktivitas Pembelajaran -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-8">

@@ -52,8 +52,43 @@ class DashboardController extends Controller
     public function mahasiswaDashboard()
     {
         $user = Auth::user();
-        return view('mahasiswa.dashboard', compact('user'));
+        $mahasiswa = $user->mahasiswa;
+        $mahasiswaId = $mahasiswa->id;
+
+        $cpls = \App\Models\Cpl::with(['cpmk' => function($q) use ($mahasiswaId) {
+            $q->whereHas('nilai', function($n) use ($mahasiswaId) {
+                $n->where('mahasiswaId', $mahasiswaId);
+            });
+        }])->get();
+
+        $cpl_cpmk_data = [];
+        foreach ($cpls as $cpl) {
+            $cpmks = $cpl->cpmk;
+            $cpmk_data = [];
+            foreach ($cpmks as $cpmk) {
+                $avg = $cpmk->nilai()->where('mahasiswaId', $mahasiswaId)->avg('nilai');
+                if ($avg !== null) {
+                    $cpmk_data[] = [
+                        'label' => $cpmk->kodeCpmk,
+                        'nilai' => round($avg, )
+                    ];
+                }
+            }
+            // Urutkan CPMK berdasarkan nilai tertinggi, ambil 5 teratas
+            $top = collect($cpmk_data)->sortByDesc('nilai')->take(5)->values();
+            if ($top->count() > 0) {
+                $cpl_cpmk_data[] = [
+                    'cpl_label' => $cpl->kodeCpl,
+                    'cpmk_labels' => $top->pluck('label')->all(),
+                    'cpmk_nilai' => $top->pluck('nilai')->all(),
+                ];
+            }
+        }
+
+        return view('mahasiswa.dashboard', compact('user', 'cpl_cpmk_data'));
     }
+    
+
 
     /**
      * Pimpinan Dashboard

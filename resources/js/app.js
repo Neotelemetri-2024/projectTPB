@@ -2,6 +2,7 @@ import './bootstrap';
 
 import Alpine from 'alpinejs';
 import Toastify from 'toastify-js';
+import Chart from 'chart.js/auto';
 
 window.Alpine = Alpine;
 window.Toastify = Toastify;
@@ -55,3 +56,61 @@ window.showToast = function(message, type = 'success') {
         }
     }).showToast();
 };
+
+document.addEventListener('DOMContentLoaded', function () {
+    const cplCpmkData = window.cplCpmkData || [];
+
+    // Render bar chart per CPL
+    cplCpmkData.forEach((cpl, idx) => {
+        const chartElement = document.getElementById('cplBarChart' + idx);
+        if (chartElement && cpl.cpmk_labels && cpl.cpmk_nilai) {
+            new Chart(chartElement, {
+                type: 'bar',
+                data: {
+                    labels: cpl.cpmk_labels,
+                    datasets: [{
+                        label: 'Capaian Mahasiswa',
+                        data: cpl.cpmk_nilai,
+                        backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: `Grafik Capaian ${cpl.cpl_label}`,
+                            font: { size: 18 }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Nilai: ${context.parsed.y.toFixed(2)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Nilai'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Indikator CPMK'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });
+});
+

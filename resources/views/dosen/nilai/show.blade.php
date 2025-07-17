@@ -204,6 +204,7 @@
                                                     @if($komponen->bobot->isNotEmpty())
                                                         <div class="text-xs text-gray-400">
                                                             Total: {{ $komponen->bobot->sum('bobot') }}%
+                                                            <div class="text-xs text-gray-400 mt-1">(Semua Kelas)</div>
                                                         </div>
                                                     @endif
                                                 </div>
@@ -218,12 +219,14 @@
                                     @foreach($mahasiswa as $mhs)
                                         @php
                                             $kelasNumber = 'Tidak Ada Kelas';
+                                            $studentClassId = null;
 
                                             // Find the class this student belongs to
                                             foreach($mataKuliahClasses as $class) {
                                                 $studentInClass = $class->kelasMahasiswa->where('mahasiswaId', $mhs->id)->first();
                                                 if ($studentInClass) {
                                                     $kelasNumber = $class->kelas;
+                                                    $studentClassId = $class->id;
                                                     break;
                                                 }
                                             }
@@ -237,6 +240,8 @@
                                             $studentNilai = $existingNilai->get($mhs->id, collect());
                                         @endphp
                                         <tr class="mahasiswa-row hover:bg-gray-50" data-kelas="kelas-{{ Str::slug($kelasHuruf) }}" data-mahasiswa-id="{{ $mhs->id }}">
+                                            <!-- Hidden field to identify student's class -->
+                                            <input type="hidden" name="student_class_id[{{ $mhs->id }}]" value="{{ $studentClassId }}">
                                             <td class="px-6 py-4 whitespace-nowrap sticky left-0 bg-white">
                                                 <div class="flex items-left">
                                                     <div class="text-sm font-medium text-gray-900">{{ $mhs->nama }}</div>
@@ -255,7 +260,8 @@
                                                     // Calculate the existing component value from bobot values
                                                     $nilaiKomponen = null;
                                                     if ($studentNilai->isNotEmpty()) {
-                                                        $komponenBobot = $komponen->bobot ?? collect();
+                                                        // Only use bobot from the student's class
+                                                        $komponenBobot = $komponen->bobot->where('tahunAjaranMatkulId', $studentClassId) ?? collect();
                                                         if ($komponenBobot->isNotEmpty()) {
                                                             // Get values for this component's bobot
                                                             $nilaiBobot = [];
@@ -318,10 +324,10 @@
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50">
-                                        Mahasiswa
+                                        NIM
                                     </th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        NIM
+                                        Mahasiswa
                                     </th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Kelas
@@ -333,6 +339,7 @@
                                                 @if($komponen->bobot->isNotEmpty())
                                                     <div class="text-xs text-gray-400">
                                                         Total: {{ $komponen->bobot->sum('bobot') }}%
+                                                        <div class="text-xs text-gray-400 mt-1">(Semua Kelas)</div>
                                                     </div>
                                                 @endif
                                             </div>
@@ -350,12 +357,14 @@
                                 @foreach($mahasiswa as $mhs)
                                     @php
                                         $kelasNumber = 'Tidak Ada Kelas';
+                                        $studentClassId = null;
 
                                         // Find the class this student belongs to
                                         foreach($mataKuliahClasses as $class) {
                                             $studentInClass = $class->kelasMahasiswa->where('mahasiswaId', $mhs->id)->first();
                                             if ($studentInClass) {
                                                 $kelasNumber = $class->kelas;
+                                                $studentClassId = $class->id;
                                                 break;
                                             }
                                         }
@@ -372,13 +381,13 @@
                                         $finalGrade = $nilaiMahasiswa->get($mhs->id);
                                     @endphp
                                     <tr class="mahasiswa-row hover:bg-gray-50" data-kelas="kelas-{{ Str::slug($kelasHuruf) }}" data-mahasiswa-id="{{ $mhs->id }}">
-                                        <td class="px-6 py-4 whitespace-nowrap sticky bg-white">
+                                        <td class="px-6 py-4 whitespace-nowrap sticky left-0 bg-white">
                                             <div class="flex items-left">
-                                                <div class="text-sm font-medium text-gray-900">{{ $mhs->nama }}</div>
+                                                <div class="text-sm font-medium text-gray-900">{{ $mhs->nim }}</div>
                                             </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-mono text-gray-900">{{ $mhs->nim }}</div>
+                                            <div class="text-sm font-mono text-gray-900">{{ $mhs->nama }}</div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -389,12 +398,15 @@
                                         <!-- Individual Forms for Each Student -->
                                         <form id="form-{{ $mhs->id }}" action="{{ route('dosen.nilai.bulk-store', $mataKuliahDiampu->id) }}" method="POST" class="contents">
                                             @csrf
+                                            <!-- Hidden field to identify student's class -->
+                                            <input type="hidden" name="student_class_id[{{ $mhs->id }}]" value="{{ $studentClassId }}">
                                             @foreach($allKomponen as $komponen)
                                                 @php
                                                     // Calculate the existing component value from bobot values
                                                     $nilaiKomponen = null;
                                                     if ($studentNilai->isNotEmpty()) {
-                                                        $komponenBobot = $komponen->bobot ?? collect();
+                                                        // Only use bobot from the student's class
+                                                        $komponenBobot = $komponen->bobot->where('tahunAjaranMatkulId', $studentClassId) ?? collect();
                                                         if ($komponenBobot->isNotEmpty()) {
                                                             // Get values for this component's bobot
                                                             $nilaiBobot = [];
@@ -945,6 +957,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // Create FormData with only this student's data
         const formData = new FormData();
         formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+
+        // Add student class ID
+        const studentClassInput = row.querySelector(`input[name="student_class_id[${mahasiswaId}]"]`);
+        if (studentClassInput) {
+            formData.append(`student_class_id[${mahasiswaId}]`, studentClassInput.value);
+        }
 
         // Add nilai array for this specific student using the correct format
         inputs.forEach(input => {

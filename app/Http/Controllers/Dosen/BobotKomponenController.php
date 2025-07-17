@@ -25,26 +25,29 @@ class BobotKomponenController extends Controller
      */
     public function bulkCreate($tahunAjaranMatkulId)
     {
+        $dosen = Auth::user()->dosen;
+
         // Verify access
-        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('dosenPengampu', function($query) {
-            $query->where('dosenId', Auth::user()->dosen->id);
+        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('dosenPengampu', function($query) use ($dosen) {
+            $query->where('dosenId', $dosen->id);
         })->findOrFail($tahunAjaranMatkulId);
 
         // Get all TahunAjaranMatkul records for the same mata kuliah, tahun ajaran, and dosen
         $relatedTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
             ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
-            ->whereHas('dosenPengampu', function($query) {
-                $query->where('dosenId', Auth::user()->dosen->id);
+            ->whereHas('dosenPengampu', function($query) use ($dosen) {
+                $query->where('dosenId', $dosen->id);
             })
             ->pluck('id');
 
         // Get CPMK that are assigned to this mata kuliah (from all classes with same dosen)
         $cpmkList = CpmkMatKul::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
-        ->with('cpmk')
-        ->get()
-        ->unique('cpmkId'); // Remove duplicates based on cpmkId
-
-        // dd($cpmkList);
+            ->with('cpmk.cpl') // Include CPL relationship
+            ->get()
+            ->unique('cpmkId') // Remove duplicates based on cpmkId
+            ->map(function($cpmkMatKul) {
+                return $cpmkMatKul->cpmk;
+            });
 
         if ($cpmkList->isEmpty()) {
             return redirect()->route('dosen.cpmk.show', $tahunAjaranMatkulId)
@@ -56,13 +59,13 @@ class BobotKomponenController extends Controller
 
         // Get existing bobot with all necessary relationships (from all related classes)
         $existingBobot = Bobot::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
-            ->with(['komponen', 'cpmk', 'nilai'])
+            ->with(['komponen', 'cpmk.cpl', 'nilai'])
             ->get();
 
         // Get existing bobot from all classes with same mataKuliahId, tahunAjaranId, and dosen for usedKomponenIds
         $allExistingBobot = Bobot::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
-        ->with(['komponen', 'cpmk', 'nilai'])
-        ->get();
+            ->with(['komponen', 'cpmk.cpl', 'nilai'])
+            ->get();
 
         // Create array of existing combinations for easier lookup
         $existingCombinations = $existingBobot->mapWithKeys(function($bobot) {
@@ -84,6 +87,17 @@ class BobotKomponenController extends Controller
         // Get unique component IDs that are already used in existing bobot (from all classes)
         $usedKomponenIds = $allExistingBobot->pluck('komponenId')->unique()->toArray();
 
+        // Get class information for display
+        $kelasInfo = TahunAjaranMatkul::whereIn('id', $relatedTahunAjaranMatkulIds)
+            ->with('kelasMahasiswa')
+            ->get()
+            ->map(function($item) {
+                return [
+                    'kelas' => $item->kelas,
+                    'jumlah_mahasiswa' => $item->kelasMahasiswa->count()
+                ];
+            });
+
         return view('dosen.bobot-komponen.bulk-create', compact(
             'tahunAjaranMatkul',
             'cpmkList',
@@ -94,7 +108,8 @@ class BobotKomponenController extends Controller
             'usedBobot',
             'bobotWithNilai',
             'usedKomponenIds',
-            'relatedTahunAjaranMatkulIds'
+            'relatedTahunAjaranMatkulIds',
+            'kelasInfo'
         ));
     }
 
@@ -103,16 +118,18 @@ class BobotKomponenController extends Controller
      */
     public function bulkStore(Request $request, $tahunAjaranMatkulId)
     {
+        $dosen = Auth::user()->dosen;
+
         // Verify access
-        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('dosenPengampu', function($query) {
-            $query->where('dosenId', Auth::user()->dosen->id);
+        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('dosenPengampu', function($query) use ($dosen) {
+            $query->where('dosenId', $dosen->id);
         })->findOrFail($tahunAjaranMatkulId);
 
         // Get all TahunAjaranMatkul records for the same mata kuliah, tahun ajaran, and dosen
         $relatedTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
             ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
-            ->whereHas('dosenPengampu', function($query) {
-                $query->where('dosenId', Auth::user()->dosen->id);
+            ->whereHas('dosenPengampu', function($query) use ($dosen) {
+                $query->where('dosenId', $dosen->id);
             })
             ->pluck('id');
 
@@ -185,8 +202,11 @@ class BobotKomponenController extends Controller
             }
 
             DB::commit();
+
+            $jumlahKelas = $relatedTahunAjaranMatkulIds->count();
             return redirect()->route('dosen.cpmk.show', $tahunAjaranMatkulId)
-                ->with('success', 'Bobot komponen berhasil disimpan.');
+                ->with('success', 'Bobot komponen berhasil disimpan untuk ' . $jumlahKelas . ' kelas yang Anda ampu.');
+
         } catch (\Exception $e) {
             DB::rollback();
             return redirect()->back()

@@ -38,9 +38,7 @@ class NilaiController extends Controller
         $query = TahunAjaranMatkul::with([
             'mataKuliah',
             'tahunAjaran',
-            'dosenPengampu' => function($query) use ($dosen) {
-                $query->where('dosenId', $dosen->id);
-            },
+            'dosenPengampu.dosen', // Load all dosen pengampu with their dosen data
             'kelasMahasiswa'
         ])->whereHas('dosenPengampu', function($query) use ($dosen) {
             $query->where('dosenId', $dosen->id);
@@ -82,7 +80,15 @@ class NilaiController extends Controller
 
             // Set aggregated data to representative
             $representative->setRelation('kelasMahasiswa', $allKelasMahasiswa->unique('id'));
-            $representative->setRelation('dosenPengampu', $allDosenPengampu->unique('id'));
+            $representative->setRelation('dosenPengampu', $allDosenPengampu->unique('dosenId'));
+
+            // Get unique dosen pengampu with their names
+            $uniqueDosenPengampu = $allDosenPengampu->unique('dosenId');
+            $dosenNames = $uniqueDosenPengampu->map(function($dosenPengampu) {
+                return $dosenPengampu->dosen->nama ?? 'Unknown';
+            })->unique()->values();
+            $representative->dosenPengampuNames = $dosenNames;
+
             $representative->allKelas = $allKelas->unique()->sort()->values();
             $representative->groupedItems = $group;
 

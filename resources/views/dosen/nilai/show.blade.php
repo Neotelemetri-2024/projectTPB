@@ -41,7 +41,7 @@
     </div>
 
     <!-- Course Info Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <div class="bg-white rounded-lg shadow-md p-6">
             <div class="flex items-center">
                 <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
@@ -82,6 +82,36 @@
                 <div>
                     <p class="text-sm font-medium text-gray-600">SKS</p>
                     <p class="text-2xl font-bold text-gray-900">{{ $mataKuliahDiampu->mataKuliah->sks ?? '-' }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                    </svg>
+                </div>
+                <div>
+                    @php
+                        $lastNilaiUpdate = \App\Models\Nilai::where('tahunAjaranMatkulId', $mataKuliahDiampu->id)->max('updated_at');
+                    @endphp
+                    <div class="flex items-center gap-2">
+                        <p class="text-sm font-medium text-gray-600">Last Modified</p>
+                        @if($lastNilaiUpdate)
+                            <span class="text-xs text-gray-500">
+                                ({{ \Carbon\Carbon::parse($lastNilaiUpdate)->diffForHumans() }})
+                            </span>
+                        @endif
+                    </div>
+                    @if($lastNilaiUpdate)
+                        <p class="text-sm font-bold text-gray-900" title="{{ \Carbon\Carbon::parse($lastNilaiUpdate)->format('d/m/Y H:i:s') }}">
+                            {{ \Carbon\Carbon::parse($lastNilaiUpdate)->format('d/m/Y H:i') }}
+                        </p>
+                    @else
+                        <p class="text-sm font-bold text-gray-400">Belum ada nilai</p>
+                    @endif
                 </div>
             </div>
         </div>

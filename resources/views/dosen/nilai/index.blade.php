@@ -114,6 +114,12 @@
                                     Mahasiswa
                                 </th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                                    Dosen Pengampu
+                                </th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                                    Last Modified
+                                </th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
                                     Aksi
                                 </th>
                             </tr>
@@ -187,6 +193,57 @@
                                     <td class="px-6 py-4 text-center">
                                         <div class="inline-flex items-center justify-center w-8 h-8 bg-orange-100 rounded-full">
                                             <span class="text-sm font-semibold text-orange-800">{{ $mataKuliah->kelasMahasiswa->count() }}</span>
+                                        </div>
+                                    </td>
+
+                                    <!-- Dosen Pengampu -->
+                                    <td class="px-6 py-4 text-center">
+                                        <div class="text-sm text-gray-900">
+                                            @if(isset($mataKuliah->dosenPengampuNames) && $mataKuliah->dosenPengampuNames->count() > 0)
+                                                @if($mataKuliah->dosenPengampuNames->count() <= 2)
+                                                    @foreach($mataKuliah->dosenPengampuNames as $dosenName)
+                                                        <span class="inline-block {{ $dosenName === $dosen->nama ? 'bg-green-100 text-green-800 font-medium' : 'bg-blue-100 text-blue-800' }} text-xs px-2 py-1 rounded-full mr-1"
+                                                              title="{{ $dosenName === $dosen->nama ? 'Anda' : $dosenName }}">
+                                                            {{ $dosenName === $dosen->nama ? 'Anda' : Str::limit($dosenName, 12) }}
+                                                        </span>
+                                                    @endforeach
+                                                @else
+                                                    @php
+                                                        $currentUserFirst = $mataKuliah->dosenPengampuNames->contains($dosen->nama);
+                                                        $firstDosen = $currentUserFirst ? $dosen->nama : $mataKuliah->dosenPengampuNames->first();
+                                                    @endphp
+                                                    <span class="inline-block {{ $firstDosen === $dosen->nama ? 'bg-green-100 text-green-800 font-medium' : 'bg-blue-100 text-blue-800' }} text-xs px-2 py-1 rounded-full mr-1"
+                                                          title="{{ $firstDosen === $dosen->nama ? 'Anda' : $firstDosen }}">
+                                                        {{ $firstDosen === $dosen->nama ? 'Anda' : Str::limit($firstDosen, 8) }}
+                                                    </span>
+                                                    <span class="text-xs text-gray-500" title="{{ $mataKuliah->dosenPengampuNames->reject(fn($name) => $name === $firstDosen)->implode(', ') }}">
+                                                        +{{ $mataKuliah->dosenPengampuNames->count() - 1 }}
+                                                    </span>
+                                                @endif
+                                            @else
+                                                <span class="text-gray-500">-</span>
+                                            @endif
+                                        </div>
+                                    </td>
+
+                                    <!-- Last Modified -->
+                                    <td class="px-6 py-4 text-center">
+                                        <div class="text-xs text-gray-600">
+                                            @php
+                                                $lastNilaiUpdate = \App\Models\Nilai::where('tahunAjaranMatkulId', $mataKuliah->id)->max('updated_at');
+                                            @endphp
+                                            @if($lastNilaiUpdate)
+                                                <span class="font-medium" title="{{ \Carbon\Carbon::parse($lastNilaiUpdate)->format('d/m/Y H:i:s') }}">
+                                                    {{ \Carbon\Carbon::parse($lastNilaiUpdate)->format('d/m/Y H:i') }}
+                                                </span>
+                                                <div class="text-xs text-gray-500 mt-1">
+                                                    {{ \Carbon\Carbon::parse($lastNilaiUpdate)->diffForHumans() }}
+                                                </div>
+                                            @else
+                                                <div class="text-xs text-gray-500">
+                                                    -
+                                                </div>
+                                            @endif
                                         </div>
                                     </td>
 

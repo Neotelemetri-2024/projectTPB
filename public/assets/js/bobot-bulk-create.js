@@ -6,6 +6,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const existingCombinationsData = window.existingCombinationsData || {};
         const bobotWithNilaiData = window.bobotWithNilaiData || {};
         const usedKomponenIdsData = window.usedKomponenIdsData || [];
+
+        // Debug logging
+        console.log('CPMK List Data:', cpmkListData);
+        console.log('Komponen List Data:', komponenListData);
+        console.log('Existing Combinations:', existingCombinationsData);
     // DOM elements
     const availableKomponenDiv = document.getElementById('available-komponen');
     const bobotTable = document.getElementById('bobot-table');
@@ -38,12 +43,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const komponenId = card.getAttribute('data-id').toString(); // Ensure string
             const komponenNama = card.getAttribute('data-nama');
 
+            console.log('Komponen clicked:', komponenId, komponenNama);
+
             // Check if currently selected
             const isSelected = selectedKomponen.find(k => k.id === komponenId);
 
             if (isSelected) {
                 // Remove from selected komponen
                 selectedKomponen = selectedKomponen.filter(k => k.id !== komponenId);
+                console.log('Komponen removed:', komponenId);
             } else {
                 // Add to selected komponen
                 selectedKomponen.push({
@@ -98,6 +106,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Render selected komponen tags (removed since we no longer have separate display area)
     // Components are now shown with visual state changes directly on the cards    // Render table based on selected komponen
     function renderTable() {
+        console.log('renderTable called with selectedKomponen:', selectedKomponen);
+
         // Show/hide no komponen message
         if (selectedKomponen.length === 0) {
             noKomponenMessage.style.display = 'block';
@@ -129,12 +139,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Add komponen columns for this CPMK
             if (selectedKomponen.length > 0) {
-                const cpmkMatKul = cpmkListData[index];
+                const cpmkData = cpmkListData[index];
+                console.log('Processing CPMK at index', index, ':', cpmkData);
 
                 selectedKomponen.forEach(function(komponen) {
-                    const combination = cpmkMatKul.cpmk.id + '_' + komponen.id;
+                    const combination = cpmkData.id + '_' + komponen.id;
                     const existingValue = existingCombinationsData[combination] || 0;
                     const hasNilai = bobotWithNilaiData.hasOwnProperty(combination);
+
+                    console.log('Creating input for combination:', combination, 'existing value:', existingValue);
 
                     const td = document.createElement('td');
                     td.className = 'px-2 py-3 text-center border-r border-gray-200';

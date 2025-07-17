@@ -110,16 +110,13 @@
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Bobot (%)
                                     </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Kelas
-                                    </th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @foreach($bobotKomponen as $bobot)
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-gray-900">{{ $bobot->komponen->namaKomponen }}</div>
+                                        <div class="text-sm font-medium text-gray-900">{{ $bobot->komponen->nama }}</div>
                                         @if($bobot->komponen->deskripsi)
                                         <div class="text-sm text-gray-500">{{ $bobot->komponen->deskripsi }}</div>
                                         @endif
@@ -128,9 +125,6 @@
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                             {{ $bobot->bobot }}%
                                         </span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {{ $bobot->tahunAjaranMatkul->kelas->namaKelas }}
                                     </td>
                                 </tr>
                                 @endforeach
@@ -144,7 +138,36 @@
 
         <!-- Sidebar -->
         <div class="space-y-6">
-
+            <!-- CPMK Metadata -->
+            <div class="bg-white rounded-lg shadow-md">
+                <div class="p-6 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900">Informasi Metadata</h3>
+                </div>
+                <div class="p-6">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Dibuat pada</label>
+                            <div class="flex items-center text-sm text-gray-600">
+                                <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                                <span class="font-medium">{{ $cpmk->created_at->format('d/m/Y H:i') }}</span>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">{{ $cpmk->created_at->diffForHumans() }}</div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Terakhir dimodifikasi</label>
+                            <div class="flex items-center text-sm text-gray-600">
+                                <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                                <span class="font-medium">{{ $cpmk->updated_at->format('d/m/Y H:i') }}</span>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1">{{ $cpmk->updated_at->diffForHumans() }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- Quick Actions -->
             <div class="bg-white rounded-lg shadow-md">
@@ -159,6 +182,13 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                             </svg>
                             Edit CPMK
+                        </a>
+                        <a href="{{ route('dosen.bobot-komponen.bulk-create', $tahunAjaranMatkul->id) }}"
+                           class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center justify-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            </svg>
+                            Kelola Bobot
                         </a>
                         <button type="button"
                                 class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center justify-center"

@@ -164,10 +164,13 @@
                                     CPL Terkait
                                 </th>
                                 <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Aksi
+                                    Total Bobot (%)
                                 </th>
                                 <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Total Bobot (%)
+                                    Last Modified
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Aksi
                                 </th>
                             </tr>
                         </thead>
@@ -197,6 +200,38 @@
                                             @endforeach
                                         </div>
                                 </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    @php
+                                        $totalBobot = $cpmk->bobot->sum('bobot');
+                                    @endphp
+                                    <div class="text-sm font-medium text-gray-900">
+                                        {{ number_format($totalBobot, 1) }}%
+                                    </div>
+                                    @if($totalBobot > 0)
+                                        <div class="text-xs text-gray-500">
+                                            {{ $cpmk->bobot->count() }} komponen
+                                        </div>
+                                    @else
+                                        <div class="text-xs text-gray-400">
+                                            Belum ada bobot
+                                        </div>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    @if($cpmk->lastModified)
+                                        <!-- Tanggal dan jam dalam 1 baris -->
+                                        <div class="text-xs text-gray-900 font-medium" title="Last updated: {{ \Carbon\Carbon::parse($cpmk->lastModified)->format('d M Y, H:i') }}">
+                                            {{ \Carbon\Carbon::parse($cpmk->lastModified)->format('d/m/Y H:i') }}
+                                        </div>
+                                        <div class="text-xs text-gray-500 mt-1">
+                                            {{ \Carbon\Carbon::parse($cpmk->lastModified)->diffForHumans() }}
+                                        </div>
+                                    @else
+                                        <div class="text-xs text-gray-500">
+                                            -
+                                        </div>
+                                    @endif
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex items-center justify-center space-x-2">
                                         <a href="{{ route('dosen.cpmk.detail', [$tahunAjaranMatkul->id, $cpmk->id]) }}"
@@ -220,23 +255,6 @@
                                         </button>
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-center">
-                                    @php
-                                        $totalBobot = $cpmk->bobot->sum('bobot');
-                                    @endphp
-                                    <div class="text-sm font-medium text-gray-900">
-                                        {{ number_format($totalBobot, 1) }}%
-                                    </div>
-                                    @if($totalBobot > 0)
-                                        <div class="text-xs text-gray-500">
-                                            {{ $cpmk->bobot->count() }} komponen
-                                        </div>
-                                    @else
-                                        <div class="text-xs text-gray-400">
-                                            Belum ada bobot
-                                        </div>
-                                    @endif
-                                </td>
 
                             </tr>
                             @endforeach
@@ -248,7 +266,8 @@
                                 </td>
                                 <td class="px-6 py-3"></td>
                                 <td class="px-6 py-3"></td>
-                                 <td class="px-6 py-3 text-center text-lg font-bold text-gray-900">
+                                <td class="px-6 py-3"></td>
+                                <td class="px-6 py-3 text-center text-lg font-bold text-gray-900">
                                     @php
                                         $totalAllBobot = 0;
                                         foreach($cpmkList as $item) {

@@ -18,7 +18,7 @@ class Cpmk extends Model
 
     public function cpl()
     {
-        return $this->belongsToMany(Cpl::class, 'cpmk_cpl', 'cpmkId', 'cplId');
+        return $this->belongsToMany(Cpl::class, 'cpmk_cpl', 'cpmkId', 'cplId')->withTimestamps();
     }
 
     public function cpmkMatKul()

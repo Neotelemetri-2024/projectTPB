@@ -295,17 +295,38 @@ class CpmkController extends Controller
             $query->where('dosenId', $dosen->id);
         })->findOrFail($tahunAjaranMatkulId);
 
+        // Get all TahunAjaranMatkul records for the same mata kuliah and tahun ajaran
+        // that are taught by this dosen
+        $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
+            ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
+            ->whereHas('dosenPengampu', function ($query) use ($dosen) {
+                $query->where('dosenId', $dosen->id);
+            })
+            ->pluck('id');
+
+        // Custom validation for CPMK uniqueness within scope of mata kuliah + dosen
+        $existingCpmk = Cpmk::where('kodeCpmk', $request->kodeCpmk)
+            ->whereHas('cpmkMatKul', function ($query) use ($allTahunAjaranMatkulIds) {
+                $query->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
+            })
+            ->first();
+
+        if ($existingCpmk) {
+            return redirect()->back()
+                ->withErrors(['kodeCpmk' => 'Kode CPMK sudah digunakan untuk mata kuliah ini.'])
+                ->withInput();
+        }
+
         $validator = Validator::make($request->all(), [
             'cpl_ids' => 'required|array',
             'cpl_ids.*' => 'exists:cpl,id',
-            'kodeCpmk' => 'required|string|max:20|unique:cpmk,kodeCpmk',
+            'kodeCpmk' => 'required|string|max:20',
             'deskripsi' => 'required|string|max:1000',
         ], [
             'cpl_ids.required' => 'Minimal satu CPL harus dipilih.',
             'cpl_ids.array' => 'Format CPL tidak valid.',
             'cpl_ids.*.exists' => 'CPL yang dipilih tidak valid.',
             'kodeCpmk.required' => 'Kode CPMK harus diisi.',
-            'kodeCpmk.unique' => 'Kode CPMK sudah digunakan.',
             'kodeCpmk.max' => 'Kode CPMK maksimal 20 karakter.',
             'deskripsi.required' => 'Deskripsi CPMK harus diisi.',
             'deskripsi.max' => 'Deskripsi CPMK maksimal 1000 karakter.',
@@ -326,15 +347,6 @@ class CpmkController extends Controller
 
             // Attach CPL relationships
             $cpmk->cpl()->attach($request->cpl_ids);
-
-            // Get all TahunAjaranMatkul records for the same mata kuliah and tahun ajaran
-            // that are taught by this dosen
-            $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
-                ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
-                ->whereHas('dosenPengampu', function ($query) use ($dosen) {
-                    $query->where('dosenId', $dosen->id);
-                })
-                ->pluck('id');
 
             // Create relation to ALL mata kuliah classes taught by this dosen
             foreach ($allTahunAjaranMatkulIds as $tahunAjaranMatkulId) {
@@ -463,17 +475,30 @@ class CpmkController extends Controller
             $q->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
         })->findOrFail($id);
 
+        // Custom validation for CPMK uniqueness within scope of mata kuliah + dosen (excluding current CPMK)
+        $existingCpmk = Cpmk::where('kodeCpmk', $request->kodeCpmk)
+            ->where('id', '!=', $id) // Exclude current CPMK being updated
+            ->whereHas('cpmkMatKul', function ($query) use ($allTahunAjaranMatkulIds) {
+                $query->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
+            })
+            ->first();
+
+        if ($existingCpmk) {
+            return redirect()->back()
+                ->withErrors(['kodeCpmk' => 'Kode CPMK sudah digunakan untuk mata kuliah ini.'])
+                ->withInput();
+        }
+
         $validator = Validator::make($request->all(), [
             'cpl_ids' => 'required|array',
             'cpl_ids.*' => 'exists:cpl,id',
-            'kodeCpmk' => 'required|string|max:20|unique:cpmk,kodeCpmk,' . $id,
+            'kodeCpmk' => 'required|string|max:20',
             'deskripsi' => 'required|string|max:1000',
         ], [
             'cpl_ids.required' => 'Minimal satu CPL harus dipilih.',
             'cpl_ids.array' => 'Format CPL tidak valid.',
             'cpl_ids.*.exists' => 'CPL yang dipilih tidak valid.',
             'kodeCpmk.required' => 'Kode CPMK harus diisi.',
-            'kodeCpmk.unique' => 'Kode CPMK sudah digunakan.',
             'kodeCpmk.max' => 'Kode CPMK maksimal 20 karakter.',
             'deskripsi.required' => 'Deskripsi CPMK harus diisi.',
             'deskripsi.max' => 'Deskripsi CPMK maksimal 1000 karakter.',

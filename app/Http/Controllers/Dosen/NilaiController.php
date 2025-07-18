@@ -110,7 +110,7 @@ class NilaiController extends Controller
     /**
      * Display students list for a specific mata kuliah.
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
         $user = Auth::user();
         $dosen = $user->dosen;
@@ -154,7 +154,153 @@ class NilaiController extends Controller
         foreach ($mataKuliahClasses as $class) {
             $allMahasiswa = $allMahasiswa->merge($class->kelasMahasiswa->pluck('mahasiswa'));
         }
-        $mahasiswa = $allMahasiswa->unique('id')->values();
+        $allMahasiswaCollection = $allMahasiswa->unique('id')->values();
+
+        // Handle pagination, sorting, and search - get request parameters
+        $perPage = 10; // Number of students per page
+        $currentPage = $request->get('page', 1);
+        $isBulkMode = $request->get('bulk', false);
+        $activeTab = $request->get('tab', 'all'); // Get active tab
+        $sortBy = $request->get('sort', 'nim'); // Default sort by NIM
+        $sortDirection = $request->get('direction', 'asc'); // Default ascending
+        $search = $request->get('search', ''); // Search parameter
+
+        // Apply sorting to all mahasiswa collection
+        $allMahasiswaCollection = $allMahasiswaCollection->sortBy(function($mahasiswa) use ($sortBy) {
+            switch ($sortBy) {
+                case 'nim':
+                    return $mahasiswa->nim;
+                case 'nama':
+                    return $mahasiswa->nama;
+                default:
+                    return $mahasiswa->nim;
+            }
+        });
+
+        // Reverse if descending
+        if ($sortDirection === 'desc') {
+            $allMahasiswaCollection = $allMahasiswaCollection->reverse();
+        }
+
+        $allMahasiswaCollection = $allMahasiswaCollection->values();
+
+        // Apply search filter if search term is provided
+        if (!empty($search)) {
+            $allMahasiswaCollection = $allMahasiswaCollection->filter(function($mahasiswa) use ($search) {
+                $searchTerm = strtolower($search);
+                return (
+                    stripos($mahasiswa->nim, $searchTerm) !== false ||
+                    stripos($mahasiswa->nama, $searchTerm) !== false
+                );
+            })->values();
+        }
+
+        // If bulk mode, show all students without pagination
+        if ($isBulkMode) {
+            $mahasiswa = $allMahasiswaCollection;
+            $mahasiswaPaginated = null;
+            $mahasiswaByKelas = [];
+        } else {
+            // Group mahasiswa by kelas first for pagination
+            $mahasiswaByKelas = [];
+            foreach ($allMahasiswaCollection as $mhs) {
+                $kelasNumber = 'Tidak Ada Kelas';
+
+                // Find the class this student belongs to
+                foreach($mataKuliahClasses as $class) {
+                    $studentInClass = $class->kelasMahasiswa->where('mahasiswaId', $mhs->id)->first();
+                    if ($studentInClass) {
+                        $kelasNumber = $class->kelas;
+                        break;
+                    }
+                }
+
+                // Convert numeric class to letter
+                $kelasHuruf = is_numeric($kelasNumber) ?
+                    \App\Models\TahunAjaranMatkul::convertKelasToHuruf($kelasNumber) :
+                    $kelasNumber;
+
+                if (!isset($mahasiswaByKelas[$kelasHuruf])) {
+                    $mahasiswaByKelas[$kelasHuruf] = [];
+                }
+                $mahasiswaByKelas[$kelasHuruf][] = $mhs;
+            }
+
+            // Sort by kelas
+            uksort($mahasiswaByKelas, function($a, $b) {
+                if ($a === 'Tidak Ada Kelas') return 1;
+                if ($b === 'Tidak Ada Kelas') return -1;
+                return strcmp($a, $b);
+            });
+
+            // Apply pagination based on active tab
+            if ($activeTab === 'all') {
+                // Paginate all students
+                $totalStudents = $allMahasiswaCollection->count();
+                $offset = ($currentPage - 1) * $perPage;
+                $mahasiswa = $allMahasiswaCollection->slice($offset, $perPage)->values();
+
+                $mahasiswaPaginated = new \Illuminate\Pagination\LengthAwarePaginator(
+                    $mahasiswa,
+                    $totalStudents,
+                    $perPage,
+                    $currentPage,
+                    [
+                        'path' => $request->url(),
+                        'pageName' => 'page',
+                    ]
+                );
+                $mahasiswaPaginated->appends($request->query());
+            } else {
+                // Paginate specific class
+                $kelasSlug = str_replace('kelas-', '', $activeTab);
+                $kelasName = null;
+
+                // Find the corresponding class name
+                foreach ($mahasiswaByKelas as $kelasHuruf => $students) {
+                    if (\Illuminate\Support\Str::slug($kelasHuruf) === $kelasSlug) {
+                        $kelasName = $kelasHuruf;
+                        break;
+                    }
+                }
+
+                if ($kelasName && isset($mahasiswaByKelas[$kelasName])) {
+                    $kelasStudents = collect($mahasiswaByKelas[$kelasName]);
+                    $totalStudents = $kelasStudents->count();
+                    $offset = ($currentPage - 1) * $perPage;
+                    $mahasiswa = $kelasStudents->slice($offset, $perPage)->values();
+
+                    $mahasiswaPaginated = new \Illuminate\Pagination\LengthAwarePaginator(
+                        $mahasiswa,
+                        $totalStudents,
+                        $perPage,
+                        $currentPage,
+                        [
+                            'path' => $request->url(),
+                            'pageName' => 'page',
+                        ]
+                    );
+                    $mahasiswaPaginated->appends($request->query());
+                } else {
+                    // Fallback to all students if class not found
+                    $totalStudents = $allMahasiswaCollection->count();
+                    $offset = ($currentPage - 1) * $perPage;
+                    $mahasiswa = $allMahasiswaCollection->slice($offset, $perPage)->values();
+
+                    $mahasiswaPaginated = new \Illuminate\Pagination\LengthAwarePaginator(
+                        $mahasiswa,
+                        $totalStudents,
+                        $perPage,
+                        $currentPage,
+                        [
+                            'path' => $request->url(),
+                            'pageName' => 'page',
+                        ]
+                    );
+                    $mahasiswaPaginated->appends($request->query());
+                }
+            }
+        }
 
         // Get all unique kelas numbers for display
         $kelasNumbers = $mataKuliahClasses->pluck('kelas')->unique()->sort()->values();
@@ -169,14 +315,14 @@ class NilaiController extends Controller
             ->orderBy('nama')
             ->get();
 
-        // Get existing nilai for all students in all related classes
+        // Get existing nilai for displayed students
         $existingNilai = Nilai::with('bobot')
             ->whereIn('mahasiswaId', $mahasiswa->pluck('id'))
             ->whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
             ->get()
             ->groupBy('mahasiswaId');
 
-        // Get final grades from kelasMahasiswa table for all students
+        // Get final grades from kelasMahasiswa table for displayed students
         $nilaiMahasiswa = KelasMahasiswa::whereIn('mahasiswaId', $mahasiswa->pluck('id'))
             ->whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
             ->get()
@@ -186,11 +332,19 @@ class NilaiController extends Controller
             'mataKuliahDiampu',
             'mataKuliahClasses',
             'mahasiswa',
+            'mahasiswaPaginated',
+            'allMahasiswaCollection',
+            'mahasiswaByKelas',
             'kelasNumbers',
             'allKomponen',
             'existingNilai',
             'nilaiMahasiswa',
-            'dosen'
+            'dosen',
+            'isBulkMode',
+            'activeTab',
+            'sortBy',
+            'sortDirection',
+            'search'
         ));
     }
 

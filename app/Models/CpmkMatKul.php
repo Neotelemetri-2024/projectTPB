@@ -25,4 +25,17 @@ class CpmkMatKul extends Model
     {
         return $this->belongsTo(Cpmk::class, 'cpmkId');
     }
+
+    public function mataKuliah()
+    {
+        // Relasi ke MataKuliah melalui TahunAjaranMatkul
+        return $this->hasOneThrough(
+            MataKuliah::class,
+            TahunAjaranMatkul::class,
+            'id', // Foreign key on TahunAjaranMatkul
+            'id', // Foreign key on MataKuliah
+            'tahunAjaranMatkulId', // Local key on CpmkMatKul
+            'mataKuliahId' // Local key on TahunAjaranMatkul
+        );
+    }
 }

@@ -116,7 +116,49 @@ class DashboardController extends Controller
             }
         }
 
-        return view('mahasiswa.dashboard', compact('user', 'cpl_cpmk_data'));
+        // Statistik Akademik
+        $stat = [
+            'jumlah_mk' => 0,
+            'jumlah_sks' => 0,
+            'ipk' => null,
+            'cpl_tercapai' => 0
+        ];
+        if ($mahasiswa) {
+            // Jumlah MK dan SKS
+            $mkDiambil = $mahasiswa->kelasMahasiswa()->with('tahunAjaranMatkul.mataKuliah')->get();
+            $stat['jumlah_mk'] = $mkDiambil->count();
+            $stat['jumlah_sks'] = $mkDiambil->sum(function($km) {
+                return $km->tahunAjaranMatkul->mataKuliah->sks ?? 0;
+            });
+            // IPK (standar Unand: konversi nilai akhir ke bobot, lalu (bobot x sks) / total sks)
+            $totalBobot = 0;
+            $totalNilaiBobot = 0;
+            foreach ($mkDiambil as $km) {
+                $nilaiAkhir = $km->totalNilai; // final grade per MK
+                $sks = $km->tahunAjaranMatkul->mataKuliah->sks ?? 0;
+                $bobot = 0;
+                if ($nilaiAkhir !== null) {
+                    if ($nilaiAkhir >= 80) $bobot = 4;
+                    elseif ($nilaiAkhir >= 75) $bobot = 3.75;
+                    elseif ($nilaiAkhir >= 70) $bobot = 3.5;
+                    elseif ($nilaiAkhir >= 65) $bobot = 3;
+                    elseif ($nilaiAkhir >= 60) $bobot = 2.75;
+                    elseif ($nilaiAkhir >= 55) $bobot = 2.5;
+                    elseif ($nilaiAkhir >= 50) $bobot = 2;
+                    elseif ($nilaiAkhir >= 40) $bobot = 1;
+                    else $bobot = 0;
+                }
+                $totalBobot += $sks;
+                $totalNilaiBobot += ($bobot * $sks);
+            }
+            $stat['ipk'] = ($totalBobot > 0) ? round($totalNilaiBobot / $totalBobot, 2) : null;
+            // CPL tercapai (nilai CPL > 55)
+            $stat['cpl_tercapai'] = collect($cpl_cpmk_data)->filter(function($cpl) {
+                return ($cpl['nilai_cpl'] ?? 0) > 55;
+            })->count();
+        }
+
+        return view('mahasiswa.dashboard', compact('user', 'cpl_cpmk_data', 'stat'));
     }
     
 

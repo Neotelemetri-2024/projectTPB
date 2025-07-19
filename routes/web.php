@@ -14,6 +14,7 @@ use App\Http\Controllers\Dosen\CpmkController as DosenCpmkController;
 use App\Http\Controllers\Dosen\KomponenPenilaianController as DosenKomponenPenilaianController;
 use App\Http\Controllers\Dosen\BobotKomponenController;
 use App\Http\Controllers\Dosen\NilaiController as DosenNilaiController;
+use App\Http\Controllers\KHSController as KHSController;
 use Illuminate\Support\Facades\Route;
 
 // Default route
@@ -134,6 +135,7 @@ Route::middleware('auth')->group(function () {
     // Mahasiswa Dashboard
     Route::middleware('mahasiswa')->group(function () {
         Route::get('/mahasiswa/dashboard', [DashboardController::class, 'mahasiswaDashboard'])->name('mahasiswa.dashboard');
+        Route::get('/mahasiswa/transkrip', [KHSController::class,'index'])->name('mahasiswa.transkrip');
     });
 
     // Pimpinan Dashboard

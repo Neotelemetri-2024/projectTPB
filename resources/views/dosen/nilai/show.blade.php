@@ -41,7 +41,7 @@
     </div>
 
     <!-- Course Info Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <div class="bg-white rounded-lg shadow-md p-6">
             <div class="flex items-center">
                 <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
@@ -51,7 +51,7 @@
                 </div>
                 <div>
                     <p class="text-sm font-medium text-gray-600">Total Mahasiswa</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $mahasiswa->count() }}</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ $allMahasiswaCollection->count() }}</p>
                 </div>
             </div>
         </div>
@@ -85,6 +85,38 @@
                 </div>
             </div>
         </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                    </svg>
+                </div>
+                <div>
+                    @php
+                        // Get all related class IDs for this mata kuliah that are taught by this dosen
+                        $relatedTahunAjaranMatkulIds = $mataKuliahClasses->pluck('id');
+                        $lastNilaiUpdate = \App\Models\Nilai::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)->max('updated_at');
+                    @endphp
+                    <div class="flex items-center gap-2">
+                        <p class="text-sm font-medium text-gray-600">Last Modified</p>
+                        @if($lastNilaiUpdate)
+                            <span class="text-xs text-gray-500">
+                                ({{ \Carbon\Carbon::parse($lastNilaiUpdate)->diffForHumans() }})
+                            </span>
+                        @endif
+                    </div>
+                    @if($lastNilaiUpdate)
+                        <p class="text-sm font-bold text-gray-900" title="{{ \Carbon\Carbon::parse($lastNilaiUpdate)->format('d/m/Y H:i:s') }}">
+                            {{ \Carbon\Carbon::parse($lastNilaiUpdate)->format('d/m/Y H:i') }}
+                        </p>
+                    @else
+                        <p class="text-sm font-bold text-gray-400">Belum ada nilai</p>
+                    @endif
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Students List -->
@@ -96,16 +128,107 @@
                     <p class="text-gray-600 mt-1">Pilih mahasiswa untuk mengelola nilai</p>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <button type="button"
-                            id="toggle-bulk-input"
-                            class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
-                        <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                        </svg>
-                        Aktifkan Input Sekaligus
-                    </button>
+                    @if(!$isBulkMode)
+                        @php
+                            $bulkUrl = request()->fullUrl();
+                            $bulkUrl .= (strpos($bulkUrl, '?') !== false ? '&' : '?') . 'bulk=1';
+                        @endphp
+                        <a href="{{ $bulkUrl }}"
+                           class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
+                            <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                            Aktifkan Input Sekaligus
+                        </a>
+                    @else
+                        @php
+                            $individualUrl = request()->url();
+                            $currentTab = request('tab', 'all');
+                            $currentSort = request('sort', 'nim');
+                            $currentDirection = request('direction', 'asc');
+                            $currentSearch = request('search', '');
+                            $params = [
+                                'tab' => $currentTab,
+                                'sort' => $currentSort,
+                                'direction' => $currentDirection
+                            ];
+                            if (!empty($currentSearch)) {
+                                $params['search'] = $currentSearch;
+                            }
+                            $individualUrl .= '?' . http_build_query($params);
+                        @endphp
+                        <a href="{{ $individualUrl }}"
+                           class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
+                            <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                            </svg>
+                            Kembali ke Mode Individual
+                        </a>
+                    @endif
                 </div>
             </div>
+        </div>
+
+        <!-- Search Form -->
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <form method="GET" action="{{ request()->url() }}" class="flex items-center gap-4">
+                <!-- Preserve existing parameters -->
+                @if(request('tab'))
+                    <input type="hidden" name="tab" value="{{ request('tab') }}">
+                @endif
+                @if(request('sort'))
+                    <input type="hidden" name="sort" value="{{ request('sort') }}">
+                @endif
+                @if(request('direction'))
+                    <input type="hidden" name="direction" value="{{ request('direction') }}">
+                @endif
+                @if(request('bulk'))
+                    <input type="hidden" name="bulk" value="{{ request('bulk') }}">
+                @endif
+
+                <div class="flex-1 max-w-md">
+                    <div class="relative">
+                        <input type="text"
+                               name="search"
+                               value="{{ request('search', '') }}"
+                               placeholder="Cari berdasarkan NIM atau nama mahasiswa..."
+                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit"
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    Cari
+                </button>
+
+                <!-- Reset All Filters Button -->
+                @if(request('sort') || request('direction') || (request('tab') && request('tab') !== 'all') || request('search'))
+                    <a href="{{ request()->url() }}"
+                       class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition-colors duration-200 flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        Reset
+                    </a>
+                @endif
+            </form>
+
+            @if(request('search'))
+                <div class="mt-3 text-sm text-gray-600">
+                    Menampilkan hasil pencarian untuk: <span class="font-semibold">"{{ request('search') }}"</span>
+                    @if($mahasiswa->count() > 0)
+                        ({{ $allMahasiswaCollection->count() }} mahasiswa ditemukan)
+                    @endif
+                </div>
+            @endif
         </div>
 
         <div class="p-6">
@@ -123,51 +246,27 @@
                     <div class="border-b border-gray-200">
                         <nav class="-mb-px flex space-x-8" aria-label="Tabs">
                             <button type="button"
-                                    class="tab-button active whitespace-nowrap py-2 px-1 border-b-2 border-amber-500 font-medium text-sm text-amber-600"
+                                    class="tab-button {{ (!request('tab') || request('tab') === 'all') ? 'active border-amber-500 text-amber-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm"
                                     data-tab="all">
                                 Semua Mahasiswa
-                                <span class="ml-2 bg-amber-100 text-amber-600 py-0.5 px-2 rounded-full text-xs font-medium">{{ $mahasiswa->count() }}</span>
-                            </button>                            @php
-                                // Group mahasiswa by kelas
-                                $mahasiswaByKelas = [];
-                                foreach($mahasiswa as $mhs) {
-                                    $kelasNumber = 'Tidak Ada Kelas';
-
-                                    // Find the class this student belongs to
-                                    foreach($mataKuliahClasses as $class) {
-                                        $studentInClass = $class->kelasMahasiswa->where('mahasiswaId', $mhs->id)->first();
-                                        if ($studentInClass) {
-                                            $kelasNumber = $class->kelas;
-                                            break;
-                                        }
-                                    }
-
-                                    // Convert numeric class to letter
-                                    $kelasHuruf = is_numeric($kelasNumber) ?
-                                        App\Models\TahunAjaranMatkul::convertKelasToHuruf($kelasNumber) :
-                                        $kelasNumber;
-
-                                    if (!isset($mahasiswaByKelas[$kelasHuruf])) {
-                                        $mahasiswaByKelas[$kelasHuruf] = [];
-                                    }
-                                    $mahasiswaByKelas[$kelasHuruf][] = $mhs;
-                                }
-
-                                // Sort by kelas (put letter classes in alphabetical order)
-                                uksort($mahasiswaByKelas, function($a, $b) {
-                                    if ($a === 'Tidak Ada Kelas') return 1;
-                                    if ($b === 'Tidak Ada Kelas') return -1;
-                                    return strcmp($a, $b);
-                                });
-                            @endphp
-                            @foreach($mahasiswaByKelas as $kelasHuruf => $mahasiswaInKelas)
-                                <button type="button"
-                                        class="tab-button whitespace-nowrap py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                                        data-tab="kelas-{{ Str::slug($kelasHuruf) }}">
-                                    Kelas {{ $kelasHuruf }}
-                                    <span class="ml-2 bg-gray-100 text-gray-600 py-0.5 px-2 rounded-full text-xs font-medium">{{ count($mahasiswaInKelas) }}</span>
-                                </button>
-                            @endforeach
+                                <span class="ml-2 {{ (!request('tab') || request('tab') === 'all') ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-600' }} py-0.5 px-2 rounded-full text-xs font-medium">
+                                    {{ $allMahasiswaCollection->count() }}
+                                </span>
+                            </button>
+                            @if(!empty($mahasiswaByKelas))
+                                @foreach($mahasiswaByKelas as $kelasHuruf => $mahasiswaInKelas)
+                                    @php
+                                        $kelasSlug = 'kelas-' . Str::slug($kelasHuruf);
+                                        $isActive = request('tab') === $kelasSlug;
+                                    @endphp
+                                    <button type="button"
+                                            class="tab-button {{ $isActive ? 'active border-amber-500 text-amber-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm"
+                                            data-tab="{{ $kelasSlug }}">
+                                        Kelas {{ $kelasHuruf }}
+                                        <span class="ml-2 {{ $isActive ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-600' }} py-0.5 px-2 rounded-full text-xs font-medium">{{ count($mahasiswaInKelas) }}</span>
+                                    </button>
+                                @endforeach
+                            @endif
                         </nav>
                     </div>
                 </div>
@@ -182,17 +281,52 @@
                             <p class="text-gray-500">Belum ada komponen penilaian yang dikonfigurasi untuk mata kuliah ini.</p>
                         </div>
                     @else
-                        <!-- Bulk Input Form (Hidden by default) -->
-                        <form id="bulk-nilai-form" action="{{ route('dosen.nilai.bulk-store', $mataKuliahDiampu->id) }}" method="POST" class="hidden">
-                            @csrf
-                            <table id="bulk-input-table" class="min-w-full divide-y divide-gray-200">
+                        @if($isBulkMode)
+                            <!-- Bulk Input Form -->
+                            <form id="bulk-nilai-form" action="{{ route('dosen.nilai.bulk-store', $mataKuliahDiampu->id) }}" method="POST">
+                                @csrf
+                                <table id="bulk-input-table" class="min-w-full divide-y divide-gray-200">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50">
-                                            Mahasiswa
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium {{ $sortBy === 'nama' ? ($sortDirection === 'asc' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50') : 'text-gray-500' }} uppercase tracking-wider sticky left-0 {{ $sortBy === 'nama' ? ($sortDirection === 'asc' ? 'bg-green-50' : 'bg-red-50') : 'bg-gray-50' }} sortable-header cursor-pointer" data-sort="nama">
+                                            <div class="flex items-center">
+                                                Mahasiswa
+                                                @if($sortBy === 'nama')
+                                                    @if($sortDirection === 'asc')
+                                                        <svg class="w-4 h-4 ml-1 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                    @else
+                                                        <svg class="w-4 h-4 ml-1 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                    @endif
+                                                @else
+                                                    <svg class="w-4 h-4 ml-1 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                                    </svg>
+                                                @endif
+                                            </div>
                                         </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            NIM
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium {{ $sortBy === 'nim' ? ($sortDirection === 'asc' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50') : 'text-gray-500' }} uppercase tracking-wider sortable-header cursor-pointer" data-sort="nim">
+                                            <div class="flex items-center">
+                                                NIM
+                                                @if($sortBy === 'nim')
+                                                    @if($sortDirection === 'asc')
+                                                        <svg class="w-4 h-4 ml-1 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                    @else
+                                                        <svg class="w-4 h-4 ml-1 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                                        </svg>
+                                                    @endif
+                                                @else
+                                                    <svg class="w-4 h-4 ml-1 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                                    </svg>
+                                                @endif
+                                            </div>
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Kelas
@@ -204,7 +338,6 @@
                                                     @if($komponen->bobot->isNotEmpty())
                                                         <div class="text-xs text-gray-400">
                                                             Total: {{ $komponen->bobot->sum('bobot') }}%
-                                                            <div class="text-xs text-gray-400 mt-1">(Semua Kelas)</div>
                                                         </div>
                                                     @endif
                                                 </div>
@@ -216,7 +349,7 @@
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
-                                    @foreach($mahasiswa as $mhs)
+                                    @foreach($allMahasiswaCollection as $mhs)
                                         @php
                                             $kelasNumber = 'Tidak Ada Kelas';
                                             $studentClassId = null;
@@ -318,16 +451,50 @@
                                 </tbody>
                             </table>
                         </form>
-
-                        <!-- Individual Input Mode (Default) -->
-                        <table id="individual-table" class="min-w-full divide-y divide-gray-200">
+                        @else
+                            <!-- Individual Input Mode (Default) -->
+                            <table id="individual-table" class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50">
-                                        NIM
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium {{ $sortBy === 'nim' ? ($sortDirection === 'asc' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50') : 'text-gray-500' }} uppercase tracking-wider sticky left-0 {{ $sortBy === 'nim' ? ($sortDirection === 'asc' ? 'bg-green-50' : 'bg-red-50') : 'bg-gray-50' }} sortable-header cursor-pointer" data-sort="nim">
+                                        <div class="flex items-center">
+                                            NIM
+                                            @if($sortBy === 'nim')
+                                                @if($sortDirection === 'asc')
+                                                    <svg class="w-4 h-4 ml-1 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                                    </svg>
+                                                @else
+                                                    <svg class="w-4 h-4 ml-1 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                                    </svg>
+                                                @endif
+                                            @else
+                                                <svg class="w-4 h-4 ml-1 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                                </svg>
+                                            @endif
+                                        </div>
                                     </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Mahasiswa
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium {{ $sortBy === 'nama' ? ($sortDirection === 'asc' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50') : 'text-gray-500' }} uppercase tracking-wider sortable-header cursor-pointer" data-sort="nama">
+                                        <div class="flex items-center">
+                                            Mahasiswa
+                                            @if($sortBy === 'nama')
+                                                @if($sortDirection === 'asc')
+                                                    <svg class="w-4 h-4 ml-1 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                                    </svg>
+                                                @else
+                                                    <svg class="w-4 h-4 ml-1 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                                    </svg>
+                                                @endif
+                                            @else
+                                                <svg class="w-4 h-4 ml-1 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                                </svg>
+                                            @endif
+                                        </div>
                                     </th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Kelas
@@ -339,7 +506,6 @@
                                                 @if($komponen->bobot->isNotEmpty())
                                                     <div class="text-xs text-gray-400">
                                                         Total: {{ $komponen->bobot->sum('bobot') }}%
-                                                        <div class="text-xs text-gray-400 mt-1">(Semua Kelas)</div>
                                                     </div>
                                                 @endif
                                             </div>
@@ -469,11 +635,28 @@
                                 @endforeach
                             </tbody>
                         </table>
+                        @endif
                     @endif
                 </div>
 
+                    <!-- Pagination for Individual Mode -->
+                    @if(!$isBulkMode && $mahasiswaPaginated && $mahasiswaPaginated->hasPages())
+                        <div class="px-6 py-4 border-t border-gray-200">
+                            <div class="flex items-center justify-between">
+                                <div class="text-sm text-gray-700">
+                                    Menampilkan {{ $mahasiswaPaginated->firstItem() }} - {{ $mahasiswaPaginated->lastItem() }}
+                                    dari {{ $mahasiswaPaginated->total() }} mahasiswa
+                                </div>
+                                <div>
+                                    {{ $mahasiswaPaginated->links() }}
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
                 <!-- Bulk Save Controls (Bottom) -->
-                <div id="bulk-actions" class="hidden mt-6 p-4 bg-gray-50 rounded-lg border-t border-gray-200">
+                @if($isBulkMode)
+                    <div id="bulk-actions" class="mt-6 p-4 bg-gray-50 rounded-lg border-t border-gray-200">
                     <div class="flex justify-end">
                         <div class="text-right space-y-3">
                             <!-- First row: Checkbox -->
@@ -497,7 +680,8 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                    </div>
+                @endif
             @endif
         </div>
     </div>
@@ -684,37 +868,23 @@ document.addEventListener('DOMContentLoaded', function() {
         updateSaveButtonStates();
     });
 
-    // Tab functionality for students
+    // Tab functionality for students with pagination support
     const tabButtons = document.querySelectorAll('.tab-button');
-    const mahasiswaRows = document.querySelectorAll('.mahasiswa-row');
 
     function switchTab(activeTab) {
-        // Update tab buttons
-        tabButtons.forEach(button => {
-            const isActive = button.dataset.tab === activeTab;
-            if (isActive) {
-                button.classList.remove('border-transparent', 'text-gray-500');
-                button.classList.add('border-amber-500', 'text-amber-600', 'active');
-            } else {
-                button.classList.remove('border-amber-500', 'text-amber-600', 'active');
-                button.classList.add('border-transparent', 'text-gray-500');
-            }
-        });
+        // Get current URL and update tab parameter
+        const url = new URL(window.location);
+        url.searchParams.set('tab', activeTab);
+        url.searchParams.set('sort', '{{ $sortBy }}');
+        url.searchParams.set('direction', '{{ $sortDirection }}');
+        @if(request('search'))
+        url.searchParams.set('search', '{{ request('search') }}');
+        @endif
+        url.searchParams.delete('page'); // Reset to page 1 when switching tabs
 
-        // Show/hide mahasiswa rows based on tab
-        mahasiswaRows.forEach(row => {
-            const rowKelas = row.dataset.kelas;
-            const shouldShow = activeTab === 'all' || rowKelas === activeTab;
-
-            if (shouldShow) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
-        });
-    }
-
-    // Add click event listeners to tab buttons
+        // Navigate to new URL (this will reload the page with correct pagination)
+        window.location.href = url.toString();
+    }    // Add click event listeners to tab buttons
     tabButtons.forEach(button => {
         button.addEventListener('click', function() {
             const targetTab = this.dataset.tab;
@@ -722,136 +892,135 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Initialize with "all" tab active
-    switchTab('all');
+    // Initialize with current active tab from server
+    const currentTab = '{{ $activeTab ?? "all" }}';
 
+    // Update pagination links to maintain current tab and sorting
+    const paginationLinks = document.querySelectorAll('.pagination a');
+    paginationLinks.forEach(link => {
+        if (link.href) {
+            const url = new URL(link.href);
+            url.searchParams.set('tab', currentTab);
+            url.searchParams.set('sort', '{{ $sortBy }}');
+            url.searchParams.set('direction', '{{ $sortDirection }}');
+            @if(request('search'))
+            url.searchParams.set('search', '{{ request('search') }}');
+            @endif
+            @if($isBulkMode)
+                url.searchParams.set('bulk', '1');
+            @endif
+            link.href = url.toString();
+        }
+    });
 
+    // Sorting functionality
+    const sortableHeaders = document.querySelectorAll('.sortable-header');
+    sortableHeaders.forEach(header => {
+        header.addEventListener('click', function() {
+            const sortBy = this.getAttribute('data-sort');
+            const currentSort = '{{ $sortBy }}';
+            const currentDirection = '{{ $sortDirection }}';
 
-    // Mode Toggle Functionality
-    const toggleBulkBtn = document.getElementById('toggle-bulk-input');
-    const bulkForm = document.getElementById('bulk-nilai-form');
-    const individualTable = document.getElementById('individual-table');
-    const bulkActions = document.getElementById('bulk-actions');
-    const confirmCheckbox = document.getElementById('confirm-bulk-save');
-    const bulkSaveBtn = document.getElementById('bulk-save-btn');
-
-    let isBulkMode = false;
-
-    if (toggleBulkBtn) {
-        toggleBulkBtn.addEventListener('click', function() {
-            console.log('Toggle button clicked! Current mode:', isBulkMode);
-            isBulkMode = !isBulkMode;
-
-            if (isBulkMode) {
-                console.log('Switching to bulk mode...');
-                // Switch to bulk mode
-                if (individualTable) individualTable.classList.add('hidden');
-                if (bulkForm) bulkForm.classList.remove('hidden');
-                if (bulkActions) bulkActions.classList.remove('hidden');
-
-                toggleBulkBtn.innerHTML = `
-                    <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                    </svg>
-                    Lihat Mode Individual
-                `;
-                toggleBulkBtn.classList.remove('bg-amber-600', 'hover:bg-amber-700');
-                toggleBulkBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
-
-                // Initialize bulk input functionality
-                initializeBulkInput();
-            } else {
-                console.log('Switching to individual mode...');
-                // Switch to individual mode
-                if (individualTable) individualTable.classList.remove('hidden');
-                if (bulkForm) bulkForm.classList.add('hidden');
-                if (bulkActions) bulkActions.classList.add('hidden');
-
-                toggleBulkBtn.innerHTML = `
-                    <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                    </svg>
-                    Aktifkan Input Sekaligus
-                `;
-                toggleBulkBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                toggleBulkBtn.classList.add('bg-amber-600', 'hover:bg-amber-700');
+            let newDirection = 'asc';
+            if (currentSort === sortBy && currentDirection === 'asc') {
+                newDirection = 'desc';
             }
+
+            // Get current URL and update sort parameters
+            const url = new URL(window.location);
+            url.searchParams.set('sort', sortBy);
+            url.searchParams.set('direction', newDirection);
+            @if(request('search'))
+            url.searchParams.set('search', '{{ request('search') }}');
+            @endif
+            url.searchParams.delete('page'); // Reset to page 1 when sorting
+
+            // Navigate to new URL
+            window.location.href = url.toString();
         });
-    } else {
-        console.log('Toggle button not found!');
-    }
+    });
+
+    // Initialize bulk input functionality if in bulk mode
+    @if($isBulkMode)
+        initializeBulkInput();
+    @endif
 
     // Bulk mode functionality
-    if (bulkForm) {
-        const bulkInputs = bulkForm.querySelectorAll('input[type="number"]');
+    @if($isBulkMode)
+        const bulkForm = document.getElementById('bulk-nilai-form');
+        const confirmCheckbox = document.getElementById('confirm-bulk-save');
+        const bulkSaveBtn = document.getElementById('bulk-save-btn');
 
-        // Listen for changes
-        bulkInputs.forEach(input => {
-            input.addEventListener('input', function() {
-                checkForBulkChanges();
-                // Validate input
-                let value = parseFloat(this.value);
-                if (isNaN(value) || value < 0) {
-                    this.value = '';
-                } else if (value > 100) {
-                    this.value = '100';
-                }
+        if (bulkForm) {
+            const bulkInputs = bulkForm.querySelectorAll('input[type="number"]');
+
+            // Listen for changes
+            bulkInputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    checkForBulkChanges();
+                    // Validate input
+                    let value = parseFloat(this.value);
+                    if (isNaN(value) || value < 0) {
+                        this.value = '';
+                    } else if (value > 100) {
+                        this.value = '100';
+                    }
+                });
             });
-        });
 
-        function checkForBulkChanges() {
-            checkForUnsavedChanges(); // Use the global function
-            updateBulkSaveState();
-        }
-
-        function updateBulkSaveState() {
-            const canSave = hasUnsavedChanges && confirmCheckbox.checked;
-            bulkSaveBtn.disabled = !canSave;
-
-            if (canSave) {
-                bulkSaveBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
-                bulkSaveBtn.classList.add('bg-green-600', 'hover:bg-green-700');
-            } else {
-                bulkSaveBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
-                bulkSaveBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+            function checkForBulkChanges() {
+                checkForUnsavedChanges(); // Use the global function
+                updateBulkSaveState();
             }
-        }
 
-        // Checkbox change listener
-        if (confirmCheckbox) {
-            confirmCheckbox.addEventListener('change', updateBulkSaveState);
-        }
+            function updateBulkSaveState() {
+                const canSave = hasUnsavedChanges && confirmCheckbox.checked;
+                bulkSaveBtn.disabled = !canSave;
 
-        // Bulk save button
-        if (bulkSaveBtn) {
-            bulkSaveBtn.addEventListener('click', function() {
-                if (hasUnsavedChanges && confirmCheckbox && confirmCheckbox.checked) {
-                    // Show loading state
-                    bulkSaveBtn.disabled = true;
-                    bulkSaveBtn.innerHTML = `
-                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Menyimpan...
-                    `;
-
-                    // Dispatch custom event to reset unsaved changes flag
-                    document.dispatchEvent(new CustomEvent('valuesSaved'));
-
-                    // Allow navigation since we're saving
-                    allowNavigation = true;
-
-                    // Submit the form
-                    bulkForm.submit();
+                if (canSave) {
+                    bulkSaveBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                    bulkSaveBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                } else {
+                    bulkSaveBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                    bulkSaveBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
                 }
-            });
-        }
+            }
 
-        // Initialize
-        checkForBulkChanges();
-    }
+            // Checkbox change listener
+            if (confirmCheckbox) {
+                confirmCheckbox.addEventListener('change', updateBulkSaveState);
+            }
+
+            // Bulk save button
+            if (bulkSaveBtn) {
+                bulkSaveBtn.addEventListener('click', function() {
+                    if (hasUnsavedChanges && confirmCheckbox && confirmCheckbox.checked) {
+                        // Show loading state
+                        bulkSaveBtn.disabled = true;
+                        bulkSaveBtn.innerHTML = `
+                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Menyimpan...
+                        `;
+
+                        // Dispatch custom event to reset unsaved changes flag
+                        document.dispatchEvent(new CustomEvent('valuesSaved'));
+
+                        // Allow navigation since we're saving
+                        allowNavigation = true;
+
+                        // Submit the form
+                        bulkForm.submit();
+                    }
+                });
+            }
+
+            // Initialize
+            checkForBulkChanges();
+        }
+    @endif
 
     // Initialize bulk input functionality when switching to bulk mode
     function initializeBulkInput() {

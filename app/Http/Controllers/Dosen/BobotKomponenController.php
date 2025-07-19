@@ -47,6 +47,9 @@ class BobotKomponenController extends Controller
             ->unique('cpmkId') // Remove duplicates based on cpmkId
             ->map(function($cpmkMatKul) {
                 return $cpmkMatKul->cpmk;
+            })
+            ->filter(function($cpmk) {
+                return $cpmk !== null; // Filter out null CPMK
             });
 
         if ($cpmkList->isEmpty()) {

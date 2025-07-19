@@ -30,8 +30,21 @@
     <!-- Header -->
     <div class="bg-white rounded-lg shadow-md mb-6">
         <div class="p-4 sm:p-6 border-b border-gray-200">
-            <h1 class="text-2xl font-bold text-gray-900">Atur Bobot Komponen Secara Bulk</h1>
-            <p class="text-gray-600 mt-1">{{ $tahunAjaranMatkul->mataKuliah->namaMatkul }} • {{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }}</p>
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Atur Bobot Komponen Secara Bulk</h1>
+                    <p class="text-gray-600 mt-1">{{ $tahunAjaranMatkul->mataKuliah->namaMatkul }} • {{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }}</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a href="{{ route('dosen.cpmk.show', $tahunAjaranMatkul->id) }}"
+                       class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                        Kembali
+                    </a>
+                </div>
+            </div>
         </div>
 
         <div class="p-4 sm:p-6">
@@ -162,8 +175,8 @@
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-4 py-3 text-sm font-medium text-gray-900 border-r border-gray-200 bg-gray-50">
                                         <div class="flex flex-col">
-                                            <span class="font-semibold">{{ $cpmk->cpmk->kodeCpmk }}</span>
-                                            <span class="text-xs text-gray-600 mt-1">{{ Str::limit($cpmk->cpmk->deskripsi, 60) }}</span>
+                                            <span class="font-semibold">{{ $cpmk->kodeCpmk ?? 'N/A' }}</span>
+                                            <span class="text-xs text-gray-600 mt-1">{{ Str::limit($cpmk->deskripsi ?? '', 60) }}</span>
                                         </div>
                                     </td>
                                     <!-- Komponen columns will be added dynamically -->
@@ -221,8 +234,15 @@
 </div>
 
 <script>
-// Set data for external JavaScript
-window.cpmkListData = {!! json_encode($cpmkList) !!};
+// Set data for external JavaScript - ensure CPMK data is properly formatted
+window.cpmkListData = {!! json_encode($cpmkList->map(function($cpmk) {
+    return [
+        'id' => $cpmk->id ?? null,
+        'kodeCpmk' => $cpmk->kodeCpmk ?? 'N/A',
+        'deskripsi' => $cpmk->deskripsi ?? '',
+        'cpl' => $cpmk->cpl ?? []
+    ];
+})) !!};
 window.komponenListData = {!! json_encode($komponen) !!};
 window.existingCombinationsData = {!! json_encode($existingCombinations) !!};
 window.bobotWithNilaiData = {!! json_encode($bobotWithNilai) !!};

@@ -92,28 +92,34 @@
                     <table class="min-w-full bg-white border border-gray-200 rounded-lg">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 min-w-[100px]">
                                     Kode
                                 </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 min-w-[200px]">
                                     Nama Mata Kuliah
                                 </th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 min-w-[60px]">
                                     SKS
                                 </th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 min-w-[80px]">
                                     Jenis
                                 </th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 min-w-[80px]">
                                     Kelas
                                 </th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 min-w-[120px]">
                                     Tahun Ajaran
                                 </th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 min-w-[150px]">
+                                    Dosen Pengampu
+                                </th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 min-w-[70px]">
                                     CPMK
                                 </th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 min-w-[120px]">
+                                    Last Modified
+                                </th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200 min-w-[120px]">
                                     Aksi
                                 </th>
                             </tr>
@@ -178,12 +184,62 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         <div class="text-sm font-medium text-gray-900">
                                             {{ $mataKuliah->tahunAjaran->tahun ?? '-' }} - {{ $mataKuliah->tahunAjaran->periode ?? '-' }}
+                                        </div>
+                                    </td>
+
+                                    <!-- Dosen Pengampu Column -->
+                                    <td class="px-6 py-4 text-center">
+                                        <div class="text-sm text-gray-900">
+                                            @if(isset($mataKuliah->dosenPengampuNames) && $mataKuliah->dosenPengampuNames->count() > 0)
+                                                @if($mataKuliah->dosenPengampuNames->count() <= 2)
+                                                    @foreach($mataKuliah->dosenPengampuNames as $dosenName)
+                                                        <span class="inline-block {{ $dosenName === $dosen->nama ? 'bg-green-100 text-green-800 font-medium' : 'bg-blue-100 text-blue-800' }} text-xs px-2 py-1 rounded-full mr-1"
+                                                              title="{{ $dosenName === $dosen->nama ? 'Anda' : $dosenName }}">
+                                                            {{ $dosenName === $dosen->nama ? 'Anda' : Str::limit($dosenName, 12) }}
+                                                        </span>
+                                                    @endforeach
+                                                @else
+                                                    @php
+                                                        $currentUserFirst = $mataKuliah->dosenPengampuNames->contains($dosen->nama);
+                                                        $firstDosen = $currentUserFirst ? $dosen->nama : $mataKuliah->dosenPengampuNames->first();
+                                                    @endphp
+                                                    <span class="inline-block {{ $firstDosen === $dosen->nama ? 'bg-green-100 text-green-800 font-medium' : 'bg-blue-100 text-blue-800' }} text-xs px-2 py-1 rounded-full mr-1"
+                                                          title="{{ $firstDosen === $dosen->nama ? 'Anda' : $firstDosen }}">
+                                                        {{ $firstDosen === $dosen->nama ? 'Anda' : Str::limit($firstDosen, 8) }}
+                                                    </span>
+                                                    <span class="text-xs text-gray-500" title="{{ $mataKuliah->dosenPengampuNames->reject(fn($name) => $name === $firstDosen)->implode(', ') }}">
+                                                        +{{ $mataKuliah->dosenPengampuNames->count() - 1 }}
+                                                    </span>
+                                                @endif
+                                            @else
+                                                <span class="text-gray-500">-</span>
+                                            @endif
+                                        </div>
                                     </td>
 
                                     <!-- CPMK Column -->
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         <div class="flex items-center justify-center">
                                             <span class="text-sm font-medium text-gray-900">{{ $mataKuliah->cpmkMatKul->count() ?? 0 }}</span>
+                                        </div>
+                                    </td>
+
+                                    <!-- Last Updated Column -->
+                                    <td class="px-6 py-4 text-center">
+                                        <div class="text-sm text-gray-900">
+                                            @if(isset($mataKuliah->latestCpmkUpdate) && $mataKuliah->latestCpmkUpdate)
+                                                <!-- Tanggal dan jam dalam 1 baris -->
+                                                <div class="text-xs text-gray-900 font-medium" title="Last updated: {{ \Carbon\Carbon::parse($mataKuliah->latestCpmkUpdate)->format('d M Y, H:i') }}">
+                                                    {{ \Carbon\Carbon::parse($mataKuliah->latestCpmkUpdate)->format('d/m/Y H:i') }}
+                                                </div>
+                                                <div class="text-xs text-gray-500 mt-1">
+                                                    {{ \Carbon\Carbon::parse($mataKuliah->latestCpmkUpdate)->diffForHumans() }}
+                                                </div>
+                                            @else
+                                                <div class="text-xs text-gray-500">
+                                                    -
+                                                </div>
+                                            @endif
                                         </div>
                                     </td>
 

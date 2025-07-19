@@ -96,20 +96,13 @@
         $chartCount = count($cpl_cpmk_data);
     @endphp
     @if($chartCount > 0)
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-8">
         @foreach($cpl_cpmk_data as $idx => $cpl)
-        <div class="bg-white rounded-lg shadow p-6 flex flex-col justify-between h-full">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Capaian {{ $cpl['cpl_label'] }}</h3>
-            <div class="flex flex-col gap-4 items-stretch">
-                <div class="w-full flex flex-col">
-                    <div class="flex-1 flex items-center justify-center">
-                        <canvas id="cplRadarChart{{ $idx }}" class="w-full" style="max-width:100%; min-height:320px; height:320px;"></canvas>
-                    </div>
-                </div>
-                <div class="w-full flex flex-col">
-                    <div class="flex-1 flex items-center justify-center">
-                        <canvas id="cplBarChart{{ $idx }}" class="w-full" style="max-width:100%; min-height:320px; height:320px;"></canvas>
-                    </div>
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 flex flex-col justify-between h-full">
+            <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">Capaian {{ $cpl['cpl_label'] }}</h3>
+            <div class="w-full flex flex-col flex-1">
+                <div class="flex-1 flex items-center justify-center">
+                    <canvas id="cplBarChart{{ $idx }}" class="w-full" style="max-width:100%;"></canvas>
                 </div>
             </div>
         </div>

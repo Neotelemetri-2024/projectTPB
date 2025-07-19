@@ -68,52 +68,51 @@ class DashboardController extends Controller
                 $cpmks = $cpl->cpmk;
                 $cpmk_data = [];
                 foreach ($cpmks as $cpmk) {
-                    $avg = $cpmk->nilai()->where('mahasiswaId', $mahasiswaId)->avg('nilai');
-                    if ($avg !== null) {
-                        $cpmkMatKul = $cpmk->cpmkMatKul->first();
-                        $tahunAjaranMatkulId = $cpmkMatKul->tahunAjaranMatkul->id ?? null;
-                        $totalBobot = \App\Models\Bobot::where('cpmkId', $cpmk->id)
-                            ->whereHas('tahunAjaranMatkul', function($q) use ($tahunAjaranMatkulId) {
-                                $q->where('id', $tahunAjaranMatkulId);
-                            })
-                            ->sum('bobot');
-                        $nilaiNormal = ($totalBobot > 0) ? round(($avg / $totalBobot) * 100, 2) : 0;
-                        $label = $cpmk->kodeCpmk; // hanya kode CPMK
-                        $cpmk_data[] = [
-                            'label' => $label,
-                            'nilai' => $nilaiNormal
-                        ];
+                    // Ambil nilai per komponen untuk CPMK ini melalui bobot
+                    $nilaiPerKomponen = \App\Models\Nilai::where('mahasiswaId', $mahasiswaId)
+                        ->where('cpmkId', $cpmk->id)
+                        ->with('bobot.komponen')
+                        ->get()
+                        ->groupBy('bobot.komponenId')
+                        ->map(function($nilaiGroup) {
+                            return $nilaiGroup->avg('nilai');
+                        });
+
+                    // Ambil kode mata kuliah dari relasi
+                    $cpmkMatKul = $cpmk->cpmkMatKul->first();
+                    $kodeMataKuliah = $cpmkMatKul->tahunAjaranMatkul->mataKuliah->kodeMatkul ?? '';
+                    $label = $cpmk->kodeCpmk . ' - ' . $kodeMataKuliah;
+                    
+                    // Jika ada nilai, gunakan nilai tersebut. Jika tidak, gunakan 0
+                    if ($nilaiPerKomponen->count() > 0) {
+                        $totalNilai = $nilaiPerKomponen->sum();
+                    } else {
+                        // Jika tidak ada nilai, buat dummy dengan nilai 0
+                        $nilaiPerKomponen = collect([
+                            1 => 0, // Kuis
+                            2 => 0, // UAS
+                            3 => 0, // UTS
+                            4 => 0, // TB
+                            5 => 0, // Tugas
+                        ]);
+                        $totalNilai = 0;
                     }
+                    
+                    $cpmk_data[] = [
+                        'label' => $label,
+                        'komponen_nilai' => $nilaiPerKomponen->toArray(),
+                        'total_nilai' => $totalNilai
+                    ];
                 }
-                $top = collect($cpmk_data)->sortByDesc('nilai')->take(5)->values();
+                $top = collect($cpmk_data)->sortByDesc('total_nilai')->take(5)->values();
                 if ($top->count() > 0) {
                     $cpl_cpmk_data[] = [
                         'cpl_label' => $cpl->kodeCpl,
-                        'cpmk_labels' => $top->pluck('label')->all(),
-                        'cpmk_nilai' => $top->pluck('nilai')->all(),
+                        'cpmk_data' => $top->toArray(),
                     ];
                     $realCplLabels[] = $cpl->kodeCpl;
                 }
             }
-        }
-        // Tambahkan dummy agar selalu 11 CPL
-        $totalCpl = count($cpl_cpmk_data);
-        for ($i = $totalCpl + 1; $i <= 11; $i++) {
-            $cplLabel = 'CPL-' . str_pad($i, 2, '0', STR_PAD_LEFT);
-            // Pastikan tidak duplikat label CPL
-            if (in_array($cplLabel, $realCplLabels)) continue;
-            $cpmk_labels = [];
-            $cpmk_nilai = [];
-            for ($j = 1; $j <= 4; $j++) {
-                $cpmkLabel = 'CPMK-' . str_pad($j, 2, '0', STR_PAD_LEFT); // hanya kode CPMK
-                $cpmk_labels[] = $cpmkLabel;
-                $cpmk_nilai[] = rand(40, 100);
-            }
-            $cpl_cpmk_data[] = [
-                'cpl_label' => $cplLabel,
-                'cpmk_labels' => $cpmk_labels,
-                'cpmk_nilai' => $cpmk_nilai,
-            ];
         }
 
         return view('mahasiswa.dashboard', compact('user', 'cpl_cpmk_data'));

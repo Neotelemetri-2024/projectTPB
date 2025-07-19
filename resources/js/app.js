@@ -274,10 +274,245 @@ function renderAllCharts() {
     });
 }
 
+function renderCplDistribusiBarChart() {
+    const cplCpmkData = window.cplCpmkData || [];
+    const chartElement = document.getElementById('cplDistribusiBarChart');
+    if (!chartElement || cplCpmkData.length === 0) return;
+
+    // Siapkan data: label = CPL, stack = CPMK
+    const cplLabels = cplCpmkData.map(cpl => cpl.cpl_label);
+    // Kumpulkan semua label CPMK unik dari seluruh CPL
+    const allCpmkLabels = Array.from(new Set(cplCpmkData.flatMap(cpl => cpl.cpmk_data.map(cpmk => cpmk.label))));
+    // Siapkan dataset: satu dataset per CPMK, data per CPL (proporsi nilai CPMK terhadap nilai CPL, total bar CPL = nilai_cpl)
+    const datasets = allCpmkLabels.map((cpmkLabel, idx) => {
+        const data = cplCpmkData.map(cpl => {
+            const cpmk = cpl.cpmk_data.find(c => c.label === cpmkLabel);
+            // Proporsi nilai CPMK terhadap total nilai CPL
+            if (cpmk && cpl.total_nilai_cpl > 0) {
+                return (cpmk.total_nilai / cpl.total_nilai_cpl) * cpl.nilai_cpl;
+            }
+            return 0;
+        });
+        const colors = [
+            'rgba(239, 68, 68, 0.8)', // Red
+            'rgba(59, 130, 246, 0.8)', // Blue
+            'rgba(245, 158, 11, 0.8)', // Amber
+            'rgba(16, 185, 129, 0.8)', // Green
+            'rgba(139, 92, 246, 0.8)', // Purple
+            'rgba(251, 191, 36, 0.8)', // Yellow
+            'rgba(34, 197, 94, 0.8)', // Emerald
+            'rgba(236, 72, 153, 0.8)', // Pink
+            'rgba(14, 165, 233, 0.8)', // Sky
+            'rgba(168, 85, 247, 0.8)', // Violet
+            'rgba(251, 113, 133, 0.8)' // Rose
+        ];
+        return {
+            label: cpmkLabel,
+            data: data,
+            backgroundColor: colors[idx % colors.length],
+            borderColor: 'transparent',
+            borderWidth: 0,
+            stack: 'Stack 0',
+            order: idx
+        };
+    });
+    // Sumbu Y tetap satuan 0-100, tooltip tampilkan satuan (tanpa %)
+
+    if (window.cplDistribusiChartInstance) {
+        window.cplDistribusiChartInstance.destroy();
+    }
+    window.cplDistribusiChartInstance = new Chart(chartElement, {
+        type: 'bar',
+        data: {
+            labels: cplLabels,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Distribusi Nilai CPL (Stack Bar)',
+                    font: { size: 15, weight: '600', family: 'Inter, system-ui, -apple-system, sans-serif' },
+                    color: '#374151',
+                    padding: { top: 10, bottom: 10 }
+                },
+                legend: {
+                    display: false // Sembunyikan legend
+                },
+                tooltip: {
+                    bodyFont: { size: 12, family: 'Inter, system-ui, -apple-system, sans-serif' },
+                    titleFont: { size: 12, family: 'Inter, system-ui, -apple-system, sans-serif' },
+                    backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                    titleColor: '#F9FAFB',
+                    bodyColor: '#F9FAFB',
+                    borderColor: '#374151',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.parsed.y}`;
+                        }
+                    }
+                }
+            },
+            layout: {
+                padding: { left: 10, right: 10, top: 10, bottom: 10 }
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                    title: {
+                        display: true,
+                        text: 'CPL',
+                        font: { size: 13, weight: '600', family: 'Inter, system-ui, -apple-system, sans-serif' },
+                        color: '#374151',
+                        padding: { top: 6 }
+                    },
+                    ticks: {
+                        font: { size: 11, family: 'Inter, system-ui, -apple-system, sans-serif' },
+                        color: '#6B7280',
+                        maxRotation: 0,
+                        minRotation: 0,
+                        padding: 6
+                    },
+                    grid: { display: false }
+                },
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Nilai',
+                        font: { size: 13, weight: '600', family: 'Inter, system-ui, -apple-system, sans-serif' },
+                        color: '#374151',
+                        padding: { bottom: 6 }
+                    },
+                    ticks: {
+                        font: { size: 11, family: 'Inter, system-ui, -apple-system, sans-serif' },
+                        color: '#6B7280',
+                        padding: 6,
+                        stepSize: 10
+                    },
+                    grid: { color: 'rgba(107, 114, 128, 0.2)', drawBorder: false, lineWidth: 1 }
+                }
+            },
+            elements: {
+                bar: {
+                    borderRadius: 0,
+                    borderSkipped: false
+                }
+            },
+            animation: {
+                duration: 1000,
+                easing: 'easeInOutQuart'
+            }
+        }
+    });
+}
+
+function renderCplRadarChartDistribusi() {
+    const cplCpmkData = window.cplCpmkData || [];
+    const chartElement = document.getElementById('cplRadarChartDistribusi');
+    if (!chartElement || cplCpmkData.length === 0) return;
+
+    const labels = cplCpmkData.map(cpl => cpl.cpl_label);
+    const data = cplCpmkData.map(cpl => cpl.nilai_cpl);
+
+    if (window.cplRadarDistribusiChartInstance) {
+        window.cplRadarDistribusiChartInstance.destroy();
+    }
+    window.cplRadarDistribusiChartInstance = new Chart(chartElement, {
+        type: 'radar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Nilai CPL',
+                data: data,
+                fill: true,
+                backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                borderColor: '#2563eb',
+                borderWidth: 2,
+                pointBackgroundColor: '#2563eb',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: '#2563eb',
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Radar Nilai CPL',
+                    font: { size: 15, weight: '600', family: 'Inter, system-ui, -apple-system, sans-serif' },
+                    color: '#374151',
+                    padding: { top: 10, bottom: 10 }
+                },
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    bodyFont: { size: 12, family: 'Inter, system-ui, -apple-system, sans-serif' },
+                    titleFont: { size: 12, family: 'Inter, system-ui, -apple-system, sans-serif' },
+                    backgroundColor: 'rgba(17, 24, 39, 0.95)',
+                    titleColor: '#F9FAFB',
+                    bodyColor: '#F9FAFB',
+                    borderColor: '#374151',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.chart.data.labels[context.dataIndex]}: ${context.parsed.r}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                r: {
+                    angleLines: { display: true },
+                    suggestedMin: 0,
+                    suggestedMax: 100,
+                    pointLabels: {
+                        display: true,
+                        font: { size: 12, family: 'Inter, system-ui, -apple-system, sans-serif' },
+                        color: '#374151'
+                    },
+                    ticks: {
+                        stepSize: 20,
+                        font: { size: 11, family: 'Inter, system-ui, -apple-system, sans-serif' },
+                        color: '#6B7280',
+                        showLabelBackdrop: false
+                    }
+                }
+            },
+            elements: {
+                line: {
+                    borderWidth: 2.5
+                }
+            },
+            animation: {
+                duration: 1000,
+                easing: 'easeInOutQuart'
+            }
+        }
+    });
+}
+
+// Panggil fungsi renderCplDistribusiBarChart di DOMContentLoaded dan resize
 document.addEventListener('DOMContentLoaded', function () {
     renderAllCharts();
+    renderCplDistribusiBarChart();
+    renderCplRadarChartDistribusi();
 });
 window.addEventListener('resize', function () {
     renderAllCharts();
+    renderCplDistribusiBarChart();
+    renderCplRadarChartDistribusi();
 });
 

@@ -91,6 +91,21 @@
         </div>
     </div>
 
+    <!-- Distribusi Nilai CPL (Stack Bar Chart) + Radar Chart -->
+    @if(count($cpl_cpmk_data) > 0)
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 mb-8">
+        <h3 class="text-base md:text-lg font-semibold text-gray-900 mb-3 md:mb-4">Distribusi Nilai CPL</h3>
+        <div class="w-full flex flex-col flex-1 gap-6">
+            <div class="flex-1 flex items-center justify-center">
+                <canvas id="cplDistribusiBarChart" class="w-full" style="max-width:100%; min-height:380px; height:380px;"></canvas>
+            </div>
+            <div class="flex-1 flex items-center justify-center">
+                <canvas id="cplRadarChartDistribusi" class="w-full" style="max-width:100%; min-height:380px; height:380px;"></canvas>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Grafik Nilai Per CPL (Bar Chart per CPL) -->
     @php
         $chartCount = count($cpl_cpmk_data);

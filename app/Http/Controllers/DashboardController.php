@@ -67,6 +67,8 @@ class DashboardController extends Controller
             foreach ($cpls as $cpl) {
                 $cpmks = $cpl->cpmk;
                 $cpmk_data = [];
+                $totalBobotCpl = 0;
+                $totalNilaiCpl = 0;
                 foreach ($cpmks as $cpmk) {
                     // Ambil nilai per komponen untuk CPMK ini melalui bobot
                     $nilaiPerKomponen = \App\Models\Nilai::where('mahasiswaId', $mahasiswaId)
@@ -78,40 +80,39 @@ class DashboardController extends Controller
                             return $nilaiGroup->avg('nilai');
                         });
 
-                    // Ambil kode mata kuliah dari relasi
                     $cpmkMatKul = $cpmk->cpmkMatKul->first();
                     $kodeMataKuliah = $cpmkMatKul->tahunAjaranMatkul->mataKuliah->kodeMatkul ?? '';
                     $label = $cpmk->kodeCpmk . ' - ' . $kodeMataKuliah;
-                    
-                    // Jika ada nilai, gunakan nilai tersebut. Jika tidak, gunakan 0
-                    if ($nilaiPerKomponen->count() > 0) {
-                        $totalNilai = $nilaiPerKomponen->sum();
-                    } else {
-                        // Jika tidak ada nilai, buat dummy dengan nilai 0
-                        $nilaiPerKomponen = collect([
-                            1 => 0, // Kuis
-                            2 => 0, // UAS
-                            3 => 0, // UTS
-                            4 => 0, // TB
-                            5 => 0, // Tugas
-                        ]);
-                        $totalNilai = 0;
-                    }
-                    
+
+                    $totalNilai = $nilaiPerKomponen->sum();
+                    $tahunAjaranMatkulId = $cpmkMatKul->tahunAjaranMatkul->id ?? null;
+                    $totalBobot = \App\Models\Bobot::where('cpmkId', $cpmk->id)
+                        ->whereHas('tahunAjaranMatkul', function($q) use ($tahunAjaranMatkulId) {
+                            $q->where('id', $tahunAjaranMatkulId);
+                        })
+                        ->sum('bobot');
+                    $nilaiNormal = ($totalBobot > 0) ? round(($totalNilai / $totalBobot) * 100, 2) : 0;
+
                     $cpmk_data[] = [
                         'label' => $label,
                         'komponen_nilai' => $nilaiPerKomponen->toArray(),
-                        'total_nilai' => $totalNilai
+                        'total_nilai' => $totalNilai,
+                        'total_bobot' => $totalBobot,
+                        'nilai_normal' => $nilaiNormal
                     ];
+                    $totalBobotCpl += $totalBobot;
+                    $totalNilaiCpl += $totalNilai;
                 }
-                $top = collect($cpmk_data)->sortByDesc('total_nilai')->take(5)->values();
-                if ($top->count() > 0) {
-                    $cpl_cpmk_data[] = [
-                        'cpl_label' => $cpl->kodeCpl,
-                        'cpmk_data' => $top->toArray(),
-                    ];
-                    $realCplLabels[] = $cpl->kodeCpl;
-                }
+                // Hitung nilai CPL (maksimal 100)
+                $nilai_cpl = ($totalBobotCpl > 0) ? round(($totalNilaiCpl / $totalBobotCpl) * 100, 2) : 0;
+                $cpl_cpmk_data[] = [
+                    'cpl_label' => $cpl->kodeCpl,
+                    'cpmk_data' => $cpmk_data,
+                    'nilai_cpl' => $nilai_cpl,
+                    'total_bobot_cpl' => $totalBobotCpl,
+                    'total_nilai_cpl' => $totalNilaiCpl
+                ];
+                $realCplLabels[] = $cpl->kodeCpl;
             }
         }
 

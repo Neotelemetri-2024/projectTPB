@@ -8,6 +8,7 @@
         <link href="/assets/images/unand.png" rel="shortcut icon" type="image/vnd.microsoft.icon">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
         <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.css' rel='stylesheet'>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
         <!-- Di bagian head layout -->
         <meta name="csrf-token" content="{{ csrf_token() }}">

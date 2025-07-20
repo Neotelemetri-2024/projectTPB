@@ -6,7 +6,7 @@
     <div class="mb-8">
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900">Dashboard Administrator</h1>
+                <h1 class="text-3xl font-bold text-gray-900">Dashboard Pimpinan</h1>
                 <p class="mt-2 text-gray-600">Selamat datang, {{ $user->name }}!</p>
             </div>
             
@@ -26,7 +26,7 @@
         </div>
     </div>
 
-    <!-- Welcome Card --
+    <!-- Welcome Card -->
 
     <!-- Statistics Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -316,25 +316,25 @@
     <div class="bg-white rounded-lg shadow p-6">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Aksi Cepat</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <a href="{{ route('admin.mahasiswa.create') }}" class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
+            <a href="{{ route('admin.mahasiswa.index') }}" class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
                 <svg class="h-6 w-6 text-blue-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"></path>
                 </svg>
-                <span class="text-blue-700 font-medium">Tambah Mahasiswa</span>
+                <span class="text-blue-700 font-medium">Lihat Mahasiswa</span>
             </a>
             
             <a href="{{ route('admin.mata-kuliah.index') }}" class="flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
                 <svg class="h-6 w-6 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                 </svg>
-                <span class="text-green-700 font-medium">Kelola Mata Kuliah</span>
+                <span class="text-green-700 font-medium">Lihat Mata Kuliah</span>
             </a>
             
             <a href="{{ route('admin.tahun-ajaran.index') }}" class="flex items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
                 <svg class="h-6 w-6 text-purple-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                 </svg>
-                <span class="text-purple-700 font-medium">Buat Tahun Ajaran</span>
+                <span class="text-purple-700 font-medium">Lihat Tahun Ajaran</span>
             </a>
             
             <a href="{{ route('admin.cpl.index') }}" class="flex items-center p-4 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors">
@@ -613,4 +613,4 @@ function filterDashboard() {
     window.location.href = url.toString();
 }
 </script>
-@endsection
+@endsection 

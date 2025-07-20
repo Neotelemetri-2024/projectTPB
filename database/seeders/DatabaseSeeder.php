@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
 
         // Seed admin users
         $this->call(AdminUserSeeder::class);
+        $this->call(PimpinanSeeder::class);
         $this->call(MahasiswaSeeder::class);
         $this->call(DosenSeeder::class);
         $this->call(TahunAjaranSeeder::class);

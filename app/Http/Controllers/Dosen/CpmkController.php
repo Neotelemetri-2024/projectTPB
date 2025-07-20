@@ -320,7 +320,7 @@ class CpmkController extends Controller
         $validator = Validator::make($request->all(), [
             'cpl_ids' => 'required|array',
             'cpl_ids.*' => 'exists:cpl,id',
-            'kodeCpmk' => 'required|string|max:20',
+            'kodeCpmk' => 'required|string|max:20', // removed unique
             'deskripsi' => 'required|string|max:1000',
         ], [
             'cpl_ids.required' => 'Minimal satu CPL harus dipilih.',
@@ -335,6 +335,21 @@ class CpmkController extends Controller
         if ($validator->fails()) {
             return redirect()->back()
                 ->withErrors($validator)
+                ->withInput();
+        }
+
+        // Custom validation: kodeCpmk must be unique per mata kuliah (across all classes/years for that mata kuliah)
+        $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
+            ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
+            ->pluck('id');
+        $exists = \App\Models\Cpmk::where('kodeCpmk', $request->kodeCpmk)
+            ->whereHas('cpmkMatKul', function($q) use ($allTahunAjaranMatkulIds) {
+                $q->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
+            })
+            ->exists();
+        if ($exists) {
+            return redirect()->back()
+                ->withErrors(['kodeCpmk' => 'Kode CPMK sudah digunakan pada mata kuliah ini.'])
                 ->withInput();
         }
 
@@ -492,7 +507,7 @@ class CpmkController extends Controller
         $validator = Validator::make($request->all(), [
             'cpl_ids' => 'required|array',
             'cpl_ids.*' => 'exists:cpl,id',
-            'kodeCpmk' => 'required|string|max:20',
+            'kodeCpmk' => 'required|string|max:20', // removed unique
             'deskripsi' => 'required|string|max:1000',
         ], [
             'cpl_ids.required' => 'Minimal satu CPL harus dipilih.',
@@ -507,6 +522,22 @@ class CpmkController extends Controller
         if ($validator->fails()) {
             return redirect()->back()
                 ->withErrors($validator)
+                ->withInput();
+        }
+
+        // Custom validation: kodeCpmk must be unique per mata kuliah (across all classes/years for that mata kuliah)
+        $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
+            ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
+            ->pluck('id');
+        $exists = \App\Models\Cpmk::where('kodeCpmk', $request->kodeCpmk)
+            ->where('id', '!=', $id)
+            ->whereHas('cpmkMatKul', function($q) use ($allTahunAjaranMatkulIds) {
+                $q->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
+            })
+            ->exists();
+        if ($exists) {
+            return redirect()->back()
+                ->withErrors(['kodeCpmk' => 'Kode CPMK sudah digunakan pada mata kuliah ini.'])
                 ->withInput();
         }
 

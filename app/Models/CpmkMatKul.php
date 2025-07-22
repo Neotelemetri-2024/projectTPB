@@ -13,7 +13,8 @@ class CpmkMatKul extends Model
 
     protected $fillable = [
         'tahunAjaranMatkulId',
-        'cpmkId'
+        'cpmkId',
+        'bobotCpmk',
     ];
 
     public function tahunAjaranMatkul()

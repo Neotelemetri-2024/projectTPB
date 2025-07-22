@@ -328,6 +328,15 @@ class NilaiController extends Controller
             ->get()
             ->keyBy('mahasiswaId');
 
+        // Hitung total bobot CPMK dan total bobot setiap komponen penilaian
+        $totalBobotCpmk = 0;
+        $totalBobotKomponen = [];
+        $allBobot = Bobot::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)->get();
+        foreach ($allBobot as $bobot) {
+            $totalBobotCpmk += $bobot->bobotCpmk ?? 0;
+            $totalBobotKomponen[$bobot->komponenId] = ($totalBobotKomponen[$bobot->komponenId] ?? 0) + $bobot->bobot;
+        }
+
         return view('dosen.nilai.show', compact(
             'mataKuliahDiampu',
             'mataKuliahClasses',
@@ -344,7 +353,9 @@ class NilaiController extends Controller
             'activeTab',
             'sortBy',
             'sortDirection',
-            'search'
+            'search',
+            'totalBobotCpmk',
+            'totalBobotKomponen',
         ));
     }
 

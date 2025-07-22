@@ -9,6 +9,9 @@ use App\Models\TahunAjaranMatkul;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use App\Models\CpmkMatKul;
+use App\Models\Bobot;
+use App\Models\TahunAjaran;
 
 class CpmkController extends Controller
 {
@@ -102,19 +105,23 @@ class CpmkController extends Controller
 
             // Get latest update from CPMK table (directly from cpmk table, not cpmk_mat_kul)
             $cpmkIds = $allCpmkMatKul->pluck('cpmkId')->unique();
-            $latestCpmkUpdate = \App\Models\Cpmk::whereIn('id', $cpmkIds)->max('updated_at');
+            $latestCpmkUpdate = Cpmk::whereIn('id', $cpmkIds)->max('updated_at');
+
+            $latestCpmkMatKulUpdate = CpmkMatKul::whereIn('tahunAjaranMatkulId', $groupIds)->max('updated_at');
 
             // Get latest update from Bobot table
-            $latestBobotUpdate = \App\Models\Bobot::whereIn('tahunAjaranMatkulId', $groupIds)->max('updated_at');
+            $latestBobotUpdate = Bobot::whereIn('tahunAjaranMatkulId', $groupIds)->max('updated_at');
 
             // Compare and get the latest between CPMK and Bobot updates
             $latestUpdate = null;
-            if ($latestCpmkUpdate && $latestBobotUpdate) {
-                $latestUpdate = max($latestCpmkUpdate, $latestBobotUpdate);
+            if ($latestCpmkUpdate && $latestBobotUpdate && $latestCpmkMatKulUpdate) {
+                $latestUpdate = max($latestCpmkUpdate, $latestBobotUpdate, $latestCpmkMatKulUpdate);
             } elseif ($latestCpmkUpdate) {
                 $latestUpdate = $latestCpmkUpdate;
             } elseif ($latestBobotUpdate) {
                 $latestUpdate = $latestBobotUpdate;
+            } elseif ($latestCpmkMatKulUpdate) {
+                $latestUpdate = $latestCpmkMatKulUpdate;
             }
 
             $representative->latestCpmkUpdate = $latestUpdate;
@@ -136,7 +143,7 @@ class CpmkController extends Controller
         })->values();
 
         // Get data for filters
-        $tahunAjaranList = \App\Models\TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->get();
+        $tahunAjaranList = TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->get();
         $jenisList = ['wajib', 'pilihan'];
 
         return view('dosen.cpmk.index', compact(
@@ -175,7 +182,8 @@ class CpmkController extends Controller
         // Get CPMK related to this mata kuliah through CpmkMatKul from all classes
         $query = Cpmk::whereHas('cpmkMatKul', function ($q) use ($allTahunAjaranMatkulIds) {
             $q->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
-        })->with(['cpl', 'cpmkMatKul']);
+        })
+        ->with(['cpl', 'cpmkMatKul']);
 
         // Apply search filter
         if ($request->filled('search')) {
@@ -211,24 +219,24 @@ class CpmkController extends Controller
 
             $cpmk->setRelation('bobot', $bobotData->values());
 
-            // Calculate last modified time from CPMK and Bobot tables
+            // Calculate last modified time from CPMK, Bobot, and CpmkMatKul tables
             $cpmkLastUpdate = $cpmk->updated_at;
-            $bobotLastUpdate = \App\Models\Bobot::where('cpmkId', $cpmk->id)
+            $bobotLastUpdate = Bobot::where('cpmkId', $cpmk->id)
                 ->whereHas('tahunAjaranMatkul', function($q) use ($allTahunAjaranMatkulIds) {
                     $q->whereIn('id', $allTahunAjaranMatkulIds);
                 })
                 ->max('updated_at');
+            $cpmkMatKulLastUpdate = CpmkMatKul::where('cpmkId', $cpmk->id)
+                ->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds)
+                ->max('updated_at');
 
-            // Get the latest between CPMK and Bobot updates
+            // Get the latest between CPMK, Bobot, and CpmkMatKul updates
             $lastModified = null;
-            if ($cpmkLastUpdate && $bobotLastUpdate) {
-                $lastModified = max($cpmkLastUpdate, $bobotLastUpdate);
-            } elseif ($cpmkLastUpdate) {
-                $lastModified = $cpmkLastUpdate;
-            } elseif ($bobotLastUpdate) {
-                $lastModified = $bobotLastUpdate;
+            foreach ([$cpmkLastUpdate, $bobotLastUpdate, $cpmkMatKulLastUpdate] as $dt) {
+                if ($dt && ($lastModified === null || $dt > $lastModified)) {
+                    $lastModified = $dt;
+                }
             }
-
             $cpmk->lastModified = $lastModified;
         }
 
@@ -735,5 +743,80 @@ class CpmkController extends Controller
             ->values(); // Reset array keys
 
         return view('dosen.cpmk.detail', compact('cpmk', 'tahunAjaranMatkul', 'bobotKomponen'));
+    }
+
+    /**
+     * Show the form for managing CPMK weights (bobotCpmk).
+     */
+    public function bobotCpmkManagement($tahunAjaranMatkulId)
+    {
+        $user = Auth::user();
+        $dosen = $user->dosen;
+
+        if (!$dosen) {
+            return redirect()->back()->with('error', 'Data dosen tidak ditemukan.');
+        }
+
+        // Verify that this dosen teaches this mata kuliah
+        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('dosenPengampu', function ($query) use ($dosen) {
+            $query->where('dosenId', $dosen->id);
+        })->with(['mataKuliah', 'tahunAjaran'])->findOrFail($tahunAjaranMatkulId);
+
+        // Get all TahunAjaranMatkul records for the same mata kuliah and tahun ajaran
+        $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
+            ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
+            ->whereHas('dosenPengampu', function ($query) use ($dosen) {
+                $query->where('dosenId', $dosen->id);
+            })
+            ->pluck('id');
+
+        // Ambil semua CPMK yang terkait dengan mata kuliah ini
+        $cpmkList = Cpmk::whereHas('cpmkMatKul', function ($q) use ($allTahunAjaranMatkulIds) {
+            $q->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
+        })
+        ->with(['cpmkMatKul' => function($q) use ($allTahunAjaranMatkulIds) {
+            $q->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
+        }])
+        ->orderBy('kodeCpmk')
+        ->get();
+
+        return view('dosen.cpmk.bobot', compact('cpmkList', 'tahunAjaranMatkul'));
+    }
+
+    /**
+     * Save all CPMK weights (bobotCpmk) in one go.
+     */
+    public function bobotCpmkSave(Request $request, $tahunAjaranMatkulId)
+    {
+        $user = Auth::user();
+        $dosen = $user->dosen;
+
+        if (!$dosen) {
+            return redirect()->back()->with('error', 'Data dosen tidak ditemukan.');
+        }
+
+        $bobotCpmk = $request->input('bobotCpmk', []);
+        $total = 0;
+        foreach ($bobotCpmk as $val) {
+            $total += floatval($val);
+        }
+        if ($total > 100) {
+            return redirect()->back()->with('error', 'Total bobot CPMK tidak boleh lebih dari 100%. Saat ini: ' . number_format($total, 2) . '%');
+        }
+
+        // Get all TahunAjaranMatkul records for the same mata kuliah and tahun ajaran
+        $tahunAjaranMatkul = TahunAjaranMatkul::findOrFail($tahunAjaranMatkulId);
+        $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
+            ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
+            ->pluck('id');
+
+        // Update bobotCpmk di semua relasi cpmk_mat_kul yang terkait
+        foreach ($bobotCpmk as $cpmkId => $bobot) {
+            \App\Models\CpmkMatKul::whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds)
+                ->where('cpmkId', $cpmkId)
+                ->update(['bobotCpmk' => $bobot]);
+        }
+
+        return redirect()->route('dosen.cpmk.show', $tahunAjaranMatkulId)->with('success', 'Bobot CPMK berhasil disimpan.');
     }
 }

@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('cplId')->constrained('cpl')->onDelete('cascade');
             $table->foreignId('cpmkId')->constrained('cpmk')->onDelete('cascade');
+            $table->float('bobotCpmk')->nullable();
             $table->timestamps();
 
             // Add unique constraint to prevent duplicate relationships

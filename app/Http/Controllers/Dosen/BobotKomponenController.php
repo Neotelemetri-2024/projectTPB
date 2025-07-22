@@ -141,16 +141,28 @@ class BobotKomponenController extends Controller
             'bobot.*' => 'nullable|numeric|min:0|max:100',
         ]);
 
-        // Calculate total new bobot
-        $newTotalBobot = array_sum(array_filter($request->bobot, function($value) {
-            return $value > 0;
-        }));
-
-        // Only check if total exceeds 100%, allow saving even if less than 100%
-        if ($newTotalBobot > 100) {
+        // Validasi total bobot per komponen
+        $komponenTotals = [];
+        foreach ($request->bobot as $combination => $bobotValue) {
+            if ($bobotValue > 0) {
+                // Format: cpmkId_komponenId
+                list($cpmkId, $komponenId) = explode('_', $combination);
+                if (!isset($komponenTotals[$komponenId])) {
+                    $komponenTotals[$komponenId] = 0;
+                }
+                $komponenTotals[$komponenId] += $bobotValue;
+            }
+        }
+        $invalidKomponen = [];
+        foreach ($komponenTotals as $komponenId => $total) {
+            if ($total > 100) {
+                $invalidKomponen[] = $komponenId;
+            }
+        }
+        if (count($invalidKomponen) > 0) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Total bobot tidak boleh melebihi 100%. Total yang diinput: ' . $newTotalBobot . '%');
+                ->with('error', 'Total bobot pada salah satu komponen melebihi 100%. Mohon periksa kembali.');
         }
 
         try {

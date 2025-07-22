@@ -112,7 +112,7 @@
                             {{ \Carbon\Carbon::parse($lastNilaiUpdate)->format('d/m/Y H:i') }}
                         </p>
                     @else
-                        <p class="text-sm font-bold text-gray-400">Belum ada nilai</p>
+                        <p class="text-sm font-bold text-gray-400">-</p>
                     @endif
                 </div>
             </div>
@@ -602,7 +602,7 @@
                                                            min="0"
                                                            max="100"
                                                            step="0.01"
-                                                           class="individual-input w-20 px-2 py-1 border-0 bg-transparent text-sm text-center focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-gray-300 focus:bg-white focus:rounded"
+                                                           class="individual-input w-20 px-2 py-1 border-0 bg-transparent text-sm text-center focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-gray-300 focus:bg-white focus:rounded" disabled
                                                            placeholder="0"
                                                            data-original-value="{{ $nilaiKomponen !== null ? number_format($nilaiKomponen, 2, '.', '') : '' }}">
                                                 </td>
@@ -698,6 +698,21 @@
     cancelText="Tetap di Halaman"
 />
 
+@if($isBulkMode)
+<x-confirm-modal
+    id="confirm-bobot-warning"
+    title="Peringatan Bobot Tidak 100%"
+    message="Pastikan total bobot CPMK dan bobot setiap komponen penilaian sudah 100%. Apakah Anda yakin ingin tetap mengaktifkan input sekaligus?"
+    type="warning"
+    action="#"
+    confirmText="Tetap Lanjutkan"
+    cancelText="Batal"
+/>
+@endif
+<script>
+window.totalBobotCpmk = {{ $totalBobotCpmk ?? 0 }};
+window.totalBobotKomponen = @json($totalBobotKomponen ?? []);
+</script>
 @endsection
 
 @push('scripts')
@@ -1206,7 +1221,6 @@ document.addEventListener('DOMContentLoaded', function() {
     checkForUnsavedChanges();
 });
 </script>
-@endpush
 
 @push('styles')
 <style>

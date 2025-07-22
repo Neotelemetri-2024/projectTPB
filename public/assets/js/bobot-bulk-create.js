@@ -17,16 +17,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const noKomponenMessage = document.getElementById('no-komponen-message');
     const tableHeaderRow = document.getElementById('table-header-row');
     const tableBody = document.getElementById('table-body');
-    const totalDisplay = document.getElementById('total-display');
-    const statusDisplay = document.getElementById('status-display');
-    const progressBar = document.getElementById('progress-bar');
     const submitBtn = document.getElementById('submit-btn');
     const clearAllBtn = document.getElementById('clear-all');
     const clearKomponenBtn = document.getElementById('clear-komponen');
 
     // Check if essential elements exist
     if (!availableKomponenDiv || !bobotTable || !noKomponenMessage || !tableHeaderRow || !tableBody ||
-        !totalDisplay || !statusDisplay || !progressBar || !submitBtn || !clearAllBtn || !clearKomponenBtn) {
+        !submitBtn || !clearAllBtn || !clearKomponenBtn) {
         console.error('Some required DOM elements are missing!');
         return;
     }
@@ -138,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function() {
             tr.appendChild(cpmkColumn);
 
             // Add komponen columns for this CPMK
-            if (selectedKomponen.length > 0) {
+            if (selectedKomponen.length > 0 && tr.id !== 'total-bobot-row') {
                 const cpmkData = cpmkListData[index];
                 console.log('Processing CPMK at index', index, ':', cpmkData);
 
@@ -169,8 +166,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         input.className = 'w-20 px-2 py-1 border border-gray-300 rounded text-sm text-center bobot-input focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
 
                         // Add event listeners
-                        input.addEventListener('input', updateTotal);
-                        input.addEventListener('change', updateTotal);
+                        input.addEventListener('input', updateTotalBobotRowRealtime);
+                        input.addEventListener('change', updateTotalBobotRowRealtime);
 
                         td.appendChild(input);
                     }
@@ -180,7 +177,78 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
+        // Update baris total bobot per komponen setelah render
+        updateTotalBobotRowRealtime();
+
         updateTotal();
+    }
+
+    // Fungsi untuk update baris total bobot per komponen secara realtime
+    function updateTotalBobotRowRealtime() {
+        const totalRow = document.getElementById('total-bobot-row');
+        let allValid = true;
+        // Hitung total per komponen dan simpan ke objek
+        const komponenTotals = {};
+        selectedKomponen.forEach(function(komponen) {
+            komponenTotals[komponen.id] = 0;
+            document.querySelectorAll('input[type="number"]').forEach(input => {
+                if (input.name && input.name.endsWith('_' + komponen.id + ']')) {
+                    komponenTotals[komponen.id] += parseFloat(input.value) || 0;
+                }
+            });
+        });
+        if (totalRow) {
+            // Hapus semua kolom kecuali kolom label pertama
+            while (totalRow.children.length > 1) {
+                totalRow.removeChild(totalRow.lastChild);
+            }
+            // Render total per komponen
+            selectedKomponen.forEach(function(komponen) {
+                const total = komponenTotals[komponen.id] || 0;
+                let color = 'text-blue-700';
+                if (total > 100) {
+                    color = 'text-red-600 font-bold';
+                    allValid = false;
+                } else if (total === 100) {
+                    color = 'text-green-600 font-bold';
+                }
+                const td = document.createElement('td');
+                td.className = `px-2 py-3 text-center border-r border-gray-200 ${color}`;
+                td.textContent = total.toFixed(1) + '%';
+                totalRow.appendChild(td);
+            });
+        }
+        // Tambahkan/hapus icon warning di input field jika total > 100
+        selectedKomponen.forEach(function(komponen) {
+            const total = komponenTotals[komponen.id] || 0;
+            document.querySelectorAll('input[type="number"]').forEach(input => {
+                if (input.name && input.name.endsWith('_' + komponen.id + ']')) {
+                    // Cari parent relative
+                    let parent = input.parentElement;
+                    if (!parent.classList.contains('relative')) {
+                        parent.classList.add('relative');
+                    }
+                    // Hapus icon warning lama jika ada
+                    const oldWarn = parent.querySelector('.bobot-warning-icon');
+                    if (oldWarn) oldWarn.remove();
+                    if (total > 100) {
+                        // Tambahkan icon warning
+                        const warn = document.createElement('span');
+                        warn.className = 'bobot-warning-icon absolute top-1 right-1';
+                        warn.innerHTML = '<svg class="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 16.084A2 2 0 0116.342 18H3.658A2 2 0 011.99 16.084l6.342-11.084a2 2 0 013.336 0l6.342 11.084zM11 14a1 1 0 10-2 0 1 1 0 002 0zm-1-2a1 1 0 01-1-1V9a1 1 0 112 0v2a1 1 0 01-1 1z" clip-rule="evenodd"/></svg>';
+                        parent.appendChild(warn);
+                    }
+                }
+            });
+        });
+        // Update tombol submit
+        if (allValid && selectedKomponen.length > 0) {
+            submitBtn.disabled = false;
+            submitBtn.className = 'w-full sm:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500';
+        } else {
+            submitBtn.disabled = true;
+            submitBtn.className = 'w-full sm:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-400 cursor-not-allowed';
+        }
     }
 
     // Quick actions
@@ -195,43 +263,44 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Update total calculation
     function updateTotal() {
-        let total = 0;
+        // Ambil semua input bobot yang aktif
+        const komponenTotals = {};
+        let komponenValid = {};
+        let komponenCount = selectedKomponen.length;
+        let allValid = true;
 
-        // Calculate total from all inputs (including disabled ones)
-        document.querySelectorAll('input[type="number"]').forEach(input => {
-            const value = parseFloat(input.value) || 0;
-            total += value;
+        // Inisialisasi total per komponen
+        selectedKomponen.forEach(komponen => {
+            komponenTotals[komponen.id] = 0;
+            komponenValid[komponen.id] = true;
         });
 
-        totalDisplay.textContent = total.toFixed(1) + '%';
+        // Hitung total per komponen (kolom)
+        document.querySelectorAll('input[type="number"]').forEach(input => {
+            if (input.name && input.name.startsWith('bobot[')) {
+                // Format: bobot[cpmkId_komponenId]
+                const match = input.name.match(/bobot\[(\d+)_([\w-]+)\]/);
+                if (match) {
+                    const komponenId = match[2];
+                    const value = parseFloat(input.value) || 0;
+                    if (komponenTotals.hasOwnProperty(komponenId)) {
+                        komponenTotals[komponenId] += value;
+                    }
+                }
+            }
+        });
 
-        // Update progress bar
-        const percentage = Math.min(total, 100);
-        progressBar.style.width = percentage + '%';
-
-        // Update status and colors
-        if (total === 100) {
-            statusDisplay.textContent = 'Sesuai (100%)';
-            statusDisplay.className = 'text-sm text-green-600';
-            progressBar.className = 'h-3 rounded-full bg-green-500 transition-all duration-300';
+        // Update tombol submit
+        if (allValid && komponenCount > 0) {
             submitBtn.disabled = false;
             submitBtn.className = 'w-full sm:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500';
-        } else if (total > 100) {
-            statusDisplay.textContent = 'Melebihi 100%';
-            statusDisplay.className = 'text-sm text-red-600';
-            progressBar.className = 'h-3 rounded-full bg-red-500 transition-all duration-300';
+        } else {
             submitBtn.disabled = true;
             submitBtn.className = 'w-full sm:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-400 cursor-not-allowed';
-        } else {
-            statusDisplay.textContent = 'Dapat disimpan';
-            statusDisplay.className = 'text-sm text-blue-600';
-            progressBar.className = 'h-3 rounded-full bg-blue-500 transition-all duration-300';
-            submitBtn.disabled = false;
-            submitBtn.className = 'w-full sm:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500';
         }
     }
 
-    // Form validation before submit (removed 100% requirement)
+    // Form validation before submit (per komponen)
     const formElement = document.querySelector('form');
     if (formElement) {
         formElement.addEventListener('submit', function(e) {
@@ -240,17 +309,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Pilih minimal satu komponen penilaian');
                 return false;
             }
-
-            let total = 0;
-            document.querySelectorAll('input[type="number"]').forEach(input => {
-                const value = parseFloat(input.value) || 0;
-                total += value;
+            // Validasi per komponen
+            const komponenTotals = {};
+            selectedKomponen.forEach(komponen => {
+                komponenTotals[komponen.id] = 0;
             });
-
-            // Only check if total exceeds 100%, allow saving even if less than 100%
-            if (total > 100) {
+            document.querySelectorAll('input[type="number"]').forEach(input => {
+                if (input.name && input.name.startsWith('bobot[')) {
+                    const match = input.name.match(/bobot\[(\d+)_([\w-]+)\]/);
+                    if (match) {
+                        const komponenId = match[2];
+                        const value = parseFloat(input.value) || 0;
+                        if (komponenTotals.hasOwnProperty(komponenId)) {
+                            komponenTotals[komponenId] += value;
+                        }
+                    }
+                }
+            });
+            let allValid = true;
+            Object.keys(komponenTotals).forEach(komponenId => {
+                if (komponenTotals[komponenId] > 100) {
+                    allValid = false;
+                }
+            });
+            if (!allValid) {
                 e.preventDefault();
-                alert('Total bobot tidak boleh melebihi 100%. Saat ini: ' + total.toFixed(1) + '%');
+                alert('Total bobot pada salah satu komponen melebihi 100%. Mohon periksa kembali.');
                 return false;
             }
         });

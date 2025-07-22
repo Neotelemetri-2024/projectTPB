@@ -119,6 +119,8 @@ Route::middleware('auth')->group(function () {
         Route::put('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk/{id}', [DosenCpmkController::class, 'update'])->name('dosen.cpmk.update');
         Route::delete('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk/{id}', [DosenCpmkController::class, 'destroy'])->name('dosen.cpmk.destroy');
         Route::post('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk/bulk-action', [DosenCpmkController::class, 'bulkAction'])->name('dosen.cpmk.bulk-action');
+        Route::get('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk/bobot-cpmk', [DosenCpmkController::class, 'bobotCpmkManagement'])->name('dosen.cpmk.bobot');
+        Route::post('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk/bobot-cpmk', [DosenCpmkController::class, 'bobotCpmkSave'])->name('dosen.cpmk.bobot-save');
         // Bobot Komponen Penilaian Management untuk CPMK
         Route::get('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk/bobot-komponen/bulk/create', [BobotKomponenController::class, 'bulkCreate'])->name('dosen.bobot-komponen.bulk-create');
         Route::post('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk/bobot-komponen/bulk', [BobotKomponenController::class, 'bulkStore'])->name('dosen.bobot-komponen.bulk-store');

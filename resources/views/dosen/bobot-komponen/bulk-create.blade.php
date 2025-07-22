@@ -58,7 +58,7 @@
                         <div class="text-sm text-blue-700 mt-1">
                             <p>• Pilih komponen penilaian yang akan digunakan terlebih dahulu</p>
                             <p>• Atur bobot untuk setiap kombinasi CPMK dan Komponen penilaian</p>
-                            <p>• Total bobot maksimal 100% (tidak harus tepat 100%)</p>
+                            <p>• Total bobot maksimal 100% untuk setiap komponen penilaian (tidak harus tepat 100%)</p>
                             <p>• Bobot yang sudah memiliki nilai mahasiswa akan terkunci (tidak dapat diubah)</p>
                         </div>
                     </div>
@@ -107,25 +107,6 @@
                                 </div>
                             @endforeach
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Total Counter -->
-            <div class="mb-6 p-4 bg-gray-50 rounded-lg">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h3 class="text-lg font-medium text-gray-900">Total Bobot</h3>
-                        <p class="text-sm text-gray-600">Maksimal 100% (tidak harus tepat 100%)</p>
-                    </div>
-                    <div class="text-right">
-                        <div id="total-display" class="text-3xl font-bold text-blue-600">0.0%</div>
-                        <div id="status-display" class="text-sm text-gray-500">Belum sesuai</div>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <div class="w-full bg-gray-200 rounded-full h-3">
-                        <div id="progress-bar" class="h-3 rounded-full bg-blue-500 transition-all duration-300" style="width: 0%"></div>
                     </div>
                 </div>
             </div>
@@ -182,6 +163,11 @@
                                     <!-- Komponen columns will be added dynamically -->
                                 </tr>
                                 @endforeach
+                                <!-- ROW TOTAL BOBOT PER KOMPONEN -->
+                                <tr id="total-bobot-row" class="bg-blue-50 font-bold">
+                                    <td class="px-4 py-3 text-sm text-blue-900 border-r border-gray-200">Total</td>
+                                    <!-- Komponen total columns will be added dynamically by JS -->
+                                </tr>
                             </tbody>
                         </table>
 
@@ -234,15 +220,7 @@
 </div>
 
 <script>
-// Set data for external JavaScript - ensure CPMK data is properly formatted
-window.cpmkListData = {!! json_encode($cpmkList->map(function($cpmk) {
-    return [
-        'id' => $cpmk->id ?? null,
-        'kodeCpmk' => $cpmk->kodeCpmk ?? 'N/A',
-        'deskripsi' => $cpmk->deskripsi ?? '',
-        'cpl' => $cpmk->cpl ?? []
-    ];
-})) !!};
+window.cpmkListData = {!! json_encode($cpmkList) !!};
 window.komponenListData = {!! json_encode($komponen) !!};
 window.existingCombinationsData = {!! json_encode($existingCombinations) !!};
 window.bobotWithNilaiData = {!! json_encode($bobotWithNilai) !!};

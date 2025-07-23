@@ -102,6 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Render selected komponen tags (removed since we no longer have separate display area)
     // Components are now shown with visual state changes directly on the cards    // Render table based on selected komponen
+    let currentInputValues = {};
     function renderTable() {
         console.log('renderTable called with selectedKomponen:', selectedKomponen);
 
@@ -111,6 +112,12 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             noKomponenMessage.style.display = 'none';
         }
+
+        // Simpan semua nilai input sebelum render ulang, dari tableBody saja
+        let currentInputValues = {};
+        tableBody.querySelectorAll('input[name^="bobot["]').forEach(input => {
+            currentInputValues[input.name] = input.value;
+        });
 
         // Clear existing komponen headers (keep CPMK header)
         const cpmkHeader = tableHeaderRow.querySelector('th:first-child');
@@ -124,125 +131,212 @@ document.addEventListener('DOMContentLoaded', function() {
             th.textContent = komponen.nama;
             tableHeaderRow.appendChild(th);
         });
+        // Tambahkan header kolom Total Bobot CPMK
+        const thTotalCpmk = document.createElement('th');
+        thTotalCpmk.className = 'px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200';
+        thTotalCpmk.textContent = 'Total Bobot CPMK';
+        tableHeaderRow.appendChild(thTotalCpmk);
 
-        // Update existing table rows by adding/removing komponen columns
-        const tableRows = tableBody.querySelectorAll('tr');
+        // Bersihkan body tabel
+        tableBody.innerHTML = '';
 
-        tableRows.forEach(function(tr, index) {
-            // Remove all existing komponen columns (keep only CPMK column)
-            const cpmkColumn = tr.querySelector('td:first-child');
-            tr.innerHTML = '';
-            tr.appendChild(cpmkColumn);
+        // Render baris CPMK
+        cpmkListData.forEach(function(cpmkData, rowIndex) {
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-gray-50';
 
-            // Add komponen columns for this CPMK
-            if (selectedKomponen.length > 0 && tr.id !== 'total-bobot-row') {
-                const cpmkData = cpmkListData[index];
-                console.log('Processing CPMK at index', index, ':', cpmkData);
+            // Kolom CPMK
+            const tdCpmk = document.createElement('td');
+            tdCpmk.className = 'px-4 py-3 text-sm font-medium text-gray-900 border-r border-gray-200 bg-gray-50';
+            tdCpmk.innerHTML = `<div class="flex flex-col"><span class="font-semibold">${cpmkData.kodeCpmk ?? 'N/A'}</span><span class="text-xs text-gray-600 mt-1">${(cpmkData.deskripsi ?? '').substring(0, 60)}</span></div>`;
+            tr.appendChild(tdCpmk);
 
-                selectedKomponen.forEach(function(komponen) {
-                    const combination = cpmkData.id + '_' + komponen.id;
-                    const existingValue = existingCombinationsData[combination] || 0;
-                    const hasNilai = bobotWithNilaiData.hasOwnProperty(combination);
+            // Kolom bobot per komponen
+            let totalCpmk = 0;
+            selectedKomponen.forEach(function(komponen) {
+                const combination = cpmkData.id + '_' + komponen.id;
+                let existingValue = existingCombinationsData[combination] || 0;
+                const hasNilai = bobotWithNilaiData.hasOwnProperty(combination);
+                // Jika ada input, gunakan value input
+                const inputName = 'bobot[' + combination + ']';
+                const inputElem = document.querySelector(`input[name='${inputName}']`);
+                if (inputElem && inputElem.value !== '') {
+                    existingValue = parseFloat(inputElem.value) || 0;
+                }
+                totalCpmk += parseFloat(existingValue) || 0;
 
-                    console.log('Creating input for combination:', combination, 'existing value:', existingValue);
+                const td = document.createElement('td');
+                td.className = 'px-2 py-3 text-center border-r border-gray-200';
 
-                    const td = document.createElement('td');
-                    td.className = 'px-2 py-3 text-center border-r border-gray-200';
-
-                    if (hasNilai) {
-                        // Locked input
-                        td.innerHTML = '<div class="relative inline-block"><input type="number" step="0.1" min="0" max="100" value="' + existingValue + '" class="w-20 px-2 py-1 border border-gray-300 rounded text-sm text-center bg-gray-100" disabled><div class="absolute -top-1 -right-1"><svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z" clip-rule="evenodd"></path></svg></div></div><div class="text-xs text-red-600 mt-1">Terkunci</div>';
+                if (hasNilai) {
+                    td.innerHTML = '<div class="relative inline-block"><input type="number" step="0.1" min="0" max="100" value="' + existingValue + '" class="w-20 px-2 py-1 border border-gray-300 rounded text-sm text-center bg-gray-100" disabled><div class="absolute -top-1 -right-1"><svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z" clip-rule="evenodd"></path></svg></div></div><div class="text-xs text-red-600 mt-1">Terkunci</div>';
+                } else {
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.step = '0.1';
+                    input.min = '0';
+                    input.max = '100';
+                    input.name = inputName;
+                    if (currentInputValues[inputName] !== undefined) {
+                        input.value = currentInputValues[inputName];
                     } else {
-                        // Editable input
-                        const input = document.createElement('input');
-                        input.type = 'number';
-                        input.step = '0.1';
-                        input.min = '0';
-                        input.max = '100';
-                        input.name = 'bobot[' + combination + ']';
                         input.value = existingValue > 0 ? existingValue : '';
-                        input.setAttribute('data-original', existingValue);
-                        input.placeholder = '0.0';
-                        input.className = 'w-20 px-2 py-1 border border-gray-300 rounded text-sm text-center bobot-input focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
-
-                        // Add event listeners
-                        input.addEventListener('input', updateTotalBobotRowRealtime);
-                        input.addEventListener('change', updateTotalBobotRowRealtime);
-
-                        td.appendChild(input);
                     }
+                    input.setAttribute('data-original', existingValue);
+                    input.placeholder = '0.0';
+                    input.className = 'w-20 px-2 py-1 border border-gray-300 rounded text-sm text-center bobot-input focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
 
-                    tr.appendChild(td);
-                });
-            }
+                    // Add event listeners
+                    input.addEventListener('input', updateTotalBobotRowRealtime);
+                    input.addEventListener('change', updateTotalBobotRowRealtime);
+
+                    td.appendChild(input);
+                }
+                tr.appendChild(td);
+            });
+            // Kolom total bobot CPMK
+            const tdTotalCpmk = document.createElement('td');
+            tdTotalCpmk.className = 'px-4 py-3 text-center font-bold text-blue-700';
+            tdTotalCpmk.textContent = totalCpmk.toFixed(2);
+            tr.appendChild(tdTotalCpmk);
+
+            tableBody.appendChild(tr);
         });
 
-        // Update baris total bobot per komponen setelah render
-        updateTotalBobotRowRealtime();
-
-        updateTotal();
+        // Baris total per komponen
+        const trTotal = document.createElement('tr');
+        trTotal.className = 'bg-blue-50 font-bold';
+        const tdLabel = document.createElement('td');
+        tdLabel.className = 'px-4 py-3 text-blue-900 text-base text-center';
+        tdLabel.textContent = 'Total per Komponen';
+        trTotal.appendChild(tdLabel);
+        let totalKeseluruhan = 0;
+        selectedKomponen.forEach(function(komponen) {
+            let totalPerKomponen = 0;
+            cpmkListData.forEach(function(cpmkData) {
+                const combination = cpmkData.id + '_' + komponen.id;
+                let existingValue = existingCombinationsData[combination] || 0;
+                // Jika ada input, gunakan value input
+                const inputName = 'bobot[' + combination + ']';
+                const inputElem = document.querySelector(`input[name='${inputName}']`);
+                if (inputElem && inputElem.value !== '') {
+                    existingValue = parseFloat(inputElem.value) || 0;
+                }
+                totalPerKomponen += parseFloat(existingValue) || 0;
+            });
+            totalKeseluruhan += totalPerKomponen;
+            const td = document.createElement('td');
+            td.className = 'px-4 py-3 text-center text-blue-900 text-base';
+            td.textContent = totalPerKomponen.toFixed(2);
+            trTotal.appendChild(td);
+        });
+        // Kolom total keseluruhan di pojok kanan bawah
+        const tdTotalKeseluruhan = document.createElement('td');
+        tdTotalKeseluruhan.className = 'px-4 py-3 text-center font-bold text-green-700';
+        tdTotalKeseluruhan.textContent = totalKeseluruhan.toFixed(2);
+        trTotal.appendChild(tdTotalKeseluruhan);
+        tableBody.appendChild(trTotal);
     }
 
     // Fungsi untuk update baris total bobot per komponen secara realtime
     function updateTotalBobotRowRealtime() {
-        const totalRow = document.getElementById('total-bobot-row');
-        let allValid = true;
-        // Hitung total per komponen dan simpan ke objek
-        const komponenTotals = {};
-        selectedKomponen.forEach(function(komponen) {
-            komponenTotals[komponen.id] = 0;
-            document.querySelectorAll('input[type="number"]').forEach(input => {
-                if (input.name && input.name.endsWith('_' + komponen.id + ']')) {
-                    komponenTotals[komponen.id] += parseFloat(input.value) || 0;
+        // Hitung total per komponen (kolom)
+        const tableBodyRows = tableBody.querySelectorAll('tr');
+        let totalKeseluruhan = 0;
+        let komponenTotals = [];
+        let cpmkTotals = [];
+        // Inisialisasi array
+        for (let i = 0; i < selectedKomponen.length; i++) komponenTotals[i] = 0;
+        for (let i = 0; i < cpmkListData.length; i++) cpmkTotals[i] = 0;
+
+        // Loop semua input dan akumulasi ke array
+        tableBody.querySelectorAll('input[type="number"]').forEach(input => {
+            const name = input.name;
+            const match = name.match(/bobot\[(\d+)_([\w-]+)\]/);
+            if (match) {
+                const cpmkId = match[1];
+                const komponenId = match[2];
+                const cpmkIdx = cpmkListData.findIndex(c => c.id == cpmkId);
+                const komponenIdx = selectedKomponen.findIndex(k => k.id == komponenId);
+                const value = parseFloat(input.value) || 0;
+                if (cpmkIdx >= 0 && komponenIdx >= 0) {
+                    komponenTotals[komponenIdx] += value;
+                    cpmkTotals[cpmkIdx] += value;
+                    totalKeseluruhan += value;
                 }
-            });
-        });
-        if (totalRow) {
-            // Hapus semua kolom kecuali kolom label pertama
-            while (totalRow.children.length > 1) {
-                totalRow.removeChild(totalRow.lastChild);
             }
-            // Render total per komponen
-            selectedKomponen.forEach(function(komponen) {
-                const total = komponenTotals[komponen.id] || 0;
-                let color = 'text-blue-700';
-                if (total > 100) {
-                    color = 'text-red-600 font-bold';
-                    allValid = false;
-                } else if (total === 100) {
-                    color = 'text-green-600 font-bold';
+        });
+        // Update baris total per komponen (row terakhir)
+        const tableBodyRows2 = tableBody.querySelectorAll('tr');
+        if (tableBodyRows2.length > 0) {
+            const lastRow = tableBodyRows2[tableBodyRows2.length - 1];
+            // Update cell total per komponen
+            for (let i = 0; i < selectedKomponen.length; i++) {
+                const td = lastRow.children[i+1]; // +1 karena kolom label
+                if (td) td.textContent = komponenTotals[i].toFixed(2);
+            }
+            // Update cell total keseluruhan
+            const tdTotal = lastRow.lastElementChild;
+            if (tdTotal) {
+                tdTotal.textContent = totalKeseluruhan.toFixed(2);
+                tdTotal.classList.remove('text-green-700', 'text-yellow-500', 'text-red-600');
+                if (totalKeseluruhan < 100) {
+                    tdTotal.classList.add('text-yellow-500');
+                } else if (totalKeseluruhan == 100) {
+                    tdTotal.classList.add('text-green-700');
+                } else if (totalKeseluruhan > 100) {
+                    tdTotal.classList.add('text-red-600');
                 }
-                const td = document.createElement('td');
-                td.className = `px-2 py-3 text-center border-r border-gray-200 ${color}`;
-                td.textContent = total.toFixed(1) + '%';
-                totalRow.appendChild(td);
+            }
+        }
+        // Update kolom total bobot CPMK (per baris)
+        for (let i = 0; i < cpmkListData.length; i++) {
+            const row = tableBodyRows2[i];
+            if (row) {
+                const td = row.lastElementChild;
+                if (td) td.textContent = cpmkTotals[i].toFixed(2);
+            }
+        }
+        // Tambahkan/hapus icon warning di setiap input jika total keseluruhan > 100
+        tableBody.querySelectorAll('input[type="number"]').forEach(input => {
+            // Cari parent relative
+            let parent = input.parentElement;
+            if (!parent.classList.contains('relative')) {
+                parent.classList.add('relative');
+            }
+            // Hapus icon warning lama jika ada
+            const oldWarn = parent.querySelector('.bobot-warning-icon');
+            if (oldWarn) oldWarn.remove();
+            if (totalKeseluruhan > 100) {
+                // Tambahkan icon warning
+                const warn = document.createElement('span');
+                warn.className = 'bobot-warning-icon absolute top-1 right-1';
+                warn.innerHTML = '<svg class="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 16.084A2 2 0 0116.342 18H3.658A2 2 0 011.99 16.084l6.342-11.084a2 2 0 013.336 0l6.342 11.084zM11 14a1 1 0 10-2 0 1 1 0 002 0zm-1-2a1 1 0 01-1-1V9a1 1 0 112 0v2a1 1 0 01-1 1z" clip-rule="evenodd"/></svg>';
+                parent.appendChild(warn);
+            }
+        });
+        // Update status tombol submit
+        let allValid = true;
+        let adaIsi = false;
+        for (let i = 0; i < selectedKomponen.length; i++) {
+            if (komponenTotals[i] > 100) {
+                allValid = false;
+            }
+            if (komponenTotals[i] > 0) {
+                adaIsi = true;
+            }
+        }
+        // Cek juga jika ada input bobot > 0
+        if (!adaIsi) {
+            tableBody.querySelectorAll('input[type="number"]').forEach(input => {
+                if (parseFloat(input.value) > 0) adaIsi = true;
             });
         }
-        // Tambahkan/hapus icon warning di input field jika total > 100
-        selectedKomponen.forEach(function(komponen) {
-            const total = komponenTotals[komponen.id] || 0;
-            document.querySelectorAll('input[type="number"]').forEach(input => {
-                if (input.name && input.name.endsWith('_' + komponen.id + ']')) {
-                    // Cari parent relative
-                    let parent = input.parentElement;
-                    if (!parent.classList.contains('relative')) {
-                        parent.classList.add('relative');
-                    }
-                    // Hapus icon warning lama jika ada
-                    const oldWarn = parent.querySelector('.bobot-warning-icon');
-                    if (oldWarn) oldWarn.remove();
-                    if (total > 100) {
-                        // Tambahkan icon warning
-                        const warn = document.createElement('span');
-                        warn.className = 'bobot-warning-icon absolute top-1 right-1';
-                        warn.innerHTML = '<svg class="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 16.084A2 2 0 0116.342 18H3.658A2 2 0 011.99 16.084l6.342-11.084a2 2 0 013.336 0l6.342 11.084zM11 14a1 1 0 10-2 0 1 1 0 002 0zm-1-2a1 1 0 01-1-1V9a1 1 0 112 0v2a1 1 0 01-1 1z" clip-rule="evenodd"/></svg>';
-                        parent.appendChild(warn);
-                    }
-                }
-            });
-        });
-        // Update tombol submit
-        if (allValid && selectedKomponen.length > 0) {
+        // Validasi total keseluruhan tidak boleh lebih dari 100
+        if (totalKeseluruhan > 100) {
+            allValid = false;
+        }
+        if (allValid && adaIsi && selectedKomponen.length > 0) {
             submitBtn.disabled = false;
             submitBtn.className = 'w-full sm:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500';
         } else {

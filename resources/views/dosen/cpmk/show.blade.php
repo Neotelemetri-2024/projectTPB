@@ -105,35 +105,19 @@
             <div class="flex items-center justify-between">
                 <h2 class="text-xl font-semibold text-gray-900">Daftar CPMK</h2>
                 @php
-                    $editBobot = request('edit_bobot') == '1';
-                    $editUrl = request()->fullUrlWithQuery(['edit_bobot' => 1]);
-                    $baseUrl = request()->url();
+                    $editBobot = false;
                 @endphp
                 <div class="mb-4">
-                    @if(!$editBobot)
-                        <a href="{{ $editUrl }}"
-                           class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg flex items-center transition-colors duration-200">
-                           <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                            </svg>
-                            Kelola Bobot CPMK
-                        </a>
-                    @else
-                        <a href="{{ $baseUrl }}"
-                           class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg flex items-center transition-colors duration-200">
-                           <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                            </svg>
-                            Kembali
-                        </a>
-                    @endif
+                    <!-- Tombol kembali di tabel daftar CPMK dihapus -->
                 </div>
             </div>
         </div>
         <div class="p-6">
 
-        <form method="POST" action="{{ route('dosen.cpmk.bobot-save', $tahunAjaranMatkul->id) }}" id="form-bobot-cpmk">
-            @csrf
+            <form method="POST" action="#" id="form-bobot-cpmk" style="display:none;">
+                @csrf
+                <!-- Form bobot CPMK dihapus -->
+            </form>
             <div class="overflow-x-auto bg-white rounded-lg">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
@@ -202,7 +186,7 @@
                             @else
                             <td class="px-6 py-4 whitespace-nowrap text-center">
                                 <div class="text-sm text-gray-900">
-                                    {{ ($cpmk->cpmkMatKul[0]->bobotCpmk ?? 0) == '' ? '0' : number_format($cpmk->cpmkMatKul[0]->bobotCpmk ?? 0, 2) }} %
+                                    {{ number_format($cpmk->bobot->sum('bobot'), 2) }} %
                                 </div>
                             </td>
                             @endif
@@ -251,7 +235,7 @@
                             <td class="px-6 py-3 text-center text-blue-900 text-base" id="total-bobot-cpmk-cell">0.00%</td>
                             @else
                             <td class="px-6 py-3 text-center text-blue-900 text-base">
-                                {{ number_format($cpmkList->sum(fn($cpmk) => $cpmk->cpmkMatKul[0]->bobotCpmk ?? 0), 2) }} %
+                                {{ number_format($cpmkList->sum(fn($cpmk) => $cpmk->bobot->sum('bobot')), 2) }} %
                             </td>
                             @endif
                         </tr>
@@ -303,7 +287,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let currentDeleteId = null;
     let currentDeleteType = 'single'; // 'single' or 'bulk'
-    let selectedIds = [];    // Single delete handlers
+    let selectedIds = [];
+    // Single delete handlers
     document.querySelectorAll('.delete-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             currentDeleteId = this.dataset.id;
@@ -359,7 +344,8 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             bulkActions.classList.add('hidden');
         }
-    }    // Bulk delete handler - add data-modal-toggle for bulk delete button too
+    }
+    // Bulk delete handler - add data-modal-toggle for bulk delete button too
     bulkDeleteBtn.setAttribute('data-modal-toggle', 'deleteModal');
     bulkDeleteBtn.addEventListener('click', function() {
         if (selectedIds.length === 0) return;
@@ -385,7 +371,8 @@ document.addEventListener('DOMContentLoaded', function() {
             selectAllCheckbox.indeterminate = false;
         }
         updateSelection();
-    });    // Override form submission for bulk delete
+    });
+    // Override form submission for bulk delete
     const modalForm = deleteModal.querySelector('form');
     if (modalForm) {
         modalForm.addEventListener('submit', function(e) {
@@ -431,45 +418,6 @@ document.addEventListener('DOMContentLoaded', function() {
             // For single delete, let the form submit normally
         });
     }
-});
-document.addEventListener('DOMContentLoaded', function() {
-    const inputs = document.querySelectorAll('.bobot-cpmk-input');
-    const submitBtn = document.getElementById('submit-bobot-cpmk');
-    const warning = document.getElementById('bobot-cpmk-warning');
-    let editMode = {{ $editBobot ? 1 : 0 }} === 1;
-    function updateTotal() {
-        let total = 0;
-        let hasChanged = false;
-        inputs.forEach(input => {
-            total += parseFloat(input.value) || 0;
-            const original = input.getAttribute('data-original-value') ?? '';
-            if ((original === '' && input.value !== '') || (original !== '' && input.value !== original)) {
-                hasChanged = true;
-            }
-        });
-        const totalCell = document.getElementById('total-bobot-cpmk-cell');
-        if (totalCell) {
-            totalCell.textContent = total.toFixed(2) + '%';
-            if (total === 100) {
-                totalCell.className = 'px-6 py-3 text-center text-green-700 text-base font-bold';
-            } else if (total > 100) {
-                totalCell.className = 'px-6 py-3 text-center text-red-700 text-base font-bold';
-            } else {
-                totalCell.className = 'px-6 py-3 text-center text-blue-900 text-base';
-            }
-        }
-        if (submitBtn) {
-            submitBtn.disabled = !editMode || !hasChanged;
-            submitBtn.className = (editMode && hasChanged) ? 'w-full sm:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700' : 'w-full sm:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-400 cursor-not-allowed';
-        }
-    }
-    inputs.forEach(input => {
-        if (!input.hasAttribute('data-original-value')) {
-            input.setAttribute('data-original-value', input.value ?? '');
-        }
-        input.addEventListener('input', updateTotal);
-    });
-    updateTotal();
 });
 </script>
 @endsection

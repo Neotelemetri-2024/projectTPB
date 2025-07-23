@@ -165,6 +165,10 @@ class NilaiController extends Controller
         // Penilaian siap jika semua syarat terpenuhi
         $isPenilaianSiap = $adaCpmk && $bobotCpmk100 && $semuaKomponenBobot100;
 
+        // Hitung total bobot keseluruhan
+        $totalBobotKeseluruhan = $allBobot->sum('bobot');
+        $isPenilaianSiap = $totalBobotKeseluruhan == 100;
+
         // Get all unique mahasiswa across all classes
         $allMahasiswa = collect();
         foreach ($mataKuliahClasses as $class) {
@@ -233,7 +237,7 @@ class NilaiController extends Controller
 
                 // Convert numeric class to letter
                 $kelasHuruf = is_numeric($kelasNumber) ?
-                    \App\Models\TahunAjaranMatkul::convertKelasToHuruf($kelasNumber) :
+                    TahunAjaranMatkul::convertKelasToHuruf($kelasNumber) :
                     $kelasNumber;
 
                 if (!isset($mahasiswaByKelas[$kelasHuruf])) {
@@ -373,6 +377,7 @@ class NilaiController extends Controller
             'totalBobotCpmk',
             'totalBobotKomponen',
             'isPenilaianSiap',
+            'totalBobotKeseluruhan',
         ));
     }
 

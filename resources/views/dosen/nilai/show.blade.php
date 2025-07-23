@@ -112,7 +112,7 @@
                             {{ \Carbon\Carbon::parse($lastNilaiUpdate)->format('d/m/Y H:i') }}
                         </p>
                     @else
-                        <p class="text-sm font-bold text-gray-400">-</p>
+                        <p class="text-sm font-bold text-gray-400">Belum ada nilai</p>
                     @endif
                 </div>
             </div>
@@ -135,60 +135,24 @@
                         @endphp
                         <a href="#"
                            id="activate-bulk-mode-btn"
-                           class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors duration-200"
-                           data-modal-toggle="no-komponen-warning">
+                           class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
                             <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                             </svg>
                             Aktifkan Input Sekaligus
                         </a>
                         <x-confirm-modal
-                            id="no-komponen-warning"
-                            title="Konfigurasi Penilaian Belum Lengkap"
-                            message="Belum ada CPMK atau total bobot CPMK/Komponen belum 100%. Silakan konfigurasi terlebih dahulu sebelum mengaktifkan input nilai."
+                            id="bobot-warning-modal"
+                            title="Total Bobot Belum 100%"
+                            message="Total bobot keseluruhan belum 100%. Silakan lengkapi konfigurasi bobot sebelum menginput nilai."
                             type="warning"
                             action="{{ route('dosen.cpmk.show', $mataKuliahDiampu->mataKuliahId) }}"
-                            confirmText="Konfigurasi"
+                            confirmText="Konfigurasi Bobot"
                             cancelText="Tutup"
                         />
-                        <script>
-                        document.addEventListener('DOMContentLoaded', function() {
-                            const btn = document.getElementById('activate-bulk-mode-btn');
-                            let isPenilaianSiap = @json($isPenilaianSiap);
-                            let bulkUrl = @json($bulkUrl ?? '');
-                            btn.addEventListener('click', function(e) {
-                                e.preventDefault();
-                                if (!isPenilaianSiap) {
-                                    // Tampilkan modal warning
-                                    const modal = document.getElementById('no-komponen-warning');
-                                    modal.classList.remove('hidden');
-                                    modal.classList.add('flex');
-                                    setTimeout(() => {
-                                        const modalContent = modal.querySelector('[data-modal-content]');
-                                        modal.classList.remove('bg-opacity-0');
-                                        modal.classList.add('bg-opacity-10');
-                                        modalContent.classList.remove('scale-95', 'opacity-0');
-                                        modalContent.classList.add('scale-100', 'opacity-100');
-                                    }, 10);
-                                } else {
-                                    window.location.href = bulkUrl;
-                                }
-                            });
-                            // Override tombol submit (Konfigurasi) pada modal agar redirect, bukan submit
-                            const modal = document.getElementById('no-komponen-warning');
-                            modal.querySelectorAll('button, input[type=submit]').forEach(function(button) {
-                                if (button.textContent.trim() === 'Konfigurasi') {
-                                    button.addEventListener('click', function(e) {
-                                        e.preventDefault();
-                                        window.location.href = "{{ route('dosen.cpmk.show', $mataKuliahDiampu->mataKuliahId) }}";
-                                    });
-                                }
-                            });
-                        });
-                        </script>
                     @else
                         @php
-                            $individualUrl = request()->fullUrl();
+                            $individualUrl = request()->url();
                             $currentTab = request('tab', 'all');
                             $currentSort = request('sort', 'nim');
                             $currentDirection = request('direction', 'asc');
@@ -278,7 +242,7 @@
         </div>
 
         <div class="p-6">
-            @if($allMahasiswaCollection->isEmpty())
+            @if($mahasiswa->isEmpty())
                 <div class="text-center py-12">
                     <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"></path>
@@ -321,48 +285,8 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th scope="col"
-                                    class="px-6 py-3 text-left text-xs font-medium {{ $sortBy === 'nim' ? ($sortDirection === 'asc' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50') : 'text-gray-500' }} uppercase tracking-wider sortable-header cursor-pointer"
-                                    data-sort="nim">
-                                    <a href="{{ request()->fullUrlWithQuery([
-                                        'sort' => 'nim',
-                                        'direction' => ($sortBy === 'nim' && $sortDirection === 'asc') ? 'desc' : 'asc'
-                                    ]) }}" class="flex items-center">
-                                        NIM
-                                        @if($sortBy === 'nim')
-                                            @if($sortDirection === 'asc')
-                                                <svg class="w-4 h-4 ml-1 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
-                                                </svg>
-                                            @else
-                                                <svg class="w-4 h-4 ml-1 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                                </svg>
-                                            @endif
-                                        @endif
-                                    </a>
-                                </th>
-                                <th scope="col"
-                                    class="px-6 py-3 text-left text-xs font-medium {{ $sortBy === 'nama' ? ($sortDirection === 'asc' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50') : 'text-gray-500' }} uppercase tracking-wider sortable-header cursor-pointer"
-                                    data-sort="nama">
-                                    <a href="{{ request()->fullUrlWithQuery([
-                                        'sort' => 'nama',
-                                        'direction' => ($sortBy === 'nama' && $sortDirection === 'asc') ? 'desc' : 'asc'
-                                    ]) }}" class="flex items-center">
-                                        Mahasiswa
-                                        @if($sortBy === 'nama')
-                                            @if($sortDirection === 'asc')
-                                                <svg class="w-4 h-4 ml-1 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
-                                                </svg>
-                                            @else
-                                                <svg class="w-4 h-4 ml-1 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                                </svg>
-                                            @endif
-                                        @endif
-                                    </a>
-                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIM</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mahasiswa</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kelas</th>
                                 @foreach($allKomponen as $komponen)
                                     <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-24">{{ $komponen->nama }}</th>
@@ -370,15 +294,28 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach($allMahasiswaCollection as $mhs)
+                            @foreach($mahasiswa as $mhs)
+                                @php
+                                    $kelasNumber = 'Tidak Ada Kelas';
+                                    $studentClassId = null;
+                                    foreach($mataKuliahClasses as $class) {
+                                        $studentInClass = $class->kelasMahasiswa->where('mahasiswaId', $mhs->id)->first();
+                                        if ($studentInClass) {
+                                            $kelasNumber = $class->kelas;
+                                            $studentClassId = $class->id;
+                                            break;
+                                        }
+                                    }
+                                    $kelasHuruf = is_numeric($kelasNumber) ? App\Models\TahunAjaranMatkul::convertKelasToHuruf($kelasNumber) : $kelasNumber;
+                                @endphp
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap">{{ $mhs->nim }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">{{ $mhs->nama }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-        Kelas {{ $kelasHuruf }}
-    </span>
-</td>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            Kelas {{ $kelasHuruf }}
+                                        </span>
+                                    </td>
                                     @foreach($allKomponen as $komponen)
                                         <td class="px-4 py-4 whitespace-nowrap text-center">
                                             <input type="number" class="w-20 px-2 py-1 text-sm text-center" disabled placeholder="-">
@@ -449,8 +386,6 @@
     cancelText="Tetap di Halaman"
 />
 
-<script>
-</script>
 @endsection
 
 @push('scripts')
@@ -913,9 +848,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.dispatchEvent(new CustomEvent('valuesSaved'));
 
                 // Refresh the page to update total nilai and grade
-                setTimeout(() => {
+                setTimeout(function() {
                     allowNavigation = true;
-                    window.location.reload();
+                    window.location.href = window.location.pathname;
                 }, 1000);
             } else {
                 showNotification(data.message || 'Terjadi kesalahan saat menyimpan nilai.', 'error');
@@ -957,8 +892,34 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initial check for unsaved changes
     checkForUnsavedChanges();
+
+    // Modal warning untuk bulk mode
+    const btnBulk = document.getElementById('activate-bulk-mode-btn');
+    if (btnBulk) {
+        let bulkUrl = @json($bulkUrl ?? '');
+        let isPenilaianSiap = @json($isPenilaianSiap);
+        btnBulk.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (!isPenilaianSiap) {
+                // Tampilkan modal warning
+                const modal = document.getElementById('bobot-warning-modal');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                setTimeout(() => {
+                    const modalContent = modal.querySelector('[data-modal-content]');
+                    modal.classList.remove('bg-opacity-0');
+                    modal.classList.add('bg-opacity-10');
+                    modalContent.classList.remove('scale-95', 'opacity-0');
+                    modalContent.classList.add('scale-100', 'opacity-100');
+                }, 10);
+            } else {
+                window.location.href = bulkUrl;
+            }
+        });
+    }
 });
 </script>
+@endpush
 
 @push('styles')
 <style>

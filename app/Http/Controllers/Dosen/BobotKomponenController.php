@@ -141,28 +141,17 @@ class BobotKomponenController extends Controller
             'bobot.*' => 'nullable|numeric|min:0|max:100',
         ]);
 
-        // Validasi total bobot per komponen
-        $komponenTotals = [];
+        // Validasi total bobot keseluruhan (bukan per komponen)
+        $totalBobot = 0;
         foreach ($request->bobot as $combination => $bobotValue) {
             if ($bobotValue > 0) {
-                // Format: cpmkId_komponenId
-                list($cpmkId, $komponenId) = explode('_', $combination);
-                if (!isset($komponenTotals[$komponenId])) {
-                    $komponenTotals[$komponenId] = 0;
-                }
-                $komponenTotals[$komponenId] += $bobotValue;
+                $totalBobot += $bobotValue;
             }
         }
-        $invalidKomponen = [];
-        foreach ($komponenTotals as $komponenId => $total) {
-            if ($total > 100) {
-                $invalidKomponen[] = $komponenId;
-            }
-        }
-        if (count($invalidKomponen) > 0) {
+        if ($totalBobot > 100) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Total bobot pada salah satu komponen melebihi 100%. Mohon periksa kembali.');
+                ->with('error', 'Total bobot seluruh kombinasi CPMK-Komponen melebihi 100%. Mohon periksa kembali.');
         }
 
         try {

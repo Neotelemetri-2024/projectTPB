@@ -58,7 +58,7 @@
                         <div class="text-sm text-blue-700 mt-1">
                             <p>• Pilih komponen penilaian yang akan digunakan terlebih dahulu</p>
                             <p>• Atur bobot untuk setiap kombinasi CPMK dan Komponen penilaian</p>
-                            <p>• Total bobot maksimal 100% untuk setiap komponen penilaian (tidak harus tepat 100%)</p>
+                            <p>• Total bobot maksimal 100%</p>
                             <p>• Bobot yang sudah memiliki nilai mahasiswa akan terkunci (tidak dapat diubah)</p>
                         </div>
                     </div>
@@ -149,6 +149,14 @@
                                         CPMK
                                     </th>
                                     <!-- Komponen headers will be added dynamically here -->
+                                    @foreach($komponen as $komponenItem)
+                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                                            {{ $komponenItem->nama }}
+                                        </th>
+                                    @endforeach
+                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                                        Total Bobot CPMK
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody id="table-body" class="divide-y divide-gray-200">
@@ -160,13 +168,37 @@
                                             <span class="text-xs text-gray-600 mt-1">{{ Str::limit($cpmk->deskripsi ?? '', 60) }}</span>
                                         </div>
                                     </td>
-                                    <!-- Komponen columns will be added dynamically -->
+                                    @php $totalCpmk = 0; @endphp
+                                    @foreach($komponen as $komponenItem)
+                                        @php
+                                            $inputName = $cpmk->id . '_' . $komponenItem->id;
+                                            $bobotValue = old('bobot.' . $inputName, $existingCombinations[$inputName] ?? '');
+                                            $totalCpmk += floatval($bobotValue);
+                                        @endphp
+                                        <td class="px-4 py-3 text-center">
+                                            <input type="number" name="bobot[{{ $inputName }}]" value="{{ $bobotValue }}" min="0" max="100" step="0.01" class="w-20 text-center border rounded" />
+                                        </td>
+                                    @endforeach
+                                    <td class="px-4 py-3 text-center font-bold text-blue-700">
+                                        {{ number_format($totalCpmk, 2) }}
+                                    </td>
                                 </tr>
                                 @endforeach
                                 <!-- ROW TOTAL BOBOT PER KOMPONEN -->
-                                <tr id="total-bobot-row" class="bg-blue-50 font-bold">
-                                    <td class="px-4 py-3 text-sm text-blue-900 border-r border-gray-200">Total</td>
-                                    <!-- Komponen total columns will be added dynamically by JS -->
+                                <tr class="bg-blue-50 font-bold">
+                                    <td class="px-4 py-3 text-blue-900 text-base text-center">Total per Komponen</td>
+                                    @foreach($komponen as $komponenItem)
+                                        @php
+                                            $totalPerKomponen = 0;
+                                            foreach($cpmkList as $cpmk) {
+                                                $inputName = $cpmk->id . '_' . $komponenItem->id;
+                                                $bobotValue = old('bobot.' . $inputName, $existingCombinations[$inputName] ?? '');
+                                                $totalPerKomponen += floatval($bobotValue);
+                                            }
+                                        @endphp
+                                        <td class="px-4 py-3 text-center text-blue-900 text-base">{{ number_format($totalPerKomponen, 2) }}</td>
+                                    @endforeach
+                                    <td class="px-4 py-3"></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -225,6 +257,12 @@ window.komponenListData = {!! json_encode($komponen) !!};
 window.existingCombinationsData = {!! json_encode($existingCombinations) !!};
 window.bobotWithNilaiData = {!! json_encode($bobotWithNilai) !!};
 window.usedKomponenIdsData = {!! json_encode($allExistingBobot->pluck('komponenId')->unique()->values()) !!};
+
+// Tambahkan script untuk update total bobot keseluruhan secara dinamis
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Hapus script updateOverallTotalBobot dan pemanggilannya
+});
 </script>
 <script src="{{ asset('assets/js/bobot-bulk-create.js') }}"></script>
 @endsection

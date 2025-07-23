@@ -149,6 +149,22 @@ class NilaiController extends Controller
         // Get all related tahunAjaranMatkul IDs for queries
         $relatedTahunAjaranMatkulIds = $mataKuliahClasses->pluck('id');
 
+        // CEK: Apakah sudah ada CPMK untuk matkul ini dan total bobot CPMK 100
+        $cpmkMatkul = \App\Models\CpmkMatKul::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)->get();
+        $adaCpmk = $cpmkMatkul->isNotEmpty();
+        $totalBobotCpmk = $cpmkMatkul->sum('bobot');
+        $bobotCpmk100 = ($totalBobotCpmk == 100);
+
+        // CEK: Apakah total bobot setiap komponen sudah 100
+        $allBobot = \App\Models\Bobot::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)->get();
+        $bobotPerKomponen = $allBobot->groupBy('komponenId')->map(function($bobotGroup) {
+            return $bobotGroup->sum('bobot');
+        });
+        $semuaKomponenBobot100 = $bobotPerKomponen->every(function($total) { return $total == 100; });
+
+        // Penilaian siap jika semua syarat terpenuhi
+        $isPenilaianSiap = $adaCpmk && $bobotCpmk100 && $semuaKomponenBobot100;
+
         // Get all unique mahasiswa across all classes
         $allMahasiswa = collect();
         foreach ($mataKuliahClasses as $class) {
@@ -356,6 +372,7 @@ class NilaiController extends Controller
             'search',
             'totalBobotCpmk',
             'totalBobotKomponen',
+            'isPenilaianSiap',
         ));
     }
 

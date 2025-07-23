@@ -133,16 +133,62 @@
                             $bulkUrl = request()->fullUrl();
                             $bulkUrl .= (strpos($bulkUrl, '?') !== false ? '&' : '?') . 'bulk=1';
                         @endphp
-                        <a href="{{ $bulkUrl }}"
-                           class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
+                        <a href="#"
+                           id="activate-bulk-mode-btn"
+                           class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors duration-200"
+                           data-modal-toggle="no-komponen-warning">
                             <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                             </svg>
                             Aktifkan Input Sekaligus
                         </a>
+                        <x-confirm-modal
+                            id="no-komponen-warning"
+                            title="Konfigurasi Penilaian Belum Lengkap"
+                            message="Belum ada CPMK atau total bobot CPMK/Komponen belum 100%. Silakan konfigurasi terlebih dahulu sebelum mengaktifkan input nilai."
+                            type="warning"
+                            action="{{ route('dosen.cpmk.show', $mataKuliahDiampu->mataKuliahId) }}"
+                            confirmText="Konfigurasi"
+                            cancelText="Tutup"
+                        />
+                        <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const btn = document.getElementById('activate-bulk-mode-btn');
+                            let isPenilaianSiap = @json($isPenilaianSiap);
+                            let bulkUrl = @json($bulkUrl ?? '');
+                            btn.addEventListener('click', function(e) {
+                                e.preventDefault();
+                                if (!isPenilaianSiap) {
+                                    // Tampilkan modal warning
+                                    const modal = document.getElementById('no-komponen-warning');
+                                    modal.classList.remove('hidden');
+                                    modal.classList.add('flex');
+                                    setTimeout(() => {
+                                        const modalContent = modal.querySelector('[data-modal-content]');
+                                        modal.classList.remove('bg-opacity-0');
+                                        modal.classList.add('bg-opacity-10');
+                                        modalContent.classList.remove('scale-95', 'opacity-0');
+                                        modalContent.classList.add('scale-100', 'opacity-100');
+                                    }, 10);
+                                } else {
+                                    window.location.href = bulkUrl;
+                                }
+                            });
+                            // Override tombol submit (Konfigurasi) pada modal agar redirect, bukan submit
+                            const modal = document.getElementById('no-komponen-warning');
+                            modal.querySelectorAll('button, input[type=submit]').forEach(function(button) {
+                                if (button.textContent.trim() === 'Konfigurasi') {
+                                    button.addEventListener('click', function(e) {
+                                        e.preventDefault();
+                                        window.location.href = "{{ route('dosen.cpmk.show', $mataKuliahDiampu->mataKuliahId) }}";
+                                    });
+                                }
+                            });
+                        });
+                        </script>
                     @else
                         @php
-                            $individualUrl = request()->url();
+                            $individualUrl = request()->fullUrl();
                             $currentTab = request('tab', 'all');
                             $currentSort = request('sort', 'nim');
                             $currentDirection = request('direction', 'asc');
@@ -232,7 +278,7 @@
         </div>
 
         <div class="p-6">
-            @if($mahasiswa->isEmpty())
+            @if($allMahasiswaCollection->isEmpty())
                 <div class="text-center py-12">
                     <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"></path>
@@ -272,371 +318,76 @@
                 </div>
 
                 <div class="overflow-x-auto">
-                    @if($allKomponen->isEmpty())
-                        <div class="text-center py-12">
-                            <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c0 .621-.504 1.125-1.125 1.125H18a2.25 2.25 0 01-2.25-2.25M6.75 17.25h-.75m-.75 0h-.75m-.75 0h-.75" />
-                            </svg>
-                            <h3 class="text-lg font-medium text-gray-900 mb-2">Belum Ada Komponen Penilaian</h3>
-                            <p class="text-gray-500">Belum ada komponen penilaian yang dikonfigurasi untuk mata kuliah ini.</p>
-                        </div>
-                    @else
-                        @if($isBulkMode)
-                            <!-- Bulk Input Form -->
-                            <form id="bulk-nilai-form" action="{{ route('dosen.nilai.bulk-store', $mataKuliahDiampu->id) }}" method="POST">
-                                @csrf
-                                <table id="bulk-input-table" class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium {{ $sortBy === 'nama' ? ($sortDirection === 'asc' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50') : 'text-gray-500' }} uppercase tracking-wider sticky left-0 {{ $sortBy === 'nama' ? ($sortDirection === 'asc' ? 'bg-green-50' : 'bg-red-50') : 'bg-gray-50' }} sortable-header cursor-pointer" data-sort="nama">
-                                            <div class="flex items-center">
-                                                Mahasiswa
-                                                @if($sortBy === 'nama')
-                                                    @if($sortDirection === 'asc')
-                                                        <svg class="w-4 h-4 ml-1 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
-                                                        </svg>
-                                                    @else
-                                                        <svg class="w-4 h-4 ml-1 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                                        </svg>
-                                                    @endif
-                                                @else
-                                                    <svg class="w-4 h-4 ml-1 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                                    </svg>
-                                                @endif
-                                            </div>
-                                        </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium {{ $sortBy === 'nim' ? ($sortDirection === 'asc' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50') : 'text-gray-500' }} uppercase tracking-wider sortable-header cursor-pointer" data-sort="nim">
-                                            <div class="flex items-center">
-                                                NIM
-                                                @if($sortBy === 'nim')
-                                                    @if($sortDirection === 'asc')
-                                                        <svg class="w-4 h-4 ml-1 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
-                                                        </svg>
-                                                    @else
-                                                        <svg class="w-4 h-4 ml-1 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                                        </svg>
-                                                    @endif
-                                                @else
-                                                    <svg class="w-4 h-4 ml-1 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                                    </svg>
-                                                @endif
-                                            </div>
-                                        </th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Kelas
-                                        </th>
-                                        @foreach($allKomponen as $komponen)
-                                            <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-24">
-                                                <div class="text-center">
-                                                    <div class="font-semibold">{{ $komponen->nama }}</div>
-                                                    @if($komponen->bobot->isNotEmpty())
-                                                        <div class="text-xs text-gray-400">
-                                                            Total: {{ $komponen->bobot->sum('bobot') }}%
-                                                        </div>
-                                                    @endif
-                                                </div>
-                                            </th>
-                                        @endforeach
-                                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Aksi
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    @foreach($allMahasiswaCollection as $mhs)
-                                        @php
-                                            $kelasNumber = 'Tidak Ada Kelas';
-                                            $studentClassId = null;
-
-                                            // Find the class this student belongs to
-                                            foreach($mataKuliahClasses as $class) {
-                                                $studentInClass = $class->kelasMahasiswa->where('mahasiswaId', $mhs->id)->first();
-                                                if ($studentInClass) {
-                                                    $kelasNumber = $class->kelas;
-                                                    $studentClassId = $class->id;
-                                                    break;
-                                                }
-                                            }
-
-                                            // Convert numeric class to letter for display
-                                            $kelasHuruf = is_numeric($kelasNumber) ?
-                                                App\Models\TahunAjaranMatkul::convertKelasToHuruf($kelasNumber) :
-                                                $kelasNumber;
-
-                                            // Get existing grades for this student
-                                            $studentNilai = $existingNilai->get($mhs->id, collect());
-                                        @endphp
-                                        <tr class="mahasiswa-row hover:bg-gray-50" data-kelas="kelas-{{ Str::slug($kelasHuruf) }}" data-mahasiswa-id="{{ $mhs->id }}">
-                                            <!-- Hidden field to identify student's class -->
-                                            <input type="hidden" name="student_class_id[{{ $mhs->id }}]" value="{{ $studentClassId }}">
-                                            <td class="px-6 py-4 whitespace-nowrap sticky left-0 bg-white">
-                                                <div class="flex items-left">
-                                                    <div class="text-sm font-medium text-gray-900">{{ $mhs->nama }}</div>
-                                                </div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm font-mono text-gray-900">{{ $mhs->nim }}</div>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                    Kelas {{ $kelasHuruf }}
-                                                </span>
-                                            </td>
-                                            @foreach($allKomponen as $komponen)
-                                                @php
-                                                    // Calculate the existing component value from bobot values
-                                                    $nilaiKomponen = null;
-                                                    if ($studentNilai->isNotEmpty()) {
-                                                        // Only use bobot from the student's class
-                                                        $komponenBobot = $komponen->bobot->where('tahunAjaranMatkulId', $studentClassId) ?? collect();
-                                                        if ($komponenBobot->isNotEmpty()) {
-                                                            // Get values for this component's bobot
-                                                            $nilaiBobot = [];
-                                                            $totalBobot = 0;
-
-                                                            foreach ($komponenBobot as $bobot) {
-                                                                $existingNilaiRecord = $studentNilai->where('bobotId', $bobot->id)->first();
-                                                                if ($existingNilaiRecord && $existingNilaiRecord->nilai !== null) {
-                                                                    // Reverse calculate: nilai / (bobot/100) = original component value
-                                                                    $originalValue = $existingNilaiRecord->nilai / ($bobot->bobot / 100);
-                                                                    $nilaiBobot[] = $originalValue;
-                                                                    $totalBobot += $bobot->bobot;
-                                                                }
-                                                            }
-
-                                                            // If we have consistent values, use the first one (they should be the same)
-                                                            if (!empty($nilaiBobot)) {
-                                                                $nilaiKomponen = $nilaiBobot[0];
-                                                            }
-                                                        }
-                                                    }
-                                                @endphp
-                                                <td class="px-4 py-4 whitespace-nowrap text-center">
-                                                    <input type="number"
-                                                           name="nilai[{{ $mhs->id }}][{{ $komponen->id }}]"
-                                                           value="{{ $nilaiKomponen !== null ? number_format($nilaiKomponen, 2, '.', '') : '' }}"
-                                                           min="0"
-                                                           max="100"
-                                                           step="0.01"
-                                                           class="bulk-input w-20 px-2 py-1 border border-gray-300 rounded text-sm text-left focus:ring-amber-500 focus:border-amber-500"
-                                                           placeholder="0"
-                                                           data-mahasiswa-id="{{ $mhs->id }}"
-                                                           data-komponen-id="{{ $komponen->id }}"
-                                                           data-original-value="{{ $nilaiKomponen !== null ? number_format($nilaiKomponen, 2, '.', '') : '' }}"
-                                                           value="{{ $nilaiKomponen !== null ? number_format($nilaiKomponen, 2, '.', '') : '' }}">
-                                                </td>
-                                            @endforeach
-                                            <td class="px-6 py-4 whitespace-nowrap text-center">
-                                                <div class="flex items-center justify-center space-x-2">
-                                                    <button type="button"
-                                                            onclick="saveIndividualNilai({{ $mhs->id }})"
-                                                            class="individual-save-btn px-3 py-1 bg-gray-400 text-white text-xs font-medium rounded-lg transition-colors duration-200 cursor-not-allowed"
-                                                            id="bulk-save-btn-{{ $mhs->id }}"
-                                                            disabled>
-                                                        <svg class="w-3 h-3 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                                        </svg>
-                                                        Simpan
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </form>
-                        @else
-                            <!-- Individual Input Mode (Default) -->
-                            <table id="individual-table" class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium {{ $sortBy === 'nim' ? ($sortDirection === 'asc' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50') : 'text-gray-500' }} uppercase tracking-wider sticky left-0 {{ $sortBy === 'nim' ? ($sortDirection === 'asc' ? 'bg-green-50' : 'bg-red-50') : 'bg-gray-50' }} sortable-header cursor-pointer" data-sort="nim">
-                                        <div class="flex items-center">
-                                            NIM
-                                            @if($sortBy === 'nim')
-                                                @if($sortDirection === 'asc')
-                                                    <svg class="w-4 h-4 ml-1 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
-                                                    </svg>
-                                                @else
-                                                    <svg class="w-4 h-4 ml-1 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                                    </svg>
-                                                @endif
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium {{ $sortBy === 'nim' ? ($sortDirection === 'asc' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50') : 'text-gray-500' }} uppercase tracking-wider sortable-header cursor-pointer"
+                                    data-sort="nim">
+                                    <a href="{{ request()->fullUrlWithQuery([
+                                        'sort' => 'nim',
+                                        'direction' => ($sortBy === 'nim' && $sortDirection === 'asc') ? 'desc' : 'asc'
+                                    ]) }}" class="flex items-center">
+                                        NIM
+                                        @if($sortBy === 'nim')
+                                            @if($sortDirection === 'asc')
+                                                <svg class="w-4 h-4 ml-1 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                                </svg>
                                             @else
-                                                <svg class="w-4 h-4 ml-1 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                                                <svg class="w-4 h-4 ml-1 text-red-600" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
                                                 </svg>
                                             @endif
-                                        </div>
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium {{ $sortBy === 'nama' ? ($sortDirection === 'asc' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50') : 'text-gray-500' }} uppercase tracking-wider sortable-header cursor-pointer" data-sort="nama">
-                                        <div class="flex items-center">
-                                            Mahasiswa
-                                            @if($sortBy === 'nama')
-                                                @if($sortDirection === 'asc')
-                                                    <svg class="w-4 h-4 ml-1 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
-                                                    </svg>
-                                                @else
-                                                    <svg class="w-4 h-4 ml-1 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                                    </svg>
-                                                @endif
+                                        @endif
+                                    </a>
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium {{ $sortBy === 'nama' ? ($sortDirection === 'asc' ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50') : 'text-gray-500' }} uppercase tracking-wider sortable-header cursor-pointer"
+                                    data-sort="nama">
+                                    <a href="{{ request()->fullUrlWithQuery([
+                                        'sort' => 'nama',
+                                        'direction' => ($sortBy === 'nama' && $sortDirection === 'asc') ? 'desc' : 'asc'
+                                    ]) }}" class="flex items-center">
+                                        Mahasiswa
+                                        @if($sortBy === 'nama')
+                                            @if($sortDirection === 'asc')
+                                                <svg class="w-4 h-4 ml-1 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                                                </svg>
                                             @else
-                                                <svg class="w-4 h-4 ml-1 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                                                <svg class="w-4 h-4 ml-1 text-red-600" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
                                                 </svg>
                                             @endif
-                                        </div>
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Kelas
-                                    </th>
-                                    @foreach($allKomponen as $komponen)
-                                        <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-24">
-                                            <div class="text-center">
-                                                <div class="font-semibold">{{ $komponen->nama }}</div>
-                                                @if($komponen->bobot->isNotEmpty())
-                                                    <div class="text-xs text-gray-400">
-                                                        Total: {{ $komponen->bobot->sum('bobot') }}%
-                                                    </div>
-                                                @endif
-                                            </div>
-                                        </th>
-                                    @endforeach
-                                    <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Total Nilai
-                                    </th>
-                                    <th scope="col" class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Grade
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach($mahasiswa as $mhs)
-                                    @php
-                                        $kelasNumber = 'Tidak Ada Kelas';
-                                        $studentClassId = null;
-
-                                        // Find the class this student belongs to
-                                        foreach($mataKuliahClasses as $class) {
-                                            $studentInClass = $class->kelasMahasiswa->where('mahasiswaId', $mhs->id)->first();
-                                            if ($studentInClass) {
-                                                $kelasNumber = $class->kelas;
-                                                $studentClassId = $class->id;
-                                                break;
-                                            }
-                                        }
-
-                                        // Convert numeric class to letter for display
-                                        $kelasHuruf = is_numeric($kelasNumber) ?
-                                            App\Models\TahunAjaranMatkul::convertKelasToHuruf($kelasNumber) :
-                                            $kelasNumber;
-
-                                        // Get existing grades for this student
-                                        $studentNilai = $existingNilai->get($mhs->id, collect());
-
-                                        // Get final grade from kelasMahasiswa table (passed from controller)
-                                        $finalGrade = $nilaiMahasiswa->get($mhs->id);
-                                    @endphp
-                                    <tr class="mahasiswa-row hover:bg-gray-50" data-kelas="kelas-{{ Str::slug($kelasHuruf) }}" data-mahasiswa-id="{{ $mhs->id }}">
-                                        <td class="px-6 py-4 whitespace-nowrap sticky left-0 bg-white">
-                                            <div class="flex items-left">
-                                                <div class="text-sm font-medium text-gray-900">{{ $mhs->nim }}</div>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-mono text-gray-900">{{ $mhs->nama }}</div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                                Kelas {{ $kelasHuruf }}
-                                            </span>
-                                        </td>
-
-                                        <!-- Individual Forms for Each Student -->
-                                        <form id="form-{{ $mhs->id }}" action="{{ route('dosen.nilai.bulk-store', $mataKuliahDiampu->id) }}" method="POST" class="contents">
-                                            @csrf
-                                            <!-- Hidden field to identify student's class -->
-                                            <input type="hidden" name="student_class_id[{{ $mhs->id }}]" value="{{ $studentClassId }}">
-                                            @foreach($allKomponen as $komponen)
-                                                @php
-                                                    // Calculate the existing component value from bobot values
-                                                    $nilaiKomponen = null;
-                                                    if ($studentNilai->isNotEmpty()) {
-                                                        // Only use bobot from the student's class
-                                                        $komponenBobot = $komponen->bobot->where('tahunAjaranMatkulId', $studentClassId) ?? collect();
-                                                        if ($komponenBobot->isNotEmpty()) {
-                                                            // Get values for this component's bobot
-                                                            $nilaiBobot = [];
-                                                            $totalBobot = 0;
-
-                                                            foreach ($komponenBobot as $bobot) {
-                                                                $existingNilaiRecord = $studentNilai->where('bobotId', $bobot->id)->first();
-                                                                if ($existingNilaiRecord && $existingNilaiRecord->nilai !== null) {
-                                                                    // Reverse calculate: nilai / (bobot/100) = original component value
-                                                                    $originalValue = $existingNilaiRecord->nilai / ($bobot->bobot / 100);
-                                                                    $nilaiBobot[] = $originalValue;
-                                                                    $totalBobot += $bobot->bobot;
-                                                                }
-                                                            }
-
-                                                            // If we have consistent values, use the first one (they should be the same)
-                                                            if (!empty($nilaiBobot)) {
-                                                                $nilaiKomponen = $nilaiBobot[0];
-                                                            }
-                                                        }
-                                                    }
-                                                @endphp
-                                                <td class="px-4 py-4 whitespace-nowrap text-center">
-                                                    <input type="number"
-                                                           name="nilai[{{ $mhs->id }}][{{ $komponen->id }}]"
-                                                           value="{{ $nilaiKomponen !== null ? number_format($nilaiKomponen, 2, '.', '') : '' }}"
-                                                           min="0"
-                                                           max="100"
-                                                           step="0.01"
-                                                           class="individual-input w-20 px-2 py-1 border-0 bg-transparent text-sm text-center focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-gray-300 focus:bg-white focus:rounded" disabled
-                                                           placeholder="0"
-                                                           data-original-value="{{ $nilaiKomponen !== null ? number_format($nilaiKomponen, 2, '.', '') : '' }}">
-                                                </td>
-                                            @endforeach
-                                        </form>
-
-                                        <td class="px-4 py-4 whitespace-nowrap text-center">
-                                            <div class="text-sm font-medium text-gray-900">
-                                                {{ $finalGrade && $finalGrade->totalNilai !== null ? number_format($finalGrade->totalNilai, 2) : '-' }}
-                                            </div>
-                                        </td>
-                                        <td class="px-4 py-4 whitespace-nowrap text-center">
-                                            @if($finalGrade && $finalGrade->grade)
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                                    @if(in_array($finalGrade->grade, ['A', 'A-'])) bg-green-100 text-green-800
-                                                    @elseif(in_array($finalGrade->grade, ['B+', 'B', 'B-'])) bg-blue-100 text-blue-800
-                                                    @elseif(in_array($finalGrade->grade, ['C+', 'C'])) bg-yellow-100 text-yellow-800
-                                                    @elseif($finalGrade->grade == 'D') bg-orange-100 text-orange-800
-                                                    @elseif($finalGrade->grade == 'E') bg-red-100 text-red-800
-                                                    @else bg-gray-100 text-gray-800
-                                                    @endif">
-                                                    {{ $finalGrade->grade }}
-                                                </span>
-                                            @else
-                                                <span class="text-gray-400">-</span>
-                                            @endif
-                                        </td>
-                                        </form>
-                                    </tr>
+                                        @endif
+                                    </a>
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kelas</th>
+                                @foreach($allKomponen as $komponen)
+                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-24">{{ $komponen->nama }}</th>
                                 @endforeach
-                            </tbody>
-                        </table>
-                        @endif
-                    @endif
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach($allMahasiswaCollection as $mhs)
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap">{{ $mhs->nim }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">{{ $mhs->nama }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+        Kelas {{ $kelasHuruf }}
+    </span>
+</td>
+                                    @foreach($allKomponen as $komponen)
+                                        <td class="px-4 py-4 whitespace-nowrap text-center">
+                                            <input type="number" class="w-20 px-2 py-1 text-sm text-center" disabled placeholder="-">
+                                        </td>
+                                    @endforeach
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
 
                     <!-- Pagination for Individual Mode -->
@@ -698,20 +449,7 @@
     cancelText="Tetap di Halaman"
 />
 
-@if($isBulkMode)
-<x-confirm-modal
-    id="confirm-bobot-warning"
-    title="Peringatan Bobot Tidak 100%"
-    message="Pastikan total bobot CPMK dan bobot setiap komponen penilaian sudah 100%. Apakah Anda yakin ingin tetap mengaktifkan input sekaligus?"
-    type="warning"
-    action="#"
-    confirmText="Tetap Lanjutkan"
-    cancelText="Batal"
-/>
-@endif
 <script>
-window.totalBobotCpmk = {{ $totalBobotCpmk ?? 0 }};
-window.totalBobotKomponen = @json($totalBobotKomponen ?? []);
 </script>
 @endsection
 
@@ -972,7 +710,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Listen for changes
             bulkInputs.forEach(input => {
                 input.addEventListener('input', function() {
-                    checkForBulkChanges();
+                    checkForUnsavedChanges();
                     // Validate input
                     let value = parseFloat(this.value);
                     if (isNaN(value) || value < 0) {

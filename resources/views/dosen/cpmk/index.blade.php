@@ -28,7 +28,7 @@
                         <div class="w-full sm:w-48">
                             <select name="tahun_ajaran_id" id="filter-tahun-ajaran" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5" onchange="this.form.submit()">
                                 <option value="">Semua Tahun Ajaran</option>
-                                @foreach($tahunAjaranList as $ta)
+                                @foreach($tahunAjarans as $ta)
                                     <option value="{{ $ta->id }}" {{ request('tahun_ajaran_id') == $ta->id ? 'selected' : '' }}>
                                         {{ $ta->tahun }} - {{ $ta->periode }}
                                     </option>
@@ -38,8 +38,9 @@
                         <div class="w-full sm:w-32">
                             <select name="jenis" id="filter-jenis" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5" onchange="this.form.submit()">
                                 <option value="">Semua Jenis</option>
-                                <option value="wajib" {{ request('jenis') == 'wajib' ? 'selected' : '' }}>Wajib</option>
-                                <option value="pilihan" {{ request('jenis') == 'pilihan' ? 'selected' : '' }}>Pilihan</option>
+                                @foreach($jenisOptions as $jenis)
+                                    <option value="{{ $jenis }}" {{ request('jenis') == $jenis ? 'selected' : '' }}>{{ $jenis }}</option>
+                                @endforeach
                             </select>
                         </div>
                     </div>
@@ -172,10 +173,10 @@
                                     <!-- Kelas Column -->
                                     <td class="px-6 py-4 whitespace-nowrap text-center">
                                         <div class="text-sm font-medium text-gray-900">
-                                            @if(isset($mataKuliah->allKelas) && $mataKuliah->allKelas->count() > 0)
-                                                {{ App\Models\TahunAjaranMatkul::convertKelasToHuruf($mataKuliah->allKelas)->implode(', ') }}
+                                            @if($mataKuliah->kelas && $mataKuliah->kelas->count() > 0)
+                                                {{ $mataKuliah->kelas->pluck('namaKelas')->implode(', ') }}
                                             @else
-                                                {{ $mataKuliah->kelasHuruf ?: '-' }}
+                                                -
                                             @endif
                                         </div>
                                     </td>
@@ -190,29 +191,30 @@
                                     <!-- Dosen Pengampu Column -->
                                     <td class="px-6 py-4 text-center">
                                         <div class="text-sm text-gray-900">
-                                            @if(isset($mataKuliah->dosenPengampuNames) && $mataKuliah->dosenPengampuNames->count() > 0)
-                                                @if($mataKuliah->dosenPengampuNames->count() <= 2)
-                                                    @foreach($mataKuliah->dosenPengampuNames as $dosenName)
-                                                        <span class="inline-block {{ $dosenName === $dosen->nama ? 'bg-green-100 text-green-800 font-medium' : 'bg-blue-100 text-blue-800' }} text-xs px-2 py-1 rounded-full mr-1"
-                                                              title="{{ $dosenName === $dosen->nama ? 'Anda' : $dosenName }}">
-                                                            {{ $dosenName === $dosen->nama ? 'Anda' : Str::limit($dosenName, 12) }}
+                                            @if($mataKuliah->dosenPengampuKelas && $mataKuliah->dosenPengampuKelas->count() > 0)
+                                                @php
+                                                    $dosenNames = $mataKuliah->dosenPengampuKelas->map(function($dosenPengampuKelas) {
+                                                        return $dosenPengampuKelas->dosen->nama ?? 'Unknown';
+                                                    })->unique()->values();
+                                                @endphp
+                                                @if($dosenNames->count() <= 2)
+                                                    @foreach($dosenNames as $dosenName)
+                                                        <span class="inline-block {{ $dosenName === auth()->user()->dosen->nama ? 'bg-green-100 text-green-800 font-medium' : 'bg-blue-100 text-blue-800' }} text-xs px-2 py-1 rounded-full mr-1"
+                                                              title="{{ $dosenName === auth()->user()->dosen->nama ? 'Anda' : $dosenName }}">
+                                                            {{ $dosenName === auth()->user()->dosen->nama ? 'Anda' : Str::limit($dosenName, 12) }}
                                                         </span>
                                                     @endforeach
                                                 @else
-                                                    @php
-                                                        $currentUserFirst = $mataKuliah->dosenPengampuNames->contains($dosen->nama);
-                                                        $firstDosen = $currentUserFirst ? $dosen->nama : $mataKuliah->dosenPengampuNames->first();
-                                                    @endphp
-                                                    <span class="inline-block {{ $firstDosen === $dosen->nama ? 'bg-green-100 text-green-800 font-medium' : 'bg-blue-100 text-blue-800' }} text-xs px-2 py-1 rounded-full mr-1"
-                                                          title="{{ $firstDosen === $dosen->nama ? 'Anda' : $firstDosen }}">
-                                                        {{ $firstDosen === $dosen->nama ? 'Anda' : Str::limit($firstDosen, 8) }}
+                                                    <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full mr-1">
+                                                        {{ $dosenNames->first() === auth()->user()->dosen->nama ? 'Anda' : Str::limit($dosenNames->first(), 12) }}
                                                     </span>
-                                                    <span class="text-xs text-gray-500" title="{{ $mataKuliah->dosenPengampuNames->reject(fn($name) => $name === $firstDosen)->implode(', ') }}">
-                                                        +{{ $mataKuliah->dosenPengampuNames->count() - 1 }}
+                                                    <span class="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full"
+                                                          title="{{ $dosenNames->slice(1)->implode(', ') }}">
+                                                        +{{ $dosenNames->count() - 1 }}
                                                     </span>
                                                 @endif
                                             @else
-                                                <span class="text-gray-500">-</span>
+                                                <span class="text-sm text-gray-500">-</span>
                                             @endif
                                         </div>
                                     </td>
@@ -227,14 +229,23 @@
                                     <!-- Last Updated Column -->
                                     <td class="px-6 py-4 text-center">
                                         <div class="text-sm text-gray-900">
-                                            @if(isset($mataKuliah->latestCpmkUpdate) && $mataKuliah->latestCpmkUpdate)
-                                                <!-- Tanggal dan jam dalam 1 baris -->
-                                                <div class="text-xs text-gray-900 font-medium" title="Last updated: {{ \Carbon\Carbon::parse($mataKuliah->latestCpmkUpdate)->format('d M Y, H:i') }}">
-                                                    {{ \Carbon\Carbon::parse($mataKuliah->latestCpmkUpdate)->format('d/m/Y H:i') }}
-                                                </div>
-                                                <div class="text-xs text-gray-500 mt-1">
-                                                    {{ \Carbon\Carbon::parse($mataKuliah->latestCpmkUpdate)->diffForHumans() }}
-                                                </div>
+                                            @if($mataKuliah->cpmkMatKul && $mataKuliah->cpmkMatKul->count() > 0)
+                                                @php
+                                                    $latestUpdate = $mataKuliah->cpmkMatKul->max('updated_at');
+                                                @endphp
+                                                @if($latestUpdate)
+                                                    <!-- Tanggal dan jam dalam 1 baris -->
+                                                    <div class="text-xs text-gray-900 font-medium" title="Last updated: {{ \Carbon\Carbon::parse($latestUpdate)->format('d M Y, H:i') }}">
+                                                        {{ \Carbon\Carbon::parse($latestUpdate)->format('d/m/Y H:i') }}
+                                                    </div>
+                                                    <div class="text-xs text-gray-500 mt-1">
+                                                        {{ \Carbon\Carbon::parse($latestUpdate)->diffForHumans() }}
+                                                    </div>
+                                                @else
+                                                    <div class="text-xs text-gray-500">
+                                                        -
+                                                    </div>
+                                                @endif
                                             @else
                                                 <div class="text-xs text-gray-500">
                                                     -

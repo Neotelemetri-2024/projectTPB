@@ -13,7 +13,7 @@ class KelasMahasiswa extends Model
 
     protected $fillable = [
         'mahasiswaId',
-        'tahunAjaranMatkulId',
+        'kelasId',
         'totalNilai',
         'grade'
     ];
@@ -30,8 +30,13 @@ class KelasMahasiswa extends Model
         return $this->belongsTo(Mahasiswa::class, 'mahasiswaId');
     }
 
+    public function kelas()
+    {
+        return $this->belongsTo(Kelas::class, 'kelasId');
+    }
+
     public function tahunAjaranMatkul()
     {
-        return $this->belongsTo(TahunAjaranMatkul::class, 'tahunAjaranMatkulId');
+        return $this->belongsTo(TahunAjaranMatkul::class, 'kelas.tahunAjaranMatkulId');
     }
 }

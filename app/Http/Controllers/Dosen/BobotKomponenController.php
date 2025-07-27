@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use App\Models\Bobot;
 use App\Models\Komponen;
 use App\Models\TahunAjaranMatkul;
-use App\Models\DosenPengampu;
 use App\Models\Cpmk;
 use App\Models\CpmkMatKul;
 use Illuminate\Support\Facades\Auth;
@@ -27,15 +26,15 @@ class BobotKomponenController extends Controller
     {
         $dosen = Auth::user()->dosen;
 
-        // Verify access
-        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('dosenPengampu', function($query) use ($dosen) {
+        // Verify access - use new schema
+        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('kelas.dosenPengampuKelas', function($query) use ($dosen) {
             $query->where('dosenId', $dosen->id);
         })->findOrFail($tahunAjaranMatkulId);
 
         // Get all TahunAjaranMatkul records for the same mata kuliah, tahun ajaran, and dosen
         $relatedTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
             ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
-            ->whereHas('dosenPengampu', function($query) use ($dosen) {
+            ->whereHas('kelas.dosenPengampuKelas', function($query) use ($dosen) {
                 $query->where('dosenId', $dosen->id);
             })
             ->pluck('id');
@@ -79,9 +78,12 @@ class BobotKomponenController extends Controller
         // Calculate used bobot
         $usedBobot = $existingBobot->sum('bobot');
 
-        // Check if any bobot has nilai (for locking mechanism)
-        $bobotWithNilai = $existingBobot->filter(function($bobot) {
-            return $bobot->nilai->count() > 0;
+        // Check if any bobot has nilai (for locking mechanism) - fresh query to avoid cache
+        $bobotIds = $existingBobot->pluck('id');
+        $bobotWithNilaiIds = \App\Models\Nilai::whereIn('bobotId', $bobotIds)->pluck('bobotId')->unique();
+        
+        $bobotWithNilai = $existingBobot->filter(function($bobot) use ($bobotWithNilaiIds) {
+            return $bobotWithNilaiIds->contains($bobot->id);
         })->mapWithKeys(function($bobot) {
             $key = $bobot->cpmkId . '_' . $bobot->komponenId;
             return [$key => true];
@@ -92,12 +94,15 @@ class BobotKomponenController extends Controller
 
         // Get class information for display
         $kelasInfo = TahunAjaranMatkul::whereIn('id', $relatedTahunAjaranMatkulIds)
-            ->with('kelasMahasiswa')
+            ->with(['kelas.kelasMahasiswa'])
             ->get()
             ->map(function($item) {
+                $totalMahasiswa = $item->kelas->sum(function($kelas) {
+                    return $kelas->kelasMahasiswa->count();
+                });
                 return [
-                    'kelas' => $item->kelas,
-                    'jumlah_mahasiswa' => $item->kelasMahasiswa->count()
+                    'kelas' => $item->kelas->pluck('namaKelas')->implode(', '),
+                    'jumlah_mahasiswa' => $totalMahasiswa
                 ];
             });
 
@@ -123,15 +128,15 @@ class BobotKomponenController extends Controller
     {
         $dosen = Auth::user()->dosen;
 
-        // Verify access
-        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('dosenPengampu', function($query) use ($dosen) {
+        // Verify access - use new schema
+        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('kelas.dosenPengampuKelas', function($query) use ($dosen) {
             $query->where('dosenId', $dosen->id);
         })->findOrFail($tahunAjaranMatkulId);
 
         // Get all TahunAjaranMatkul records for the same mata kuliah, tahun ajaran, and dosen
         $relatedTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
             ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
-            ->whereHas('dosenPengampu', function($query) use ($dosen) {
+            ->whereHas('kelas.dosenPengampuKelas', function($query) use ($dosen) {
                 $query->where('dosenId', $dosen->id);
             })
             ->pluck('id');

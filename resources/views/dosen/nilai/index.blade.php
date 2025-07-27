@@ -174,10 +174,10 @@
                                     <!-- Kelas -->
                                     <td class="px-6 py-4">
                                         <div class="text-sm font-medium text-gray-900">
-                                            @if(isset($mataKuliah->allKelas) && $mataKuliah->allKelas->count() > 0)
-                                                {{ App\Models\TahunAjaranMatkul::convertKelasToHuruf($mataKuliah->allKelas)->implode(', ') }}
+                                            @if(isset($mataKuliah->kelasNames) && $mataKuliah->kelasNames->count() > 0)
+                                                {{ $mataKuliah->kelasNames->implode(', ') }}
                                             @else
-                                                {{ $mataKuliah->kelasHuruf ?: '-' }}
+                                                -
                                             @endif
                                         </div>
                                     </td>

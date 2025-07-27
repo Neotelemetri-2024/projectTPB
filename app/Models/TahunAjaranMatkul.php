@@ -13,12 +13,7 @@ class TahunAjaranMatkul extends Model
 
     protected $fillable = [
         'tahunAjaranId',
-        'mataKuliahId',
-        'kelas'
-    ];
-
-    protected $casts = [
-        'kelas' => 'integer'
+        'mataKuliahId'
     ];
 
     public function tahunAjaran()
@@ -31,14 +26,14 @@ class TahunAjaranMatkul extends Model
         return $this->belongsTo(MataKuliah::class, 'mataKuliahId');
     }
 
-    public function dosenPengampu()
+    public function kelas()
     {
-        return $this->hasMany(DosenPengampu::class, 'tahunAjaranMatkulId');
+        return $this->hasMany(Kelas::class, 'tahunAjaranMatkulId');
     }
 
     public function kelasMahasiswa()
     {
-        return $this->hasMany(KelasMahasiswa::class, 'tahunAjaranMatkulId');
+        return $this->hasManyThrough(KelasMahasiswa::class, Kelas::class, 'tahunAjaranMatkulId', 'kelasId');
     }
 
     public function nilai()
@@ -57,28 +52,18 @@ class TahunAjaranMatkul extends Model
     }
 
     /**
-     * Get class name as letter (1=A, 2=B, etc.)
+     * Get all classes for this mata kuliah
      */
-    public function getKelasHurufAttribute()
+    public function getAllKelas()
     {
-        return $this->kelas ? chr(64 + $this->kelas) : '';
+        return $this->kelas()->orderBy('namaKelas')->get();
     }
 
     /**
-     * Convert class numbers to letters
+     * Get class names as letters
      */
-    public static function convertKelasToHuruf($kelasNumbers)
+    public function getKelasNames()
     {
-        if (is_numeric($kelasNumbers)) {
-            return chr(64 + $kelasNumbers);
-        }
-
-        if ($kelasNumbers instanceof \Illuminate\Support\Collection) {
-            return $kelasNumbers->map(function($kelas) {
-                return chr(64 + $kelas);
-            });
-        }
-
-        return $kelasNumbers;
+        return $this->kelas()->pluck('namaKelas')->sort()->values();
     }
 }

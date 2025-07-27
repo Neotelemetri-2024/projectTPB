@@ -26,4 +26,14 @@ class Dosen extends Model
     {
         return $this->hasMany(DosenPengampu::class, 'dosenId');
     }
+
+    public function kelas()
+    {
+        return $this->belongsToMany(Kelas::class, 'dosen_pengampu_kelas', 'dosenId', 'kelasId');
+    }
+
+    public function dosenPengampuKelas()
+    {
+        return $this->hasMany(DosenPengampuKelas::class, 'dosenId');
+    }
 }

@@ -32,8 +32,8 @@ class CpmkController extends Controller
             return redirect()->back()->with('error', 'Data dosen tidak ditemukan.');
         }
 
-        // Start with base query
-        $query = TahunAjaranMatkul::whereHas('dosenPengampu', function ($q) use ($dosen) {
+        // Start with base query - use new schema with dosen_pengampu_kelas
+        $query = TahunAjaranMatkul::whereHas('kelas.dosenPengampuKelas', function ($q) use ($dosen) {
             $q->where('dosenId', $dosen->id);
         });
 
@@ -62,8 +62,8 @@ class CpmkController extends Controller
         $mataKuliahData = $query->with([
             'mataKuliah',
             'tahunAjaran',
-            'dosenPengampu.dosen.user',
-            'kelasMahasiswa.mahasiswa',
+            'kelas.dosenPengampuKelas.dosen.user',
+            'kelas.kelasMahasiswa.mahasiswa',
             'cpmkMatKul.cpmk',
             'cpmkMatKul' => function($query) {
                 $query->orderBy('updated_at', 'desc');
@@ -81,77 +81,37 @@ class CpmkController extends Controller
 
             // Aggregate data from all classes
             $allKelasMahasiswa = collect();
-            $allDosenPengampu = collect();
+            $allDosenPengampuKelas = collect();
             $allKelas = collect();
             $allCpmkMatKul = collect();
 
             foreach($group as $item) {
-                $allKelasMahasiswa = $allKelasMahasiswa->merge($item->kelasMahasiswa);
-                $allDosenPengampu = $allDosenPengampu->merge($item->dosenPengampu);
-                $allKelas->push($item->kelas);
+                // Collect all kelas mahasiswa from all classes
+                foreach($item->kelas as $kelas) {
+                    $allKelasMahasiswa = $allKelasMahasiswa->merge($kelas->kelasMahasiswa);
+                    $allDosenPengampuKelas = $allDosenPengampuKelas->merge($kelas->dosenPengampuKelas);
+                }
+                $allKelas = $allKelas->merge($item->kelas);
                 $allCpmkMatKul = $allCpmkMatKul->merge($item->cpmkMatKul);
             }
 
             // Set aggregated data to representative
             $representative->setRelation('kelasMahasiswa', $allKelasMahasiswa->unique('id'));
-            $representative->setRelation('dosenPengampu', $allDosenPengampu->unique('id'));
+            $representative->setRelation('dosenPengampuKelas', $allDosenPengampuKelas->unique('id'));
+            $representative->setRelation('kelas', $allKelas->unique('id'));
 
             // Make CPMK unique based on cpmkId, not the cpmkMatKul record id
             $uniqueCpmkMatKul = $allCpmkMatKul->unique('cpmkId');
             $representative->setRelation('cpmkMatKul', $uniqueCpmkMatKul);
 
-            // Get the latest update timestamp from both CPMK and Bobot tables
-            $groupIds = $group->pluck('id');
-
-            // Get latest update from CPMK table (directly from cpmk table, not cpmk_mat_kul)
-            $cpmkIds = $allCpmkMatKul->pluck('cpmkId')->unique();
-            $latestCpmkUpdate = Cpmk::whereIn('id', $cpmkIds)->max('updated_at');
-
-            $latestCpmkMatKulUpdate = CpmkMatKul::whereIn('tahunAjaranMatkulId', $groupIds)->max('updated_at');
-
-            // Get latest update from Bobot table
-            $latestBobotUpdate = Bobot::whereIn('tahunAjaranMatkulId', $groupIds)->max('updated_at');
-
-            // Compare and get the latest between CPMK and Bobot updates
-            $latestUpdate = null;
-            if ($latestCpmkUpdate && $latestBobotUpdate && $latestCpmkMatKulUpdate) {
-                $latestUpdate = max($latestCpmkUpdate, $latestBobotUpdate, $latestCpmkMatKulUpdate);
-            } elseif ($latestCpmkUpdate) {
-                $latestUpdate = $latestCpmkUpdate;
-            } elseif ($latestBobotUpdate) {
-                $latestUpdate = $latestBobotUpdate;
-            } elseif ($latestCpmkMatKulUpdate) {
-                $latestUpdate = $latestCpmkMatKulUpdate;
-            }
-
-            $representative->latestCpmkUpdate = $latestUpdate;
-            $representative->latestCpmkUpdate = $latestUpdate;
-
-            // Get unique dosen pengampu first
-            $uniqueDosenPengampu = $allDosenPengampu->unique('dosenId');
-
-            // Get unique dosen pengampu with their names
-            $dosenNames = $uniqueDosenPengampu->map(function($dosenPengampu) {
-                return $dosenPengampu->dosen->nama ?? 'Unknown';
-            })->unique()->values();
-            $representative->dosenPengampuNames = $dosenNames;
-
-            $representative->allKelas = $allKelas->unique()->sort()->values();
-            $representative->groupedItems = $group;
-
             return $representative;
         })->values();
 
-        // Get data for filters
-        $tahunAjaranList = TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->get();
-        $jenisList = ['wajib', 'pilihan'];
+        // Get filter options
+        $tahunAjarans = TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->get();
+        $jenisOptions = ['Teori', 'Praktikum', 'Teori & Praktikum'];
 
-        return view('dosen.cpmk.index', compact(
-            'mataKuliahDiampu',
-            'dosen',
-            'tahunAjaranList',
-            'jenisList'
-        ));
+        return view('dosen.cpmk.index', compact('mataKuliahDiampu', 'tahunAjarans', 'jenisOptions'));
     }
 
     /**
@@ -166,15 +126,15 @@ class CpmkController extends Controller
             return redirect()->back()->with('error', 'Data dosen tidak ditemukan.');
         }
 
-        // Verify that this dosen teaches this mata kuliah
-        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('dosenPengampu', function ($query) use ($dosen) {
+        // Verify that this dosen teaches this mata kuliah - use new schema
+        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
             $query->where('dosenId', $dosen->id);
         })->with(['mataKuliah', 'tahunAjaran'])->findOrFail($tahunAjaranMatkulId);
 
         // Get all TahunAjaranMatkul records for the same mata kuliah and tahun ajaran
         $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
             ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
-            ->whereHas('dosenPengampu', function ($query) use ($dosen) {
+            ->whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
                 $query->where('dosenId', $dosen->id);
             })
             ->pluck('id');
@@ -185,18 +145,17 @@ class CpmkController extends Controller
         })
         ->with(['cpl', 'cpmkMatKul']);
 
-        // Apply search filter
+        // Apply filters
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('kodeCpmk', 'like', "%{$search}%")
-                  ->orWhere('deskripsi', 'like', "%{$search}%");
+                  ->orWhere('deskripsiCpmk', 'like', "%{$search}%");
             });
         }
 
-        // Apply CPL filter
         if ($request->filled('cpl_id')) {
-            $query->whereHas('cpl', function($q) use ($request) {
+            $query->whereHas('cpl', function ($q) use ($request) {
                 $q->where('cpl.id', $request->cpl_id);
             });
         }
@@ -258,8 +217,8 @@ class CpmkController extends Controller
             return redirect()->back()->with('error', 'Data dosen tidak ditemukan.');
         }
 
-        // Verify that this dosen teaches this mata kuliah
-        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('dosenPengampu', function ($query) use ($dosen) {
+        // Verify that this dosen teaches this mata kuliah - use new schema
+        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
             $query->where('dosenId', $dosen->id);
         })->with(['mataKuliah', 'tahunAjaran'])->findOrFail($tahunAjaranMatkulId);
 
@@ -269,17 +228,20 @@ class CpmkController extends Controller
         // Get all classes taught by this dosen for this mata kuliah and tahun ajaran
         $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
             ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
-            ->whereHas('dosenPengampu', function ($query) use ($dosen) {
+            ->whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
                 $query->where('dosenId', $dosen->id);
             })
-            ->with('kelasMahasiswa')
+            ->with(['kelas.kelasMahasiswa'])
             ->get();
 
         // Get class information for display
         $kelasInfo = $allTahunAjaranMatkulIds->map(function($item) {
+            $totalMahasiswa = $item->kelas->sum(function($kelas) {
+                return $kelas->kelasMahasiswa->count();
+            });
             return [
-                'kelas' => $item->kelas,
-                'jumlah_mahasiswa' => $item->kelasMahasiswa->count()
+                'kelas' => $item->kelas->pluck('namaKelas')->implode(', '),
+                'jumlah_mahasiswa' => $totalMahasiswa
             ];
         });
 
@@ -349,6 +311,9 @@ class CpmkController extends Controller
         // Custom validation: kodeCpmk must be unique per mata kuliah (across all classes/years for that mata kuliah)
         $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
             ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
+            ->whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
+                $query->where('dosenId', $dosen->id);
+            })
             ->pluck('id');
         $exists = \App\Models\Cpmk::where('kodeCpmk', $request->kodeCpmk)
             ->whereHas('cpmkMatKul', function($q) use ($allTahunAjaranMatkulIds) {
@@ -400,15 +365,15 @@ class CpmkController extends Controller
             return redirect()->back()->with('error', 'Data dosen tidak ditemukan.');
         }
 
-        // Verify that this dosen teaches this mata kuliah
-        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('dosenPengampu', function ($query) use ($dosen) {
+        // Verify that this dosen teaches this mata kuliah - use new schema
+        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
             $query->where('dosenId', $dosen->id);
         })->with(['mataKuliah', 'tahunAjaran'])->findOrFail($tahunAjaranMatkulId);
 
         // Get all TahunAjaranMatkul records for the same mata kuliah and tahun ajaran
         $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
             ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
-            ->whereHas('dosenPengampu', function ($query) use ($dosen) {
+            ->whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
                 $query->where('dosenId', $dosen->id);
             })
             ->pluck('id');
@@ -445,8 +410,8 @@ class CpmkController extends Controller
             return redirect()->back()->with('error', 'Data dosen tidak ditemukan.');
         }
 
-        // Verify that this dosen teaches this mata kuliah
-        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('dosenPengampu', function ($query) use ($dosen) {
+        // Verify that this dosen teaches this mata kuliah - use new schema
+        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
             $query->where('dosenId', $dosen->id);
         })->with(['mataKuliah', 'tahunAjaran'])->findOrFail($tahunAjaranMatkulId);
 
@@ -480,8 +445,8 @@ class CpmkController extends Controller
             return redirect()->back()->with('error', 'Data dosen tidak ditemukan.');
         }
 
-        // Verify that this dosen teaches this mata kuliah
-        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('dosenPengampu', function ($query) use ($dosen) {
+        // Verify that this dosen teaches this mata kuliah - use new schema
+        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
             $query->where('dosenId', $dosen->id);
         })->findOrFail($tahunAjaranMatkulId);
 
@@ -489,7 +454,7 @@ class CpmkController extends Controller
         // that are taught by this dosen
         $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
             ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
-            ->whereHas('dosenPengampu', function ($query) use ($dosen) {
+            ->whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
                 $query->where('dosenId', $dosen->id);
             })
             ->pluck('id');
@@ -580,15 +545,15 @@ class CpmkController extends Controller
             return redirect()->back()->with('error', 'Data dosen tidak ditemukan.');
         }
 
-        // Verify that this dosen teaches this mata kuliah
-        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('dosenPengampu', function ($query) use ($dosen) {
+        // Verify that this dosen teaches this mata kuliah - use new schema
+        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
             $query->where('dosenId', $dosen->id);
         })->findOrFail($tahunAjaranMatkulId);
 
         // Get all TahunAjaranMatkul records for the same mata kuliah and tahun ajaran
         $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
             ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
-            ->whereHas('dosenPengampu', function ($query) use ($dosen) {
+            ->whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
                 $query->where('dosenId', $dosen->id);
             })
             ->pluck('id');
@@ -633,15 +598,15 @@ class CpmkController extends Controller
             return response()->json(['error' => 'Data dosen tidak ditemukan.'], 403);
         }
 
-        // Verify that this dosen teaches this mata kuliah
-        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('dosenPengampu', function ($query) use ($dosen) {
+        // Verify that this dosen teaches this mata kuliah - use new schema
+        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
             $query->where('dosenId', $dosen->id);
         })->findOrFail($tahunAjaranMatkulId);
 
         // Get all TahunAjaranMatkul records for the same mata kuliah and tahun ajaran
         $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
             ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
-            ->whereHas('dosenPengampu', function ($query) use ($dosen) {
+            ->whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
                 $query->where('dosenId', $dosen->id);
             })
             ->pluck('id');
@@ -712,15 +677,15 @@ class CpmkController extends Controller
             return redirect()->back()->with('error', 'Data dosen tidak ditemukan.');
         }
 
-        // Verify that this dosen teaches this mata kuliah
-        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('dosenPengampu', function ($query) use ($dosen) {
+        // Verify that this dosen teaches this mata kuliah - use new schema
+        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
             $query->where('dosenId', $dosen->id);
         })->with(['mataKuliah', 'tahunAjaran'])->findOrFail($tahunAjaranMatkulId);
 
         // Get all TahunAjaranMatkul records for the same mata kuliah and tahun ajaran
         $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
             ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
-            ->whereHas('dosenPengampu', function ($query) use ($dosen) {
+            ->whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
                 $query->where('dosenId', $dosen->id);
             })
             ->pluck('id');

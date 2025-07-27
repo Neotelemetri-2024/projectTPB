@@ -12,7 +12,7 @@
                     <p class="text-sm text-gray-600 mt-1">
                         {{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }} - {{ $tahunAjaranMatkul->mataKuliah->namaMatkul }}
                         <span class="mx-2">•</span>
-                        Kelas {{ $tahunAjaranMatkul->kelasHuruf }}
+                        Kelas {{ $tahunAjaranMatkul->kelas->pluck('namaKelas')->implode(', ') }}
                         <span class="mx-2">•</span>
                         {{ $tahunAjaranMatkul->tahunAjaran->tahun }} - {{ $tahunAjaranMatkul->tahunAjaran->periode }}
                     </p>
@@ -83,6 +83,8 @@
         <!-- Bulk Add Form -->
         <form method="POST" action="{{ route('admin.tahun-ajaran-matkul.bulk-add-mahasiswa', $tahunAjaranMatkul->id) }}" id="bulkAddForm">
             @csrf
+            <!-- Hidden field untuk kelasId -->
+            <input type="hidden" name="kelasId" value="{{ $tahunAjaranMatkul->kelas->first()->id }}">
 
             <!-- Action Bar -->
             <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
@@ -182,6 +184,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const checkboxes = document.querySelectorAll('.mahasiswa-checkbox');
     const selectedCount = document.getElementById('selectedCount');
     const addSelectedBtn = document.getElementById('addSelectedBtn');
+    const bulkAddForm = document.getElementById('bulkAddForm');
 
     function updateUI() {
         const checked = document.querySelectorAll('.mahasiswa-checkbox:checked');
@@ -201,11 +204,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Select all functionality
-    [selectAll, selectAllHeader].forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            checkboxes.forEach(cb => cb.checked = this.checked);
-            updateUI();
+    selectAll.addEventListener('change', function() {
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
         });
+        updateUI();
+    });
+
+    selectAllHeader.addEventListener('change', function() {
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+        selectAll.checked = this.checked;
+        updateUI();
     });
 
     // Individual checkbox change
@@ -213,38 +224,43 @@ document.addEventListener('DOMContentLoaded', function() {
         checkbox.addEventListener('change', updateUI);
     });
 
+    // Modal functionality - update the form action when modal is triggered
+    addSelectedBtn.addEventListener('click', function() {
+        const checked = document.querySelectorAll('.mahasiswa-checkbox:checked');
+        if (checked.length > 0) {
+            // Update the modal form action to include the current form data
+            const modal = document.getElementById('confirmAddModal');
+            const modalForm = modal.querySelector('form');
+            if (modalForm) {
+                // Clone the bulk add form data
+                const formData = new FormData(bulkAddForm);
+                modalForm.innerHTML = '';
+                
+                // Add CSRF token
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_token';
+                csrfInput.value = document.querySelector('input[name="_token"]').value;
+                modalForm.appendChild(csrfInput);
+                
+                // Add all form data
+                for (let [key, value] of formData.entries()) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = value;
+                    modalForm.appendChild(input);
+                }
+                
+                // Set the action
+                modalForm.action = bulkAddForm.action;
+                modalForm.method = 'POST';
+            }
+        }
+    });
+
     // Initial UI update
     updateUI();
-
-    // Handle modal confirmation
-    document.getElementById('addSelectedBtn').addEventListener('click', function() {
-        const checked = document.querySelectorAll('.mahasiswa-checkbox:checked');
-        if (checked.length === 0) {
-            alert('Pilih minimal satu mahasiswa untuk ditambahkan.');
-            return;
-        }
-
-        // Update modal message with count
-        const modal = document.getElementById('confirmAddModal');
-        const messageElement = modal.querySelector('p');
-        messageElement.textContent = `Apakah Anda yakin ingin menambahkan ${checked.length} mahasiswa ke kelas ini?`;
-
-        // Update form to include selected mahasiswa
-        const form = modal.querySelector('form');
-
-        // Clear existing hidden inputs
-        const existingInputs = form.querySelectorAll('input[name="mahasiswa_ids[]"]');
-        existingInputs.forEach(input => input.remove());
-
-        // Add selected mahasiswa IDs to modal form
-        checked.forEach(checkbox => {
-            const hiddenInput = document.createElement('input');
-            hiddenInput.type = 'hidden';
-            hiddenInput.name = 'mahasiswa_ids[]';
-            hiddenInput.value = checkbox.value;
-            form.appendChild(hiddenInput);
-        });
-    });
 });
 </script>
 @endpush

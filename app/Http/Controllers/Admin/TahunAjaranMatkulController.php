@@ -8,8 +8,9 @@ use App\Models\MataKuliah;
 use App\Models\TahunAjaranMatkul;
 use App\Models\Dosen;
 use App\Models\Mahasiswa;
-use App\Models\DosenPengampu;
+use App\Models\DosenPengampuKelas;
 use App\Models\KelasMahasiswa;
+use App\Models\Kelas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -17,7 +18,12 @@ class TahunAjaranMatkulController extends Controller
 {
     public function index(Request $request)
     {
-        $query = TahunAjaranMatkul::with(['tahunAjaran', 'mataKuliah', 'dosenPengampu.dosen', 'kelasMahasiswa.mahasiswa']);
+        $query = TahunAjaranMatkul::with([
+            'tahunAjaran', 
+            'mataKuliah', 
+            'kelas.dosenPengampuKelas.dosen', 
+            'kelas.kelasMahasiswa.mahasiswa'
+        ]);
 
         // Get the latest tahun ajaran for default filter
         $latestTahunAjaran = TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->first();
@@ -25,9 +31,9 @@ class TahunAjaranMatkulController extends Controller
         // Set default filter to latest tahun ajaran if no filter is selected
         $selectedTahunAjaranId = $request->filled('tahun_ajaran_id') ? $request->tahun_ajaran_id : ($latestTahunAjaran ? $latestTahunAjaran->id : null);
 
-        // Filter by tahun ajaran (default to latest)
-        if ($selectedTahunAjaranId) {
-            $query->where('tahunAjaranId', $selectedTahunAjaranId);
+        // Filter by tahun ajaran (only if explicitly selected)
+        if ($request->filled('tahun_ajaran_id')) {
+            $query->where('tahunAjaranId', $request->tahun_ajaran_id);
         }
 
         // Search by mata kuliah
@@ -66,42 +72,75 @@ class TahunAjaranMatkulController extends Controller
         $request->validate([
             'tahunAjaranId' => 'required|exists:tahun_ajaran,id',
             'mataKuliahId' => 'required|exists:mata_kuliah,id',
-            'kelas' => 'required|integer|min:1',
-            'dosenIds' => 'required|array|min:1',
-            'dosenIds.*' => 'exists:dosen,id'
+            'kelasNames' => 'required|array|min:1',
+            'kelasNames.*' => 'required|string|max:10',
+            'dosenOption' => 'required|in:same,different'
         ]);
 
-        // Check if combination already exists
+        // Filter out empty kelas names
+        $kelasNames = array_filter($request->kelasNames, function($name) {
+            return !empty(trim($name));
+        });
+
+        if (empty($kelasNames)) {
+            return back()->withErrors(['kelasNames' => 'Minimal satu nama kelas harus diisi.'])->withInput();
+        }
+
+        // Check if combination already exists (tahun ajaran + mata kuliah)
         $existing = TahunAjaranMatkul::where('tahunAjaranId', $request->tahunAjaranId)
             ->where('mataKuliahId', $request->mataKuliahId)
-            ->where('kelas', $request->kelas)
             ->first();
 
         if ($existing) {
-            return back()->withErrors(['kelas' => 'Kombinasi tahun ajaran, mata kuliah, dan kelas sudah ada.']);
+            return back()->withErrors(['mataKuliahId' => 'Mata kuliah ini sudah ada di tahun ajaran yang dipilih. Silakan pilih mata kuliah lain atau tahun ajaran lain.'])->withInput();
         }
 
         DB::beginTransaction();
         try {
             $tahunAjaranMatkul = TahunAjaranMatkul::create([
                 'tahunAjaranId' => $request->tahunAjaranId,
-                'mataKuliahId' => $request->mataKuliahId,
-                'kelas' => $request->kelas
+                'mataKuliahId' => $request->mataKuliahId
             ]);
 
-            // Create dosen pengampu
-            foreach ($request->dosenIds as $dosenId) {
-                DosenPengampu::create([
-                    'dosenId' => $dosenId,
-                    'tahunAjaranMatkulId' => $tahunAjaranMatkul->id
-                ]);
+            // Create kelas for each kelas name
+            foreach ($kelasNames as $kelasName) {
+                $kelasName = trim($kelasName);
+                if (!empty($kelasName)) {
+                    $kelas = Kelas::create([
+                        'namaKelas' => $kelasName,
+                        'tahunAjaranMatkulId' => $tahunAjaranMatkul->id
+                    ]);
+
+                    // Create dosen pengampu based on option
+                    if ($request->dosenOption === 'same') {
+                        // Same dosen for all classes
+                        if ($request->has('dosenIds')) {
+                            foreach ($request->dosenIds as $dosenId) {
+                                DosenPengampuKelas::create([
+                                    'dosenId' => $dosenId,
+                                    'kelasId' => $kelas->id
+                                ]);
+                            }
+                        }
+                    } else {
+                        // Different dosen per class
+                        if ($request->has("dosenPerKelas.{$kelasName}")) {
+                            foreach ($request->input("dosenPerKelas.{$kelasName}") as $dosenId) {
+                                DosenPengampuKelas::create([
+                                    'dosenId' => $dosenId,
+                                    'kelasId' => $kelas->id
+                                ]);
+                            }
+                        }
+                    }
+                }
             }
 
             DB::commit();
             return redirect()->route('admin.tahun-ajaran-matkul.index')->with('success', 'Mata kuliah berhasil ditambahkan ke tahun ajaran.');
         } catch (\Exception $e) {
             DB::rollback();
-            return back()->withErrors(['error' => 'Terjadi kesalahan saat menyimpan data.']);
+            return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])->withInput();
         }
     }
 
@@ -110,12 +149,16 @@ class TahunAjaranMatkulController extends Controller
         $tahunAjaranMatkul = TahunAjaranMatkul::with([
             'tahunAjaran', 
             'mataKuliah', 
-            'dosenPengampu.dosen'
+            'kelas.dosenPengampuKelas.dosen', 
+            'kelas.kelasMahasiswa.mahasiswa.user'
         ])->findOrFail($id);
 
+        // Ambil semua kelasId untuk tahun ajaran matkul ini
+        $kelasIds = $tahunAjaranMatkul->kelas->pluck('id');
+
         // Query untuk mahasiswa yang ada di kelas dengan search
-        $query = KelasMahasiswa::with('mahasiswa.user')
-            ->where('tahunAjaranMatkulId', $id);
+        $query = KelasMahasiswa::with(['mahasiswa.user', 'kelas'])
+            ->whereIn('kelasId', $kelasIds);
 
         // Search mahasiswa berdasarkan nama atau NIM
         if ($request->filled('search')) {
@@ -129,15 +172,29 @@ class TahunAjaranMatkulController extends Controller
         $kelasMahasiswa = $query->paginate(10);
         $kelasMahasiswa->appends($request->query());
 
-        $mahasiswas = Mahasiswa::whereNotIn('id', $kelasMahasiswa->pluck('mahasiswaId'))->get();
-        $dosens = Dosen::whereNotIn('id', $tahunAjaranMatkul->dosenPengampu->pluck('dosenId'))->get();
+        // Get all unique mahasiswa IDs that are already in any class of this tahun ajaran matkul
+        $existingMahasiswaIds = $tahunAjaranMatkul->kelas->flatMap->kelasMahasiswa->pluck('mahasiswaId')->unique();
+        
+        // Get available mahasiswas (not in any class of this tahun ajaran matkul)
+        $availableMahasiswas = Mahasiswa::whereNotIn('id', $existingMahasiswaIds)->get();
 
-        return view('admin.tahun-ajaran-matkul.show', compact('tahunAjaranMatkul', 'kelasMahasiswa', 'mahasiswas', 'dosens'));
+        // Get all unique dosen IDs that are already teaching any class of this tahun ajaran matkul
+        $existingDosenIds = $tahunAjaranMatkul->kelas->flatMap->dosenPengampuKelas->pluck('dosenId')->unique();
+        
+        // Get available dosens (not teaching any class of this tahun ajaran matkul)
+        $availableDosens = Dosen::whereNotIn('id', $existingDosenIds)->get();
+
+        return view('admin.tahun-ajaran-matkul.show', compact(
+            'tahunAjaranMatkul', 
+            'kelasMahasiswa', 
+            'availableMahasiswas', 
+            'availableDosens'
+        ));
     }
 
     public function edit($id)
     {
-        $tahunAjaranMatkul = TahunAjaranMatkul::with(['dosenPengampu.dosen'])->findOrFail($id);
+        $tahunAjaranMatkul = TahunAjaranMatkul::with(['kelas.dosenPengampuKelas.dosen'])->findOrFail($id);
         $tahunAjarans = TahunAjaran::all();
         $mataKuliahs = MataKuliah::all();
         $dosens = Dosen::all();
@@ -150,7 +207,8 @@ class TahunAjaranMatkulController extends Controller
         $request->validate([
             'tahunAjaranId' => 'required|exists:tahun_ajaran,id',
             'mataKuliahId' => 'required|exists:mata_kuliah,id',
-            'kelas' => 'required|integer|min:1',
+            'kelasNames' => 'required|array|min:1',
+            'kelasNames.*' => 'required|string|max:10',
             'dosenIds' => 'required|array|min:1',
             'dosenIds.*' => 'exists:dosen,id'
         ]);
@@ -160,36 +218,57 @@ class TahunAjaranMatkulController extends Controller
         // Check if combination already exists (excluding current record)
         $existing = TahunAjaranMatkul::where('tahunAjaranId', $request->tahunAjaranId)
             ->where('mataKuliahId', $request->mataKuliahId)
-            ->where('kelas', $request->kelas)
             ->where('id', '!=', $id)
             ->first();
 
         if ($existing) {
-            return back()->withErrors(['kelas' => 'Kombinasi tahun ajaran, mata kuliah, dan kelas sudah ada.']);
+            return back()->withErrors(['mataKuliahId' => 'Kombinasi tahun ajaran dan mata kuliah sudah ada.']);
         }
 
         DB::beginTransaction();
         try {
             $tahunAjaranMatkul->update([
                 'tahunAjaranId' => $request->tahunAjaranId,
-                'mataKuliahId' => $request->mataKuliahId,
-                'kelas' => $request->kelas
+                'mataKuliahId' => $request->mataKuliahId
             ]);
 
-            // Update dosen pengampu
-            $tahunAjaranMatkul->dosenPengampu()->delete();
-            foreach ($request->dosenIds as $dosenId) {
-                DosenPengampu::create([
-                    'dosenId' => $dosenId,
+            // Get existing kelas IDs for proper deletion
+            $existingKelasIds = $tahunAjaranMatkul->kelas->pluck('id');
+
+            // Delete related records in correct order
+            // 1. Delete nilai records (if any)
+            $tahunAjaranMatkul->nilai()->delete();
+            
+            // 2. Delete kelas_mahasiswa records
+            KelasMahasiswa::whereIn('kelasId', $existingKelasIds)->delete();
+            
+            // 3. Delete dosen_pengampu_kelas records
+            DosenPengampuKelas::whereIn('kelasId', $existingKelasIds)->delete();
+            
+            // 4. Delete existing kelas records
+            $tahunAjaranMatkul->kelas()->delete();
+
+            // Create new kelas and dosen pengampu
+            foreach ($request->kelasNames as $kelasName) {
+                $kelas = Kelas::create([
+                    'namaKelas' => $kelasName,
                     'tahunAjaranMatkulId' => $tahunAjaranMatkul->id
                 ]);
+
+                // Create dosen pengampu for this kelas
+                foreach ($request->dosenIds as $dosenId) {
+                    DosenPengampuKelas::create([
+                        'dosenId' => $dosenId,
+                        'kelasId' => $kelas->id
+                    ]);
+                }
             }
 
             DB::commit();
             return redirect()->route('admin.tahun-ajaran-matkul.index')->with('success', 'Data berhasil diperbarui.');
         } catch (\Exception $e) {
             DB::rollback();
-            return back()->withErrors(['error' => 'Terjadi kesalahan saat memperbarui data.']);
+            return back()->withErrors(['error' => 'Terjadi kesalahan saat memperbarui data: ' . $e->getMessage()]);
         }
     }
 
@@ -199,18 +278,28 @@ class TahunAjaranMatkulController extends Controller
         
         DB::beginTransaction();
         try {
-            // Delete related records
-            $tahunAjaranMatkul->dosenPengampu()->delete();
-            $tahunAjaranMatkul->kelasMahasiswa()->delete();
+            // Delete related records in correct order
+            // 1. Delete nilai records (if any)
             $tahunAjaranMatkul->nilai()->delete();
             
+            // 2. Delete kelas_mahasiswa records
+            $kelasIds = $tahunAjaranMatkul->kelas->pluck('id');
+            KelasMahasiswa::whereIn('kelasId', $kelasIds)->delete();
+            
+            // 3. Delete dosen_pengampu_kelas records
+            DosenPengampuKelas::whereIn('kelasId', $kelasIds)->delete();
+            
+            // 4. Delete kelas records
+            $tahunAjaranMatkul->kelas()->delete();
+            
+            // 5. Delete tahun_ajaran_matkul
             $tahunAjaranMatkul->delete();
             
             DB::commit();
             return redirect()->route('admin.tahun-ajaran-matkul.index')->with('success', 'Data berhasil dihapus.');
         } catch (\Exception $e) {
             DB::rollback();
-            return back()->withErrors(['error' => 'Terjadi kesalahan saat menghapus data.']);
+            return back()->withErrors(['error' => 'Terjadi kesalahan saat menghapus data: ' . $e->getMessage()]);
         }
     }
 
@@ -218,34 +307,37 @@ class TahunAjaranMatkulController extends Controller
     public function addMahasiswa(Request $request, $id)
     {
         $request->validate([
-            'mahasiswaIds' => 'required|array|min:1',
-            'mahasiswaIds.*' => 'exists:mahasiswa,id'
+            'mahasiswa_ids' => 'required|array|min:1',
+            'mahasiswa_ids.*' => 'exists:mahasiswa,id',
+            'kelasId' => 'required|exists:kelas,id'
         ]);
 
         $tahunAjaranMatkul = TahunAjaranMatkul::findOrFail($id);
 
-        foreach ($request->mahasiswaIds as $mahasiswaId) {
+        $addedCount = 0;
+        foreach ($request->mahasiswa_ids as $mahasiswaId) {
             // Check if already exists
             $existing = KelasMahasiswa::where('mahasiswaId', $mahasiswaId)
-                ->where('tahunAjaranMatkulId', $id)
+                ->where('kelasId', $request->kelasId)
                 ->first();
 
             if (!$existing) {
                 KelasMahasiswa::create([
                     'mahasiswaId' => $mahasiswaId,
-                    'tahunAjaranMatkulId' => $id
+                    'kelasId' => $request->kelasId
                 ]);
+                $addedCount++;
             }
         }
 
-        return back()->with('success', 'Mahasiswa berhasil ditambahkan ke kelas.');
+        return back()->with('success', "$addedCount mahasiswa berhasil ditambahkan ke kelas.");
     }
 
     // Method untuk menghapus mahasiswa dari kelas
-    public function removeMahasiswa($id, $mahasiswaId)
+    public function removeMahasiswa($id, $mahasiswaId, $kelasId)
     {
         KelasMahasiswa::where('mahasiswaId', $mahasiswaId)
-            ->where('tahunAjaranMatkulId', $id)
+            ->where('kelasId', $kelasId)
             ->delete();
 
         return back()->with('success', 'Mahasiswa berhasil dihapus dari kelas.');
@@ -256,19 +348,22 @@ class TahunAjaranMatkulController extends Controller
     {
         $request->validate([
             'dosenIds' => 'required|array|min:1',
-            'dosenIds.*' => 'exists:dosen,id'
+            'dosenIds.*' => 'exists:dosen,id',
+            'kelasId' => 'required|exists:kelas,id'
         ]);
+
+        $tahunAjaranMatkul = TahunAjaranMatkul::findOrFail($id);
 
         foreach ($request->dosenIds as $dosenId) {
             // Check if already exists
-            $existing = DosenPengampu::where('dosenId', $dosenId)
-                ->where('tahunAjaranMatkulId', $id)
+            $existing = DosenPengampuKelas::where('dosenId', $dosenId)
+                ->where('kelasId', $request->kelasId)
                 ->first();
 
             if (!$existing) {
-                DosenPengampu::create([
+                DosenPengampuKelas::create([
                     'dosenId' => $dosenId,
-                    'tahunAjaranMatkulId' => $id
+                    'kelasId' => $request->kelasId
                 ]);
             }
         }
@@ -277,10 +372,10 @@ class TahunAjaranMatkulController extends Controller
     }
 
     // Method untuk menghapus dosen pengampu
-    public function removeDosen($id, $dosenId)
+    public function removeDosen($id, $dosenId, $kelasId)
     {
-        DosenPengampu::where('dosenId', $dosenId)
-            ->where('tahunAjaranMatkulId', $id)
+        DosenPengampuKelas::where('dosenId', $dosenId)
+            ->where('kelasId', $kelasId)
             ->delete();
 
         return back()->with('success', 'Dosen pengampu berhasil dihapus.');
@@ -292,11 +387,12 @@ class TahunAjaranMatkulController extends Controller
         $tahunAjaranMatkul = TahunAjaranMatkul::with([
             'tahunAjaran', 
             'mataKuliah', 
-            'kelasMahasiswa.mahasiswa'
+            'kelas.kelasMahasiswa.mahasiswa'
         ])->findOrFail($id);
 
         // Query mahasiswa yang belum di kelas ini
-        $query = Mahasiswa::whereNotIn('id', $tahunAjaranMatkul->kelasMahasiswa->pluck('mahasiswaId'));
+        $existingMahasiswaIds = $tahunAjaranMatkul->kelas->flatMap->kelasMahasiswa->pluck('mahasiswaId')->unique();
+        $query = Mahasiswa::whereNotIn('id', $existingMahasiswaIds);
 
         // Filter by tahun masuk
         if ($request->filled('tahun_masuk')) {
@@ -333,7 +429,8 @@ class TahunAjaranMatkulController extends Controller
     {
         $request->validate([
             'mahasiswa_ids' => 'required|array|min:1',
-            'mahasiswa_ids.*' => 'exists:mahasiswa,id'
+            'mahasiswa_ids.*' => 'exists:mahasiswa,id',
+            'kelasId' => 'required|exists:kelas,id'
         ]);
 
         $tahunAjaranMatkul = TahunAjaranMatkul::findOrFail($id);
@@ -342,18 +439,107 @@ class TahunAjaranMatkulController extends Controller
         foreach ($request->mahasiswa_ids as $mahasiswaId) {
             // Check if already exists
             $existing = KelasMahasiswa::where('mahasiswaId', $mahasiswaId)
-                ->where('tahunAjaranMatkulId', $id)
+                ->where('kelasId', $request->kelasId)
                 ->first();
 
             if (!$existing) {
                 KelasMahasiswa::create([
                     'mahasiswaId' => $mahasiswaId,
-                    'tahunAjaranMatkulId' => $id
+                    'kelasId' => $request->kelasId
                 ]);
                 $addedCount++;
             }
         }
 
         return back()->with('success', "$addedCount mahasiswa berhasil ditambahkan ke kelas.");
+    }
+
+    // Method untuk tambah kelas baru
+    public function addKelas(Request $request, $id)
+    {
+        $request->validate([
+            'kelasNames' => 'required|array|min:1',
+            'kelasNames.*' => 'required|string|max:10',
+            'dosenOption' => 'required|in:same,different'
+        ]);
+
+        $tahunAjaranMatkul = TahunAjaranMatkul::findOrFail($id);
+
+        // Filter out empty kelas names
+        $kelasNames = array_filter($request->kelasNames, function($name) {
+            return !empty(trim($name));
+        });
+
+        if (empty($kelasNames)) {
+            return back()->withErrors(['kelasNames' => 'Minimal satu nama kelas harus diisi.'])->withInput();
+        }
+
+        // Check for duplicate kelas names
+        $existingKelasNames = $tahunAjaranMatkul->kelas->pluck('namaKelas')->toArray();
+        $duplicateKelas = array_intersect($kelasNames, $existingKelasNames);
+        
+        if (!empty($duplicateKelas)) {
+            return back()->withErrors(['kelasNames' => 'Kelas ' . implode(', ', $duplicateKelas) . ' sudah ada.'])->withInput();
+        }
+
+        // Validate dosen selection based on option
+        if ($request->dosenOption === 'same') {
+            $request->validate([
+                'dosenIds' => 'required|array|min:1',
+                'dosenIds.*' => 'exists:dosen,id'
+            ]);
+        } else {
+            // For different dosen per class, validate that each class has at least one dosen
+            foreach ($kelasNames as $kelasName) {
+                $kelasName = trim($kelasName);
+                if (!empty($kelasName)) {
+                    if (!$request->has("dosenPerKelas.{$kelasName}") || empty($request->input("dosenPerKelas.{$kelasName}"))) {
+                        return back()->withErrors(['dosenPerKelas' => "Kelas {$kelasName} harus memiliki minimal satu dosen pengampu."])->withInput();
+                    }
+                }
+            }
+        }
+
+        DB::beginTransaction();
+        try {
+            foreach ($kelasNames as $kelasName) {
+                $kelasName = trim($kelasName);
+                if (!empty($kelasName)) {
+                    $kelas = Kelas::create([
+                        'namaKelas' => $kelasName,
+                        'tahunAjaranMatkulId' => $tahunAjaranMatkul->id
+                    ]);
+
+                    // Create dosen pengampu based on option
+                    if ($request->dosenOption === 'same') {
+                        // Same dosen for all classes
+                        if ($request->has('dosenIds')) {
+                            foreach ($request->dosenIds as $dosenId) {
+                                DosenPengampuKelas::create([
+                                    'dosenId' => $dosenId,
+                                    'kelasId' => $kelas->id
+                                ]);
+                            }
+                        }
+                    } else {
+                        // Different dosen per class
+                        if ($request->has("dosenPerKelas.{$kelasName}")) {
+                            foreach ($request->input("dosenPerKelas.{$kelasName}") as $dosenId) {
+                                DosenPengampuKelas::create([
+                                    'dosenId' => $dosenId,
+                                    'kelasId' => $kelas->id
+                                ]);
+                            }
+                        }
+                    }
+                }
+            }
+
+            DB::commit();
+            return back()->with('success', 'Kelas berhasil ditambahkan.');
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])->withInput();
+        }
     }
 } 

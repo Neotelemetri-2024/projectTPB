@@ -11,10 +11,13 @@ use App\Models\KelasMahasiswa;
 use App\Models\Nilai;
 use App\Models\Bobot;
 use App\Models\Komponen;
-use App\Models\DosenPengampu;
+use App\Models\CpmkMatKul;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Exports\NilaiTemplateExport;
+use App\Imports\NilaiImport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class NilaiController extends Controller
 {
@@ -38,9 +41,9 @@ class NilaiController extends Controller
         $query = TahunAjaranMatkul::with([
             'mataKuliah',
             'tahunAjaran',
-            'dosenPengampu.dosen', // Load all dosen pengampu with their dosen data
-            'kelasMahasiswa'
-        ])->whereHas('dosenPengampu', function($query) use ($dosen) {
+            'kelas.dosenPengampuKelas.dosen', // Load all dosen pengampu through kelas
+            'kelas.kelasMahasiswa.mahasiswa'
+        ])->whereHas('kelas.dosenPengampuKelas', function($query) use ($dosen) {
             $query->where('dosenId', $dosen->id);
         });
 
@@ -73,23 +76,26 @@ class NilaiController extends Controller
             $allKelas = collect();
 
             foreach($group as $item) {
-                $allKelasMahasiswa = $allKelasMahasiswa->merge($item->kelasMahasiswa);
-                $allDosenPengampu = $allDosenPengampu->merge($item->dosenPengampu);
-                $allKelas->push($item->kelas);
+                foreach($item->kelas as $kelas) {
+                    $allKelasMahasiswa = $allKelasMahasiswa->merge($kelas->kelasMahasiswa);
+                    $allKelas->push($kelas->namaKelas);
+                    $allDosenPengampu = $allDosenPengampu->merge($kelas->dosenPengampuKelas);
+                }
             }
 
             // Set aggregated data to representative
             $representative->setRelation('kelasMahasiswa', $allKelasMahasiswa->unique('id'));
-            $representative->setRelation('dosenPengampu', $allDosenPengampu->unique('dosenId'));
+            $representative->setRelation('dosenPengampuKelas', $allDosenPengampu->unique('id'));
 
             // Get unique dosen pengampu with their names
             $uniqueDosenPengampu = $allDosenPengampu->unique('dosenId');
-            $dosenNames = $uniqueDosenPengampu->map(function($dosenPengampu) {
-                return $dosenPengampu->dosen->nama ?? 'Unknown';
+            $dosenNames = $uniqueDosenPengampu->map(function($dosenPengampuKelas) {
+                return $dosenPengampuKelas->dosen->nama ?? 'Unknown';
             })->unique()->values();
             $representative->dosenPengampuNames = $dosenNames;
 
-            $representative->allKelas = $allKelas->unique()->sort()->values();
+            // Get unique kelas names
+            $representative->kelasNames = $allKelas->unique()->sort()->values();
             $representative->groupedItems = $group;
 
             return $representative;
@@ -119,60 +125,74 @@ class NilaiController extends Controller
             return redirect()->back()->with('error', 'Data dosen tidak ditemukan.');
         }
 
-        // Get mata kuliah info
-        $mataKuliahDiampu = TahunAjaranMatkul::with([
+        // Get mata kuliah info (sekarang ini adalah tahunAjaranMatkul)
+        $tahunAjaranMatkul = TahunAjaranMatkul::with([
             'mataKuliah',
             'tahunAjaran',
-            'dosenPengampu' => function($query) use ($dosen) {
+            'kelas.dosenPengampuKelas' => function($query) use ($dosen) {
                 $query->where('dosenId', $dosen->id);
             }
         ])->findOrFail($id);
 
-        // Verify access
-        if (!$mataKuliahDiampu->dosenPengampu->contains('dosenId', $dosen->id)) {
+        // Verify access - check if dosen has access to any kelas in this tahunAjaranMatkul
+        $hasAccess = $tahunAjaranMatkul->kelas->some(function($kelas) use ($dosen) {
+            return $kelas->dosenPengampuKelas->contains('dosenId', $dosen->id);
+        });
+
+        if (!$hasAccess) {
             return redirect()->route('dosen.nilai.index')->with('error', 'Akses ditolak.');
         }
 
-        // Get all related classes for this mata kuliah and tahun ajaran
+        // Get all classes for this mata kuliah and tahun ajaran
         $mataKuliahClasses = TahunAjaranMatkul::with([
-            'kelasMahasiswa.mahasiswa',
-            'dosenPengampu'
+            'kelas.kelasMahasiswa.mahasiswa',
+            'kelas.dosenPengampuKelas'
         ])
-        ->where('mataKuliahId', $mataKuliahDiampu->mataKuliahId)
-        ->where('tahunAjaranId', $mataKuliahDiampu->tahunAjaranId)
-        ->whereHas('dosenPengampu', function($query) use ($dosen) {
-            $query->where('dosenId', $dosen->id);
-        })
-        ->orderBy('kelas')
-        ->get();
-
-        // Get all related tahunAjaranMatkul IDs for queries
-        $relatedTahunAjaranMatkulIds = $mataKuliahClasses->pluck('id');
-
-        // CEK: Apakah sudah ada CPMK untuk matkul ini dan total bobot CPMK 100
-        $cpmkMatkul = \App\Models\CpmkMatKul::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)->get();
-        $adaCpmk = $cpmkMatkul->isNotEmpty();
-        $totalBobotCpmk = $cpmkMatkul->sum('bobot');
-        $bobotCpmk100 = ($totalBobotCpmk == 100);
-
-        // CEK: Apakah total bobot setiap komponen sudah 100
-        $allBobot = \App\Models\Bobot::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)->get();
-        $bobotPerKomponen = $allBobot->groupBy('komponenId')->map(function($bobotGroup) {
-            return $bobotGroup->sum('bobot');
+        ->where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
+        ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
+        ->get()
+        ->filter(function($tam) use ($dosen) {
+            // Filter to only include classes where this dosen teaches
+            return $tam->kelas->some(function($kelas) use ($dosen) {
+                return $kelas->dosenPengampuKelas->contains('dosenId', $dosen->id);
+            });
         });
-        $semuaKomponenBobot100 = $bobotPerKomponen->every(function($total) { return $total == 100; });
 
-        // Penilaian siap jika semua syarat terpenuhi
-        $isPenilaianSiap = $adaCpmk && $bobotCpmk100 && $semuaKomponenBobot100;
+        // Get all CPMK for this mata kuliah
+        $cpmkList = CpmkMatKul::with(['cpmk.cpl'])
+            ->whereIn('tahunAjaranMatkulId', $mataKuliahClasses->pluck('id'))
+            ->get()
+            ->unique('cpmkId')
+            ->map(function($cpmkMatKul) {
+                return $cpmkMatKul->cpmk;
+            });
 
-        // Hitung total bobot keseluruhan
-        $totalBobotKeseluruhan = $allBobot->sum('bobot');
+        // Get all komponen
+        $allKomponen = Komponen::orderBy('nama')->get();
+
+        // Get bobot data for all classes
+        $bobotData = Bobot::with(['komponen', 'cpmk'])
+            ->whereIn('tahunAjaranMatkulId', $mataKuliahClasses->pluck('id'))
+            ->get();
+
+        // Get existing nilai data for all classes
+        $nilaiData = Nilai::with(['mahasiswa', 'cpmk', 'bobot.komponen'])
+            ->whereIn('tahunAjaranMatkulId', $mataKuliahClasses->pluck('id'))
+            ->get();
+
+        // Check if penilaian is ready (total bobot = 100%)
+        $totalBobotKeseluruhan = $bobotData->sum('bobot');
         $isPenilaianSiap = $totalBobotKeseluruhan == 100;
+
+        // Check if there are CPMK for this mata kuliah
+        $adaCpmk = $cpmkList->count() > 0;
 
         // Get all unique mahasiswa across all classes
         $allMahasiswa = collect();
-        foreach ($mataKuliahClasses as $class) {
-            $allMahasiswa = $allMahasiswa->merge($class->kelasMahasiswa->pluck('mahasiswa'));
+        foreach ($mataKuliahClasses as $tam) {
+            foreach ($tam->kelas as $kelas) {
+                $allMahasiswa = $allMahasiswa->merge($kelas->kelasMahasiswa->pluck('mahasiswa'));
+            }
         }
         $allMahasiswaCollection = $allMahasiswa->unique('id')->values();
 
@@ -224,45 +244,44 @@ class NilaiController extends Controller
             // Group mahasiswa by kelas first for pagination
             $mahasiswaByKelas = [];
             foreach ($allMahasiswaCollection as $mhs) {
-                $kelasNumber = 'Tidak Ada Kelas';
+                $kelasNama = 'Tidak Ada Kelas';
 
                 // Find the class this student belongs to
-                foreach($mataKuliahClasses as $class) {
-                    $studentInClass = $class->kelasMahasiswa->where('mahasiswaId', $mhs->id)->first();
-                    if ($studentInClass) {
-                        $kelasNumber = $class->kelas;
-                        break;
+                foreach($mataKuliahClasses as $tam) {
+                    foreach($tam->kelas as $kelas) {
+                        $studentInClass = $kelas->kelasMahasiswa->where('mahasiswaId', $mhs->id)->first();
+                        if ($studentInClass) {
+                            $kelasNama = $kelas->namaKelas;
+                            break 2;
+                        }
                     }
                 }
 
-                // Convert numeric class to letter
-                $kelasHuruf = is_numeric($kelasNumber) ?
-                    TahunAjaranMatkul::convertKelasToHuruf($kelasNumber) :
-                    $kelasNumber;
-
-                if (!isset($mahasiswaByKelas[$kelasHuruf])) {
-                    $mahasiswaByKelas[$kelasHuruf] = [];
+                if (!isset($mahasiswaByKelas[$kelasNama])) {
+                    $mahasiswaByKelas[$kelasNama] = [];
                 }
-                $mahasiswaByKelas[$kelasHuruf][] = $mhs;
+                $mahasiswaByKelas[$kelasNama][] = $mhs;
             }
 
-            // Sort by kelas
-            uksort($mahasiswaByKelas, function($a, $b) {
-                if ($a === 'Tidak Ada Kelas') return 1;
-                if ($b === 'Tidak Ada Kelas') return -1;
-                return strcmp($a, $b);
-            });
+            // Apply tab filtering
+            if ($activeTab !== 'all') {
+                $kelasSlug = str_replace('kelas-', '', $activeTab);
+                $kelasNama = strtoupper($kelasSlug);
+                
+                if (isset($mahasiswaByKelas[$kelasNama])) {
+                    $mahasiswa = collect($mahasiswaByKelas[$kelasNama]);
+                } else {
+                    $mahasiswa = collect();
+                }
+            } else {
+                $mahasiswa = $allMahasiswaCollection;
+            }
 
-            // Apply pagination based on active tab
-            if ($activeTab === 'all') {
-                // Paginate all students
-                $totalStudents = $allMahasiswaCollection->count();
-                $offset = ($currentPage - 1) * $perPage;
-                $mahasiswa = $allMahasiswaCollection->slice($offset, $perPage)->values();
-
+            // Apply pagination
+            if ($mahasiswa->count() > 0) {
                 $mahasiswaPaginated = new \Illuminate\Pagination\LengthAwarePaginator(
-                    $mahasiswa,
-                    $totalStudents,
+                    $mahasiswa->forPage($currentPage, $perPage),
+                    $mahasiswa->count(),
                     $perPage,
                     $currentPage,
                     [
@@ -271,94 +290,75 @@ class NilaiController extends Controller
                     ]
                 );
                 $mahasiswaPaginated->appends($request->query());
+                
+                // Update $mahasiswa to only contain data for current page
+                $mahasiswa = $mahasiswa->forPage($currentPage, $perPage);
             } else {
-                // Paginate specific class
-                $kelasSlug = str_replace('kelas-', '', $activeTab);
-                $kelasName = null;
-
-                // Find the corresponding class name
-                foreach ($mahasiswaByKelas as $kelasHuruf => $students) {
-                    if (\Illuminate\Support\Str::slug($kelasHuruf) === $kelasSlug) {
-                        $kelasName = $kelasHuruf;
-                        break;
-                    }
-                }
-
-                if ($kelasName && isset($mahasiswaByKelas[$kelasName])) {
-                    $kelasStudents = collect($mahasiswaByKelas[$kelasName]);
-                    $totalStudents = $kelasStudents->count();
-                    $offset = ($currentPage - 1) * $perPage;
-                    $mahasiswa = $kelasStudents->slice($offset, $perPage)->values();
-
-                    $mahasiswaPaginated = new \Illuminate\Pagination\LengthAwarePaginator(
-                        $mahasiswa,
-                        $totalStudents,
-                        $perPage,
-                        $currentPage,
-                        [
-                            'path' => $request->url(),
-                            'pageName' => 'page',
-                        ]
-                    );
-                    $mahasiswaPaginated->appends($request->query());
-                } else {
-                    // Fallback to all students if class not found
-                    $totalStudents = $allMahasiswaCollection->count();
-                    $offset = ($currentPage - 1) * $perPage;
-                    $mahasiswa = $allMahasiswaCollection->slice($offset, $perPage)->values();
-
-                    $mahasiswaPaginated = new \Illuminate\Pagination\LengthAwarePaginator(
-                        $mahasiswa,
-                        $totalStudents,
-                        $perPage,
-                        $currentPage,
-                        [
-                            'path' => $request->url(),
-                            'pageName' => 'page',
-                        ]
-                    );
-                    $mahasiswaPaginated->appends($request->query());
-                }
+                $mahasiswaPaginated = null;
             }
         }
 
         // Get all unique kelas numbers for display
-        $kelasNumbers = $mataKuliahClasses->pluck('kelas')->unique()->sort()->values();
+        $kelasNumbers = collect();
+        foreach ($mataKuliahClasses as $tam) {
+            foreach ($tam->kelas as $kelas) {
+                $kelasNumbers->push($kelas->namaKelas);
+            }
+        }
+        $kelasNumbers = $kelasNumbers->unique()->sort()->values();
 
-        // Get all components for this mata kuliah through bobot table
-        $allKomponen = Komponen::whereHas('bobot', function($query) use ($relatedTahunAjaranMatkulIds) {
-                $query->whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds);
+        // Get all components for this mata kuliah through bobot table (hanya dari satu kelas)
+        $allKomponen = Komponen::whereHas('bobot', function($query) use ($id) {
+                $query->where('tahunAjaranMatkulId', $id);
             })
-            ->with(['bobot' => function($query) use ($relatedTahunAjaranMatkulIds) {
-                $query->whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds);
+            ->with(['bobot' => function($query) use ($id) {
+                $query->where('tahunAjaranMatkulId', $id);
             }])
             ->orderBy('nama')
             ->get();
 
-        // Get existing nilai for displayed students
+        // Get existing nilai for displayed students (hanya dari satu kelas)
         $existingNilai = Nilai::with('bobot')
             ->whereIn('mahasiswaId', $mahasiswa->pluck('id'))
-            ->whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
+            ->where('tahunAjaranMatkulId', $id)
             ->get()
             ->groupBy('mahasiswaId');
 
-        // Get final grades from kelasMahasiswa table for displayed students
+        // Get final grades from kelasMahasiswa table for displayed students (hanya dari satu kelas)
         $nilaiMahasiswa = KelasMahasiswa::whereIn('mahasiswaId', $mahasiswa->pluck('id'))
-            ->whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
+            ->where('kelasId', function($query) use ($id) {
+                $query->select('id')
+                    ->from('kelas')
+                    ->where('tahunAjaranMatkulId', $id)
+                    ->limit(1);
+            })
             ->get()
             ->keyBy('mahasiswaId');
 
-        // Hitung total bobot CPMK dan total bobot setiap komponen penilaian
-        $totalBobotCpmk = 0;
+        // Hitung total bobot setiap komponen penilaian (untuk display) - hanya dari satu kelas
         $totalBobotKomponen = [];
-        $allBobot = Bobot::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)->get();
+        $allBobot = Bobot::where('tahunAjaranMatkulId', $id)->get();
         foreach ($allBobot as $bobot) {
-            $totalBobotCpmk += $bobot->bobotCpmk ?? 0;
             $totalBobotKomponen[$bobot->komponenId] = ($totalBobotKomponen[$bobot->komponenId] ?? 0) + $bobot->bobot;
         }
 
+        // Debug: Log untuk memeriksa nilai yang dikirim ke view
+        \Log::info('Debug View Data:', [
+            'isPenilaianSiap' => $isPenilaianSiap,
+            'totalBobotKeseluruhan' => $totalBobotKeseluruhan,
+            'adaCpmk' => $adaCpmk,
+            'cpmkCount' => $cpmkList->count(),
+            'komponenCount' => $allKomponen->count(),
+            'bobotCount' => $bobotData->count(),
+            'nilaiCount' => $nilaiData->count()
+        ]);
+
+        // Build bulk URL for the view
+        $bulkUrl = request()->fullUrl();
+        $bulkUrl .= (strpos($bulkUrl, '?') !== false ? '&' : '?') . 'bulk=1';
+
         return view('dosen.nilai.show', compact(
-            'mataKuliahDiampu',
+            'tahunAjaranMatkul',
             'mataKuliahClasses',
             'mahasiswa',
             'mahasiswaPaginated',
@@ -366,18 +366,21 @@ class NilaiController extends Controller
             'mahasiswaByKelas',
             'kelasNumbers',
             'allKomponen',
-            'existingNilai',
-            'nilaiMahasiswa',
             'dosen',
             'isBulkMode',
             'activeTab',
             'sortBy',
             'sortDirection',
             'search',
-            'totalBobotCpmk',
+            'totalBobotKeseluruhan',
             'totalBobotKomponen',
             'isPenilaianSiap',
-            'totalBobotKeseluruhan',
+            'adaCpmk',
+            'cpmkList',
+            'allKomponen',
+            'bobotData',
+            'nilaiData',
+            'bulkUrl'
         ));
     }
 
@@ -390,6 +393,9 @@ class NilaiController extends Controller
         $dosen = $user->dosen;
 
         if (!$dosen) {
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Data dosen tidak ditemukan.'], 403);
+            }
             return redirect()->back()->with('error', 'Data dosen tidak ditemukan.');
         }
 
@@ -399,16 +405,26 @@ class NilaiController extends Controller
             'nilai.*.*' => 'nullable|numeric|min:0|max:100',
             'student_class_id' => 'nullable|array',
             'student_class_id.*' => 'nullable|exists:tahun_ajaran_matkul,id',
+        ], [
+            'nilai.*.*.max' => 'Nilai tidak boleh lebih dari 100',
+            'nilai.*.*.min' => 'Nilai tidak boleh kurang dari 0',
+            'nilai.*.*.numeric' => 'Nilai harus berupa angka',
         ]);
 
         try {
+            \Log::info('Bulk store request received', [
+                'matkulId' => $matkulId,
+                'request_data' => $request->all(),
+                'is_ajax' => $request->ajax()
+            ]);
+
             // Get mata kuliah info
             $matkulClass = TahunAjaranMatkul::findOrFail($matkulId);
 
             // Get all related classes for this mata kuliah and dosen
             $relatedClasses = TahunAjaranMatkul::where('mataKuliahId', $matkulClass->mataKuliahId)
                 ->where('tahunAjaranId', $matkulClass->tahunAjaranId)
-                ->whereHas('dosenPengampu', function($query) use ($dosen) {
+                ->whereHas('kelas.dosenPengampuKelas', function($query) use ($dosen) {
                     $query->where('dosenId', $dosen->id);
                 })
                 ->get();
@@ -428,11 +444,13 @@ class NilaiController extends Controller
                 }
 
                 // Get dosen pengampu ID for current dosen in this specific class
-                $dosenPengampu = DosenPengampu::where('dosenId', $dosen->id)
-                    ->where('tahunAjaranMatkulId', $studentClass->id)
+                $dosenPengampuKelas = \App\Models\DosenPengampuKelas::where('dosenId', $dosen->id)
+                    ->whereHas('kelas', function($query) use ($studentClass) {
+                        $query->where('tahunAjaranMatkulId', $studentClass->id);
+                    })
                     ->first();
 
-                if (!$dosenPengampu) {
+                if (!$dosenPengampuKelas) {
                     continue; // Skip if dosen pengampu not found for this class
                 }
 
@@ -446,17 +464,15 @@ class NilaiController extends Controller
 
                         // Create nilai entry for each bobot
                         foreach ($bobotList as $bobot) {
-                            // Calculate final score: nilaiKomponen * (bobot / 100)
-                            $nilaiAkhir = $nilaiKomponen * ($bobot->bobot / 100);
-
+                            // Simpan nilai apa adanya (0-100), tidak dikali/dibagi bobot
                             Nilai::updateOrCreate([
                                 'mahasiswaId' => $mahasiswaId,
                                 'tahunAjaranMatkulId' => $studentClass->id,
                                 'bobotId' => $bobot->id,
                             ], [
                                 'cpmkId' => $bobot->cpmkId,
-                                'dosenPengampuId' => $dosenPengampu->id,
-                                'nilai' => $nilaiAkhir,
+                                'dosenPengampuKelasId' => $dosenPengampuKelas->id,
+                                'nilai' => $nilaiKomponen,
                             ]);
                         }
                     } else {
@@ -476,8 +492,16 @@ class NilaiController extends Controller
                 $this->calculateAndStoreTotal($mahasiswaId, $studentClass->id);
             }
 
+            if ($request->ajax()) {
+                return response()->json(['success' => true, 'message' => 'Nilai berhasil disimpan.']);
+            }
             return redirect()->back()->with('success', 'Nilai berhasil disimpan.');
         } catch (\Exception $e) {
+            \Log::error('Error saving grades: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Terjadi kesalahan saat menyimpan nilai: ' . $e->getMessage()], 500);
+            }
             return redirect()->back()
                 ->with('error', 'Terjadi kesalahan saat menyimpan nilai: ' . $e->getMessage())
                 ->withInput();
@@ -509,7 +533,7 @@ class NilaiController extends Controller
             // Get all related classes for this mata kuliah and dosen
             $relatedClasses = TahunAjaranMatkul::where('mataKuliahId', $matkulClass->mataKuliahId)
                 ->where('tahunAjaranId', $matkulClass->tahunAjaranId)
-                ->whereHas('dosenPengampu', function($query) use ($dosen) {
+                ->whereHas('kelas.dosenPengampuKelas', function($query) use ($dosen) {
                     $query->where('dosenId', $dosen->id);
                 })
                 ->get();
@@ -530,11 +554,13 @@ class NilaiController extends Controller
                 }
 
                 // Get dosen pengampu ID for current dosen in this specific class
-                $dosenPengampu = DosenPengampu::where('dosenId', $dosen->id)
-                    ->where('tahunAjaranMatkulId', $studentClass->id)
+                $dosenPengampuKelas = \App\Models\DosenPengampuKelas::where('dosenId', $dosen->id)
+                    ->whereHas('kelas', function($query) use ($studentClass) {
+                        $query->where('tahunAjaranMatkulId', $studentClass->id);
+                    })
                     ->first();
 
-                if (!$dosenPengampu) {
+                if (!$dosenPengampuKelas) {
                     continue; // Skip if dosen pengampu not found for this class
                 }
 
@@ -548,17 +574,15 @@ class NilaiController extends Controller
 
                         // Create nilai entry for each bobot
                         foreach ($bobotList as $bobot) {
-                            // Calculate final score: nilaiKomponen * (bobot / 100)
-                            $nilaiAkhir = $nilaiKomponen * ($bobot->bobot / 100);
-
+                            // Simpan nilai apa adanya (0-100), tidak dikali/dibagi bobot
                             Nilai::updateOrCreate([
                                 'mahasiswaId' => $mahasiswaId,
                                 'tahunAjaranMatkulId' => $studentClass->id,
                                 'bobotId' => $bobot->id,
                             ], [
                                 'cpmkId' => $bobot->cpmkId,
-                                'dosenPengampuId' => $dosenPengampu->id,
-                                'nilai' => $nilaiAkhir,
+                                'dosenPengampuKelasId' => $dosenPengampuKelas->id,
+                                'nilai' => $nilaiKomponen,
                             ]);
                         }
                     } else {
@@ -669,6 +693,154 @@ class NilaiController extends Controller
             return 'D';
         } else {
             return 'E';
+        }
+    }
+
+    /**
+     * Export template Excel untuk input nilai
+     */
+    public function exportTemplate($id)
+    {
+        $user = Auth::user();
+        $dosen = $user->dosen;
+
+        if (!$dosen) {
+            return redirect()->back()->with('error', 'Data dosen tidak ditemukan.');
+        }
+
+        // Verify that this dosen teaches this mata kuliah
+        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
+            $query->where('dosenId', $dosen->id);
+        })->with(['mataKuliah', 'tahunAjaran'])->findOrFail($id);
+
+        $fileName = 'Template_Nilai_' . str_replace(' ', '_', $tahunAjaranMatkul->mataKuliah->namaMatkul) . '_' . 
+                   $tahunAjaranMatkul->tahunAjaran->tahun . '_' . $tahunAjaranMatkul->tahunAjaran->periode . '.xlsx';
+
+        return Excel::download(new NilaiTemplateExport($id), $fileName);
+    }
+
+    /**
+     * Import nilai dari Excel
+     */
+    public function importNilai(Request $request, $id)
+    {
+        $user = Auth::user();
+        $dosen = $user->dosen;
+
+        if (!$dosen) {
+            return redirect()->back()->with('error', 'Data dosen tidak ditemukan.');
+        }
+
+        // Verify that this dosen teaches this mata kuliah
+        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
+            $query->where('dosenId', $dosen->id);
+        })->findOrFail($id);
+
+        $request->validate([
+            'excel_file' => 'required|file|mimes:xlsx,xls|max:2048'
+        ], [
+            'excel_file.required' => 'File Excel harus dipilih.',
+            'excel_file.mimes' => 'File harus berformat Excel (.xlsx atau .xls).',
+            'excel_file.max' => 'Ukuran file maksimal 2MB.'
+        ]);
+
+        try {
+            $import = new NilaiImport($id, $dosen->id);
+            Excel::import($import, $request->file('excel_file'));
+
+            // Get import results
+            $results = $import->getImportResults();
+            \Log::info('Import results received in controller:', $results);
+
+            $message = "Import berhasil! ";
+            $message .= "Berhasil memproses " . ($results['success'] ?? 0) . " mahasiswa. ";
+            
+            if (($results['created_students'] ?? 0) > 0) {
+                $message .= "Dibuat " . $results['created_students'] . " akun mahasiswa baru. ";
+            }
+            
+            if (($results['updated_grades'] ?? 0) > 0) {
+                $message .= "Diperbarui " . $results['updated_grades'] . " nilai. ";
+            }
+
+            if (!empty($results['errors'])) {
+                $message .= "Terdapat " . count($results['errors']) . " error.";
+                
+                // Store errors in session for detailed display
+                session()->flash('import_errors', $results['errors']);
+            }
+
+            // Store created students info in session
+            if (!empty($results['created_student_list'])) {
+                session()->flash('created_students', $results['created_student_list']);
+            }
+
+            return redirect()->back()->with('success', $message);
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat import: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Reset all grades for a mata kuliah.
+     */
+    public function resetNilai(Request $request, $id)
+    {
+        $user = Auth::user();
+        $dosen = $user->dosen;
+
+        if (!$dosen) {
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Data dosen tidak ditemukan.'], 403);
+            }
+            return redirect()->back()->with('error', 'Data dosen tidak ditemukan.');
+        }
+
+        try {
+            // Verify that this dosen teaches this mata kuliah
+            $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
+                $query->where('dosenId', $dosen->id);
+            })->findOrFail($id);
+
+            // Get all related classes for this mata kuliah and dosen
+            $relatedClasses = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
+                ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
+                ->whereHas('kelas.dosenPengampuKelas', function($query) use ($dosen) {
+                    $query->where('dosenId', $dosen->id);
+                })
+                ->pluck('id');
+
+            // Delete all nilai for these classes
+            $deletedCount = Nilai::whereIn('tahunAjaranMatkulId', $relatedClasses)->delete();
+
+            // Reset totalNilai and grade in kelasMahasiswa
+            // Get all kelasIds from the related classes
+            $kelasIds = \App\Models\Kelas::whereIn('tahunAjaranMatkulId', $relatedClasses)->pluck('id');
+            
+            \DB::table('kelas_mahasiswa')
+                ->whereIn('kelasId', $kelasIds)
+                ->update([
+                    'totalNilai' => null,
+                    'grade' => null
+                ]);
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true, 
+                    'message' => "Berhasil menghapus {$deletedCount} nilai."
+                ]);
+            }
+
+            return redirect()->back()->with('success', "Berhasil menghapus {$deletedCount} nilai.");
+
+        } catch (\Exception $e) {
+            \Log::error('Error resetting grades: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Terjadi kesalahan saat menghapus nilai: ' . $e->getMessage()], 500);
+            }
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat menghapus nilai: ' . $e->getMessage());
         }
     }
 }

@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\MataKuliahController;
 use App\Http\Controllers\Admin\CplController;
 use App\Http\Controllers\Admin\KomponenController;
 use App\Http\Controllers\Admin\TahunAjaranMatkulController;
+use App\Http\Controllers\Admin\KelasController;
 use App\Http\Controllers\Dosen\MataKuliahController as DosenMataKuliahController;
 use App\Http\Controllers\Dosen\CpmkController as DosenCpmkController;
 use App\Http\Controllers\Dosen\KomponenPenilaianController as DosenKomponenPenilaianController;
@@ -100,9 +101,20 @@ Route::middleware('auth')->group(function () {
         Route::get('admin/tahun-ajaran-matkul/{id}/manage-mahasiswa', [TahunAjaranMatkulController::class, 'manageMahasiswa'])->name('admin.tahun-ajaran-matkul.manage-mahasiswa');
         Route::post('admin/tahun-ajaran-matkul/{id}/bulk-add-mahasiswa', [TahunAjaranMatkulController::class, 'bulkAddMahasiswa'])->name('admin.tahun-ajaran-matkul.bulk-add-mahasiswa');
         Route::post('admin/tahun-ajaran-matkul/{id}/add-mahasiswa', [TahunAjaranMatkulController::class, 'addMahasiswa'])->name('admin.tahun-ajaran-matkul.add-mahasiswa');
-        Route::delete('admin/tahun-ajaran-matkul/{id}/remove-mahasiswa/{mahasiswaId}', [TahunAjaranMatkulController::class, 'removeMahasiswa'])->name('admin.tahun-ajaran-matkul.remove-mahasiswa');
+        Route::delete('admin/tahun-ajaran-matkul/{id}/remove-mahasiswa/{mahasiswaId}/{kelasId}', [TahunAjaranMatkulController::class, 'removeMahasiswa'])->name('admin.tahun-ajaran-matkul.remove-mahasiswa');
         Route::post('admin/tahun-ajaran-matkul/{id}/add-dosen', [TahunAjaranMatkulController::class, 'addDosen'])->name('admin.tahun-ajaran-matkul.add-dosen');
-        Route::delete('admin/tahun-ajaran-matkul/{id}/remove-dosen/{dosenId}', [TahunAjaranMatkulController::class, 'removeDosen'])->name('admin.tahun-ajaran-matkul.remove-dosen');
+        Route::delete('admin/tahun-ajaran-matkul/{id}/remove-dosen/{dosenId}/{kelasId}', [TahunAjaranMatkulController::class, 'removeDosen'])->name('admin.tahun-ajaran-matkul.remove-dosen');
+        Route::post('admin/tahun-ajaran-matkul/{id}/add-kelas', [TahunAjaranMatkulController::class, 'addKelas'])->name('admin.tahun-ajaran-matkul.add-kelas');
+
+        // Kelas routes
+        Route::get('admin/kelas/{id}', [KelasController::class, 'show'])->name('admin.kelas.show');
+        Route::get('admin/kelas/{id}/manage-mahasiswa', [KelasController::class, 'manageMahasiswa'])->name('admin.kelas.manage-mahasiswa');
+        Route::get('admin/kelas/{id}/manage-dosen', [KelasController::class, 'manageDosen'])->name('admin.kelas.manage-dosen');
+        Route::post('admin/kelas/{id}/add-mahasiswa', [KelasController::class, 'addMahasiswa'])->name('admin.kelas.add-mahasiswa');
+        Route::delete('admin/kelas/{id}/remove-mahasiswa/{mahasiswaId}', [KelasController::class, 'removeMahasiswa'])->name('admin.kelas.remove-mahasiswa');
+        Route::post('admin/kelas/{id}/add-dosen', [KelasController::class, 'addDosen'])->name('admin.kelas.add-dosen');
+        Route::delete('admin/kelas/{id}/remove-dosen/{dosenId}', [KelasController::class, 'removeDosen'])->name('admin.kelas.remove-dosen');
+        Route::post('admin/kelas/{id}/bulk-add-mahasiswa', [KelasController::class, 'bulkAddMahasiswa'])->name('admin.kelas.bulk-add-mahasiswa');
     });
 
     // Dosen Dashboard
@@ -130,6 +142,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/dosen/nilai/{matkul}/mahasiswa/{mahasiswa}/store', [DosenNilaiController::class, 'store'])->name('dosen.nilai.store');
         Route::post('/dosen/nilai/{id}/bulk-store', [DosenNilaiController::class, 'bulkStore'])->name('dosen.nilai.bulk-store');
         Route::post('/dosen/nilai/{id}/individual-store', [DosenNilaiController::class, 'storeIndividual'])->name('dosen.nilai.individual-store');
+        Route::delete('/dosen/nilai/{id}/reset', [DosenNilaiController::class, 'resetNilai'])->name('dosen.nilai.reset');
+        Route::get('/dosen/nilai/{id}/export-template', [DosenNilaiController::class, 'exportTemplate'])->name('dosen.nilai.export-template');
+        Route::post('/dosen/nilai/{id}/import', [DosenNilaiController::class, 'importNilai'])->name('dosen.nilai.import');
     });
 
     // Mahasiswa Dashboard

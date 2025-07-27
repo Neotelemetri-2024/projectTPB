@@ -1,6 +1,6 @@
 @extends('layouts.main')
 
-@section('title', 'Nilai Mahasiswa - ' . $mataKuliahDiampu->mataKuliah->namaMatkul)
+@section('title', 'Nilai Mahasiswa - ' . $tahunAjaranMatkul->mataKuliah->namaMatkul)
 
 @section('content')
 <div class="p-6">
@@ -15,7 +15,7 @@
                     <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
                 </svg>
             </li>
-            <li class="text-gray-900 font-medium">{{ $mataKuliahDiampu->mataKuliah->namaMatkul }}</li>
+            <li class="text-gray-900 font-medium">{{ $tahunAjaranMatkul->mataKuliah->namaMatkul }}</li>
         </ol>
     </nav>
 
@@ -24,8 +24,8 @@
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Nilai Mahasiswa - {{ $mataKuliahDiampu->mataKuliah->namaMatkul }}</h1>
-                    <p class="text-gray-600 mt-1">{{ $mataKuliahDiampu->mataKuliah->kodeMatkul }} • {{ $mataKuliahDiampu->tahunAjaran->tahun }} - {{ $mataKuliahDiampu->tahunAjaran->periode }}</p>
+                    <h1 class="text-2xl font-bold text-gray-900">Nilai Mahasiswa - {{ $tahunAjaranMatkul->mataKuliah->namaMatkul }}</h1>
+                    <p class="text-gray-600 mt-1">{{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }} • {{ $tahunAjaranMatkul->tahunAjaran->tahun }} - {{ $tahunAjaranMatkul->tahunAjaran->periode }}</p>
                 </div>
                 <div class="flex items-center gap-3">
                     <a href="{{ route('dosen.nilai.index') }}"
@@ -39,6 +39,8 @@
             </div>
         </div>
     </div>
+
+
 
     <!-- Course Info Cards -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
@@ -66,7 +68,7 @@
                 <div>
                     <p class="text-sm font-medium text-gray-600">Kelas</p>
                     <p class="text-2xl font-bold text-gray-900">
-                        {{ App\Models\TahunAjaranMatkul::convertKelasToHuruf($kelasNumbers)->implode(', ') }}
+                        {{ $kelasNumbers->implode(', ') }}
                     </p>
                 </div>
             </div>
@@ -81,7 +83,7 @@
                 </div>
                 <div>
                     <p class="text-sm font-medium text-gray-600">SKS</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $mataKuliahDiampu->mataKuliah->sks ?? '-' }}</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ $tahunAjaranMatkul->mataKuliah->sks ?? '-' }}</p>
                 </div>
             </div>
         </div>
@@ -128,53 +130,44 @@
                     <p class="text-gray-600 mt-1">Pilih mahasiswa untuk mengelola nilai</p>
                 </div>
                 <div class="flex items-center space-x-4">
-                    @if(!$isBulkMode)
-                        @php
-                            $bulkUrl = request()->fullUrl();
-                            $bulkUrl .= (strpos($bulkUrl, '?') !== false ? '&' : '?') . 'bulk=1';
-                        @endphp
-                        <a href="#"
-                           id="activate-bulk-mode-btn"
-                           class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
-                            <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                            </svg>
-                            Aktifkan Input Sekaligus
-                        </a>
-                        <x-confirm-modal
-                            id="bobot-warning-modal"
-                            title="Total Bobot Belum 100%"
-                            message="Total bobot keseluruhan belum 100%. Silakan lengkapi konfigurasi bobot sebelum menginput nilai."
-                            type="warning"
-                            action="{{ route('dosen.cpmk.show', $mataKuliahDiampu->mataKuliahId) }}"
-                            confirmText="Konfigurasi Bobot"
-                            cancelText="Tutup"
-                        />
-                    @else
-                        @php
-                            $individualUrl = request()->url();
-                            $currentTab = request('tab', 'all');
-                            $currentSort = request('sort', 'nim');
-                            $currentDirection = request('direction', 'asc');
-                            $currentSearch = request('search', '');
-                            $params = [
-                                'tab' => $currentTab,
-                                'sort' => $currentSort,
-                                'direction' => $currentDirection
-                            ];
-                            if (!empty($currentSearch)) {
-                                $params['search'] = $currentSearch;
-                            }
-                            $individualUrl .= '?' . http_build_query($params);
-                        @endphp
-                        <a href="{{ $individualUrl }}"
-                           class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
-                            <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                            </svg>
-                            Kembali ke Mode Individual
-                        </a>
-                    @endif
+                    <!-- Export Template Button -->
+                    <a href="{{ route('dosen.nilai.export-template', $tahunAjaranMatkul->id) }}" 
+                       class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
+                        <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Download Template Excel
+                    </a>
+
+                    <!-- Import Excel Button -->
+                    <button type="button" onclick="showImportModal()" 
+                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
+                        <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
+                        </svg>
+                        Import Excel
+                    </button>
+
+                    <!-- Toggle Edit Button -->
+                    <button id="toggle-edit-nilai" type="button" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
+                        <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6 6M3 17v2a2 2 0 002 2h2m14-6v6a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h6"></path>
+                        </svg>
+                        Aktifkan Input Nilai
+                    </button>
+
+                    <!-- Reset Button -->
+                    <button id="reset-nilai" type="button" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 hidden" data-modal-toggle="reset-confirm-modal">
+                        <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0V9a8 8 0 1115.356 2M15 13l-3-3-3 3"></path>
+                        </svg>
+                        Reset Semua Nilai
+                    </button>
+
+                    <!-- Debug Test Button -->
+                    <button id="debug-test" type="button" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors duration-200" onclick="console.log('Debug test button clicked!');">
+                        Debug Test
+                    </button>
                 </div>
             </div>
         </div>
@@ -264,15 +257,15 @@
                                 </span>
                             </button>
                             @if(!empty($mahasiswaByKelas))
-                                @foreach($mahasiswaByKelas as $kelasHuruf => $mahasiswaInKelas)
+                                @foreach($mahasiswaByKelas as $kelasNama => $mahasiswaInKelas)
                                     @php
-                                        $kelasSlug = 'kelas-' . Str::slug($kelasHuruf);
+                                        $kelasSlug = 'kelas-' . Str::slug($kelasNama);
                                         $isActive = request('tab') === $kelasSlug;
                                     @endphp
                                     <button type="button"
                                             class="tab-button {{ $isActive ? 'active border-amber-500 text-amber-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm"
                                             data-tab="{{ $kelasSlug }}">
-                                        Kelas {{ $kelasHuruf }}
+                                        Kelas {{ $kelasNama }}
                                         <span class="ml-2 {{ $isActive ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-600' }} py-0.5 px-2 rounded-full text-xs font-medium">{{ count($mahasiswaInKelas) }}</span>
                                     </button>
                                 @endforeach
@@ -281,8 +274,10 @@
                     </div>
                 </div>
 
+                <form id="bulk-nilai-form" method="POST" action="{{ route('dosen.nilai.bulk-store', $tahunAjaranMatkul->id) }}">
+                    @csrf
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
+                    <table class="min-w-full divide-y divide-gray-200" id="nilai-table">
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIM</th>
@@ -291,60 +286,124 @@
                                 @foreach($allKomponen as $komponen)
                                     <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-24">{{ $komponen->nama }}</th>
                                 @endforeach
+                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider grade-column">Grade</th>
+                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider aksi-column hidden">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach($mahasiswa as $mhs)
-                                @php
-                                    $kelasNumber = 'Tidak Ada Kelas';
-                                    $studentClassId = null;
-                                    foreach($mataKuliahClasses as $class) {
-                                        $studentInClass = $class->kelasMahasiswa->where('mahasiswaId', $mhs->id)->first();
-                                        if ($studentInClass) {
-                                            $kelasNumber = $class->kelas;
-                                            $studentClassId = $class->id;
-                                            break;
+                                                                    @php
+                                        $kelasNama = 'Tidak Ada Kelas';
+                                        $studentClassId = null;
+                                        foreach($mataKuliahClasses as $tam) {
+                                            foreach($tam->kelas as $kelas) {
+                                                $studentInClass = $kelas->kelasMahasiswa->where('mahasiswaId', $mhs->id)->first();
+                                                if ($studentInClass) {
+                                                    $kelasNama = $kelas->namaKelas;
+                                                    $studentClassId = $tam->id;
+                                                    break 2;
+                                                }
+                                            }
                                         }
-                                    }
-                                    $kelasHuruf = is_numeric($kelasNumber) ? App\Models\TahunAjaranMatkul::convertKelasToHuruf($kelasNumber) : $kelasNumber;
-                                @endphp
-                                <tr>
+                                    @endphp
+                                <tr data-mahasiswa-id="{{ $mhs->id }}">
                                     <td class="px-6 py-4 whitespace-nowrap">{{ $mhs->nim }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">{{ $mhs->nama }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                            Kelas {{ $kelasHuruf }}
+                                            Kelas {{ $kelasNama }}
                                         </span>
                                     </td>
                                     @foreach($allKomponen as $komponen)
                                         <td class="px-4 py-4 whitespace-nowrap text-center">
-                                            <input type="number" class="w-20 px-2 py-1 text-sm text-center" disabled placeholder="-">
+                                            @php
+                                                $existingNilai = $nilaiData->where('mahasiswaId', $mhs->id)
+                                                    ->filter(function($nilai) use ($komponen) {
+                                                        return $nilai->bobot && $nilai->bobot->komponenId == $komponen->id;
+                                                    })
+                                                    ->first();
+                                                $nilaiValue = $existingNilai ? $existingNilai->nilai : '';
+                                            @endphp
+                                            <span class="nilai-plain" data-mahasiswa-id="{{ $mhs->id }}" data-komponen-id="{{ $komponen->id }}">{{ $nilaiValue !== '' ? $nilaiValue : '-' }}</span>
+                                            <input type="number"
+                                                   name="nilai[{{ $mhs->id }}][{{ $komponen->id }}]"
+                                                   value="{{ $nilaiValue }}"
+                                                   min="0"
+                                                   max="100"
+                                                   step="0.01"
+                                                   class="w-20 px-2 py-1 text-sm text-center border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 nilai-input hidden"
+                                                   data-mahasiswa-id="{{ $mhs->id }}"
+                                                   data-komponen-id="{{ $komponen->id }}"
+                                                   data-original-value="{{ $nilaiValue }}"
+                                                   placeholder="0">
+                                            <input type="hidden" name="student_class_id[{{ $mhs->id }}]" value="{{ $studentClassId }}">
                                         </td>
                                     @endforeach
+                                    <!-- Kolom Grade -->
+                                    <td class="px-4 py-4 whitespace-nowrap text-center grade-column">
+                                        @php
+                                            // Ambil grade dan total nilai yang sudah dihitung dari kelas_mahasiswa
+                                            $kelasMahasiswa = $mhs->kelasMahasiswa->where('tahunAjaranMatkulId', $tahunAjaranMatkul->id)->first();
+                                            $totalNilai = $kelasMahasiswa ? $kelasMahasiswa->totalNilai : null;
+                                            $grade = $kelasMahasiswa ? $kelasMahasiswa->grade : null;
+                                            
+                                            // Jika belum ada nilai yang tersimpan, hitung dari bobot dan nilai yang ada
+                                            if ($totalNilai === null || $grade === null) {
+                                                $nilaiTerbobot = 0;
+                                                $totalBobot = 0;
+                                                
+                                                // Hitung berdasarkan semua nilai yang ada dengan bobotnya
+                                                $allNilaiMahasiswa = $nilaiData->where('mahasiswaId', $mhs->id);
+                                                foreach($allNilaiMahasiswa as $nilai) {
+                                                    if ($nilai->bobot) {
+                                                        $nilaiTerbobot += ($nilai->nilai * $nilai->bobot->bobot);
+                                                        $totalBobot += $nilai->bobot->bobot;
+                                                    }
+                                                }
+                                                
+                                                $totalNilai = $totalBobot > 0 ? $nilaiTerbobot / $totalBobot : 0;
+                                                
+                                                // Hitung grade berdasarkan total nilai terbobot
+                                                if ($totalNilai >= 80) $grade = 'A';
+                                                elseif ($totalNilai >= 75) $grade = 'A-';
+                                                elseif ($totalNilai >= 70) $grade = 'B+';
+                                                elseif ($totalNilai >= 65) $grade = 'B';
+                                                elseif ($totalNilai >= 60) $grade = 'B-';
+                                                elseif ($totalNilai >= 55) $grade = 'C+';
+                                                elseif ($totalNilai >= 50) $grade = 'C';
+                                                elseif ($totalNilai >= 45) $grade = 'D';
+                                                else $grade = 'E';
+                                            }
+                                        @endphp
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                            {{ $grade == 'A' || $grade == 'A-' ? 'bg-green-100 text-green-800' : 
+                                               ($grade == 'B+' || $grade == 'B' || $grade == 'B-' ? 'bg-blue-100 text-blue-800' : 
+                                               ($grade == 'C+' || $grade == 'C' ? 'bg-yellow-100 text-yellow-800' : 
+                                               ($grade == 'D' ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800'))) }}">
+                                            {{ $grade ?: '-' }}
+                                        </span>
+                                    </td>
+                                    <!-- Kolom Aksi (hidden by default) -->
+                                    <td class="px-4 py-4 whitespace-nowrap text-center aksi-column hidden">
+                                        <button type="button"
+                                                id="save-btn-{{ $mhs->id }}"
+                                                class="btn-simpan-nilai px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                                disabled>
+                                            <svg class="w-3 h-3 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                            </svg>
+                                            Simpan
+                                        </button>
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
                     </table>
                 </div>
+                </form>
 
-                    <!-- Pagination for Individual Mode -->
-                    @if(!$isBulkMode && $mahasiswaPaginated && $mahasiswaPaginated->hasPages())
-                        <div class="px-6 py-4 border-t border-gray-200">
-                            <div class="flex items-center justify-between">
-                                <div class="text-sm text-gray-700">
-                                    Menampilkan {{ $mahasiswaPaginated->firstItem() }} - {{ $mahasiswaPaginated->lastItem() }}
-                                    dari {{ $mahasiswaPaginated->total() }} mahasiswa
-                                </div>
-                                <div>
-                                    {{ $mahasiswaPaginated->links() }}
-                                </div>
-                            </div>
-                        </div>
-                    @endif
-
-                <!-- Bulk Save Controls (Bottom) -->
-                @if($isBulkMode)
-                    <div id="bulk-actions" class="mt-6 p-4 bg-gray-50 rounded-lg border-t border-gray-200">
+                <!-- Bulk Save Controls (Hidden by default) - Di atas pagination -->
+                <div id="bulk-actions" class="mt-6 p-4 bg-gray-50 rounded-lg btn-simpan-semua hidden">
                     <div class="flex justify-end">
                         <div class="text-right space-y-3">
                             <!-- First row: Checkbox -->
@@ -368,6 +427,20 @@
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- Pagination -->
+                @if($mahasiswaPaginated && $mahasiswaPaginated->hasPages())
+                    <div class="px-6 py-4 border-t border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <div class="text-sm text-gray-700">
+                                Menampilkan {{ $mahasiswaPaginated->firstItem() }} - {{ $mahasiswaPaginated->lastItem() }}
+                                dari {{ $mahasiswaPaginated->total() }} mahasiswa
+                            </div>
+                            <div>
+                                {{ $mahasiswaPaginated->links() }}
+                            </div>
+                        </div>
                     </div>
                 @endif
             @endif
@@ -386,6 +459,210 @@
     cancelText="Tetap di Halaman"
 />
 
+<!-- Modal Import Excel -->
+<div id="import-modal" tabindex="-1" aria-hidden="true" class="overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center min-h-screen w-full hidden transition-opacity duration-300 ease-out" style="background: rgba(0,0,0,0.6);">
+    <div class="relative p-4 w-full max-w-md max-h-full transform transition-all duration-300 ease-out scale-95 opacity-0" data-modal-content>
+        <div class="relative bg-white rounded-lg shadow-xl animate-in fade-in slide-in-from-top-4 duration-300">
+            <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t">
+                <h3 class="text-lg font-semibold text-gray-900">
+                    <svg class="w-5 h-5 mr-2 inline-block text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Import Nilai dari Excel
+                </h3>
+                <button type="button" onclick="hideImportModal()" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center transition-colors duration-200">
+                    <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                    </svg>
+                    <span class="sr-only">Close modal</span>
+                </button>
+            </div>
+            
+            <form action="{{ route('dosen.nilai.import', $tahunAjaranMatkul->id) }}" method="POST" enctype="multipart/form-data" class="p-4 md:p-5">
+                @csrf
+                <div class="mb-4">
+                    <label for="excel_file" class="block text-sm font-medium text-gray-700 mb-2">
+                        Pilih File Excel
+                    </label>
+                    <input type="file" 
+                           id="excel_file" 
+                           name="excel_file" 
+                           accept=".xlsx,.xls"
+                           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           required>
+                </div>
+                
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                    <div class="flex">
+                        <svg class="h-5 w-5 text-yellow-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                        <div class="text-sm text-yellow-700">
+                            <p class="font-semibold mb-2">Petunjuk Import:</p>
+                            <ul class="space-y-1 text-xs">
+                                <li class="flex items-start">
+                                    <span class="mr-2">•</span>
+                                    <span>Download template Excel terlebih dahulu</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="mr-2">•</span>
+                                    <span>Isi semua kolom: NIM, Nama, Kelas, dan nilai komponen</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="mr-2">•</span>
+                                    <span>Template menyediakan 50 baris kosong untuk diisi</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="mr-2">•</span>
+                                    <span>Mahasiswa baru otomatis dibuatkan akun (password = NIM)</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="mr-2">•</span>
+                                    <span>Format file: .xlsx atau .xls</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
+                    <button type="button" onclick="hideImportModal()" class="text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10 transition-colors duration-200">
+                        Batal
+                    </button>
+                    <button type="submit" class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-colors duration-200">
+                        <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
+                        Import
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Notifikasi Import Results -->
+<!-- Reset Confirmation Modal -->
+<x-confirm-modal 
+    id="reset-confirm-modal"
+    title="Konfirmasi Reset Nilai"
+    message="Apakah Anda yakin ingin menghapus SEMUA nilai dari database? Tindakan ini tidak dapat dibatalkan."
+    action="{{ route('dosen.nilai.reset', $tahunAjaranMatkul->id) }}"
+    method="DELETE"
+    confirmText="Ya, Hapus Semua"
+    cancelText="Batal"
+    type="danger" />
+
+@if(session('created_students'))
+<!-- Created Students Modal -->
+<div id="created-students-modal" tabindex="-1" aria-hidden="true" class="overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center min-h-screen w-full flex transition-opacity duration-300 ease-out" style="background: rgba(0,0,0,0.6);">
+    <div class="relative p-4 w-full max-w-4xl max-h-full transform transition-all duration-300 ease-out scale-100 opacity-100">
+        <div class="relative bg-white rounded-lg shadow-xl animate-in fade-in slide-in-from-top-4 duration-300">
+            <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t">
+                <h3 class="text-lg font-semibold text-green-900">
+                    <svg class="w-5 h-5 mr-2 inline-block text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"></path>
+                    </svg>
+                    Akun Mahasiswa Baru Dibuat
+                </h3>
+                <button type="button" onclick="hideCreatedStudentsModal()" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center transition-colors duration-200">
+                    <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                    </svg>
+                    <span class="sr-only">Close modal</span>
+                </button>
+            </div>
+            
+            <div class="p-4 md:p-5">
+                <p class="text-sm text-gray-600 mb-4">
+                    Sistem telah membuat {{ count(session('created_students')) }} akun mahasiswa baru dengan password default = NIM:
+                </p>
+                
+                <div class="overflow-x-auto max-h-64 overflow-y-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50 sticky top-0">
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">NIM</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Nama</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Password</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach(session('created_students') as $student)
+                            <tr>
+                                <td class="px-4 py-2 text-sm text-gray-900">{{ $student['nim'] }}</td>
+                                <td class="px-4 py-2 text-sm text-gray-900">{{ $student['nama'] }}</td>
+                                <td class="px-4 py-2 text-sm text-gray-900 text-xs">{{ $student['email'] }}</td>
+                                <td class="px-4 py-2 text-sm text-gray-900 font-mono">{{ $student['password'] }}</td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="flex items-center justify-end space-x-3 p-4 md:p-5 border-t border-gray-200">
+                <button type="button" onclick="hideCreatedStudentsModal()" class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-colors duration-200">
+                    <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
+@if(session('import_errors'))
+<!-- Import Errors Modal -->
+<div id="import-errors-modal" tabindex="-1" aria-hidden="true" class="overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center min-h-screen w-full flex transition-opacity duration-300 ease-out" style="background: rgba(0,0,0,0.6);">
+    <div class="relative p-4 w-full max-w-2xl max-h-full transform transition-all duration-300 ease-out scale-100 opacity-100">
+        <div class="relative bg-white rounded-lg shadow-xl animate-in fade-in slide-in-from-top-4 duration-300">
+            <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t">
+                <h3 class="text-lg font-semibold text-red-900">
+                    <svg class="w-5 h-5 mr-2 inline-block text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Error Import
+                </h3>
+                <button type="button" onclick="hideImportErrorsModal()" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center transition-colors duration-200">
+                    <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                    </svg>
+                    <span class="sr-only">Close modal</span>
+                </button>
+            </div>
+            
+            <div class="p-4 md:p-5">
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4 max-h-64 overflow-y-auto">
+                    <ul class="text-sm text-red-700 space-y-1">
+                        @foreach(session('import_errors') as $error)
+                            <li class="flex items-start">
+                                <svg class="w-4 h-4 mr-2 mt-0.5 flex-shrink-0 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                </svg>
+                                {{ $error }}
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="flex items-center justify-end space-x-3 p-4 md:p-5 border-t border-gray-200">
+                <button type="button" onclick="hideImportErrorsModal()" class="text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-colors duration-200">
+                    <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
 @endsection
 
 @push('scripts')
@@ -398,8 +675,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Function to check for unsaved changes
     function checkForUnsavedChanges() {
-        const inputs = document.querySelectorAll('.individual-input, .bulk-input');
+        const inputs = document.querySelectorAll('.nilai-input');
         hasUnsavedChanges = false;
+        console.log('checkForUnsavedChanges: checking', inputs.length, 'inputs');
 
         inputs.forEach(input => {
             const originalValue = input.getAttribute('data-original-value') || '';
@@ -407,49 +685,83 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (originalValue !== currentValue) {
                 hasUnsavedChanges = true;
+                console.log('Found change: original =', originalValue, 'current =', currentValue);
             }
         });
 
-        // Update UI indicators if needed
-        updateSaveButtonStates();
+        console.log('hasUnsavedChanges final result:', hasUnsavedChanges);
+        // REMOVED infinite loop - don't call updateSaveButtonStates() here
     }
 
     // Function to update save button states
     function updateSaveButtonStates() {
-        // For bulk mode
-        const bulkSaveBtn = document.getElementById('bulk-save-btn');
-        const confirmCheckbox = document.getElementById('confirm-bulk-save');
+        console.log('=== updateSaveButtonStates START ===');
+        try {
+            // First, update the global hasUnsavedChanges without calling this function
+            const inputs = document.querySelectorAll('.nilai-input');
+            hasUnsavedChanges = false;
+            
+            inputs.forEach(input => {
+                const originalValue = input.getAttribute('data-original-value') || '';
+                const currentValue = input.value || '';
+                if (originalValue !== currentValue) {
+                    hasUnsavedChanges = true;
+                }
+            });
+            
+            console.log('hasUnsavedChanges calculated:', hasUnsavedChanges);
 
-        if (bulkSaveBtn && confirmCheckbox) {
-            const canSave = hasUnsavedChanges && confirmCheckbox.checked;
-            bulkSaveBtn.disabled = !canSave;
-
-            if (canSave) {
-                bulkSaveBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
-                bulkSaveBtn.classList.add('bg-green-600', 'hover:bg-green-700');
-            } else {
-                bulkSaveBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
-                bulkSaveBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+            // For bulk mode
+            const bulkSaveBtn = document.getElementById('bulk-save-btn');
+            const confirmCheckbox = document.getElementById('confirm-bulk-save');
+            console.log('bulkSaveBtn found:', !!bulkSaveBtn, 'confirmCheckbox found:', !!confirmCheckbox);
+            
+            if (bulkSaveBtn) {
+                console.log('bulkSaveBtn element:', bulkSaveBtn);
+                console.log('bulkSaveBtn parent visible:', !bulkSaveBtn.closest('.hidden'));
             }
+
+            if (bulkSaveBtn) {
+                if (confirmCheckbox) {
+                    const canSave = hasUnsavedChanges && confirmCheckbox.checked;
+                    const oldDisabled = bulkSaveBtn.disabled;
+                    bulkSaveBtn.disabled = !canSave;
+                    console.log('Bulk save button - hasUnsavedChanges:', hasUnsavedChanges, 'checkbox.checked:', confirmCheckbox.checked, 'canSave:', canSave);
+                    console.log('Bulk save button - oldDisabled:', oldDisabled, 'newDisabled:', bulkSaveBtn.disabled);
+                    console.log('Bulk save button classes:', bulkSaveBtn.className);
+                } else {
+                    // If no checkbox, just check for changes
+                    bulkSaveBtn.disabled = !hasUnsavedChanges;
+                    console.log('Bulk save button disabled status (no checkbox):', bulkSaveBtn.disabled);
+                }
+            } else {
+                console.log('bulkSaveBtn not found!');
+            }
+
+            // For individual mode - update each student's save button
+            console.log('Updating individual save buttons...');
+            const individualSaveBtns = document.querySelectorAll('[id^="save-btn-"]');
+            console.log('Found', individualSaveBtns.length, 'individual save buttons');
+            
+            individualSaveBtns.forEach(btn => {
+                const mahasiswaId = btn.id.replace('save-btn-', '');
+                const hasDataForStudent = checkForData(mahasiswaId);
+                const hasChangesForStudent = checkForChanges(mahasiswaId);
+                console.log('Student', mahasiswaId, '- hasData:', hasDataForStudent, 'hasChanges:', hasChangesForStudent);
+
+                if (hasDataForStudent || hasChangesForStudent) {
+                    btn.disabled = false;
+                    console.log('Enabled save button for student', mahasiswaId);
+                } else {
+                    btn.disabled = true;
+                    console.log('Disabled save button for student', mahasiswaId);
+                }
+            });
+
+        } catch (error) {
+            console.error('Error in updateSaveButtonStates:', error);
         }
-
-        // For individual mode
-        const individualSaveBtns = document.querySelectorAll('.individual-save-btn');
-        individualSaveBtns.forEach(btn => {
-            const mahasiswaId = btn.id.replace('bulk-save-btn-', '');
-            const hasDataForStudent = checkForData(mahasiswaId);
-            const hasChangesForStudent = checkForChanges(mahasiswaId);
-
-            btn.disabled = !hasDataForStudent || !hasChangesForStudent;
-
-            if (hasDataForStudent && hasChangesForStudent) {
-                btn.classList.remove('bg-gray-400', 'cursor-not-allowed');
-                btn.classList.add('bg-green-600', 'hover:bg-green-700');
-            } else {
-                btn.classList.add('bg-gray-400', 'cursor-not-allowed');
-                btn.classList.remove('bg-green-600', 'hover:bg-green-700');
-            }
-        });
+        console.log('=== updateSaveButtonStates END ===');
     }
 
     // Function to show unsaved changes modal
@@ -537,7 +849,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Listen for input changes
     document.addEventListener('input', function(e) {
-        if (e.target.classList.contains('individual-input') || e.target.classList.contains('bulk-input')) {
+        if (e.target.classList.contains('nilai-input')) {
             checkForUnsavedChanges();
         }
     });
@@ -548,7 +860,7 @@ document.addEventListener('DOMContentLoaded', function() {
         allowNavigation = false;
 
         // Update original values
-        const inputs = document.querySelectorAll('.individual-input, .bulk-input');
+        const inputs = document.querySelectorAll('.nilai-input');
         inputs.forEach(input => {
             input.setAttribute('data-original-value', input.value || '');
         });
@@ -582,6 +894,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize with current active tab from server
     const currentTab = '{{ $activeTab ?? "all" }}';
+
+    // Initialize input functionality
+    initializeInputs();
 
     // Update pagination links to maintain current tab and sorting
     const paginationLinks = document.querySelectorAll('.pagination a');
@@ -712,7 +1027,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize bulk input functionality when switching to bulk mode
     function initializeBulkInput() {
-        const bulkInputs = document.querySelectorAll('#bulk-input-table .bulk-input');
+        const bulkInputs = document.querySelectorAll('.bulk-input');
 
         bulkInputs.forEach(input => {
             // Add event listener for input changes (prevent duplicate listeners)
@@ -744,10 +1059,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function checkForData(mahasiswaId) {
-        const row = document.querySelector(`#bulk-input-table tr[data-mahasiswa-id="${mahasiswaId}"]`);
+        const row = document.querySelector(`tr[data-mahasiswa-id="${mahasiswaId}"]`);
         if (!row) return false;
 
-        const inputs = row.querySelectorAll('.bulk-input');
+        const inputs = row.querySelectorAll('.nilai-input');
         let hasData = false;
 
         inputs.forEach(input => {
@@ -760,10 +1075,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function checkForChanges(mahasiswaId) {
-        const row = document.querySelector(`#bulk-input-table tr[data-mahasiswa-id="${mahasiswaId}"]`);
+        const row = document.querySelector(`tr[data-mahasiswa-id="${mahasiswaId}"]`);
         if (!row) return false;
 
-        const inputs = row.querySelectorAll('.bulk-input');
+        const inputs = row.querySelectorAll('.nilai-input');
         let hasChanges = false;
 
         inputs.forEach(input => {
@@ -780,13 +1095,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Function to save individual student grades
     window.saveIndividualNilai = function(mahasiswaId) {
-        const row = document.querySelector(`#bulk-input-table tr[data-mahasiswa-id="${mahasiswaId}"]`);
-        const saveBtn = document.getElementById('bulk-save-btn-' + mahasiswaId);
+        console.log('saveIndividualNilai called for mahasiswa:', mahasiswaId);
+        const row = document.querySelector(`tr[data-mahasiswa-id="${mahasiswaId}"]`);
+        const saveBtn = document.getElementById('save-btn-' + mahasiswaId);
 
+        console.log('Row found:', !!row, 'Save button found:', !!saveBtn);
         if (!row || !saveBtn) return;
 
         // Get all inputs for this student
-        const inputs = row.querySelectorAll('.bulk-input');
+        const inputs = row.querySelectorAll('.nilai-input');
         let hasData = false;
 
         // Check if there's any data to save
@@ -830,8 +1147,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Send AJAX request
-        fetch('{{ route("dosen.nilai.individual-store", $mataKuliahDiampu->id) }}', {
+        // Send AJAX request to bulk store endpoint (same as bulk)
+        fetch('{{ route("dosen.nilai.bulk-store", $tahunAjaranMatkul->id) }}', {
             method: 'POST',
             body: formData,
             headers: {
@@ -872,6 +1189,33 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     };
 
+    // Function to initialize inputs
+    function initializeInputs() {
+        const inputs = document.querySelectorAll('.individual-input, .bulk-input');
+
+        inputs.forEach(input => {
+            // Add event listener for input changes
+            input.addEventListener('input', function() {
+                checkForUnsavedChanges();
+                
+                // Validate input
+                let value = parseFloat(this.value);
+                if (isNaN(value) || value < 0) {
+                    this.value = '';
+                } else if (value > 100) {
+                    this.value = '100';
+                }
+
+                // Update save button states
+                updateSaveButtonStates();
+            });
+        });
+    }
+
+    // REMOVED DUPLICATE FUNCTION - using the first one with proper debug logs
+
+    // REMOVED DUPLICATE FUNCTIONS - using the first ones with proper debug logs
+
     // Function to show notification
     function showNotification(message, type = 'info') {
         const notification = document.createElement('div');
@@ -893,6 +1237,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initial check for unsaved changes
     checkForUnsavedChanges();
 
+    // Debug: Log nilai isPenilaianSiap di console
+    console.log('Debug isPenilaianSiap:', @json($isPenilaianSiap));
+    console.log('Debug totalBobotKeseluruhan:', @json($totalBobotKeseluruhan ?? 'N/A'));
+
     // Modal warning untuk bulk mode
     const btnBulk = document.getElementById('activate-bulk-mode-btn');
     if (btnBulk) {
@@ -900,6 +1248,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let isPenilaianSiap = @json($isPenilaianSiap);
         btnBulk.addEventListener('click', function(e) {
             e.preventDefault();
+            console.log('Button clicked, isPenilaianSiap:', isPenilaianSiap);
             if (!isPenilaianSiap) {
                 // Tampilkan modal warning
                 const modal = document.getElementById('bobot-warning-modal');
@@ -917,6 +1266,244 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // Toggle mode edit input nilai
+    const toggleEditBtn = document.getElementById('toggle-edit-nilai');
+    let editMode = false;
+    
+    function setEditMode(active) {
+        editMode = active;
+        
+        // Tampilkan/hide input dan plain text
+        document.querySelectorAll('.nilai-input').forEach(input => {
+            input.classList.toggle('hidden', !editMode);
+        });
+        document.querySelectorAll('.nilai-plain').forEach(span => {
+            span.classList.toggle('hidden', editMode);
+        });
+        
+        // Tampilkan/hide kolom grade dan aksi
+        document.querySelectorAll('.grade-column').forEach(col => {
+            col.classList.toggle('hidden', editMode);
+        });
+        document.querySelectorAll('.aksi-column').forEach(col => {
+            col.classList.toggle('hidden', !editMode);
+        });
+        
+        // Tampilkan/hide tombol simpan per mahasiswa
+        document.querySelectorAll('.btn-simpan-nilai').forEach(btn => {
+            btn.classList.toggle('hidden', !editMode);
+        });
+        
+        // Tampilkan/hide area simpan semua
+        document.querySelectorAll('.btn-simpan-semua').forEach(btn => {
+            btn.classList.toggle('hidden', !editMode);
+        });
+        
+        // Tampilkan/hide tombol reset
+        const resetBtn = document.getElementById('reset-nilai');
+        if (resetBtn) {
+            resetBtn.classList.toggle('hidden', !editMode);
+        }
+        
+        // Update teks tombol
+        toggleEditBtn.textContent = editMode ? 'Nonaktifkan Input Nilai' : 'Aktifkan Input Nilai';
+        toggleEditBtn.classList.toggle('bg-amber-600', !editMode);
+        toggleEditBtn.classList.toggle('bg-red-600', editMode);
+        
+        // Update state tombol simpan - AFTER elements are visible
+        if (editMode) {
+            // Add small delay to ensure DOM updates are complete
+            setTimeout(() => {
+                updateSaveButtonStates();
+            }, 10);
+        }
+    }
+    
+    // Set mode awal (non-edit)
+    setEditMode(false);
+    
+    // Event listener untuk toggle
+    toggleEditBtn.addEventListener('click', function() {
+        console.log('Toggle edit button clicked, current editMode:', editMode);
+        setEditMode(!editMode);
+        console.log('Edit mode set to:', editMode);
+    });
+
+    // Initialize save button states on page load
+    updateSaveButtonStates();
+
+    // Add event listeners to all nilai input fields
+    console.log('Adding event listeners to', document.querySelectorAll('.nilai-input').length, 'input fields');
+    document.querySelectorAll('.nilai-input').forEach(input => {
+        input.addEventListener('input', function() {
+            console.log('Input changed:', this.value, 'for mahasiswa:', this.getAttribute('data-mahasiswa-id'));
+            console.log('About to call updateSaveButtonStates...');
+            updateSaveButtonStates();
+            console.log('updateSaveButtonStates called');
+        });
+    });
+
+    // Add event listeners to all individual save buttons
+    document.querySelectorAll('[id^="save-btn-"]').forEach(btn => {
+        const mahasiswaId = btn.id.replace('save-btn-', '');
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Individual save button clicked for mahasiswa:', mahasiswaId);
+            console.log('Button disabled status:', this.disabled);
+            if (!this.disabled) {
+                saveIndividualNilai(mahasiswaId);
+            }
+        });
+    });
+
+    // Add event listener for confirmation checkbox
+    const confirmCheckbox = document.getElementById('confirm-bulk-save');
+    if (confirmCheckbox) {
+        console.log('Checkbox found and event listener added');
+        confirmCheckbox.addEventListener('change', function() {
+            console.log('Checkbox changed! Checked:', this.checked);
+            updateSaveButtonStates();
+        });
+    } else {
+        console.log('Checkbox NOT found!');
+    }
+
+    // Add event listener for bulk save button (universal, not just bulk mode)
+    const bulkSaveBtn = document.getElementById('bulk-save-btn');
+    if (bulkSaveBtn) {
+        console.log('Bulk save button found and event listener added');
+        bulkSaveBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Bulk save button clicked, disabled status:', this.disabled);
+            if (!this.disabled) {
+                // Show loading state
+                this.disabled = true;
+                this.innerHTML = `
+                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 74 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Menyimpan...
+                `;
+
+                // Create form data from all nilai inputs
+                const formData = new FormData();
+                formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+
+                // Collect all nilai data
+                document.querySelectorAll('.nilai-input').forEach(input => {
+                    if (input.value && input.value.trim() !== '') {
+                        const mahasiswaId = input.getAttribute('data-mahasiswa-id');
+                        const komponenId = input.getAttribute('data-komponen-id');
+                        const fieldName = `nilai[${mahasiswaId}][${komponenId}]`;
+                        formData.append(fieldName, input.value);
+                    }
+                });
+
+                // Collect student class IDs
+                document.querySelectorAll('input[name^="student_class_id["]').forEach(input => {
+                    formData.append(input.name, input.value);
+                });
+
+                // Submit via AJAX
+                fetch('{{ route("dosen.nilai.bulk-store", $tahunAjaranMatkul->id) }}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('Semua nilai berhasil disimpan!', 'success');
+                        
+                        // Reset unsaved changes flag
+                        document.dispatchEvent(new CustomEvent('valuesSaved'));
+                        
+                        // Refresh page to show updated data
+                        setTimeout(() => {
+                            allowNavigation = true;
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        showNotification(data.message || 'Terjadi kesalahan saat menyimpan nilai.', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Terjadi kesalahan saat menyimpan nilai.', 'error');
+                })
+                .finally(() => {
+                    // Reset button state
+                    this.disabled = false;
+                    this.innerHTML = `
+                        <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        Simpan Semua Nilai
+                    `;
+                });
+            }
+        });
+    }
+
+    // Note: Reset functionality now handled by confirm modal component
+
+    // Functions for Import Modal
+    window.showImportModal = function() {
+        const modal = document.getElementById('import-modal');
+        const modalContent = modal.querySelector('[data-modal-content]');
+        
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+        // Trigger animation
+        setTimeout(() => {
+            modal.classList.remove('bg-opacity-0');
+            modal.classList.add('bg-opacity-10');
+            modalContent.classList.remove('scale-95', 'opacity-0');
+            modalContent.classList.add('scale-100', 'opacity-100');
+        }, 10);
+    };
+
+    window.hideImportModal = function() {
+        const modal = document.getElementById('import-modal');
+        const modalContent = modal.querySelector('[data-modal-content]');
+        
+        modalContent.classList.add('scale-95', 'opacity-0');
+        modalContent.classList.remove('scale-100', 'opacity-100');
+        modal.classList.remove('bg-opacity-10');
+        modal.classList.add('bg-opacity-0');
+
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }, 300);
+    };
+
+    window.hideCreatedStudentsModal = function() {
+        const modal = document.getElementById('created-students-modal');
+        if (modal) {
+            modal.remove();
+        }
+    };
+
+    window.hideImportErrorsModal = function() {
+        const modal = document.getElementById('import-errors-modal');
+        if (modal) {
+            modal.remove();
+        }
+    };
+
+    // Close modal when clicking outside
+    document.addEventListener('click', function(e) {
+        const modal = document.getElementById('import-modal');
+        if (e.target === modal) {
+            hideImportModal();
+        }
+    });
 });
 </script>
 @endpush
@@ -952,6 +1539,17 @@ document.addEventListener('DOMContentLoaded', function() {
     border: 5px solid transparent;
     border-top-color: #374151;
     z-index: 50;
+}
+
+/* Fix untuk tombol simpan disabled */
+.btn-simpan-nilai:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #9ca3af !important;
+}
+
+.btn-simpan-nilai:disabled:hover {
+    background-color: #9ca3af !important;
 }
 </style>
 @endpush

@@ -14,7 +14,7 @@ class Nilai extends Model
     protected $fillable = [
         'cpmkId',
         'mahasiswaId',
-        'dosenPengampuId',
+        'dosenPengampuKelasId',
         'tahunAjaranMatkulId',
         'bobotId',
         'nilai',
@@ -39,9 +39,19 @@ class Nilai extends Model
         return $this->belongsTo(Mahasiswa::class, 'mahasiswaId');
     }
 
-    public function dosenPengampu()
+    public function dosenPengampuKelas()
     {
-        return $this->belongsTo(DosenPengampu::class, 'dosenPengampuId');
+        return $this->belongsTo(DosenPengampuKelas::class, 'dosenPengampuKelasId');
+    }
+
+    public function dosen()
+    {
+        return $this->hasOneThrough(Dosen::class, DosenPengampuKelas::class, 'id', 'id', 'dosenPengampuKelasId', 'dosenId');
+    }
+
+    public function kelas()
+    {
+        return $this->hasOneThrough(Kelas::class, DosenPengampuKelas::class, 'id', 'id', 'dosenPengampuKelasId', 'kelasId');
     }
 
     public function tahunAjaranMatkul()

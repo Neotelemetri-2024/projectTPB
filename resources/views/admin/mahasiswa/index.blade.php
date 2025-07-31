@@ -47,7 +47,7 @@
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
                             <option value="">Semua Tahun Masuk</option>
                             @foreach($tahunMasukList as $tahun)
-                                <option value="{{ $tahun }}" {{ request('tahun_masuk') == $tahun ? 'selected' : '' }}>
+                                <option value="{{ $tahun }}" {{ (request('tahun_masuk') ? request('tahun_masuk') : $selectedTahunMasuk) == $tahun ? 'selected' : '' }}>
                                     {{ $tahun }}
                                 </option>
                             @endforeach
@@ -108,9 +108,9 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $mhs->tahunMasuk }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             @if($mhs->user->isAktif)
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Aktif</span>
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded bg-gray-100 text-gray-700">Aktif</span>
                             @else
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Tidak Aktif</span>
+                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded bg-gray-100 text-gray-700">Tidak Aktif</span>
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -169,6 +169,7 @@
         title="Konfirmasi Hapus Mahasiswa"
         :message="'Apakah Anda yakin ingin menghapus mahasiswa ' . $mhs->nama . ' (' . $mhs->nim . ')?'"
         :action="route('admin.mahasiswa.destroy', $mhs->id)"
+        method="DELETE"
     />
 @endforeach
 

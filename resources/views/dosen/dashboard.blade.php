@@ -1,112 +1,182 @@
 @extends('layouts.main')
-
+@section('title', 'Dashboard Dosen')
 @section('content')
 <div class="p-6">
-    <!-- Header -->
-    <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Dashboard Dosen</h1>
-        <p class="mt-2 text-gray-600">Selamat datang, {{ $user->name }}!</p>
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+        <h2 class="text-2xl font-bold">Dashboard Dosen</h2>
+        <form method="GET" action="" class="mt-2 md:mt-0">
+            <div class="flex items-center gap-2">
+                <label for="tahun_ajaran_id" class="text-sm font-medium text-gray-700">Tahun Ajaran:</label>
+                <select name="tahun_ajaran_id" id="tahun_ajaran_id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 p-2.5" onchange="this.form.submit()">
+                    @foreach($tahunAjaranList as $ta)
+                        <option value="{{ $ta->id }}" {{ $selectedTahunAjaranId == $ta->id ? 'selected' : '' }}>
+                            {{ $ta->tahun }} - {{ ucfirst($ta->periode) }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </form>
     </div>
-
-    <!-- Welcome Card -->
-    <div class="bg-gradient-to-r from-amber-500 to-orange-600 rounded-lg shadow-lg p-6 text-white mb-8">
-        <div class="flex items-center">
-            <div class="flex-shrink-0">
-                <svg class="h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                </svg>
-            </div>
-            <div class="ml-4">
-                <h2 class="text-2xl font-bold">Portal Dosen - Sistem Telemetri</h2>
-                <p class="mt-1 text-amber-100">Kelola mata kuliah dan nilai mahasiswa</p>
-            </div>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-lg shadow p-4 flex flex-col items-center">
+            <div class="text-3xl font-bold text-blue-600">{{ $jumlahMK }}</div>
+            <div class="text-gray-600 mt-2">Mata Kuliah</div>
         </div>
-    </div>
-
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <svg class="h-8 w-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                    </svg>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500">Mata Kuliah</p>
-                    <p class="text-2xl font-bold text-gray-900">-</p>
-                </div>
-            </div>
+        <div class="bg-white rounded-lg shadow p-4 flex flex-col items-center">
+            <div class="text-3xl font-bold text-amber-600">{{ $jumlahKelas }}</div>
+            <div class="text-gray-600 mt-2">Kelas</div>
         </div>
-
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <svg class="h-8 w-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                    </svg>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500">Total Mahasiswa</p>
-                    <p class="text-2xl font-bold text-gray-900">-</p>
-                </div>
-            </div>
+        <div class="bg-white rounded-lg shadow p-4 flex flex-col items-center">
+            <div class="text-3xl font-bold text-green-600">{{ $jumlahMahasiswa }}</div>
+            <div class="text-gray-600 mt-2">Mahasiswa</div>
         </div>
-
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <svg class="h-8 w-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500">Nilai Belum Diinput</p>
-                    <p class="text-2xl font-bold text-gray-900">-</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center">
-                <div class="flex-shrink-0">
-                    <svg class="h-8 w-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                    </svg>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500">CPMK Tercapai</p>
-                    <p class="text-2xl font-bold text-gray-900">-</p>
-                </div>
-            </div>
+        <div class="bg-white rounded-lg shadow p-4 flex flex-col items-center">
+            <div class="text-3xl font-bold text-purple-600">{{ $progressPersen }}%</div>
+            <div class="text-gray-600 mt-2">Progress Input Nilai</div>
+            <div class="text-xs text-gray-400">{{ $jumlahKelasLengkap }} dari {{ $kelasList->count() }} kelas lengkap</div>
         </div>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="bg-white rounded-lg shadow p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Aksi Cepat</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div class="bg-white rounded-lg shadow p-4">
+            <h3 class="font-semibold mb-2">Jumlah Mahasiswa per Mata Kuliah</h3>
+            <canvas id="barChart"></canvas>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4">
+            <h3 class="font-semibold mb-2">Distribusi Grade</h3>
+            <canvas id="pieChart"></canvas>
+        </div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4 mb-6">
+        <h3 class="font-semibold mb-2">Progress Rata-rata Nilai per MK (Tiap Tahun Ajaran)</h3>
+        <canvas id="lineChart"></canvas>
+    </div>
+
+    <!-- Distribusi Nilai per Mata Kuliah -->
+    <div class="bg-white rounded-lg shadow p-4 mb-6">
+        <h3 class="font-semibold mb-4">Distribusi Nilai per Mata Kuliah</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <button class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
-                <svg class="h-6 w-6 text-blue-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
-                <span class="text-blue-700 font-medium">Input Nilai</span>
-            </button>
-            
-            <button class="flex items-center p-4 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors">
-                <svg class="h-6 w-6 text-amber-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                </svg>
-                <span class="text-amber-700 font-medium">Lihat Mahasiswa</span>
-            </button>
-            
-            <button class="flex items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
-                <svg class="h-6 w-6 text-purple-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                </svg>
-                <span class="text-purple-700 font-medium">Laporan CPMK</span>
-            </button>
+            @foreach($gradeDistributionPerMK as $mk)
+                @if($mk['totalMahasiswa'] > 0)
+                    <div class="border rounded-lg p-4">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="font-medium text-sm">{{ $mk['kodeMatkul'] }}</h4>
+                            <span class="text-xs text-gray-500">{{ $mk['totalMahasiswa'] }} mahasiswa</span>
+                        </div>
+                        <p class="text-xs text-gray-600 mb-3">{{ $mk['mataKuliah'] }}</p>
+                        
+                        <div class="space-y-2">
+                            @php
+                                $grades = ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'D', 'E'];
+                                $colors = ['#10B981', '#34D399', '#60A5FA', '#3B82F6', '#6366F1', '#F59E0B', '#F97316', '#EF4444', '#DC2626'];
+                            @endphp
+                            @foreach($grades as $index => $grade)
+                                @if($mk['gradeCounts'][$grade] > 0)
+                                    @php
+                                        $percentage = $mk['totalMahasiswa'] > 0 ? round(($mk['gradeCounts'][$grade] / $mk['totalMahasiswa']) * 100, 1) : 0;
+                                        $color = $colors[$index];
+                                    @endphp
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-3 h-3 rounded-full" style="background-color: {{ $color }};"></div>
+                                            <span class="text-xs font-medium">{{ $grade }}</span>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-16 bg-gray-200 rounded-full h-2">
+                                                <div class="h-2 rounded-full" style="width: {{ $percentage }}%; background-color: {{ $color }};"></div>
+                                            </div>
+                                            <span class="text-xs text-gray-600 w-8 text-right">{{ $mk['gradeCounts'][$grade] }}</span>
+                                        </div>
+                                    </div>
+                                @endif
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+            @endforeach
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-4">
+        <h3 class="font-semibold mb-4">Daftar Mata Kuliah Diampu (Semester Aktif)</h3>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Mata Kuliah</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Kelas</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Mahasiswa</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status Nilai</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @foreach($kelasList as $kelas)
+                        <tr>
+                            <td class="px-4 py-2">{{ $kelas->tahunAjaranMatkul->mataKuliah->namaMatkul ?? '-' }}</td>
+                            <td class="px-4 py-2">{{ $kelas->namaKelas }}</td>
+                            <td class="px-4 py-2">{{ $kelas->kelasMahasiswa->count() }}</td>
+                            <td class="px-4 py-2">
+                                @php
+                                    $mahasiswaCount = $kelas->kelasMahasiswa->count();
+                                    $sudahNilai = $kelas->kelasMahasiswa->whereNotNull('totalNilai')->count();
+                                @endphp
+                                @if($mahasiswaCount > 0 && $mahasiswaCount == $sudahNilai)
+                                    <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Lengkap</span>
+                                @else
+                                    <span class="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">Belum Lengkap</span>
+                                @endif
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Bar Chart
+const barChart = new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: {
+        labels: @json($barChartLabels),
+        datasets: [{
+            label: 'Jumlah Mahasiswa',
+            data: @json($barChartData),
+            backgroundColor: '#3B82F6',
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } }
+    }
+});
+// Pie Chart
+const pieChart = new Chart(document.getElementById('pieChart'), {
+    type: 'pie',
+    data: {
+        labels: @json($pieChartLabels),
+        datasets: [{
+            data: @json($pieChartData),
+            backgroundColor: ['#10B981','#34D399','#60A5FA','#3B82F6','#6366F1','#F59E0B','#F97316','#EF4444','#DC2626'],
+        }]
+    },
+    options: { responsive: true }
+});
+// Line Chart
+const lineChart = new Chart(document.getElementById('lineChart'), {
+    type: 'line',
+    data: {
+        labels: @json($lineChartLabels),
+        datasets: @json($lineChartDatasets),
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: true } },
+        scales: { y: { beginAtZero: true, max: 100 } }
+    }
+});
+</script>
 @endsection

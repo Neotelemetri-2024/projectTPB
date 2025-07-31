@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\MataKuliah;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\MataKuliahTemplateExport;
+use App\Imports\MataKuliahImport;
 
 class MataKuliahController extends Controller
 {
@@ -58,7 +61,7 @@ class MataKuliahController extends Controller
             'kodeMatkul' => 'required|string|max:20|unique:mata_kuliah,kodeMatkul',
             'namaMatkul' => 'required|string|max:255',
             'jenis' => 'required|string|max:50',
-            'sks' => 'required|integer|min:1|max:6',
+            'sks' => 'required|integer|min:0',
         ], [
             'kodeMatkul.required' => 'Kode mata kuliah wajib diisi',
             'kodeMatkul.max' => 'Kode mata kuliah maksimal 20 karakter',
@@ -69,8 +72,7 @@ class MataKuliahController extends Controller
             'jenis.max' => 'Jenis mata kuliah maksimal 50 karakter',
             'sks.required' => 'SKS wajib diisi',
             'sks.integer' => 'SKS harus berupa angka',
-            'sks.min' => 'SKS minimal 1',
-            'sks.max' => 'SKS maksimal 6',
+            'sks.min' => 'SKS minimal 0',
         ]);
 
         if ($validator->fails()) {
@@ -110,7 +112,7 @@ class MataKuliahController extends Controller
             'kodeMatkul' => 'required|string|max:20|unique:mata_kuliah,kodeMatkul,' . $mataKuliah->id,
             'namaMatkul' => 'required|string|max:255',
             'jenis' => 'required|string|max:50',
-            'sks' => 'required|integer|min:1|max:6',
+            'sks' => 'required|integer|min:0',
         ], [
             'kodeMatkul.required' => 'Kode mata kuliah wajib diisi',
             'kodeMatkul.max' => 'Kode mata kuliah maksimal 20 karakter',
@@ -121,8 +123,7 @@ class MataKuliahController extends Controller
             'jenis.max' => 'Jenis mata kuliah maksimal 50 karakter',
             'sks.required' => 'SKS wajib diisi',
             'sks.integer' => 'SKS harus berupa angka',
-            'sks.min' => 'SKS minimal 1',
-            'sks.max' => 'SKS maksimal 6',
+            'sks.min' => 'SKS minimal 0',
         ]);
 
         if ($validator->fails()) {
@@ -158,6 +159,60 @@ class MataKuliahController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Export template Excel untuk import mata kuliah
+     */
+    public function exportTemplate()
+    {
+        $fileName = 'Template_Import_Mata_Kuliah.xlsx';
+        return Excel::download(new MataKuliahTemplateExport(), $fileName);
+    }
+
+    /**
+     * Import mata kuliah dari Excel
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'excel_file' => 'required|file|mimes:xlsx,xls|max:2048'
+        ], [
+            'excel_file.required' => 'File Excel harus dipilih.',
+            'excel_file.mimes' => 'File harus berformat Excel (.xlsx atau .xls).',
+            'excel_file.max' => 'Ukuran file maksimal 2MB.'
+        ]);
+
+        try {
+            $import = new MataKuliahImport();
+            Excel::import($import, $request->file('excel_file'));
+
+            // Get import results
+            $results = $import->getImportResults();
+
+            $message = "Import berhasil! ";
+            $message .= "Berhasil memproses " . ($results['success'] ?? 0) . " mata kuliah. ";
+            
+            if (($results['created'] ?? 0) > 0) {
+                $message .= "Dibuat " . $results['created'] . " mata kuliah baru. ";
+            }
+            
+            if (($results['updated'] ?? 0) > 0) {
+                $message .= "Diperbarui " . $results['updated'] . " mata kuliah. ";
+            }
+
+            if (!empty($results['errors'])) {
+                $message .= "Terdapat " . count($results['errors']) . " error.";
+                
+                // Store errors in session for detailed display
+                session()->flash('import_errors', $results['errors']);
+            }
+
+            return redirect()->back()->with('success', $message);
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat import: ' . $e->getMessage());
         }
     }
 } 

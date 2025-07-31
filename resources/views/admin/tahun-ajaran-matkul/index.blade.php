@@ -8,15 +8,55 @@
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <h2 class="text-lg font-semibold text-gray-900">Tahun Ajaran Mata Kuliah</h2>
-                <a href="{{ route('admin.tahun-ajaran-matkul.create') }}"
-                   class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg flex items-center">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                    </svg>
-                    Tambah Mata Kuliah
-                </a>
+                <div class="flex space-x-2">
+                    <!-- Import/Export Buttons -->
+                    <button type="button" onclick="openImportModal()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg flex items-center text-sm">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
+                        </svg>
+                        Import Excel
+                    </button>
+                    <a href="{{ route('admin.tahun-ajaran-matkul.export-template', ['tahun_ajaran_id' => $selectedTahunAjaranId]) }}" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg flex items-center text-sm">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Download Template
+                    </a>
+                    <button type="button" onclick="openDuplicateModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg flex items-center text-sm">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                        </svg>
+                        Duplicate Tahun Sebelumnya
+                    </button>
+                    <a href="{{ route('admin.tahun-ajaran-matkul.create') }}"
+                       class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg flex items-center text-sm">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        Tambah Mata Kuliah
+                    </a>
+                </div>
             </div>
         </div>
+
+        <!-- Error Import -->
+        @if(session('import_errors'))
+            <div class="p-6 border-b border-red-200 bg-red-50">
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                    </svg>
+                    <h3 class="text-sm font-medium text-red-800">Error Import:</h3>
+                </div>
+                <div class="mt-2 text-sm text-red-700">
+                    <ul class="list-disc list-inside space-y-1">
+                        @foreach(session('import_errors') as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+        @endif
 
         <!-- Filter dan Search -->
         <div class="p-6 border-b border-gray-200">
@@ -63,6 +103,7 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tahun Ajaran</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mata Kuliah</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Semester</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kelas</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dosen Pengampu</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mahasiswa</th>
@@ -74,9 +115,7 @@
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $tahunAjaranMatkuls->firstItem() + $index }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                    {{ $item->tahunAjaran->tahun }}-{{ $item->tahunAjaran->periode }}
-                                </span>
+                                {{ $item->tahunAjaran->tahun }}-{{ $item->tahunAjaran->periode }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div>
@@ -85,9 +124,12 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                Semester {{ $item->semester ?? 1 }}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 <div class="flex flex-wrap gap-1">
                                     @foreach($item->kelas as $kelas)
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-700">
                                             {{ $kelas->namaKelas }}
                                         </span>
                                     @endforeach
@@ -112,9 +154,7 @@
                                 @php
                                     $totalMahasiswa = $item->kelas->flatMap->kelasMahasiswa->pluck('mahasiswaId')->unique()->count();
                                 @endphp
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                    {{ $totalMahasiswa }} mahasiswa
-                                </span>
+                                {{ $totalMahasiswa }} mahasiswa
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <div class="flex space-x-2">
@@ -176,6 +216,138 @@
         method="DELETE"
     />
 @endforeach
+
+<!-- Modal Import Excel -->
+<div id="import-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Import Data Mata Kuliah</h3>
+                <button onclick="closeImportModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <form action="{{ route('admin.tahun-ajaran-matkul.import') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Upload File Excel</label>
+                    <input type="file" name="file" accept=".xlsx,.xls" required class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5">
+                    <p class="text-xs text-gray-500 mt-1">Format: .xlsx atau .xls (Maksimal 2MB)</p>
+                    <p class="text-xs text-gray-500 mt-1">Pastikan file Excel berisi kolom: TAHUN_AJARAN, KODE_MATKUL, MATA_KULIAH, SEMESTER, NAMA_KELAS, NAMA_DOSEN, NIP_DOSEN, EMAIL_DOSEN</p>
+                    <p class="text-xs text-gray-500 mt-1"><strong>Format:</strong> Satu baris = satu kelas. Jika mata kuliah sama, semester sama, buat baris terpisah per kelas.</p>
+                    <p class="text-xs text-gray-500 mt-1"><strong>Multiple Dosen:</strong> Gunakan titik koma (;) untuk memisahkan multiple dosen dalam satu baris.</p>
+                    <p class="text-xs text-gray-500 mt-1">Contoh: Dr. John Doe; Dr. Jane Smith | NIP1; NIP2 | email1; email2</p>
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button type="button" onclick="closeImportModal()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">
+                        Batal
+                    </button>
+                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+                        Import
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Duplicate Tahun Sebelumnya -->
+<x-duplicate-modal id="duplicate-modal" title="Duplicate dari Tahun Sebelumnya" action="{{ route('admin.tahun-ajaran-matkul.duplicate') }}" submit-text="Duplicate">
+    <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Tahun Ajaran Sumber</label>
+        <select name="source_tahun_ajaran_id" required class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5">
+            <option value="">Pilih Tahun Ajaran Sumber</option>
+            @foreach($tahunAjarans as $tahunAjaran)
+                <option value="{{ $tahunAjaran->id }}">{{ $tahunAjaran->tahun }}-{{ $tahunAjaran->periode }}</option>
+            @endforeach
+        </select>
+    </div>
+    <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Tahun Ajaran Target</label>
+        <select name="target_tahun_ajaran_id" required class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5">
+            <option value="">Pilih Tahun Ajaran Target</option>
+            @foreach($tahunAjarans as $tahunAjaran)
+                <option value="{{ $tahunAjaran->id }}">{{ $tahunAjaran->tahun }}-{{ $tahunAjaran->periode }}</option>
+            @endforeach
+        </select>
+    </div>
+</x-duplicate-modal>
+
+<script>
+function openImportModal() {
+    document.getElementById('import-modal').classList.remove('hidden');
+}
+
+function closeImportModal() {
+    document.getElementById('import-modal').classList.add('hidden');
+}
+
+function openDuplicateModal() {
+    const modal = document.getElementById('duplicate-modal');
+    const modalContent = modal.querySelector('[data-modal-content]');
+    
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    
+    // Trigger animation
+    setTimeout(() => {
+        modal.classList.remove('bg-opacity-0');
+        modal.classList.add('bg-opacity-10');
+        modalContent.classList.remove('scale-95', 'opacity-0');
+        modalContent.classList.add('scale-100', 'opacity-100');
+    }, 10);
+}
+
+function closeDuplicateModal() {
+    const modal = document.getElementById('duplicate-modal');
+    const modalContent = modal.querySelector('[data-modal-content]');
+    
+    modalContent.classList.add('scale-95', 'opacity-0');
+    modalContent.classList.remove('scale-100', 'opacity-100');
+    modal.classList.remove('bg-opacity-10');
+    modal.classList.add('bg-opacity-0');
+    
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }, 300);
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const importModal = document.getElementById('import-modal');
+    const duplicateModal = document.getElementById('duplicate-modal');
+    
+    if (event.target === importModal) {
+        closeImportModal();
+    }
+    if (event.target === duplicateModal) {
+        closeDuplicateModal();
+    }
+}
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit form if tahun ajaran is auto-selected but not in URL
+    const tahunAjaranSelect = document.querySelector('select[name="tahun_ajaran_id"]');
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasTahunAjaranInUrl = urlParams.has('tahun_ajaran_id');
+    
+    if (tahunAjaranSelect && tahunAjaranSelect.value && !hasTahunAjaranInUrl) {
+        // Preserve any existing search parameter
+        const searchInput = document.querySelector('input[name="search"]');
+        if (searchInput && searchInput.value) {
+            // Form will automatically include all form fields when submitted
+        }
+        
+        // Auto-submit the form to update URL with the selected tahun ajaran
+        tahunAjaranSelect.form.submit();
+    }
+});
+</script>
 
 @endsection
 

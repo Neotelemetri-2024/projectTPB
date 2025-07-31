@@ -5,16 +5,34 @@
 @section('content')
 <div class="p-6">
 
+
     <div class="bg-white rounded-lg shadow-md">
         <div class="p-6 border-b border-gray-200">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <h2 class="text-lg font-semibold text-gray-900">Daftar Dosen</h2>
-                <a href="{{ route('admin.dosen.create') }}" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg flex items-center w-fit">
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <!-- Import/Export Buttons -->
+                    <div class="flex gap-2">
+                        <a href="{{ route('admin.dosen.export-template') }}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Download Template
+                        </a>
+                        <button type="button" data-modal-target="modal-import-dosen" data-modal-toggle="modal-import-dosen" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                            Import Excel
+                        </button>
+                    </div>
+                    <a href="{{ route('admin.dosen.create') }}" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>
                     Tambah Dosen
                 </a>
+                </div>
             </div>
             
             <!-- Search and Filter Section -->
@@ -41,28 +59,17 @@
                         </div>
                     </div>
                     
-                    <!-- Filter Status -->
-                    <div>
-                        <select name="status" onchange="this.form.submit()" 
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
-                            <option value="">Semua Status</option>
-                            <option value="aktif" {{ request('status') == 'aktif' ? 'selected' : '' }}>Aktif</option>
-                            <option value="nonaktif" {{ request('status') == 'nonaktif' ? 'selected' : '' }}>Tidak Aktif</option>
-                        </select>
-                    </div>
+
                 </div>
             </form>
             
             <!-- Results Info -->
-            @if(request('search') || request('status'))
+            @if(request('search'))
                 <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <p class="text-sm text-blue-800">
                         Menampilkan {{ $dosen->total() }} hasil
                         @if(request('search'))
                             untuk pencarian "{{ request('search') }}"
-                        @endif
-                        @if(request('status'))
-                            dengan status {{ request('status') }}
                         @endif
                     </p>
                 </div>
@@ -77,7 +84,6 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIP</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                     </tr>
                 </thead>
@@ -88,13 +94,6 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $dsn->nip }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $dsn->nama }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $dsn->user->email }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            @if($dsn->user->isAktif)
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Aktif</span>
-                            @else
-                                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Tidak Aktif</span>
-                            @endif
-                        </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex space-x-2">
                                 <a href="{{ route('admin.dosen.show', $dsn->id) }}" 
@@ -120,7 +119,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">Tidak ada data dosen</td>
+                        <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">Tidak ada data dosen</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -154,4 +153,69 @@
     />
 @endforeach
 
+<!-- Import Error Messages -->
+@if(session('import_errors'))
+    <x-error-modal 
+        id="modal-error-dosen"
+        title="Error Import Dosen"
+    >
+        <div class="max-h-96 overflow-y-auto">
+            <ul class="list-disc list-inside space-y-1 text-sm text-gray-700">
+                @foreach(session('import_errors') as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    </x-error-modal>
+@endif
+
+<!-- Modal Import Dosen -->
+<x-import-modal 
+    id="modal-import-dosen"
+    title="Import Data Dosen"
+    :action="route('admin.dosen.import')"
+    submit-text="Import Data"
+>
+    <div class="mb-4">
+        <label for="excel_file" class="block text-sm font-medium text-gray-700 mb-2">
+            Pilih File Excel
+        </label>
+        <input type="file" 
+               id="excel_file" 
+               name="excel_file" 
+               accept=".xlsx,.xls"
+               class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+               required>
+    </div>
+    
+    <div class="mb-4 p-3 bg-yellow-50 rounded-lg">
+        <p class="text-sm text-yellow-800">
+            <strong>Format:</strong> Excel (.xlsx/.xls) max 2MB<br>
+            <strong>Email:</strong> otomatis dibuat dari nama tanpa gelar<br>
+            <strong>Password:</strong> otomatis menggunakan NIP
+        </p>
+    </div>
+</x-import-modal>
+
 @endsection 
+
+@if(session('import_errors'))
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto show error modal if there are import errors
+    const errorModal = document.getElementById('modal-error-dosen');
+    if (errorModal) {
+        errorModal.classList.remove('hidden');
+        errorModal.classList.add('flex');
+        
+        const modalContent = errorModal.querySelector('[data-modal-content]');
+        setTimeout(() => {
+            errorModal.classList.remove('bg-opacity-0');
+            errorModal.classList.add('bg-opacity-10');
+            modalContent.classList.remove('scale-95', 'opacity-0');
+            modalContent.classList.add('scale-100', 'opacity-100');
+        }, 10);
+    }
+});
+</script>
+@endif 

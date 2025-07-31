@@ -24,7 +24,7 @@
             <form action="{{ route('admin.tahun-ajaran-matkul.update', $tahunAjaranMatkul->id) }}" method="POST" class="space-y-6">
                 @csrf
                 @method('PUT')
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <label for="tahunAjaranId" class="block text-sm font-medium text-gray-700 mb-2">
                             Tahun Ajaran <span class="text-red-500">*</span>
@@ -62,30 +62,84 @@
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
+
+                    <div>
+                        <label for="semester" class="block text-sm font-medium text-gray-700 mb-2">
+                            Semester <span class="text-red-500">*</span>
+                        </label>
+                        <select name="semester" id="semester"
+                                class="bg-gray-50 border {{ $errors->has('semester') ? 'border-red-500' : 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5"
+                                required>
+                            <option value="">Pilih Semester</option>
+                            @for($i = 1; $i <= 8; $i++)
+                                <option value="{{ $i }}" {{ old('semester', $tahunAjaranMatkul->semester) == $i ? 'selected' : '' }}>
+                                    Semester {{ $i }}
+                                </option>
+                            @endfor
+                        </select>
+                        @error('semester')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                         <div>
-                         <label for="kelas" class="block text-sm font-medium text-gray-700 mb-2">
-                             Kelas <span class="text-red-500">*</span>
-                         </label>
-                         <select name="kelas" id="kelas" class="bg-gray-50 border {{ $errors->has('kelas') ? 'border-red-500' : 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5" required>
-                             <option value="">Pilih Kelas</option>
-                             @for($i = 1; $i <= 26; $i++)
-                                 <option value="{{ $i }}" {{ (old('kelas') ?? $tahunAjaranMatkul->kelas) == $i ? 'selected' : '' }}>{{ \App\Models\TahunAjaranMatkul::convertKelasToHuruf(collect([$i]))->first() }}</option>
-                             @endfor
-                         </select>
-                         @error('kelas')
-                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                         @enderror
-                     </div>
+                <div>
+                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nama Kelas <span class="text-red-500">*</span></label>
+                    <div class="space-y-2">
+                        @foreach($tahunAjaranMatkul->kelas as $index => $kelas)
+                            <div class="flex gap-2">
+                                <input type="text"
+                                       name="kelasNames[]"
+                                       class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block p-2.5"
+                                       value="{{ old('kelasNames.' . $index, $kelas->namaKelas) }}"
+                                       required>
+                                @if($index > 0)
+                                    <button type="button" 
+                                            class="remove-kelas-input bg-red-600 hover:bg-red-700 text-white px-3 py-2.5 rounded-lg text-sm">
+                                        ×
+                                    </button>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                    <button type="button" 
+                            id="add-kelas-input"
+                            class="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm">
+                        + Tambah Kelas
+                    </button>
+                    <div id="additional-kelas-inputs" class="mt-2 space-y-2"></div>
+                    <p class="mt-1 text-xs text-gray-500">Masukkan nama kelas (huruf atau angka). Klik + untuk menambah kelas lain.</p>
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         Dosen Pengampu <span class="text-red-500">*</span>
                     </label>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    
+                    <!-- Opsi Dosen Pengampu -->
+                    <div class="mb-4">
+                        <label class="flex items-center mb-2">
+                            <input type="radio" 
+                                   name="dosenType" 
+                                   value="same" 
+                                   id="dosen_same"
+                                   class="mr-2 text-amber-600"
+                                   {{ old('dosenType', 'same') == 'same' ? 'checked' : '' }}>
+                            <span class="text-sm text-gray-700">Dosen pengampu sama untuk semua kelas</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" 
+                                   name="dosenType" 
+                                   value="different" 
+                                   id="dosen_different"
+                                   class="mr-2 text-amber-600"
+                                   {{ old('dosenType', 'same') == 'different' ? 'checked' : '' }}>
+                            <span class="text-sm text-gray-700">Dosen pengampu berbeda per kelas</span>
+                        </label>
+                    </div>
+
+                    <!-- Dosen untuk semua kelas (default) -->
+                    <div id="dosen-same-section" class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         @foreach($dosens as $dosen)
                             <div class="flex items-center">
                                 <input type="checkbox"
@@ -93,14 +147,42 @@
                                        value="{{ $dosen->id }}"
                                        id="dosen_{{ $dosen->id }}"
                                        class="rounded border-gray-300 text-amber-600 shadow-sm focus:border-amber-300 focus:ring focus:ring-amber-200 focus:ring-opacity-50 {{ $errors->has('dosenIds') ? 'border-red-500' : '' }}"
-                                       {{ in_array($dosen->id, old('dosenIds', $tahunAjaranMatkul->dosenPengampu->pluck('dosenId')->toArray())) ? 'checked' : '' }}>
+                                       {{ in_array($dosen->id, old('dosenIds', $tahunAjaranMatkul->kelas->flatMap->dosenPengampuKelas->pluck('dosenId')->unique()->toArray())) ? 'checked' : '' }}>
                                 <label for="dosen_{{ $dosen->id }}" class="ml-2 text-sm text-gray-700">
                                     {{ $dosen->nama }}
                                 </label>
                             </div>
                         @endforeach
                     </div>
+
+                    <!-- Dosen per kelas (hidden by default) -->
+                    <div id="dosen-different-section" class="hidden space-y-4">
+                        @foreach($tahunAjaranMatkul->kelas as $index => $kelas)
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <h4 class="font-medium text-gray-900 mb-2">Kelas {{ $kelas->namaKelas }}</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    @foreach($dosens as $dosen)
+                                        <div class="flex items-center">
+                                            <input type="checkbox"
+                                                   name="dosenPerKelas[{{ $kelas->id }}][]"
+                                                   value="{{ $dosen->id }}"
+                                                   id="dosen_{{ $kelas->id }}_{{ $dosen->id }}"
+                                                   class="rounded border-gray-300 text-amber-600 shadow-sm focus:border-amber-300 focus:ring focus:ring-amber-200 focus:ring-opacity-50"
+                                                   {{ in_array($dosen->id, old('dosenPerKelas.' . $kelas->id, $kelas->dosenPengampuKelas->pluck('dosenId')->toArray())) ? 'checked' : '' }}>
+                                            <label for="dosen_{{ $kelas->id }}_{{ $dosen->id }}" class="ml-2 text-sm text-gray-700">
+                                                {{ $dosen->nama }}
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+
                     @error('dosenIds')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                    @error('dosenPerKelas')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
@@ -125,4 +207,66 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addKelasBtn = document.getElementById('add-kelas-input');
+    const additionalInputsContainer = document.getElementById('additional-kelas-inputs');
+
+    // Add kelas input functionality
+    addKelasBtn.addEventListener('click', function() {
+        const newInput = document.createElement('div');
+        newInput.className = 'flex gap-2';
+        newInput.innerHTML = `
+            <input type="text"
+                   name="kelasNames[]"
+                   class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block p-2.5"
+                   placeholder="Contoh: A, B, C, atau 1, 2, 3"
+                   required>
+            <button type="button" 
+                    class="remove-kelas-input bg-red-600 hover:bg-red-700 text-white px-3 py-2.5 rounded-lg text-sm">
+                ×
+            </button>
+        `;
+        
+        additionalInputsContainer.appendChild(newInput);
+        
+        // Add remove functionality
+        newInput.querySelector('.remove-kelas-input').addEventListener('click', function() {
+            newInput.remove();
+        });
+    });
+
+    // Add remove functionality to existing remove buttons
+    document.querySelectorAll('.remove-kelas-input').forEach(button => {
+        button.addEventListener('click', function() {
+            this.closest('.flex').remove();
+        });
+    });
+
+    // Dosen pengampu toggle functionality
+    const dosenSameRadio = document.getElementById('dosen_same');
+    const dosenDifferentRadio = document.getElementById('dosen_different');
+    const dosenSameSection = document.getElementById('dosen-same-section');
+    const dosenDifferentSection = document.getElementById('dosen-different-section');
+
+    function toggleDosenSections() {
+        if (dosenSameRadio.checked) {
+            dosenSameSection.classList.remove('hidden');
+            dosenDifferentSection.classList.add('hidden');
+        } else {
+            dosenSameSection.classList.add('hidden');
+            dosenDifferentSection.classList.remove('hidden');
+        }
+    }
+
+    // Add event listeners
+    dosenSameRadio.addEventListener('change', toggleDosenSections);
+    dosenDifferentRadio.addEventListener('change', toggleDosenSections);
+
+    // Initialize on page load
+    toggleDosenSections();
+});
+</script>
+
 @endsection

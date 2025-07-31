@@ -27,9 +27,15 @@ class MahasiswaController extends Controller
             });
         }
         
-        // Filter by tahun masuk
-        if ($request->filled('tahun_masuk')) {
-            $query->where('tahunMasuk', $request->tahun_masuk);
+        // Get the latest tahun masuk for default filter
+        $latestTahunMasuk = Mahasiswa::max('tahunMasuk');
+        
+        // Set default filter to latest tahun masuk if no filter is selected
+        $selectedTahunMasuk = $request->filled('tahun_masuk') ? $request->tahun_masuk : $latestTahunMasuk;
+        
+        // Apply tahun masuk filter
+        if ($selectedTahunMasuk) {
+            $query->where('tahunMasuk', $selectedTahunMasuk);
         }
         
         // Filter by status aktif
@@ -51,7 +57,7 @@ class MahasiswaController extends Controller
         // Pagination
         $mahasiswa = $query->orderBy('nama')->paginate(10)->withQueryString();
         
-        return view('admin.mahasiswa.index', compact('mahasiswa', 'tahunMasukList'));
+        return view('admin.mahasiswa.index', compact('mahasiswa', 'tahunMasukList', 'selectedTahunMasuk'));
     }
 
     public function create()
@@ -66,7 +72,6 @@ class MahasiswaController extends Controller
             'nim' => 'required|string|unique:mahasiswa,nim|max:20',
             'tahunMasuk' => 'required|integer|min:2000|max:' . (date('Y') + 1),
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6|confirmed',
         ], [
             'nama.required' => 'Nama mahasiswa wajib diisi',
             'nim.required' => 'NIM wajib diisi',
@@ -76,9 +81,6 @@ class MahasiswaController extends Controller
             'email.required' => 'Email wajib diisi',
             'email.email' => 'Format email tidak valid',
             'email.unique' => 'Email sudah terdaftar',
-            'password.required' => 'Password wajib diisi',
-            'password.min' => 'Password minimal 6 karakter',
-            'password.confirmed' => 'Konfirmasi password tidak cocok',
         ]);
 
         if ($validator->fails()) {
@@ -88,11 +90,11 @@ class MahasiswaController extends Controller
         }
 
         try {
-            // Create user account
+            // Create user account with password same as NIM
             $user = User::create([
                 'name' => $request->nama,
                 'email' => $request->email,
-                'password' => Hash::make($request->password),
+                'password' => Hash::make($request->nim), // Password otomatis sama dengan NIM
                 'role' => 'mahasiswa',
                 'isAktif' => true,
             ]);

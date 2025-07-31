@@ -27,18 +27,18 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <!-- Profile Information -->
             <div class="lg:col-span-2">
-                <div class="bg-white rounded-lg shadow-md">
+                <div class="bg-white rounded-lg shadow-md h-full flex flex-col">
                     <div class="p-6 border-b border-gray-200">
                         <h2 class="text-lg font-semibold text-gray-900">Informasi Profil</h2>
                         <p class="text-sm text-gray-600 mt-1">Perbarui informasi profil dan alamat email akun Anda</p>
                     </div>
                     
-                    <div class="p-6">
-                        <form method="POST" action="{{ route('profile.update') }}">
+                    <div class="p-6 flex-1 flex flex-col">
+                        <form method="POST" action="{{ route('profile.update') }}" class="flex-1 flex flex-col">
                             @csrf
                             @method('PATCH')
                             
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1">
                                 <div>
                                     <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
                                         Nama Lengkap <span class="text-red-500">*</span>
@@ -107,8 +107,8 @@
 
             <!-- Profile Card -->
             <div class="lg:col-span-1">
-                <div class="bg-white rounded-lg shadow-md">
-                    <div class="p-6 text-center">
+                <div class="bg-white rounded-lg shadow-md h-full flex flex-col">
+                    <div class="p-6 text-center flex-1 flex flex-col justify-center">
                         <div class="w-24 h-24 bg-amber-100 rounded-full mx-auto mb-4 flex items-center justify-center">
                             <svg class="w-12 h-12 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>

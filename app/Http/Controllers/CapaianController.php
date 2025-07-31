@@ -36,19 +36,29 @@ class CapaianController extends Controller
                         $q->where('tahunAjaranId', $tahunAjaranId);
                     })
                     ->pluck('id');
-                // Ambil nilai CPMK mahasiswa (rata-rata dari semua bobot CPMK ini)
-                $nilaiCpmk = Nilai::where('mahasiswaId', $mahasiswa->id)
+                // Ambil nilai CPMK mahasiswa dengan bobot yang benar
+                $nilaiCpmkTotal = 0;
+                $bobotCpmkTotal = 0;
+                
+                $nilaiRecords = Nilai::where('mahasiswaId', $mahasiswa->id)
                     ->whereIn('bobotId', $bobotIds)
-                    ->avg('nilai');
+                    ->with('bobot')
+                    ->get();
+                
+                foreach ($nilaiRecords as $nilai) {
+                    if ($nilai->bobot && $nilai->bobot->bobot > 0) {
+                        $nilaiCpmkTotal += ($nilai->nilai * $nilai->bobot->bobot);
+                        $bobotCpmkTotal += $nilai->bobot->bobot;
+                    }
+                }
+                
+                $nilaiCpmk = $bobotCpmkTotal > 0 ? $nilaiCpmkTotal / $bobotCpmkTotal : null;
                 // Ambil data matkul terkait CPMK ini (bisa lebih dari satu, ambil semua)
                 $matkuls = $cpmk->cpmkMatKul()->with('mataKuliah')->get();
                 foreach ($matkuls as $matkulRel) {
                     $matkul = $matkulRel->mataKuliah;
-                    // Hitung total nilai (skala 100, jika nilaiCpmk sudah 0-100, gunakan langsung. Jika 0-4, kalikan 25)
-                    $total = null;
-                    if ($nilaiCpmk !== null) {
-                        $total = $nilaiCpmk > 4 ? $nilaiCpmk : round($nilaiCpmk * 25, 2);
-                    }
+                    // Hitung total nilai (skala 100, nilaiCpmk sudah dalam skala 0-100)
+                    $total = $nilaiCpmk !== null ? round($nilaiCpmk, 2) : null;
                     if ($total !== null && is_numeric($total)) {
                         $totalCpmkArr[] = $total;
                     }

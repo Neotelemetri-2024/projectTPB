@@ -9,13 +9,28 @@
         <div class="p-6 border-b border-gray-200">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <h2 class="text-lg font-semibold text-gray-900">Daftar Mata Kuliah</h2>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <!-- Import/Export Buttons -->
+                    <button type="button" data-modal-target="modal-import" data-modal-toggle="modal-import" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg flex items-center text-sm">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
+                        </svg>
+                        Import Excel
+                    </button>
+                    <a href="{{ route('admin.mata-kuliah.export-template') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg flex items-center text-sm">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Download Template
+                    </a>
                 <button data-modal-target="modal-tambah" data-modal-toggle="modal-tambah" 
-                        class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg flex items-center w-fit">
+                            class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>
                     Tambah Mata Kuliah
                 </button>
+                </div>
             </div>
         </div>
         
@@ -62,7 +77,7 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $mk->kodeMatkul }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $mk->namaMatkul }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $mk->jenis == 'wajib' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800' }}">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
                                     {{ ucfirst($mk->jenis) }}
                                 </span>
                             </td>
@@ -107,6 +122,43 @@
     </div>
 </div>
 
+<!-- Import Error Messages -->
+@if(session('import_errors'))
+    <x-error-modal 
+        id="modal-error"
+        title="Error Import Mata Kuliah"
+    >
+        <div class="max-h-96 overflow-y-auto">
+            <ul class="list-disc list-inside space-y-1 text-sm text-gray-700">
+                @foreach(session('import_errors') as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    </x-error-modal>
+@endif
+
+<!-- Modal Import Excel -->
+<x-import-modal 
+    id="modal-import"
+    title="Import Data Mata Kuliah"
+    :action="route('admin.mata-kuliah.import')"
+    submit-text="Import Data"
+>
+    <div class="mb-4">
+        <label for="excel_file" class="block text-sm font-medium text-gray-700 mb-2">Pilih File Excel</label>
+        <input type="file" name="excel_file" id="excel_file" accept=".xlsx,.xls" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" required>
+        <p class="mt-1 text-sm text-gray-500">Format yang didukung: .xlsx, .xls (Maksimal 2MB)</p>
+    </div>
+    
+    <div class="mb-4 p-3 bg-blue-50 rounded-lg">
+        <p class="text-sm text-blue-800">
+            <strong>Kolom wajib:</strong> NAMA_MATA_KULIAH, KODE, SKS, JENIS<br>
+            <strong>SKS:</strong> angka positif | <strong>JENIS:</strong> wajib/pilihan
+        </p>
+    </div>
+</x-import-modal>
+
 <!-- Modal Tambah Mata Kuliah -->
 <x-form-modal 
     id="modal-tambah"
@@ -142,7 +194,7 @@
         </div>
         <div class="col-span-2">
             <label for="sks" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">SKS</label>
-            <input type="number" name="sks" id="sks" value="{{ old('sks') }}" min="1" max="6" class="bg-gray-50 border {{ $errors->has('sks') ? 'border-red-500' : 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="3" required>
+            <input type="number" name="sks" id="sks" value="{{ old('sks') }}" min="0" class="bg-gray-50 border {{ $errors->has('sks') ? 'border-red-500' : 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="3" required>
             @error('sks')
                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
             @enderror
@@ -178,7 +230,7 @@
             </div>
             <div class="col-span-2">
                 <label for="sks_{{ $mk->id }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">SKS</label>
-                <input type="number" name="sks" id="sks_{{ $mk->id }}" value="{{ $mk->sks }}" min="1" max="6" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="3" required>
+                <input type="number" name="sks" id="sks_{{ $mk->id }}" value="{{ $mk->sks }}" min="0" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="3" required>
             </div>
         </div>
     </x-form-modal>
@@ -196,5 +248,27 @@
 @endforeach
 
 @endsection
+
+@if(session('import_errors'))
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto show error modal if there are import errors
+    const errorModal = document.getElementById('modal-error');
+    if (errorModal) {
+        errorModal.classList.remove('hidden');
+        errorModal.classList.add('flex');
+        
+        const modalContent = errorModal.querySelector('[data-modal-content]');
+        setTimeout(() => {
+            errorModal.classList.remove('bg-opacity-0');
+            errorModal.classList.add('bg-opacity-10');
+            modalContent.classList.remove('scale-95', 'opacity-0');
+            modalContent.classList.add('scale-100', 'opacity-100');
+        }, 10);
+    }
+});
+</script>
+@endif
+
 
  

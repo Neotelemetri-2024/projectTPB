@@ -33,8 +33,13 @@ class NilaiController extends Controller
             return redirect()->back()->with('error', 'Data dosen tidak ditemukan.');
         }
 
+        // Get the latest tahun ajaran for default filter
+        $latestTahunAjaran = TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->first();
+        
+        // Set default filter to latest tahun ajaran if no filter is selected
+        $selectedTahunAjaranId = $request->filled('tahun_ajaran_id') ? $request->tahun_ajaran_id : ($latestTahunAjaran ? $latestTahunAjaran->id : null);
+
         // Get filter parameters
-        $tahunAjaranId = $request->get('tahun_ajaran_id');
         $jenis = $request->get('jenis');
 
         // Build query for TahunAjaranMatkul
@@ -48,8 +53,8 @@ class NilaiController extends Controller
         });
 
         // Apply filters
-        if ($tahunAjaranId) {
-            $query->where('tahunAjaranId', $tahunAjaranId);
+        if ($selectedTahunAjaranId) {
+            $query->where('tahunAjaranId', $selectedTahunAjaranId);
         }
 
         if ($jenis) {
@@ -109,7 +114,8 @@ class NilaiController extends Controller
             'mataKuliahDiampu',
             'dosen',
             'tahunAjaranList',
-            'jenisList'
+            'jenisList',
+            'selectedTahunAjaranId'
         ));
     }
 
@@ -307,12 +313,13 @@ class NilaiController extends Controller
         }
         $kelasNumbers = $kelasNumbers->unique()->sort()->values();
 
-        // Get all components for this mata kuliah through bobot table (hanya dari satu kelas)
-        $allKomponen = Komponen::whereHas('bobot', function($query) use ($id) {
-                $query->where('tahunAjaranMatkulId', $id);
+        // Get all components for this mata kuliah through bobot table (dari semua kelas yang terkait)
+        $relatedTahunAjaranMatkulIds = $mataKuliahClasses->pluck('id');
+        $allKomponen = Komponen::whereHas('bobot', function($query) use ($relatedTahunAjaranMatkulIds) {
+                $query->whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds);
             })
-            ->with(['bobot' => function($query) use ($id) {
-                $query->where('tahunAjaranMatkulId', $id);
+            ->with(['bobot' => function($query) use ($relatedTahunAjaranMatkulIds) {
+                $query->whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds);
             }])
             ->orderBy('nama')
             ->get();
@@ -335,23 +342,15 @@ class NilaiController extends Controller
             ->get()
             ->keyBy('mahasiswaId');
 
-        // Hitung total bobot setiap komponen penilaian (untuk display) - hanya dari satu kelas
+        // Hitung total bobot setiap komponen penilaian (untuk display) - dari semua kelas yang terkait
         $totalBobotKomponen = [];
-        $allBobot = Bobot::where('tahunAjaranMatkulId', $id)->get();
+        $allBobot = Bobot::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)->get();
+        
         foreach ($allBobot as $bobot) {
             $totalBobotKomponen[$bobot->komponenId] = ($totalBobotKomponen[$bobot->komponenId] ?? 0) + $bobot->bobot;
         }
 
-        // Debug: Log untuk memeriksa nilai yang dikirim ke view
-        \Log::info('Debug View Data:', [
-            'isPenilaianSiap' => $isPenilaianSiap,
-            'totalBobotKeseluruhan' => $totalBobotKeseluruhan,
-            'adaCpmk' => $adaCpmk,
-            'cpmkCount' => $cpmkList->count(),
-            'komponenCount' => $allKomponen->count(),
-            'bobotCount' => $bobotData->count(),
-            'nilaiCount' => $nilaiData->count()
-        ]);
+
 
         // Build bulk URL for the view
         $bulkUrl = request()->fullUrl();
@@ -620,13 +619,38 @@ class NilaiController extends Controller
             // Get all nilai for this student in this specific class only
             $allNilai = Nilai::where('mahasiswaId', $mahasiswaId)
                 ->where('tahunAjaranMatkulId', $matkulId)
-                ->with('bobot')
+                ->with(['bobot.cpmk', 'bobot.komponen'])
                 ->get();
 
             // Only calculate and update if there are actual grades
             if ($allNilai->isNotEmpty()) {
-                // Calculate total score by summing all nilai
-                $totalNilai = $allNilai->sum('nilai');
+                // Group nilai by CPMK
+                $nilaiPerCpmk = $allNilai->groupBy('cpmkId');
+                $totalNilaiKeseluruhan = 0;
+                $totalBobotKeseluruhan = 0;
+                
+                // Calculate nilai per CPMK
+                foreach ($nilaiPerCpmk as $cpmkId => $nilaiCpmk) {
+                    $nilaiCpmkTotal = 0;
+                    $bobotCpmkTotal = 0;
+                    
+                    foreach ($nilaiCpmk as $nilai) {
+                        if ($nilai->bobot && $nilai->bobot->bobot > 0) {
+                            $nilaiCpmkTotal += ($nilai->nilai * $nilai->bobot->bobot);
+                            $bobotCpmkTotal += $nilai->bobot->bobot;
+                        }
+                    }
+                    
+                    // Jika bobot CPMK > 0, hitung rata-rata terbobot
+                    if ($bobotCpmkTotal > 0) {
+                        $nilaiRataRataCpmk = $nilaiCpmkTotal / $bobotCpmkTotal;
+                        $totalNilaiKeseluruhan += $nilaiRataRataCpmk;
+                        $totalBobotKeseluruhan += 1; // Setiap CPMK dihitung sebagai 1 unit
+                    }
+                }
+                
+                // Hitung nilai akhir (rata-rata dari semua CPMK)
+                $totalNilai = $totalBobotKeseluruhan > 0 ? $totalNilaiKeseluruhan / $totalBobotKeseluruhan : 0;
 
                 // Determine grade based on total score
                 $grade = $this->calculateGrade($totalNilai);
@@ -841,6 +865,146 @@ class NilaiController extends Controller
                 return response()->json(['success' => false, 'message' => 'Terjadi kesalahan saat menghapus nilai: ' . $e->getMessage()], 500);
             }
             return redirect()->back()->with('error', 'Terjadi kesalahan saat menghapus nilai: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get detail nilai for specific student (AJAX)
+     */
+    public function detailNilai(Request $request, $id)
+    {
+        $user = Auth::user();
+        $dosen = $user->dosen;
+
+        if (!$dosen) {
+            return response()->json(['success' => false, 'message' => 'Data dosen tidak ditemukan.'], 403);
+        }
+
+        $mahasiswaId = $request->get('mahasiswa_id');
+        if (!$mahasiswaId) {
+            return response()->json(['success' => false, 'message' => 'ID mahasiswa tidak ditemukan.'], 400);
+        }
+
+        try {
+            // Verify access
+            $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('kelas.dosenPengampuKelas', function($query) use ($dosen) {
+                $query->where('dosenId', $dosen->id);
+            })->findOrFail($id);
+
+            // Get mahasiswa data
+            $mahasiswa = Mahasiswa::findOrFail($mahasiswaId);
+
+            // Get all CPMK for this mata kuliah
+            $cpmkList = CpmkMatKul::with(['cpmk.cpl'])
+                ->where('tahunAjaranMatkulId', $id)
+                ->get()
+                ->unique('cpmkId')
+                ->map(function($cpmkMatKul) {
+                    return $cpmkMatKul->cpmk;
+                });
+
+            // Get all komponen
+            $allKomponen = Komponen::orderBy('nama')->get();
+
+            // Get bobot data
+            $bobotData = Bobot::with(['komponen', 'cpmk'])
+                ->where('tahunAjaranMatkulId', $id)
+                ->get();
+
+            // Get nilai data for this student
+            $nilaiData = Nilai::with(['mahasiswa', 'cpmk', 'bobot.komponen'])
+                ->where('tahunAjaranMatkulId', $id)
+                ->where('mahasiswaId', $mahasiswaId)
+                ->get();
+
+            // Calculate total bobot per komponen
+            $totalBobotKomponen = [];
+            foreach ($bobotData as $bobot) {
+                $komponenId = $bobot->komponenId;
+                $totalBobotKomponen[$komponenId] = ($totalBobotKomponen[$komponenId] ?? 0) + $bobot->bobot;
+            }
+
+            // Calculate nilai per CPMK
+            $nilaiPerCpmk = [];
+            foreach ($cpmkList as $cpmk) {
+                $nilaiCpmkTotal = 0;
+                $bobotCpmkTotal = 0;
+                
+                $nilaiRecords = $nilaiData->where('cpmkId', $cpmk->id);
+                
+                foreach ($nilaiRecords as $nilai) {
+                    if ($nilai->bobot && $nilai->bobot->bobot > 0) {
+                        $nilaiCpmkTotal += ($nilai->nilai * $nilai->bobot->bobot);
+                        $bobotCpmkTotal += $nilai->bobot->bobot;
+                    }
+                }
+                
+                // Nilai CPMK yang sudah dikalikan bobot CPMK (nilai rata-rata × bobot CPMK)
+                $nilaiCpmkTerbobot = $bobotCpmkTotal > 0 ? ($nilaiCpmkTotal / $bobotCpmkTotal) * ($bobotCpmkTotal / 100) : null;
+                
+                $nilaiPerCpmk[] = [
+                    'cpmk' => $cpmk,
+                    'nilai' => $nilaiCpmkTerbobot, // Nilai yang sudah dikalikan bobot
+                    'nilai_rata_rata' => $bobotCpmkTotal > 0 ? $nilaiCpmkTotal / $bobotCpmkTotal : null, // Rata-rata untuk perhitungan akhir
+                    'bobot_total' => $bobotCpmkTotal,
+                    'detail_komponen' => []
+                ];
+                
+                // Get detail per komponen for this CPMK
+                foreach ($allKomponen as $komponen) {
+                    $nilaiKomponen = $nilaiData->where('cpmkId', $cpmk->id)
+                        ->where('bobot.komponenId', $komponen->id)
+                        ->first();
+                    
+                    $bobotKomponen = $bobotData->where('cpmkId', $cpmk->id)
+                        ->where('komponenId', $komponen->id)
+                        ->first();
+                    
+                    $nilaiPerCpmk[count($nilaiPerCpmk) - 1]['detail_komponen'][] = [
+                        'komponen' => $komponen,
+                        'nilai' => $nilaiKomponen ? $nilaiKomponen->nilai : null,
+                        'bobot' => $bobotKomponen ? $bobotKomponen->bobot : 0
+                    ];
+                }
+            }
+
+            // Calculate total nilai akhir menggunakan nilai rata-rata CPMK
+            $totalNilaiKeseluruhan = 0;
+            $totalBobotKeseluruhan = 0;
+            
+            foreach ($nilaiPerCpmk as $cpmkNilai) {
+                if ($cpmkNilai['nilai_rata_rata'] !== null) {
+                    $totalNilaiKeseluruhan += $cpmkNilai['nilai_rata_rata'];
+                    $totalBobotKeseluruhan += 1;
+                }
+            }
+            
+            $totalNilaiAkhir = $totalBobotKeseluruhan > 0 ? $totalNilaiKeseluruhan / $totalBobotKeseluruhan : 0;
+
+            // Hitung grade
+            $grade = $this->calculateGrade($totalNilaiAkhir);
+
+            // Generate HTML
+            $html = view('dosen.nilai.detail', compact(
+                'mahasiswa',
+                'cpmkList',
+                'allKomponen',
+                'nilaiPerCpmk',
+                'totalNilaiAkhir',
+                'totalBobotKomponen',
+                'grade'
+            ))->render();
+
+            return response()->json([
+                'success' => true,
+                'html' => $html
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

@@ -48,7 +48,7 @@
             <div class="flex items-center">
                 <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                     </svg>
                 </div>
                 <div>
@@ -159,15 +159,12 @@
                     <!-- Reset Button -->
                     <button id="reset-nilai" type="button" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 hidden" data-modal-toggle="reset-confirm-modal">
                         <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0V9a8 8 0 1115.356 2M15 13l-3-3-3 3"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                         </svg>
                         Reset Semua Nilai
                     </button>
 
-                    <!-- Debug Test Button -->
-                    <button id="debug-test" type="button" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors duration-200" onclick="console.log('Debug test button clicked!');">
-                        Debug Test
-                    </button>
+
                 </div>
             </div>
         </div>
@@ -284,9 +281,17 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mahasiswa</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kelas</th>
                                 @foreach($allKomponen as $komponen)
-                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-24">{{ $komponen->nama }}</th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-24">
+                                        {{ $komponen->nama }}
+                                        @php
+                                            $bobotKomponen = $totalBobotKomponen[$komponen->id] ?? 0;
+                                        @endphp
+                                        <div class="text-xs text-gray-400 mt-1">{{ number_format($bobotKomponen, 1) }}%</div>
+                                    </th>
                                 @endforeach
+                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Total Nilai</th>
                                 <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider grade-column">Grade</th>
+                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Detail</th>
                                 <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider aksi-column hidden">Aksi</th>
                             </tr>
                         </thead>
@@ -349,19 +354,34 @@
                                             
                                             // Jika belum ada nilai yang tersimpan, hitung dari bobot dan nilai yang ada
                                             if ($totalNilai === null || $grade === null) {
-                                                $nilaiTerbobot = 0;
-                                                $totalBobot = 0;
-                                                
-                                                // Hitung berdasarkan semua nilai yang ada dengan bobotnya
+                                                // Group nilai by CPMK
                                                 $allNilaiMahasiswa = $nilaiData->where('mahasiswaId', $mhs->id);
-                                                foreach($allNilaiMahasiswa as $nilai) {
-                                                    if ($nilai->bobot) {
-                                                        $nilaiTerbobot += ($nilai->nilai * $nilai->bobot->bobot);
-                                                        $totalBobot += $nilai->bobot->bobot;
+                                                $nilaiPerCpmk = $allNilaiMahasiswa->groupBy('cpmkId');
+                                                $totalNilaiKeseluruhan = 0;
+                                                $totalBobotKeseluruhan = 0;
+                                                
+                                                // Calculate nilai per CPMK
+                                                foreach ($nilaiPerCpmk as $cpmkId => $nilaiCpmk) {
+                                                    $nilaiCpmkTotal = 0;
+                                                    $bobotCpmkTotal = 0;
+                                                    
+                                                    foreach ($nilaiCpmk as $nilai) {
+                                                        if ($nilai->bobot && $nilai->bobot->bobot > 0) {
+                                                            $nilaiCpmkTotal += ($nilai->nilai * $nilai->bobot->bobot);
+                                                            $bobotCpmkTotal += $nilai->bobot->bobot;
+                                                        }
+                                                    }
+                                                    
+                                                    // Jika bobot CPMK > 0, hitung rata-rata terbobot
+                                                    if ($bobotCpmkTotal > 0) {
+                                                        $nilaiRataRataCpmk = $nilaiCpmkTotal / $bobotCpmkTotal;
+                                                        $totalNilaiKeseluruhan += $nilaiRataRataCpmk;
+                                                        $totalBobotKeseluruhan += 1; // Setiap CPMK dihitung sebagai 1 unit
                                                     }
                                                 }
                                                 
-                                                $totalNilai = $totalBobot > 0 ? $nilaiTerbobot / $totalBobot : 0;
+                                                // Hitung nilai akhir (rata-rata dari semua CPMK)
+                                                $totalNilai = $totalBobotKeseluruhan > 0 ? $totalNilaiKeseluruhan / $totalBobotKeseluruhan : 0;
                                                 
                                                 // Hitung grade berdasarkan total nilai terbobot
                                                 if ($totalNilai >= 80) $grade = 'A';
@@ -382,6 +402,26 @@
                                                ($grade == 'D' ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800'))) }}">
                                             {{ $grade ?: '-' }}
                                         </span>
+                                    </td>
+                                    <!-- Kolom Total Nilai -->
+                                    <td class="px-4 py-4 whitespace-nowrap text-center">
+                                        <span class="text-sm font-medium text-gray-900">
+                                            {{ $totalNilai !== null ? number_format($totalNilai, 1) : '-' }}
+                                        </span>
+                                    </td>
+                                    <!-- Kolom Detail -->
+                                    <td class="px-4 py-4 whitespace-nowrap text-center">
+                                        <button type="button"
+                                                class="btn-detail-nilai px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded transition-colors duration-200"
+                                                data-mahasiswa-id="{{ $mhs->id }}"
+                                                data-mahasiswa-nama="{{ $mhs->nama }}"
+                                                data-nim="{{ $mhs->nim }}">
+                                            <svg class="w-3 h-3 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                            </svg>
+                                            Detail
+                                        </button>
                                     </td>
                                     <!-- Kolom Aksi (hidden by default) -->
                                     <td class="px-4 py-4 whitespace-nowrap text-center aksi-column hidden">
@@ -1502,6 +1542,125 @@ document.addEventListener('DOMContentLoaded', function() {
         const modal = document.getElementById('import-modal');
         if (e.target === modal) {
             hideImportModal();
+        }
+    });
+
+    // Detail Nilai Modal
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-detail-nilai')) {
+            const button = e.target.closest('.btn-detail-nilai');
+            const mahasiswaId = button.getAttribute('data-mahasiswa-id');
+            const mahasiswaNama = button.getAttribute('data-mahasiswa-nama');
+            const nim = button.getAttribute('data-nim');
+            
+            // Tampilkan modal detail
+            showDetailModal(mahasiswaId, mahasiswaNama, nim);
+        }
+    });
+
+    function showDetailModal(mahasiswaId, mahasiswaNama, nim) {
+        // Buat modal content dengan style yang mirip dengan modal yang sudah ada
+        const modalContent = `
+            <div class="fixed inset-0 overflow-y-auto overflow-x-hidden flex justify-center items-center min-h-screen w-full z-50 transition-opacity duration-300 ease-out" id="detail-modal" style="background: rgba(0,0,0,0.6);">
+                <div class="relative p-4 w-full max-w-6xl max-h-full transform transition-all duration-300 ease-out scale-95 opacity-0" data-modal-content>
+                    <div class="relative bg-white rounded-lg shadow-xl">
+                    <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t">
+                        <h3 class="text-lg font-semibold text-gray-900">Detail Nilai Mahasiswa</h3>
+                        <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center transition-colors duration-200" data-modal-hide="detail-modal">
+                            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                            </svg>
+                            <span class="sr-only">Close modal</span>
+                        </button>
+                    </div>
+                    
+                    <div class="p-4 md:p-5 overflow-y-auto max-h-[70vh]">
+                        <div class="mb-4 bg-blue-50 rounded-lg p-3 border border-blue-200">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                <p class="text-sm text-gray-700"><strong>NIM:</strong> ${nim}</p>
+                                <p class="text-sm text-gray-700"><strong>Nama:</strong> ${mahasiswaNama}</p>
+                            </div>
+                        </div>
+                        
+                        <div id="detail-content-${mahasiswaId}" class="space-y-4">
+                            <div class="flex justify-center py-8">
+                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `;
+        
+        // Tambahkan modal ke body
+        document.body.insertAdjacentHTML('beforeend', modalContent);
+        
+        // Trigger animation
+        setTimeout(() => {
+            const modal = document.getElementById('detail-modal');
+            const modalContent = modal.querySelector('[data-modal-content]');
+            modalContent.classList.remove('scale-95', 'opacity-0');
+            modalContent.classList.add('scale-100', 'opacity-100');
+        }, 10);
+        
+        // Load detail data via AJAX
+        loadDetailData(mahasiswaId);
+    }
+
+    function hideDetailModal() {
+        const modal = document.getElementById('detail-modal');
+        if (modal) {
+            const modalContent = modal.querySelector('[data-modal-content]');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            
+            setTimeout(() => {
+                modal.remove();
+            }, 300);
+        }
+    }
+
+    function loadDetailData(mahasiswaId) {
+        const url = `{{ route('dosen.nilai.detail', ['id' => $tahunAjaranMatkul->id]) }}?mahasiswa_id=${mahasiswaId}`;
+        
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const contentDiv = document.getElementById(`detail-content-${mahasiswaId}`);
+                if (data.success) {
+                    contentDiv.innerHTML = data.html;
+                } else {
+                    contentDiv.innerHTML = '<p class="text-red-600">Gagal memuat detail nilai</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                const contentDiv = document.getElementById(`detail-content-${mahasiswaId}`);
+                contentDiv.innerHTML = '<p class="text-red-600">Terjadi kesalahan saat memuat data</p>';
+            });
+    }
+
+    // Close modal when clicking outside
+    document.addEventListener('click', function(e) {
+        const modal = document.getElementById('detail-modal');
+        if (e.target === modal) {
+            hideDetailModal();
+        }
+    });
+
+    // Close modal on escape key
+    document.addEventListener('keydown', function(e) {
+        const modal = document.getElementById('detail-modal');
+        if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+            hideDetailModal();
+        }
+    });
+
+    // Close modal on close button click
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('[data-modal-hide="detail-modal"]')) {
+            hideDetailModal();
         }
     });
 });

@@ -32,14 +32,20 @@ class CpmkController extends Controller
             return redirect()->back()->with('error', 'Data dosen tidak ditemukan.');
         }
 
+        // Get the latest tahun ajaran for default filter
+        $latestTahunAjaran = TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->first();
+        
+        // Set default filter to latest tahun ajaran if no filter is selected
+        $selectedTahunAjaranId = $request->filled('tahun_ajaran_id') ? $request->tahun_ajaran_id : ($latestTahunAjaran ? $latestTahunAjaran->id : null);
+
         // Start with base query - use new schema with dosen_pengampu_kelas
         $query = TahunAjaranMatkul::whereHas('kelas.dosenPengampuKelas', function ($q) use ($dosen) {
             $q->where('dosenId', $dosen->id);
         });
 
         // Apply filters
-        if ($request->filled('tahun_ajaran_id')) {
-            $query->where('tahunAjaranId', $request->tahun_ajaran_id);
+        if ($selectedTahunAjaranId) {
+            $query->where('tahunAjaranId', $selectedTahunAjaranId);
         }
 
         if ($request->filled('jenis')) {
@@ -111,7 +117,7 @@ class CpmkController extends Controller
         $tahunAjarans = TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->get();
         $jenisOptions = ['Teori', 'Praktikum', 'Teori & Praktikum'];
 
-        return view('dosen.cpmk.index', compact('mataKuliahDiampu', 'tahunAjarans', 'jenisOptions'));
+        return view('dosen.cpmk.index', compact('mataKuliahDiampu', 'tahunAjarans', 'jenisOptions', 'selectedTahunAjaranId'));
     }
 
     /**
@@ -261,7 +267,7 @@ class CpmkController extends Controller
         }
 
         // Verify that this dosen teaches this mata kuliah
-        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('dosenPengampu', function ($query) use ($dosen) {
+        $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
             $query->where('dosenId', $dosen->id);
         })->findOrFail($tahunAjaranMatkulId);
 
@@ -269,7 +275,7 @@ class CpmkController extends Controller
         // that are taught by this dosen
         $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
             ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
-            ->whereHas('dosenPengampu', function ($query) use ($dosen) {
+            ->whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
                 $query->where('dosenId', $dosen->id);
             })
             ->pluck('id');
@@ -418,7 +424,7 @@ class CpmkController extends Controller
         // Get all TahunAjaranMatkul records for the same mata kuliah and tahun ajaran
         $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
             ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
-            ->whereHas('dosenPengampu', function ($query) use ($dosen) {
+            ->whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
                 $query->where('dosenId', $dosen->id);
             })
             ->pluck('id');

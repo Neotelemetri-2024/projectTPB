@@ -14,6 +14,10 @@ use App\Models\Kelas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\TahunAjaranMatkulTemplateExport;
+use App\Imports\TahunAjaranMatkulImport;
+
 class TahunAjaranMatkulController extends Controller
 {
     public function index(Request $request)
@@ -31,9 +35,9 @@ class TahunAjaranMatkulController extends Controller
         // Set default filter to latest tahun ajaran if no filter is selected
         $selectedTahunAjaranId = $request->filled('tahun_ajaran_id') ? $request->tahun_ajaran_id : ($latestTahunAjaran ? $latestTahunAjaran->id : null);
 
-        // Filter by tahun ajaran (only if explicitly selected)
-        if ($request->filled('tahun_ajaran_id')) {
-            $query->where('tahunAjaranId', $request->tahun_ajaran_id);
+        // Filter by tahun ajaran (use selectedTahunAjaranId which includes default)
+        if ($selectedTahunAjaranId) {
+            $query->where('tahunAjaranId', $selectedTahunAjaranId);
         }
 
         // Search by mata kuliah
@@ -72,6 +76,7 @@ class TahunAjaranMatkulController extends Controller
         $request->validate([
             'tahunAjaranId' => 'required|exists:tahun_ajaran,id',
             'mataKuliahId' => 'required|exists:mata_kuliah,id',
+            'semester' => 'nullable|integer|min:1|max:8',
             'kelasNames' => 'required|array|min:1',
             'kelasNames.*' => 'required|string|max:10',
             'dosenOption' => 'required|in:same,different'
@@ -99,7 +104,8 @@ class TahunAjaranMatkulController extends Controller
         try {
             $tahunAjaranMatkul = TahunAjaranMatkul::create([
                 'tahunAjaranId' => $request->tahunAjaranId,
-                'mataKuliahId' => $request->mataKuliahId
+                'mataKuliahId' => $request->mataKuliahId,
+                'semester' => $request->semester ?? 1
             ]);
 
             // Create kelas for each kelas name
@@ -207,10 +213,15 @@ class TahunAjaranMatkulController extends Controller
         $request->validate([
             'tahunAjaranId' => 'required|exists:tahun_ajaran,id',
             'mataKuliahId' => 'required|exists:mata_kuliah,id',
+            'semester' => 'nullable|integer|min:1|max:8',
             'kelasNames' => 'required|array|min:1',
             'kelasNames.*' => 'required|string|max:10',
-            'dosenIds' => 'required|array|min:1',
-            'dosenIds.*' => 'exists:dosen,id'
+            'dosenType' => 'required|in:same,different',
+            'dosenIds' => 'required_if:dosenType,same|array|min:1',
+            'dosenIds.*' => 'exists:dosen,id',
+            'dosenPerKelas' => 'required_if:dosenType,different|array',
+            'dosenPerKelas.*' => 'required|array|min:1',
+            'dosenPerKelas.*.*' => 'exists:dosen,id'
         ]);
 
         $tahunAjaranMatkul = TahunAjaranMatkul::findOrFail($id);
@@ -229,7 +240,8 @@ class TahunAjaranMatkulController extends Controller
         try {
             $tahunAjaranMatkul->update([
                 'tahunAjaranId' => $request->tahunAjaranId,
-                'mataKuliahId' => $request->mataKuliahId
+                'mataKuliahId' => $request->mataKuliahId,
+                'semester' => $request->semester ?? 1
             ]);
 
             // Get existing kelas IDs for proper deletion
@@ -249,18 +261,34 @@ class TahunAjaranMatkulController extends Controller
             $tahunAjaranMatkul->kelas()->delete();
 
             // Create new kelas and dosen pengampu
-            foreach ($request->kelasNames as $kelasName) {
+            $existingKelasIds = $tahunAjaranMatkul->kelas->pluck('id')->toArray();
+            
+            foreach ($request->kelasNames as $index => $kelasName) {
                 $kelas = Kelas::create([
                     'namaKelas' => $kelasName,
                     'tahunAjaranMatkulId' => $tahunAjaranMatkul->id
                 ]);
 
                 // Create dosen pengampu for this kelas
-                foreach ($request->dosenIds as $dosenId) {
-                    DosenPengampuKelas::create([
-                        'dosenId' => $dosenId,
-                        'kelasId' => $kelas->id
-                    ]);
+                if ($request->dosenType === 'same') {
+                    // Same dosen for all kelas
+                    foreach ($request->dosenIds as $dosenId) {
+                        DosenPengampuKelas::create([
+                            'dosenId' => $dosenId,
+                            'kelasId' => $kelas->id
+                        ]);
+                    }
+                } else {
+                    // Different dosen per kelas - use existing kelas ID if available
+                    $existingKelasId = $existingKelasIds[$index] ?? null;
+                    if ($existingKelasId && isset($request->dosenPerKelas[$existingKelasId])) {
+                        foreach ($request->dosenPerKelas[$existingKelasId] as $dosenId) {
+                            DosenPengampuKelas::create([
+                                'dosenId' => $dosenId,
+                                'kelasId' => $kelas->id
+                            ]);
+                        }
+                    }
                 }
             }
 
@@ -540,6 +568,123 @@ class TahunAjaranMatkulController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
             return back()->withErrors(['error' => 'Terjadi kesalahan: ' . $e->getMessage()])->withInput();
+        }
+    }
+
+    /**
+     * Export template Excel untuk import tahun ajaran mata kuliah
+     */
+    public function exportTemplate(Request $request)
+    {
+        $tahunAjaranId = $request->get('tahun_ajaran_id');
+        return Excel::download(new TahunAjaranMatkulTemplateExport($tahunAjaranId), 'template_tahun_ajaran_matkul.xlsx');
+    }
+
+    /**
+     * Import data tahun ajaran mata kuliah dari Excel
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls|max:2048',
+        ], [
+            'file.required' => 'File Excel wajib diupload',
+            'file.mimes' => 'File harus berformat Excel (.xlsx atau .xls)',
+            'file.max' => 'Ukuran file maksimal 2MB',
+        ]);
+
+        try {
+            $import = new TahunAjaranMatkulImport();
+            Excel::import($import, $request->file('file'));
+
+            // Get import results
+            $results = $import->getImportResults();
+
+            $message = "Import berhasil! ";
+            $message .= "Berhasil memproses " . ($results['success'] ?? 0) . " data. ";
+            
+            if (!empty($results['errors'])) {
+                $message .= "Terdapat " . count($results['errors']) . " error.";
+                
+                // Store errors in session for detailed display
+                session()->flash('import_errors', $results['errors']);
+            }
+
+            return redirect()->route('admin.tahun-ajaran-matkul.index')
+                ->with('success', $message);
+
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Gagal import data: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
+    /**
+     * Duplicate mata kuliah dari tahun ajaran sebelumnya
+     */
+    public function duplicateFromPreviousYear(Request $request)
+    {
+        $request->validate([
+            'source_tahun_ajaran_id' => 'required|exists:tahun_ajaran,id',
+            'target_tahun_ajaran_id' => 'required|exists:tahun_ajaran,id|different:source_tahun_ajaran_id',
+        ], [
+            'source_tahun_ajaran_id.required' => 'Tahun ajaran sumber wajib dipilih',
+            'target_tahun_ajaran_id.required' => 'Tahun ajaran target wajib dipilih',
+            'target_tahun_ajaran_id.different' => 'Tahun ajaran target harus berbeda dengan sumber',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $sourceMatkuls = TahunAjaranMatkul::where('tahunAjaranId', $request->source_tahun_ajaran_id)
+                ->with(['mataKuliah', 'kelas'])
+                ->get();
+
+            $duplicatedCount = 0;
+            foreach ($sourceMatkuls as $sourceMatkul) {
+                // Check if already exists in target year
+                $existing = TahunAjaranMatkul::where('tahunAjaranId', $request->target_tahun_ajaran_id)
+                    ->where('mataKuliahId', $sourceMatkul->mataKuliahId)
+                    ->first();
+
+                if (!$existing) {
+                    // Create new tahun ajaran mata kuliah
+                    $newMatkul = TahunAjaranMatkul::create([
+                        'tahunAjaranId' => $request->target_tahun_ajaran_id,
+                        'mataKuliahId' => $sourceMatkul->mataKuliahId,
+                    ]);
+
+                    // Duplicate kelas structure
+                    foreach ($sourceMatkul->kelas as $kelas) {
+                        $newKelas = Kelas::create([
+                            'tahunAjaranMatkulId' => $newMatkul->id,
+                            'namaKelas' => $kelas->namaKelas,
+                        ]);
+
+                        // Duplicate dosen pengampu (optional)
+                        foreach ($kelas->dosenPengampuKelas as $dosenPengampu) {
+                            DosenPengampuKelas::create([
+                                'kelasId' => $newKelas->id,
+                                'dosenId' => $dosenPengampu->dosenId,
+                            ]);
+                        }
+                    }
+
+                    $duplicatedCount++;
+                }
+            }
+
+            DB::commit();
+
+            return redirect()->route('admin.tahun-ajaran-matkul.index')
+                ->with('success', "Berhasil menduplikasi {$duplicatedCount} mata kuliah dari tahun ajaran sebelumnya!");
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return redirect()->back()
+                ->with('error', 'Gagal menduplikasi data: ' . $e->getMessage())
+                ->withInput();
         }
     }
 } 

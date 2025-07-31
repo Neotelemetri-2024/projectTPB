@@ -63,6 +63,10 @@
                                 <span class="w-24 text-sm font-medium text-gray-600">Kode:</span>
                                 <span class="text-sm text-gray-900">{{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }}</span>
                             </div>
+                            <div class="flex">
+                                <span class="w-24 text-sm font-medium text-gray-600">Semester:</span>
+                                <span class="text-sm text-gray-900">{{ $tahunAjaranMatkul->semester ?? 1 }}</span>
+                            </div>
                         </div>
                         <div class="space-y-3">
                             <div class="flex">

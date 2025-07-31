@@ -25,13 +25,6 @@ class AdminUserSeeder extends Seeder
         ]);
 
         // Create additional admin users if needed
-        User::create([
-            'name' => 'Super Admin',
-            'email' => 'superadmin2@example.com',
-            'password' => Hash::make('password'),
-            'role' => 'admin',
-            'isAktif' => true,
-            'email_verified_at' => now(),
-        ]);
+       
     }
 }

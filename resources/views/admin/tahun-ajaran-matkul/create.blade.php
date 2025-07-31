@@ -23,7 +23,7 @@
 
             <form action="{{ route('admin.tahun-ajaran-matkul.store') }}" method="POST" class="space-y-6">
                 @csrf
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
                         <label for="tahunAjaranId" class="block text-sm font-medium text-gray-700 mb-2">
                             Tahun Ajaran <span class="text-red-500">*</span>
@@ -58,6 +58,25 @@
                             @endforeach
                         </select>
                         @error('mataKuliahId')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label for="semester" class="block text-sm font-medium text-gray-700 mb-2">
+                            Semester <span class="text-red-500">*</span>
+                        </label>
+                        <select name="semester" id="semester"
+                                class="bg-gray-50 border {{ $errors->has('semester') ? 'border-red-500' : 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5"
+                                required>
+                            <option value="">Pilih Semester</option>
+                            @for($i = 1; $i <= 8; $i++)
+                                <option value="{{ $i }}" {{ old('semester') == $i ? 'selected' : '' }}>
+                                    Semester {{ $i }}
+                                </option>
+                            @endfor
+                        </select>
+                        @error('semester')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>

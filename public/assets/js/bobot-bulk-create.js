@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const komponenListData = window.komponenListData || [];
         const existingCombinationsData = window.existingCombinationsData || {};
         const bobotWithNilaiData = window.bobotWithNilaiData || {};
+        const komponenLockedData = window.komponenLockedData || {};
         const usedKomponenIdsData = window.usedKomponenIdsData || [];
 
         // Debug logging
@@ -36,6 +37,12 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
 
             const btn = e.target.classList.contains('toggle-komponen-btn') ? e.target : e.target.closest('.toggle-komponen-btn');
+            
+            // Check if button is disabled (locked)
+            if (btn.disabled) {
+                return;
+            }
+            
             const card = btn.closest('.komponen-card');
             const komponenId = card.getAttribute('data-id').toString(); // Ensure string
             const komponenNama = card.getAttribute('data-nama');
@@ -44,12 +51,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Check if currently selected
             const isSelected = selectedKomponen.find(k => k.id === komponenId);
+            const isLocked = komponenLockedData[komponenId] || false;
 
             if (isSelected) {
+                // Don't allow removal if komponen is locked
+                if (isLocked) {
+                    alert('Komponen ini tidak dapat dihapus karena sudah memiliki nilai mahasiswa.');
+                    return;
+                }
                 // Remove from selected komponen
                 selectedKomponen = selectedKomponen.filter(k => k.id !== komponenId);
                 console.log('Komponen removed:', komponenId);
             } else {
+                // Check if any komponen is locked (has nilai)
+                const hasAnyLockedKomponen = Object.values(komponenLockedData).some(locked => locked);
+                if (hasAnyLockedKomponen) {
+                    alert('Tidak dapat menambahkan komponen baru karena sudah ada nilai mahasiswa. Komponen yang sudah ada nilai tidak dapat diubah atau ditambah.');
+                    return;
+                }
                 // Add to selected komponen
                 selectedKomponen.push({
                     id: komponenId,
@@ -73,20 +92,40 @@ document.addEventListener('DOMContentLoaded', function() {
             const removeIcon = card.querySelector('.remove-icon');
 
             const isSelected = selectedKomponen.find(k => k.id === komponenId);
+            const isLocked = komponenLockedData[komponenId] || false;
+            const hasAnyLockedKomponen = Object.values(komponenLockedData).some(locked => locked);
 
             if (isSelected) {
                 card.classList.remove('border-gray-300', 'hover:border-green-500', 'hover:bg-green-50');
-                card.classList.add('border-green-500', 'bg-green-50');
-                toggleBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
-                toggleBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+                if (isLocked) {
+                    card.classList.add('border-red-500', 'bg-red-50');
+                    toggleBtn.classList.remove('bg-green-600', 'hover:bg-green-700', 'bg-red-600', 'hover:bg-red-700');
+                    toggleBtn.classList.add('bg-gray-600', 'cursor-not-allowed');
+                    toggleBtn.disabled = true;
+                } else {
+                    card.classList.add('border-green-500', 'bg-green-50');
+                    toggleBtn.classList.remove('bg-green-600', 'hover:bg-green-700', 'bg-gray-600', 'cursor-not-allowed');
+                    toggleBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+                    toggleBtn.disabled = false;
+                }
                 addIcon.classList.add('hidden');
                 removeIcon.classList.remove('hidden');
             } else {
                 // Not selected - show as available with + icon
-                card.classList.remove('border-green-500', 'bg-green-50');
-                card.classList.add('border-gray-300', 'hover:border-green-500', 'hover:bg-green-50');
-                toggleBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
-                toggleBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                card.classList.remove('border-green-500', 'bg-green-50', 'border-red-500', 'bg-red-50');
+                
+                // If any komponen is locked, disable adding new komponen
+                if (hasAnyLockedKomponen) {
+                    card.classList.add('border-gray-300', 'bg-gray-100', 'cursor-not-allowed');
+                    toggleBtn.classList.remove('bg-green-600', 'hover:bg-green-700', 'bg-red-600', 'hover:bg-red-700');
+                    toggleBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                    toggleBtn.disabled = true;
+                } else {
+                    card.classList.add('border-gray-300', 'hover:border-green-500', 'hover:bg-green-50');
+                    toggleBtn.classList.remove('bg-red-600', 'hover:bg-red-700', 'bg-gray-400', 'cursor-not-allowed');
+                    toggleBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                    toggleBtn.disabled = false;
+                }
                 addIcon.classList.remove('hidden');
                 removeIcon.classList.add('hidden');
             }
@@ -95,7 +134,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Clear all komponen
     clearKomponenBtn.addEventListener('click', function() {
-        selectedKomponen = [];
+        // Keep only locked komponen
+        selectedKomponen = selectedKomponen.filter(komponen => {
+            return komponenLockedData[komponen.id] || false;
+        });
         updateKomponenCardsState();
         renderTable();
     });
@@ -157,6 +199,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const combination = cpmkData.id + '_' + komponen.id;
                 let existingValue = existingCombinationsData[combination] || 0;
                 const hasNilai = bobotWithNilaiData.hasOwnProperty(combination);
+                const isKomponenLocked = komponenLockedData[komponen.id] || false;
+                
                 // Jika ada input, gunakan value input
                 const inputName = 'bobot[' + combination + ']';
                 const inputElem = document.querySelector(`input[name='${inputName}']`);
@@ -168,7 +212,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const td = document.createElement('td');
                 td.className = 'px-2 py-3 text-center border-r border-gray-200';
 
-                if (hasNilai) {
+                // Lock if either this specific combination has nilai OR the entire komponen is locked
+                if (hasNilai || isKomponenLocked) {
                     td.innerHTML = '<div class="relative inline-block"><input type="number" step="0.1" min="0" max="100" value="' + existingValue + '" class="w-20 px-2 py-1 border border-gray-300 rounded text-sm text-center bg-gray-100" disabled><div class="absolute -top-1 -right-1"><svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z" clip-rule="evenodd"></path></svg></div></div><div class="text-xs text-red-600 mt-1">Terkunci</div>';
                 } else {
                     const input = document.createElement('input');
@@ -318,6 +363,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update status tombol submit
         let allValid = true;
         let adaIsi = false;
+        
+        // Validasi per komponen (maksimal 100% per komponen)
         for (let i = 0; i < selectedKomponen.length; i++) {
             if (komponenTotals[i] > 100) {
                 allValid = false;
@@ -326,16 +373,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 adaIsi = true;
             }
         }
+        
         // Cek juga jika ada input bobot > 0
         if (!adaIsi) {
             tableBody.querySelectorAll('input[type="number"]').forEach(input => {
                 if (parseFloat(input.value) > 0) adaIsi = true;
             });
         }
+        
         // Validasi total keseluruhan tidak boleh lebih dari 100
         if (totalKeseluruhan > 100) {
             allValid = false;
         }
+        
         if (allValid && adaIsi && selectedKomponen.length > 0) {
             submitBtn.disabled = false;
             submitBtn.className = 'w-full sm:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500';
@@ -352,46 +402,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 input.value = '';
             }
         });
-        updateTotal();
+        updateTotalBobotRowRealtime();
     });
 
-    // Update total calculation
+    // Update total calculation (deprecated - using updateTotalBobotRowRealtime instead)
     function updateTotal() {
-        // Ambil semua input bobot yang aktif
-        const komponenTotals = {};
-        let komponenValid = {};
-        let komponenCount = selectedKomponen.length;
-        let allValid = true;
-
-        // Inisialisasi total per komponen
-        selectedKomponen.forEach(komponen => {
-            komponenTotals[komponen.id] = 0;
-            komponenValid[komponen.id] = true;
-        });
-
-        // Hitung total per komponen (kolom)
-        document.querySelectorAll('input[type="number"]').forEach(input => {
-            if (input.name && input.name.startsWith('bobot[')) {
-                // Format: bobot[cpmkId_komponenId]
-                const match = input.name.match(/bobot\[(\d+)_([\w-]+)\]/);
-                if (match) {
-                    const komponenId = match[2];
-                    const value = parseFloat(input.value) || 0;
-                    if (komponenTotals.hasOwnProperty(komponenId)) {
-                        komponenTotals[komponenId] += value;
-                    }
-                }
-            }
-        });
-
-        // Update tombol submit
-        if (allValid && komponenCount > 0) {
-            submitBtn.disabled = false;
-            submitBtn.className = 'w-full sm:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500';
-        } else {
-            submitBtn.disabled = true;
-            submitBtn.className = 'w-full sm:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-400 cursor-not-allowed';
-        }
+        updateTotalBobotRowRealtime();
     }
 
     // Form validation before submit (per komponen)
@@ -403,11 +419,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Pilih minimal satu komponen penilaian');
                 return false;
             }
+            
             // Validasi per komponen
             const komponenTotals = {};
             selectedKomponen.forEach(komponen => {
                 komponenTotals[komponen.id] = 0;
             });
+            
             document.querySelectorAll('input[type="number"]').forEach(input => {
                 if (input.name && input.name.startsWith('bobot[')) {
                     const match = input.name.match(/bobot\[(\d+)_([\w-]+)\]/);
@@ -420,15 +438,33 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             });
+            
             let allValid = true;
+            let errorMessage = '';
+            
             Object.keys(komponenTotals).forEach(komponenId => {
                 if (komponenTotals[komponenId] > 100) {
                     allValid = false;
+                    const komponenData = komponenListData.find(k => k.id.toString() === komponenId);
+                    const komponenNama = komponenData ? komponenData.nama : 'Komponen ' + komponenId;
+                    errorMessage += `• Total bobot untuk komponen "${komponenNama}" melebihi 100% (${komponenTotals[komponenId].toFixed(2)}%)\n`;
                 }
             });
+            
+            // Validasi total keseluruhan
+            let totalKeseluruhan = 0;
+            Object.values(komponenTotals).forEach(total => {
+                totalKeseluruhan += total;
+            });
+            
+            if (totalKeseluruhan > 100) {
+                allValid = false;
+                errorMessage += `• Total bobot keseluruhan melebihi 100% (${totalKeseluruhan.toFixed(2)}%)\n`;
+            }
+            
             if (!allValid) {
                 e.preventDefault();
-                alert('Total bobot pada salah satu komponen melebihi 100%. Mohon periksa kembali.');
+                alert('Validasi bobot gagal:\n\n' + errorMessage + '\nMohon periksa kembali.');
                 return false;
             }
         });
@@ -446,6 +482,21 @@ document.addEventListener('DOMContentLoaded', function() {
                         id: komponenIdStr,
                         nama: komponenData.nama
                     });
+                }
+            });
+        }
+        
+        // Also add komponen that are locked (have nilai)
+        if (komponenLockedData) {
+            Object.keys(komponenLockedData).forEach(komponenId => {
+                if (komponenLockedData[komponenId] && !selectedKomponen.find(k => k.id === komponenId)) {
+                    const komponenData = komponenListData.find(k => k.id.toString() === komponenId);
+                    if (komponenData) {
+                        selectedKomponen.push({
+                            id: komponenId,
+                            nama: komponenData.nama
+                        });
+                    }
                 }
             });
         }

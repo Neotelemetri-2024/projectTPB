@@ -58,15 +58,23 @@ class KHSController extends Controller
                 foreach ($komponenGrouped as $komponenId => $listBobot) {
                     $komponen = $listBobot->first()->komponen;
                     $nilaiInput = null;
+                    $totalNilai = 0;
+                    $totalBobot = 0;
+                    
                     foreach ($listBobot as $bobot) {
                         $nilaiRecord = \App\Models\Nilai::where('mahasiswaId', $mahasiswa->id)
                             ->where('bobotId', $bobot->id)
                             ->first();
                         if ($nilaiRecord && $bobot->bobot > 0) {
-                            $nilaiInput = $nilaiRecord->nilai / ($bobot->bobot / 100);
-                            break; // cukup ambil satu, karena input dosen sama untuk semua bobot komponen tsb
+                            $totalNilai += ($nilaiRecord->nilai * $bobot->bobot);
+                            $totalBobot += $bobot->bobot;
                         }
                     }
+                    
+                    if ($totalBobot > 0) {
+                        $nilaiInput = $totalNilai / $totalBobot;
+                    }
+                    
                     $komponenNilai[] = [
                         'no' => $idxKom++,
                         'nama' => $komponen->nama ?? '-',
@@ -83,14 +91,29 @@ class KHSController extends Controller
                 foreach ($cpmkGrouped as $cpmkId => $listBobot) {
                     $cpmk = $listBobot->first()->cpmk;
                     $bobotTotal = $listBobot->sum('bobot');
-                    $nilai = \App\Models\Nilai::where('mahasiswaId', $mahasiswa->id)
-                        ->whereIn('bobotId', $listBobot->pluck('id'))
-                        ->avg('nilai');
+                    
+                    // Hitung nilai CPMK dengan bobot yang benar
+                    $nilaiCpmkTotal = 0;
+                    $bobotCpmkTotal = 0;
+                    
+                    foreach ($listBobot as $bobot) {
+                        $nilaiRecord = \App\Models\Nilai::where('mahasiswaId', $mahasiswa->id)
+                            ->where('bobotId', $bobot->id)
+                            ->first();
+                        
+                        if ($nilaiRecord && $bobot->bobot > 0) {
+                            $nilaiCpmkTotal += ($nilaiRecord->nilai * $bobot->bobot);
+                            $bobotCpmkTotal += $bobot->bobot;
+                        }
+                    }
+                    
+                    $nilaiCpmk = $bobotCpmkTotal > 0 ? $nilaiCpmkTotal / $bobotCpmkTotal : null;
+                    
                     $cpmkNilai[] = [
                         'no' => $idxCpmk++,
                         'kode' => $cpmk->kodeCpmk ?? '-',
                         'bobot' => $bobotTotal,
-                        'nilai' => $nilai !== null ? round($nilai, 2) : '-',
+                        'nilai' => $nilaiCpmk !== null ? round($nilaiCpmk, 2) : '-',
                     ];
                 }
                 $matkulDiambil[] = [
@@ -109,3 +132,5 @@ class KHSController extends Controller
         return view("mahasiswa.transkrip", compact('matkulDiambil', 'periodes', 'periodeTerpilih'));
     }
 }
+
+

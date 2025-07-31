@@ -18,14 +18,43 @@ use App\Http\Controllers\Dosen\NilaiController as DosenNilaiController;
 use App\Http\Controllers\KHSController as KHSController;
 use Illuminate\Support\Facades\Route;
 
-// Default route
+// Default route - redirect to dashboard based on user role
 Route::get('/', function () {
-    return view('welcome');
+    if (auth()->check()) {
+        $user = auth()->user();
+        switch ($user->role) {
+            case 'admin':
+                return redirect()->route('admin.dashboard');
+            case 'dosen':
+                return redirect()->route('dosen.dashboard');
+            case 'mahasiswa':
+                return redirect()->route('mahasiswa.dashboard');
+            case 'pimpinan':
+                return redirect()->route('pimpinan.dashboard');
+            default:
+                return redirect()->route('dashboard');
+        }
+    }
+    return redirect()->route('login');
 });
 
 // Dashboard Routes
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', function () {
+        $user = auth()->user();
+        switch ($user->role) {
+            case 'admin':
+                return redirect()->route('admin.dashboard');
+            case 'dosen':
+                return redirect()->route('dosen.dashboard');
+            case 'mahasiswa':
+                return redirect()->route('mahasiswa.dashboard');
+            case 'pimpinan':
+                return redirect()->route('pimpinan.dashboard');
+            default:
+                return redirect()->route('admin.dashboard');
+        }
+    })->name('dashboard');
 
     // Admin Dashboard
     Route::middleware('admin')->group(function () {
@@ -53,6 +82,10 @@ Route::middleware('auth')->group(function () {
             'destroy' => 'admin.dosen.destroy',
         ]);
 
+        // Import/Export routes for dosen
+        Route::get('/admin/dosen/export/template', [DosenController::class, 'exportTemplate'])->name('admin.dosen.export-template');
+        Route::post('/admin/dosen/import', [DosenController::class, 'importDosen'])->name('admin.dosen.import');
+
         // Data Master Routes
         Route::resource('admin/tahun-ajaran', TahunAjaranController::class)->names([
             'index' => 'admin.tahun-ajaran.index',
@@ -69,6 +102,10 @@ Route::middleware('auth')->group(function () {
             'update' => 'admin.mata-kuliah.update',
             'destroy' => 'admin.mata-kuliah.destroy',
         ]);
+
+        // Import/Export routes for mata kuliah
+        Route::get('/admin/mata-kuliah/export/template', [MataKuliahController::class, 'exportTemplate'])->name('admin.mata-kuliah.export-template');
+        Route::post('/admin/mata-kuliah/import', [MataKuliahController::class, 'import'])->name('admin.mata-kuliah.import');
 
         Route::resource('admin/cpl', CplController::class)->except(['show'])->names([
             'index' => 'admin.cpl.index',
@@ -96,6 +133,11 @@ Route::middleware('auth')->group(function () {
             'update' => 'admin.tahun-ajaran-matkul.update',
             'destroy' => 'admin.tahun-ajaran-matkul.destroy',
         ]);
+
+        // Import/Export routes for tahun ajaran matkul
+        Route::get('/admin/tahun-ajaran-matkul/export/template', [TahunAjaranMatkulController::class, 'exportTemplate'])->name('admin.tahun-ajaran-matkul.export-template');
+        Route::post('/admin/tahun-ajaran-matkul/import', [TahunAjaranMatkulController::class, 'import'])->name('admin.tahun-ajaran-matkul.import');
+        Route::post('/admin/tahun-ajaran-matkul/duplicate', [TahunAjaranMatkulController::class, 'duplicateFromPreviousYear'])->name('admin.tahun-ajaran-matkul.duplicate');
 
         // Additional routes for managing students and lecturers
         Route::get('admin/tahun-ajaran-matkul/{id}/manage-mahasiswa', [TahunAjaranMatkulController::class, 'manageMahasiswa'])->name('admin.tahun-ajaran-matkul.manage-mahasiswa');
@@ -145,6 +187,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/dosen/nilai/{id}/reset', [DosenNilaiController::class, 'resetNilai'])->name('dosen.nilai.reset');
         Route::get('/dosen/nilai/{id}/export-template', [DosenNilaiController::class, 'exportTemplate'])->name('dosen.nilai.export-template');
         Route::post('/dosen/nilai/{id}/import', [DosenNilaiController::class, 'importNilai'])->name('dosen.nilai.import');
+        Route::get('/dosen/nilai/{id}/detail', [DosenNilaiController::class, 'detailNilai'])->name('dosen.nilai.detail');
     });
 
     // Mahasiswa Dashboard

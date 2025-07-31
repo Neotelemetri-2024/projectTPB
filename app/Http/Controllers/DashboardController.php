@@ -305,10 +305,10 @@ class DashboardController extends Controller
      */
     private function getMatkulPerformanceData($selectedTahunAjaranId = null)
     {
-        $query = \App\Models\KelasMahasiswa::with(['tahunAjaranMatkul.mataKuliah', 'tahunAjaranMatkul.tahunAjaran']);
+        $query = \App\Models\KelasMahasiswa::with(['kelas.tahunAjaranMatkul.mataKuliah', 'kelas.tahunAjaranMatkul.tahunAjaran']);
         
         if ($selectedTahunAjaranId) {
-            $query->whereHas('tahunAjaranMatkul', function($q) use ($selectedTahunAjaranId) {
+            $query->whereHas('kelas.tahunAjaranMatkul', function($q) use ($selectedTahunAjaranId) {
                 $q->where('tahunAjaranId', $selectedTahunAjaranId);
             });
         }
@@ -454,11 +454,11 @@ class DashboardController extends Controller
      */
     private function getTopStudentsData($selectedTahunAjaranId = null)
     {
-        $query = \App\Models\KelasMahasiswa::with(['mahasiswa', 'tahunAjaranMatkul'])
+        $query = \App\Models\KelasMahasiswa::with(['mahasiswa', 'kelas.tahunAjaranMatkul'])
             ->whereNotNull('totalNilai');
         
         if ($selectedTahunAjaranId) {
-            $query->whereHas('tahunAjaranMatkul', function($q) use ($selectedTahunAjaranId) {
+            $query->whereHas('kelas.tahunAjaranMatkul', function($q) use ($selectedTahunAjaranId) {
                 $q->where('tahunAjaranId', $selectedTahunAjaranId);
             });
         }
@@ -585,10 +585,139 @@ class DashboardController extends Controller
     /**
      * Dosen Dashboard
      */
-    public function dosenDashboard()
+    public function dosenDashboard(Request $request)
     {
         $user = Auth::user();
-        return view('dosen.dashboard', compact('user'));
+        $dosen = $user->dosen;
+        if (!$dosen) {
+            return redirect()->back()->with('error', 'Data dosen tidak ditemukan.');
+        }
+
+        // List tahun ajaran untuk filter
+        $tahunAjaranList = \App\Models\TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->get();
+        $selectedTahunAjaranId = $request->get('tahun_ajaran_id');
+        if (!$selectedTahunAjaranId) {
+            $selectedTahunAjaranId = $tahunAjaranList->first() ? $tahunAjaranList->first()->id : null;
+        }
+
+        // Mata kuliah diampu dosen (tahun ajaran terpilih)
+        $mataKuliahDiampu = \App\Models\TahunAjaranMatkul::whereHas('kelas.dosenPengampuKelas', function($q) use ($dosen) {
+            $q->where('dosenId', $dosen->id);
+        })
+        ->where('tahunAjaranId', $selectedTahunAjaranId)
+        ->with(['mataKuliah', 'kelas.kelasMahasiswa'])
+        ->get();
+
+        // Jumlah MK, kelas, mahasiswa
+        $jumlahMK = $mataKuliahDiampu->count();
+        $jumlahKelas = $mataKuliahDiampu->flatMap->kelas->count();
+        $jumlahMahasiswa = $mataKuliahDiampu->flatMap->kelas->flatMap->kelasMahasiswa->pluck('mahasiswaId')->unique()->count();
+
+        // Progress input nilai: kelas yang sudah lengkap input nilai (semua mahasiswa punya totalNilai)
+        $kelasList = $mataKuliahDiampu->flatMap->kelas;
+        $kelasProgress = $kelasList->map(function($kelas) {
+            $mahasiswaCount = $kelas->kelasMahasiswa->count();
+            $sudahNilai = $kelas->kelasMahasiswa->whereNotNull('totalNilai')->count();
+            return [
+                'kelas' => $kelas,
+                'mahasiswaCount' => $mahasiswaCount,
+                'sudahNilai' => $sudahNilai,
+                'isComplete' => $mahasiswaCount > 0 && $mahasiswaCount == $sudahNilai
+            ];
+        });
+        $jumlahKelasLengkap = $kelasProgress->where('isComplete', true)->count();
+        $progressPersen = $kelasList->count() > 0 ? round(($jumlahKelasLengkap / $kelasList->count()) * 100, 1) : 0;
+
+        // Bar chart: jumlah mahasiswa per mata kuliah
+        $barChartLabels = $mataKuliahDiampu->map(fn($mk) => $mk->mataKuliah->namaMatkul)->toArray();
+        $barChartData = $mataKuliahDiampu->map(function($mk) {
+            $mahasiswaIds = $mk->kelas->flatMap->kelasMahasiswa->map(function($km) {
+                return $km->mahasiswaId;
+            })->unique()->values();
+            return $mahasiswaIds->count();
+        })->toArray();
+
+        // Pie chart: distribusi grade per mata kuliah
+        $gradeDistributionPerMK = [];
+        foreach ($mataKuliahDiampu as $mk) {
+            $mkKelasMahasiswa = $mk->kelas->flatMap->kelasMahasiswa;
+            $gradeCounts = ['A'=>0,'A-'=>0,'B+'=>0,'B'=>0,'B-'=>0,'C+'=>0,'C'=>0,'D'=>0,'E'=>0];
+            
+            foreach ($mkKelasMahasiswa as $km) {
+                $grade = $km->grade;
+                if ($grade && array_key_exists($grade, $gradeCounts)) {
+                    $gradeCounts[$grade]++;
+                }
+            }
+            
+            $gradeDistributionPerMK[] = [
+                'mataKuliah' => $mk->mataKuliah->namaMatkul,
+                'kodeMatkul' => $mk->mataKuliah->kodeMatkul,
+                'gradeCounts' => $gradeCounts,
+                'totalMahasiswa' => array_sum($gradeCounts)
+            ];
+        }
+        
+        // Pie chart: distribusi grade keseluruhan (untuk chart utama)
+        $allKelasMahasiswa = $mataKuliahDiampu->flatMap->kelas->flatMap->kelasMahasiswa;
+        $overallGradeCounts = ['A'=>0,'A-'=>0,'B+'=>0,'B'=>0,'B-'=>0,'C+'=>0,'C'=>0,'D'=>0,'E'=>0];
+        foreach ($allKelasMahasiswa as $km) {
+            $grade = $km->grade;
+            if ($grade && array_key_exists($grade, $overallGradeCounts)) {
+                $overallGradeCounts[$grade]++;
+            }
+        }
+        $pieChartLabels = array_keys($overallGradeCounts);
+        $pieChartData = array_values($overallGradeCounts);
+
+        // Line chart: progress rata-rata nilai per MK dari waktu ke waktu (per tahun ajaran)
+        $lineChartLabels = [];
+        $lineChartDatasets = [];
+        foreach ($mataKuliahDiampu as $mk) {
+            $nilaiPerTahun = \App\Models\TahunAjaranMatkul::where('mataKuliahId', $mk->mataKuliahId)
+                ->with(['tahunAjaran', 'kelas.kelasMahasiswa'])
+                ->get()
+                ->groupBy('tahunAjaranId')
+                ->map(function($group) {
+                    $tahunAjaran = $group->first()->tahunAjaran;
+                    $label = $tahunAjaran->tahun . ' - ' . ucfirst($tahunAjaran->periode);
+                    $allNilai = $group->flatMap->kelas->flatMap->kelasMahasiswa->map(function($km) {
+                        return $km->totalNilai;
+                    })->filter();
+                    $avg = $allNilai->count() > 0 ? round($allNilai->avg(),2) : null;
+                    return ['label' => $label, 'avg' => $avg];
+                });
+            foreach ($nilaiPerTahun as $row) {
+                if (!in_array($row['label'], $lineChartLabels)) {
+                    $lineChartLabels[] = $row['label'];
+                }
+            }
+            $lineChartDatasets[] = [
+                'label' => $mk->mataKuliah->namaMatkul,
+                'data' => $nilaiPerTahun->map(function($item) {
+                    return $item['avg'];
+                })->toArray(),
+            ];
+        }
+
+        return view('dosen.dashboard', compact(
+            'user',
+            'jumlahMK',
+            'jumlahKelas',
+            'jumlahMahasiswa',
+            'progressPersen',
+            'jumlahKelasLengkap',
+            'kelasList',
+            'barChartLabels',
+            'barChartData',
+            'pieChartLabels',
+            'pieChartData',
+            'lineChartLabels',
+            'lineChartDatasets',
+            'gradeDistributionPerMK',
+            'tahunAjaranList',
+            'selectedTahunAjaranId',
+        ));
     }
 
     /**
@@ -615,28 +744,45 @@ class DashboardController extends Controller
                 $totalBobotCpl = 0;
                 $totalNilaiCpl = 0;
                 foreach ($cpmks as $cpmk) {
-                    // Ambil nilai per komponen untuk CPMK ini melalui bobot
-                    $nilaiPerKomponen = \App\Models\Nilai::where('mahasiswaId', $mahasiswaId)
-                        ->where('cpmkId', $cpmk->id)
-                        ->with('bobot.komponen')
-                        ->get()
-                        ->groupBy('bobot.komponenId')
-                        ->map(function($nilaiGroup) {
-                            return $nilaiGroup->avg('nilai');
-                        });
+                                    // Ambil nilai per komponen untuk CPMK ini melalui bobot
+                $bobotIds = \App\Models\Bobot::where('cpmkId', $cpmk->id)->pluck('id');
+                $nilaiPerKomponen = \App\Models\Nilai::where('mahasiswaId', $mahasiswaId)
+                    ->whereIn('bobotId', $bobotIds)
+                    ->with('bobot.komponen')
+                    ->get()
+                    ->groupBy('bobot.komponenId')
+                    ->map(function($nilaiGroup) {
+                        return $nilaiGroup->avg('nilai');
+                    });
 
-                    $cpmkMatKul = $cpmk->cpmkMatKul->first();
-                    $kodeMataKuliah = $cpmkMatKul->tahunAjaranMatkul->mataKuliah->kodeMatkul ?? '';
-                    $label = $cpmk->kodeCpmk . ' - ' . $kodeMataKuliah;
+                $cpmkMatKul = $cpmk->cpmkMatKul->first();
+                $kodeMataKuliah = $cpmkMatKul->tahunAjaranMatkul->mataKuliah->kodeMatkul ?? '';
+                $label = $cpmk->kodeCpmk . ' - ' . $kodeMataKuliah;
 
-                    $totalNilai = $nilaiPerKomponen->sum();
-                    $tahunAjaranMatkulId = $cpmkMatKul->tahunAjaranMatkul->id ?? null;
-                    $totalBobot = \App\Models\Bobot::where('cpmkId', $cpmk->id)
-                        ->whereHas('tahunAjaranMatkul', function($q) use ($tahunAjaranMatkulId) {
-                            $q->where('id', $tahunAjaranMatkulId);
-                        })
-                        ->sum('bobot');
-                    $nilaiNormal = ($totalBobot > 0) ? round(($totalNilai / $totalBobot) * 100, 2) : 0;
+                // Hitung nilai CPMK dengan bobot yang benar
+                $nilaiCpmkTotal = 0;
+                $bobotCpmkTotal = 0;
+                
+                $nilaiRecords = \App\Models\Nilai::where('mahasiswaId', $mahasiswaId)
+                    ->whereIn('bobotId', $bobotIds)
+                    ->with('bobot')
+                    ->get();
+                
+                foreach ($nilaiRecords as $nilai) {
+                    if ($nilai->bobot && $nilai->bobot->bobot > 0) {
+                        $nilaiCpmkTotal += ($nilai->nilai * $nilai->bobot->bobot);
+                        $bobotCpmkTotal += $nilai->bobot->bobot;
+                    }
+                }
+                
+                $totalNilai = $bobotCpmkTotal > 0 ? $nilaiCpmkTotal / $bobotCpmkTotal : 0;
+                $tahunAjaranMatkulId = $cpmkMatKul->tahunAjaranMatkul->id ?? null;
+                $totalBobot = \App\Models\Bobot::where('cpmkId', $cpmk->id)
+                    ->whereHas('tahunAjaranMatkul', function($q) use ($tahunAjaranMatkulId) {
+                        $q->where('id', $tahunAjaranMatkulId);
+                    })
+                    ->sum('bobot');
+                $nilaiNormal = round($totalNilai, 2);
 
                     $cpmk_data[] = [
                         'label' => $label,
@@ -652,10 +798,12 @@ class DashboardController extends Controller
                 $nilai_cpl = ($totalBobotCpl > 0) ? round(($totalNilaiCpl / $totalBobotCpl) * 100, 2) : 0;
                 $cpl_cpmk_data[] = [
                     'cpl_label' => $cpl->kodeCpl,
+                    'cpl_deskripsi' => $cpl->deskripsiCpl ?? '',
                     'cpmk_data' => $cpmk_data,
                     'nilai_cpl' => $nilai_cpl,
                     'total_bobot_cpl' => $totalBobotCpl,
-                    'total_nilai_cpl' => $totalNilaiCpl
+                    'total_nilai_cpl' => $totalNilaiCpl,
+                    'status' => $nilai_cpl >= 55 ? 'Tercapai' : 'Belum Tercapai'
                 ];
                 $realCplLabels[] = $cpl->kodeCpl;
             }
@@ -670,17 +818,17 @@ class DashboardController extends Controller
         ];
         if ($mahasiswa) {
             // Jumlah MK dan SKS
-            $mkDiambil = $mahasiswa->kelasMahasiswa()->with('tahunAjaranMatkul.mataKuliah')->get();
+            $mkDiambil = $mahasiswa->kelasMahasiswa()->with('kelas.tahunAjaranMatkul.mataKuliah')->get();
             $stat['jumlah_mk'] = $mkDiambil->count();
             $stat['jumlah_sks'] = $mkDiambil->sum(function($km) {
-                return $km->tahunAjaranMatkul->mataKuliah->sks ?? 0;
+                return $km->kelas->tahunAjaranMatkul->mataKuliah->sks ?? 0;
             });
             // IPK (standar Unand: konversi nilai akhir ke bobot, lalu (bobot x sks) / total sks)
-            $totalBobot = 0;
+            $totalSks = 0;
             $totalNilaiBobot = 0;
             foreach ($mkDiambil as $km) {
                 $nilaiAkhir = $km->totalNilai; // final grade per MK
-                $sks = $km->tahunAjaranMatkul->mataKuliah->sks ?? 0;
+                $sks = $km->kelas->tahunAjaranMatkul->mataKuliah->sks ?? 0;
                 $bobot = 0;
                 if ($nilaiAkhir !== null) {
                     if ($nilaiAkhir >= 80) $bobot = 4;
@@ -693,10 +841,10 @@ class DashboardController extends Controller
                     elseif ($nilaiAkhir >= 40) $bobot = 1;
                     else $bobot = 0;
                 }
-                $totalBobot += $sks;
+                $totalSks += $sks;
                 $totalNilaiBobot += ($bobot * $sks);
             }
-            $stat['ipk'] = ($totalBobot > 0) ? round($totalNilaiBobot / $totalBobot, 2) : null;
+            $stat['ipk'] = ($totalSks > 0) ? round($totalNilaiBobot / $totalSks, 2) : null;
             // CPL tercapai (nilai CPL > 55)
             $stat['cpl_tercapai'] = collect($cpl_cpmk_data)->filter(function($cpl) {
                 return ($cpl['nilai_cpl'] ?? 0) > 55;

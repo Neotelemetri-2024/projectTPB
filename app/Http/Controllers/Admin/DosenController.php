@@ -8,6 +8,9 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use App\Exports\DosenTemplateExport;
+use App\Imports\DosenImport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class DosenController extends Controller
 {
@@ -27,18 +30,7 @@ class DosenController extends Controller
             });
         }
         
-        // Filter by status aktif
-        if ($request->filled('status')) {
-            if ($request->status === 'aktif') {
-                $query->whereHas('user', function($userQuery) {
-                    $userQuery->where('isAktif', true);
-                });
-            } elseif ($request->status === 'nonaktif') {
-                $query->whereHas('user', function($userQuery) {
-                    $userQuery->where('isAktif', false);
-                });
-            }
-        }
+
         
         // Pagination
         $dosen = $query->orderBy('nama')->paginate(10)->withQueryString();
@@ -57,7 +49,6 @@ class DosenController extends Controller
             'nama' => 'required|string|max:255',
             'nip' => 'required|string|unique:dosen,nip|max:20',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6|confirmed',
         ], [
             'nama.required' => 'Nama dosen wajib diisi',
             'nip.required' => 'NIP wajib diisi',
@@ -65,9 +56,6 @@ class DosenController extends Controller
             'email.required' => 'Email wajib diisi',
             'email.email' => 'Format email tidak valid',
             'email.unique' => 'Email sudah terdaftar',
-            'password.required' => 'Password wajib diisi',
-            'password.min' => 'Password minimal 6 karakter',
-            'password.confirmed' => 'Konfirmasi password tidak cocok',
         ]);
 
         if ($validator->fails()) {
@@ -77,13 +65,12 @@ class DosenController extends Controller
         }
 
         try {
-            // Create user account
+            // Create user account with password same as NIP
             $user = User::create([
                 'name' => $request->nama,
                 'email' => $request->email,
-                'password' => Hash::make($request->password),
+                'password' => Hash::make($request->nip), // Password otomatis sama dengan NIP
                 'role' => 'dosen',
-                'isAktif' => true,
             ]);
 
             // Create dosen record
@@ -179,6 +166,62 @@ class DosenController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Export template Excel untuk import dosen
+     */
+    public function exportTemplate()
+    {
+        $fileName = 'Template_Import_Dosen.xlsx';
+        return Excel::download(new DosenTemplateExport(), $fileName);
+    }
+
+    /**
+     * Import dosen dari Excel
+     */
+    public function importDosen(Request $request)
+    {
+        $request->validate([
+            'excel_file' => 'required|file|mimes:xlsx,xls|max:2048'
+        ], [
+            'excel_file.required' => 'File Excel harus dipilih.',
+            'excel_file.mimes' => 'File harus berformat Excel (.xlsx atau .xls).',
+            'excel_file.max' => 'Ukuran file maksimal 2MB.'
+        ]);
+
+        try {
+            \Log::info('Starting dosen import...');
+            $import = new DosenImport();
+            Excel::import($import, $request->file('excel_file'));
+
+            // Get import results
+            $results = $import->getImportResults();
+            \Log::info('Import dosen results:', $results);
+
+            $message = "Import berhasil! ";
+            $message .= "Berhasil memproses " . ($results['success'] ?? 0) . " dosen. ";
+            
+            if (($results['created'] ?? 0) > 0) {
+                $message .= "Dibuat " . $results['created'] . " akun dosen baru. ";
+            }
+            
+            if (($results['updated'] ?? 0) > 0) {
+                $message .= "Diperbarui " . $results['updated'] . " data dosen. ";
+            }
+
+            if (!empty($results['errors'])) {
+                $message .= "Terdapat " . count($results['errors']) . " error.";
+                
+                // Store errors in session for detailed display
+                session()->flash('import_errors', $results['errors']);
+            }
+
+            return redirect()->back()->with('success', $message);
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat import: ' . $e->getMessage());
         }
     }
 }

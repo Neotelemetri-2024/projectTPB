@@ -69,7 +69,7 @@
         <div class="mt-8 text-center">
             <p class="text-xs text-gray-500">
                 © {{ date('Y') }} Portal TPB by Neo Telemetri. All Rights Reserved.
-            </p>
+                                </p>
                     </div>
                 </div>
 

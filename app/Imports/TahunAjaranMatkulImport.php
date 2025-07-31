@@ -44,7 +44,7 @@ class TahunAjaranMatkulImport implements ToModel, WithHeadingRow, WithValidation
             // Skip baris kosong
             if (empty($tahunAjaran) && empty($kodeMatkul) && empty($mataKuliah) && empty($semester) && empty($namaKelas) && empty($namaDosen) && empty($nipDosen) && empty($emailDosen)) {
                 return null;
-            }
+        }
 
             // Validasi data wajib
             if (empty($tahunAjaran)) {
@@ -142,7 +142,7 @@ class TahunAjaranMatkulImport implements ToModel, WithHeadingRow, WithValidation
             if (count($namaDosenArray) !== count($nipDosenArray) || count($namaDosenArray) !== count($emailDosenArray)) {
                 $this->results['errors'][] = "Jumlah nama, NIP, dan email dosen tidak sama untuk mata kuliah '{$mataKuliah}'";
                 return null;
-            }
+        }
 
             // Cari atau buat tahun ajaran mata kuliah
             $tahunAjaranMatkul = TahunAjaranMatkul::firstOrCreate([
@@ -216,8 +216,8 @@ class TahunAjaranMatkulImport implements ToModel, WithHeadingRow, WithValidation
                             $dosen->user->update(['name' => $namaDosenSingle]);
                         }
                     }
-                }
-
+            }
+            
                 // Cari atau buat dosen pengampu kelas
                 $dosenPengampuKelas = DosenPengampuKelas::firstOrCreate([
                     'dosenId' => $dosen->id,

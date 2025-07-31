@@ -798,12 +798,10 @@ class DashboardController extends Controller
                 $nilai_cpl = ($totalBobotCpl > 0) ? round(($totalNilaiCpl / $totalBobotCpl) * 100, 2) : 0;
                 $cpl_cpmk_data[] = [
                     'cpl_label' => $cpl->kodeCpl,
-                    'cpl_deskripsi' => $cpl->deskripsiCpl ?? '',
                     'cpmk_data' => $cpmk_data,
                     'nilai_cpl' => $nilai_cpl,
                     'total_bobot_cpl' => $totalBobotCpl,
-                    'total_nilai_cpl' => $totalNilaiCpl,
-                    'status' => $nilai_cpl >= 55 ? 'Tercapai' : 'Belum Tercapai'
+                    'total_nilai_cpl' => $totalNilaiCpl
                 ];
                 $realCplLabels[] = $cpl->kodeCpl;
             }

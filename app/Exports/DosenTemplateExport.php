@@ -6,21 +6,20 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithTitle;
+use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\WithMultipleSheets;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
-use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Style\Font;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Color;
 
 class DosenTemplateExport implements WithMultipleSheets
 {
     public function sheets(): array
     {
         return [
-            'Template' => new DosenTemplateSheet(),
-            'Instruksi' => new InstruksiDosenSheet(),
+            new DosenTemplateSheet(),
+            new InstruksiDosenSheet(),
         ];
     }
 }
@@ -29,98 +28,79 @@ class DosenTemplateSheet implements FromCollection, WithHeadings, WithMapping, W
 {
     public function collection()
     {
-        // Generate 50 empty rows
-        $rows = [];
+        // Buat 50 baris kosong untuk admin isi sendiri
+        $emptyRows = collect();
         for ($i = 1; $i <= 50; $i++) {
-            $rows[] = [
-                'nama' => '',
-                'nip' => '',
-                'email' => ''
-            ];
+            $emptyRows->push(['row' => $i]);
         }
-        return collect($rows);
+        return $emptyRows;
     }
 
     public function headings(): array
     {
+        $headings = [
+            'NAMA',
+            'NIP'
+        ];
+
+        // Tambahkan header informasi di baris pertama
+        $infoHeader = [
+            'TEMPLATE IMPORT DOSEN',
+            '',
+            'Format: Nama lengkap dengan gelar (contoh: Prof.Dr. Ir. Rusnam, MS)',
+            'NIP: 18 digit angka',
+            'Email akan otomatis dibuat: namatanpagelar@ae.unand.ac.id',
+            'Password otomatis: NIP',
+        ];
+
         return [
-            ['FORMAT IMPORT DATA DOSEN'],
-            [''],
-            ['NAMA', 'NIP', 'EMAIL'],
-            ['Contoh: Dr. John Doe', 'Contoh: 197304131998022001', 'Contoh: johndoe@ae.unand.ac.id']
+            $infoHeader, // Baris 1: Info template
+            [], // Baris 2: Kosong
+            $headings, // Baris 3: Header kolom
         ];
     }
 
-    public function map($row): array
+    public function map($emptyRow): array
     {
-        return [
-            $row['nama'],
-            $row['nip'],
-            $row['email']
+        $row = [
+            '', // NAMA kosong (untuk diisi admin)
+            '', // NIP kosong (untuk diisi admin)
         ];
+
+        return $row;
     }
 
     public function title(): string
     {
-        return 'Template';
+        return 'Template Dosen';
     }
 
     public function styles(Worksheet $sheet)
     {
-        // Style untuk header utama
-        $sheet->getStyle('A1:C1')->applyFromArray([
-            'font' => [
-                'bold' => true,
-                'size' => 14,
-            ],
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-            ],
-            'fill' => [
-                'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => 'E2EFDA'],
-            ],
-        ]);
-
-        // Merge cell untuk judul
-        $sheet->mergeCells('A1:C1');
-
-        // Style untuk header kolom
-        $sheet->getStyle('A3:C3')->applyFromArray([
-            'font' => [
-                'bold' => true,
-                'color' => ['rgb' => 'FFFFFF'],
-            ],
-            'fill' => [
-                'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => '4472C4'],
-            ],
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-            ],
-        ]);
-
-        // Style untuk contoh data
-        $sheet->getStyle('A4:C4')->applyFromArray([
-            'font' => [
-                'italic' => true,
-                'color' => ['rgb' => '7F7F7F'],
-            ],
-            'fill' => [
-                'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => 'F2F2F2'],
-            ],
-        ]);
-
-        // Border untuk semua data
-        $sheet->getStyle('A3:C53')->applyFromArray([
-            'borders' => [
-                'allBorders' => [
-                    'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
-                    'color' => ['rgb' => '000000'],
+        return [
+            // Style untuk baris header info (baris 1)
+            1 => [
+                'font' => [
+                    'bold' => true,
+                    'size' => 12,
+                ],
+                'fill' => [
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => ['argb' => 'FFE6F3FF'],
                 ],
             ],
-        ]);
+            // Style untuk header kolom (baris 3)
+            3 => [
+                'font' => [
+                    'bold' => true,
+                    'color' => ['argb' => Color::COLOR_WHITE],
+                ],
+                'fill' => [
+                    'fillType' => Fill::FILL_SOLID,
+                    'startColor' => ['argb' => 'FF4472C4'],
+                ],
+            ],
+        ];
     }
 }
 
@@ -129,41 +109,42 @@ class InstruksiDosenSheet implements FromCollection, WithHeadings, WithTitle, Sh
     public function collection()
     {
         return collect([
-            ['INSTRUKSI PENGISIAN TEMPLATE IMPORT DOSEN'],
+            ['INSTRUKSI PENGISIAN TEMPLATE DOSEN'],
             [''],
-            ['1. Format File:', 'Excel (.xlsx atau .xls)'],
-            ['2. Kolom yang Harus Diisi:', ''],
-            ['   - NAMA', 'Nama lengkap dosen (termasuk gelar jika ada)'],
-            ['   - NIP', 'Nomor Induk Pegawai (18 digit)'],
-            ['   - EMAIL', 'Alamat email dosen'],
+            ['1. Isi kolom NAMA dengan nama lengkap dosen beserta gelar'],
+            ['   Contoh: Prof.Dr. Ir. Rusnam, MS'],
+            ['   Contoh: Ir. Ayendra Asmuti, M.Si'],
+            ['   Contoh: Dr. Renny Eka Putri, S.TP, MP'],
             [''],
-            ['3. Aturan Pengisian:', ''],
-            ['   - NAMA', 'Wajib diisi, maksimal 255 karakter'],
-            ['   - NIP', 'Wajib diisi, harus 18 digit angka'],
-            ['   - EMAIL', 'Wajib diisi, format email yang valid'],
+            ['2. Isi kolom NIP dengan 18 digit angka NIP dosen'],
+            ['   Contoh: 196309041989031002'],
             [''],
-            ['4. Contoh Pengisian:', ''],
-            ['   NAMA', 'Dr. John Doe'],
-            ['   NIP', '197304131998022001'],
-            ['   EMAIL', 'johndoe@ae.unand.ac.id'],
+            ['3. Sistem akan otomatis:'],
+            ['   - Membuat email: namatanpagelar@ae.unand.ac.id'],
+            ['   - Menghilangkan gelar dari email (tanpa Prof., Dr., Ir., dll)'],
+            ['   - Membuat password sama dengan NIP'],
+            ['   - Membuat akun user dengan role dosen'],
             [''],
-            ['5. Catatan:', ''],
-            ['   - Password akun akan otomatis diset sama dengan NIP'],
-            ['   - Jika dosen sudah ada (berdasarkan NIP), data akan diupdate'],
-            ['   - Jika dosen belum ada, akan dibuat akun baru'],
-            ['   - Pastikan email tidak duplikat dengan dosen lain'],
+            ['4. Format email yang dihasilkan:'],
+            ['   Nama: Prof.Dr. Ir. Rusnam, MS → Email: rusnam@ae.unand.ac.id'],
+            ['   Nama: Dr. Renny Eka Putri, S.TP, MP → Email: rennyekaputri@ae.unand.ac.id'],
+            ['   Nama: Ir. Ayendra Asmuti, M.Si → Email: ayendraasmuti@ae.unand.ac.id'],
             [''],
-            ['6. Error yang Mungkin Terjadi:', ''],
-            ['   - NIP tidak 18 digit', 'Periksa kembali jumlah digit NIP'],
-            ['   - Email sudah digunakan', 'Gunakan email yang berbeda'],
-            ['   - Format email tidak valid', 'Pastikan format email benar'],
-            ['   - Nama kosong', 'Nama dosen wajib diisi'],
+            ['5. Setelah mengisi, simpan file dan upload kembali ke sistem'],
+            ['6. Tersedia 50 baris kosong untuk diisi'],
+            [''],
+            ['Contoh pengisian:'],
+            ['NAMA: Prof.Dr. Ir. Rusnam, MS, NIP: 196309041989031002'],
+            ['NAMA: Dr. Renny Eka Putri, S.TP, MP, NIP: 198006212006042016'],
+            ['NAMA: Ir. Ayendra Asmuti, M.Si, NIP: 196504051990101001'],
         ]);
     }
 
     public function headings(): array
     {
-        return ['KETERANGAN', 'DETAIL'];
+        return [
+            'INSTRUKSI PENGISIAN TEMPLATE DOSEN',
+        ];
     }
 
     public function title(): string

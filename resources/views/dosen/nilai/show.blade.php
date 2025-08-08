@@ -131,7 +131,7 @@
                 </div>
                 <div class="flex items-center space-x-4">
                     <!-- Export Template Button -->
-                    <a href="{{ route('dosen.nilai.export-template', $tahunAjaranMatkul->id) }}" 
+                    <a href="{{ route('dosen.nilai.export-template', $tahunAjaranMatkul->id) }}"
                        class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
                         <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -140,7 +140,7 @@
                     </a>
 
                     <!-- Import Excel Button -->
-                    <button type="button" onclick="showImportModal()" 
+                    <button type="button" onclick="showImportModal()"
                             class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
                         <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
@@ -351,7 +351,7 @@
                                             $kelasMahasiswa = $mhs->kelasMahasiswa->where('tahunAjaranMatkulId', $tahunAjaranMatkul->id)->first();
                                             $totalNilai = $kelasMahasiswa ? $kelasMahasiswa->totalNilai : null;
                                             $grade = $kelasMahasiswa ? $kelasMahasiswa->grade : null;
-                                            
+
                                             // Jika belum ada nilai yang tersimpan, hitung dari bobot dan nilai yang ada
                                             if ($totalNilai === null || $grade === null) {
                                                 // Group nilai by CPMK
@@ -359,19 +359,19 @@
                                                 $nilaiPerCpmk = $allNilaiMahasiswa->groupBy('cpmkId');
                                                 $totalNilaiKeseluruhan = 0;
                                                 $totalBobotKeseluruhan = 0;
-                                                
+
                                                 // Calculate nilai per CPMK
                                                 foreach ($nilaiPerCpmk as $cpmkId => $nilaiCpmk) {
                                                     $nilaiCpmkTotal = 0;
                                                     $bobotCpmkTotal = 0;
-                                                    
+
                                                     foreach ($nilaiCpmk as $nilai) {
                                                         if ($nilai->bobot && $nilai->bobot->bobot > 0) {
                                                             $nilaiCpmkTotal += ($nilai->nilai * $nilai->bobot->bobot);
                                                             $bobotCpmkTotal += $nilai->bobot->bobot;
                                                         }
                                                     }
-                                                    
+
                                                     // Jika bobot CPMK > 0, hitung rata-rata terbobot
                                                     if ($bobotCpmkTotal > 0) {
                                                         $nilaiRataRataCpmk = $nilaiCpmkTotal / $bobotCpmkTotal;
@@ -379,10 +379,10 @@
                                                         $totalBobotKeseluruhan += 1; // Setiap CPMK dihitung sebagai 1 unit
                                                     }
                                                 }
-                                                
+
                                                 // Hitung nilai akhir (rata-rata dari semua CPMK)
                                                 $totalNilai = $totalBobotKeseluruhan > 0 ? $totalNilaiKeseluruhan / $totalBobotKeseluruhan : 0;
-                                                
+
                                                 // Hitung grade berdasarkan total nilai terbobot
                                                 if ($totalNilai >= 80) $grade = 'A';
                                                 elseif ($totalNilai >= 75) $grade = 'A-';
@@ -395,10 +395,10 @@
                                                 else $grade = 'E';
                                             }
                                         @endphp
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                            {{ $grade == 'A' || $grade == 'A-' ? 'bg-green-100 text-green-800' : 
-                                               ($grade == 'B+' || $grade == 'B' || $grade == 'B-' ? 'bg-blue-100 text-blue-800' : 
-                                               ($grade == 'C+' || $grade == 'C' ? 'bg-yellow-100 text-yellow-800' : 
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                            {{ $grade == 'A' || $grade == 'A-' ? 'bg-green-100 text-green-800' :
+                                               ($grade == 'B+' || $grade == 'B' || $grade == 'B-' ? 'bg-blue-100 text-blue-800' :
+                                               ($grade == 'C+' || $grade == 'C' ? 'bg-yellow-100 text-yellow-800' :
                                                ($grade == 'D' ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800'))) }}">
                                             {{ $grade ?: '-' }}
                                         </span>
@@ -517,21 +517,21 @@
                     <span class="sr-only">Close modal</span>
                 </button>
             </div>
-            
+
             <form action="{{ route('dosen.nilai.import', $tahunAjaranMatkul->id) }}" method="POST" enctype="multipart/form-data" class="p-4 md:p-5">
                 @csrf
                 <div class="mb-4">
                     <label for="excel_file" class="block text-sm font-medium text-gray-700 mb-2">
                         Pilih File Excel
                     </label>
-                    <input type="file" 
-                           id="excel_file" 
-                           name="excel_file" 
+                    <input type="file"
+                           id="excel_file"
+                           name="excel_file"
                            accept=".xlsx,.xls"
                            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                            required>
                 </div>
-                
+
                 <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
                     <div class="flex">
                         <svg class="h-5 w-5 text-yellow-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -564,7 +564,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
                     <button type="button" onclick="hideImportModal()" class="text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10 transition-colors duration-200">
                         Batal
@@ -583,7 +583,7 @@
 
 <!-- Notifikasi Import Results -->
 <!-- Reset Confirmation Modal -->
-<x-confirm-modal 
+<x-confirm-modal
     id="reset-confirm-modal"
     title="Konfirmasi Reset Nilai"
     message="Apakah Anda yakin ingin menghapus SEMUA nilai dari database? Tindakan ini tidak dapat dibatalkan."
@@ -612,12 +612,12 @@
                     <span class="sr-only">Close modal</span>
                 </button>
             </div>
-            
+
             <div class="p-4 md:p-5">
                 <p class="text-sm text-gray-600 mb-4">
                     Sistem telah membuat {{ count(session('created_students')) }} akun mahasiswa baru dengan password default = NIM:
                 </p>
-                
+
                 <div class="overflow-x-auto max-h-64 overflow-y-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50 sticky top-0">
@@ -641,7 +641,7 @@
                     </table>
                 </div>
             </div>
-            
+
             <div class="flex items-center justify-end space-x-3 p-4 md:p-5 border-t border-gray-200">
                 <button type="button" onclick="hideCreatedStudentsModal()" class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-colors duration-200">
                     <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -674,7 +674,7 @@
                     <span class="sr-only">Close modal</span>
                 </button>
             </div>
-            
+
             <div class="p-4 md:p-5">
                 <div class="bg-red-50 border border-red-200 rounded-lg p-4 max-h-64 overflow-y-auto">
                     <ul class="text-sm text-red-700 space-y-1">
@@ -689,7 +689,7 @@
                     </ul>
                 </div>
             </div>
-            
+
             <div class="flex items-center justify-end space-x-3 p-4 md:p-5 border-t border-gray-200">
                 <button type="button" onclick="hideImportErrorsModal()" class="text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-colors duration-200">
                     <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -740,7 +740,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // First, update the global hasUnsavedChanges without calling this function
             const inputs = document.querySelectorAll('.nilai-input');
             hasUnsavedChanges = false;
-            
+
             inputs.forEach(input => {
                 const originalValue = input.getAttribute('data-original-value') || '';
                 const currentValue = input.value || '';
@@ -748,14 +748,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     hasUnsavedChanges = true;
                 }
             });
-            
+
             console.log('hasUnsavedChanges calculated:', hasUnsavedChanges);
 
             // For bulk mode
             const bulkSaveBtn = document.getElementById('bulk-save-btn');
             const confirmCheckbox = document.getElementById('confirm-bulk-save');
             console.log('bulkSaveBtn found:', !!bulkSaveBtn, 'confirmCheckbox found:', !!confirmCheckbox);
-            
+
             if (bulkSaveBtn) {
                 console.log('bulkSaveBtn element:', bulkSaveBtn);
                 console.log('bulkSaveBtn parent visible:', !bulkSaveBtn.closest('.hidden'));
@@ -782,7 +782,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Updating individual save buttons...');
             const individualSaveBtns = document.querySelectorAll('[id^="save-btn-"]');
             console.log('Found', individualSaveBtns.length, 'individual save buttons');
-            
+
             individualSaveBtns.forEach(btn => {
                 const mahasiswaId = btn.id.replace('save-btn-', '');
                 const hasDataForStudent = checkForData(mahasiswaId);
@@ -1237,7 +1237,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Add event listener for input changes
             input.addEventListener('input', function() {
                 checkForUnsavedChanges();
-                
+
                 // Validate input
                 let value = parseFloat(this.value);
                 if (isNaN(value) || value < 0) {
@@ -1310,10 +1310,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Toggle mode edit input nilai
     const toggleEditBtn = document.getElementById('toggle-edit-nilai');
     let editMode = false;
-    
+
     function setEditMode(active) {
         editMode = active;
-        
+
         // Tampilkan/hide input dan plain text
         document.querySelectorAll('.nilai-input').forEach(input => {
             input.classList.toggle('hidden', !editMode);
@@ -1321,7 +1321,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.nilai-plain').forEach(span => {
             span.classList.toggle('hidden', editMode);
         });
-        
+
         // Tampilkan/hide kolom grade dan aksi
         document.querySelectorAll('.grade-column').forEach(col => {
             col.classList.toggle('hidden', editMode);
@@ -1329,28 +1329,28 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.aksi-column').forEach(col => {
             col.classList.toggle('hidden', !editMode);
         });
-        
+
         // Tampilkan/hide tombol simpan per mahasiswa
         document.querySelectorAll('.btn-simpan-nilai').forEach(btn => {
             btn.classList.toggle('hidden', !editMode);
         });
-        
+
         // Tampilkan/hide area simpan semua
         document.querySelectorAll('.btn-simpan-semua').forEach(btn => {
             btn.classList.toggle('hidden', !editMode);
         });
-        
+
         // Tampilkan/hide tombol reset
         const resetBtn = document.getElementById('reset-nilai');
         if (resetBtn) {
             resetBtn.classList.toggle('hidden', !editMode);
         }
-        
+
         // Update teks tombol
         toggleEditBtn.textContent = editMode ? 'Nonaktifkan Input Nilai' : 'Aktifkan Input Nilai';
         toggleEditBtn.classList.toggle('bg-amber-600', !editMode);
         toggleEditBtn.classList.toggle('bg-red-600', editMode);
-        
+
         // Update state tombol simpan - AFTER elements are visible
         if (editMode) {
             // Add small delay to ensure DOM updates are complete
@@ -1359,10 +1359,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 10);
         }
     }
-    
+
     // Set mode awal (non-edit)
     setEditMode(false);
-    
+
     // Event listener untuk toggle
     toggleEditBtn.addEventListener('click', function() {
         console.log('Toggle edit button clicked, current editMode:', editMode);
@@ -1458,10 +1458,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(data => {
                     if (data.success) {
                         showNotification('Semua nilai berhasil disimpan!', 'success');
-                        
+
                         // Reset unsaved changes flag
                         document.dispatchEvent(new CustomEvent('valuesSaved'));
-                        
+
                         // Refresh page to show updated data
                         setTimeout(() => {
                             allowNavigation = true;
@@ -1495,10 +1495,10 @@ document.addEventListener('DOMContentLoaded', function() {
     window.showImportModal = function() {
         const modal = document.getElementById('import-modal');
         const modalContent = modal.querySelector('[data-modal-content]');
-        
+
         modal.classList.remove('hidden');
         modal.classList.add('flex');
-        
+
         // Trigger animation
         setTimeout(() => {
             modal.classList.remove('bg-opacity-0');
@@ -1511,7 +1511,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.hideImportModal = function() {
         const modal = document.getElementById('import-modal');
         const modalContent = modal.querySelector('[data-modal-content]');
-        
+
         modalContent.classList.add('scale-95', 'opacity-0');
         modalContent.classList.remove('scale-100', 'opacity-100');
         modal.classList.remove('bg-opacity-10');
@@ -1552,7 +1552,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const mahasiswaId = button.getAttribute('data-mahasiswa-id');
             const mahasiswaNama = button.getAttribute('data-mahasiswa-nama');
             const nim = button.getAttribute('data-nim');
-            
+
             // Tampilkan modal detail
             showDetailModal(mahasiswaId, mahasiswaNama, nim);
         }
@@ -1573,7 +1573,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <span class="sr-only">Close modal</span>
                         </button>
                     </div>
-                    
+
                     <div class="p-4 md:p-5 overflow-y-auto max-h-[70vh]">
                         <div class="mb-4 bg-blue-50 rounded-lg p-3 border border-blue-200">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -1581,7 +1581,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <p class="text-sm text-gray-700"><strong>Nama:</strong> ${mahasiswaNama}</p>
                             </div>
                         </div>
-                        
+
                         <div id="detail-content-${mahasiswaId}" class="space-y-4">
                             <div class="flex justify-center py-8">
                                 <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -1592,10 +1592,10 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         </div>
         `;
-        
+
         // Tambahkan modal ke body
         document.body.insertAdjacentHTML('beforeend', modalContent);
-        
+
         // Trigger animation
         setTimeout(() => {
             const modal = document.getElementById('detail-modal');
@@ -1603,7 +1603,7 @@ document.addEventListener('DOMContentLoaded', function() {
             modalContent.classList.remove('scale-95', 'opacity-0');
             modalContent.classList.add('scale-100', 'opacity-100');
         }, 10);
-        
+
         // Load detail data via AJAX
         loadDetailData(mahasiswaId);
     }
@@ -1614,7 +1614,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const modalContent = modal.querySelector('[data-modal-content]');
             modalContent.classList.add('scale-95', 'opacity-0');
             modalContent.classList.remove('scale-100', 'opacity-100');
-            
+
             setTimeout(() => {
                 modal.remove();
             }, 300);
@@ -1623,7 +1623,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function loadDetailData(mahasiswaId) {
         const url = `{{ route('dosen.nilai.detail', ['id' => $tahunAjaranMatkul->id]) }}?mahasiswa_id=${mahasiswaId}`;
-        
+
         fetch(url)
             .then(response => response.json())
             .then(data => {

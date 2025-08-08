@@ -194,7 +194,9 @@ Route::middleware('auth')->group(function () {
     Route::middleware('mahasiswa')->group(function () {
         Route::get('/mahasiswa/dashboard', [DashboardController::class, 'mahasiswaDashboard'])->name('mahasiswa.dashboard');
         Route::get('/mahasiswa/transkrip', [KHSController::class,'index'])->name('mahasiswa.transkrip');
+        Route::get('/mahasiswa/transkrip/export-pdf', [KHSController::class,'exportPDF'])->name('mahasiswa.transkrip.export-pdf');
         Route::get('/mahasiswa/capaian', [\App\Http\Controllers\CapaianController::class, 'index'])->name('mahasiswa.capaian');
+        Route::get('/mahasiswa/capaian/export-pdf', [\App\Http\Controllers\CapaianController::class, 'exportPDF'])->name('mahasiswa.capaian.export-pdf');
     });
 
     // Pimpinan Dashboard

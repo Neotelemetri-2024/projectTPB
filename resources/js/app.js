@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }).showToast();
     }
-    
+
     // Error messages
     const errorMessage = document.querySelector('meta[name="error-message"]');
     if (errorMessage) {
@@ -42,10 +42,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Helper function to show toast manually
 window.showToast = function(message, type = 'success') {
-    const backgroundColor = type === 'success' 
+    const backgroundColor = type === 'success'
         ? "linear-gradient(to right, #10b981, #059669)"
         : "linear-gradient(to right, #ef4444, #dc2626)";
-    
+
     Toastify({
         text: message,
         duration: 3000,
@@ -64,57 +64,114 @@ function renderAllCharts() {
     chartInstances.forEach(chart => chart.destroy());
     chartInstances = [];
     const cplCpmkData = window.cplCpmkData || [];
+
     cplCpmkData.forEach((cpl, idx) => {
+        // Debug: Log data untuk setiap CPL
+        console.log(`CPL ${idx}: ${cpl.cpl_label}`);
+        console.log('CPMK data:', cpl.cpmk_data);
+        console.log('CPMK labels:', cpl.cpmk_data?.map(item => item.label));
+
         // Responsive chart height dan font sizes
         const isMobile = window.innerWidth < 768;
         const isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
         const isDesktop = window.innerWidth >= 1024;
-        
+
         // Chart height yang lebih proporsional
         const chartHeight = isMobile ? 280 : (isTablet ? 380 : 350);
-        
+
         // Font sizes yang konsisten dengan tema aplikasi
         const fontTitle = isMobile ? 13 : (isTablet ? 15 : 16);
         const fontLegend = isMobile ? 11 : (isTablet ? 12 : 13);
         const fontAxis = isMobile ? 11 : (isTablet ? 12 : 13);
         const fontTicks = isMobile ? 9 : (isTablet ? 10 : 11);
         const fontLabels = isMobile ? 9 : (isTablet ? 10 : 11);
-        
+
         // Stack bar chart
         const chartElement = document.getElementById('cplBarChart' + idx);
         if (chartElement && cpl.cpmk_data) {
             chartElement.style.height = chartHeight + 'px';
             chartElement.style.minHeight = chartHeight + 'px';
-            
+
             // Siapkan data untuk stack bar chart
-            const labels = cpl.cpmk_data.map(item => item.label);
+            const labels = cpl.cpmk_data.map(item => {
+                // Split label menjadi kode CPMK dan nama mata kuliah
+                const parts = item.label.split(' - ');
+                const kodeCpmk = parts[0]; // CPMK-1, CPMK-2, etc.
+                const namaMatkul = parts[1] || ''; // Ekonomi Teknik
+
+                // Return array untuk multi-line label
+                return [kodeCpmk, namaMatkul];
+            });
             const datasets = [];
-            
-            // Buat dataset untuk setiap komponen dengan urutan stacking yang benar
-            const komponenOrder = [5, 4, 3, 2, 1]; // Tugas, TB, UTS, UAS, Kuis (dari atas ke bawah)
-            const komponenNames = ['Tugas', 'TB', 'UTS', 'UAS', 'Kuis'];
+
+            // Debug: Log labels yang akan digunakan
+            console.log('Labels untuk chart:', labels);
+            console.log('Jumlah labels:', labels.length);
+
+            // Ambil semua komponen ID yang ada dari data
+            const allKomponenIds = new Set();
+            cpl.cpmk_data.forEach(item => {
+                Object.keys(item.komponen_nilai).forEach(id => {
+                    allKomponenIds.add(parseInt(id));
+                });
+            });
+
+            // Debug: Log komponen IDs yang ditemukan
+            console.log('Komponen IDs yang ditemukan:', Array.from(allKomponenIds).sort());
+
+            // Buat mapping nama komponen (bisa ditambah sesuai kebutuhan)
+            const komponenNames = {
+                1: 'Kuis',
+                2: 'UAS',
+                3: 'UTS',
+                4: 'TB',
+                5: 'Tugas',
+                6: 'TB',
+                7: 'UAS',
+                8: 'Praktikum',
+                9: 'Quiz',
+                10: 'Tugas/PR',
+                11: 'Kuis',
+                12: 'Project',
+                13: 'Tugas Besar'
+                // Tambah mapping sesuai kebutuhan
+            };
+
+            // Warna untuk chart (rotasi otomatis jika lebih dari 5 komponen)
             const colors = [
-                'rgba(139, 92, 246, 0.8)', // Purple - Tugas
-                'rgba(16, 185, 129, 0.8)', // Green - TB
-                'rgba(245, 158, 11, 0.8)', // Amber - UTS
+                'rgba(239, 68, 68, 0.8)',  // Red - Kuis
                 'rgba(59, 130, 246, 0.8)', // Blue - UAS
-                'rgba(239, 68, 68, 0.8)'  // Red - Kuis
+                'rgba(245, 158, 11, 0.8)', // Amber - UTS
+                'rgba(16, 185, 129, 0.8)', // Green - TB
+                'rgba(139, 92, 246, 0.8)', // Purple - Tugas
+                'rgba(236, 72, 153, 0.8)', // Pink
+                'rgba(14, 165, 233, 0.8)', // Sky
+                'rgba(34, 197, 94, 0.8)',  // Emerald
+                'rgba(168, 85, 247, 0.8)', // Violet
+                'rgba(251, 113, 133, 0.8)' // Rose
             ];
-            
-            komponenOrder.forEach((komponenId, index) => {
+
+            // Buat dataset untuk setiap komponen berdasarkan ID yang ada
+            Array.from(allKomponenIds).sort().forEach((komponenId, index) => {
                 const data = cpl.cpmk_data.map(item => item.komponen_nilai[komponenId] || 0);
-                
+                const componentName = komponenNames[komponenId] || `Komponen ${komponenId}`;
+
+                console.log(`Dataset ${componentName} (ID: ${komponenId}):`, data);
+
                 datasets.push({
-                    label: komponenNames[index],
+                    label: componentName,
                     data: data,
-                    backgroundColor: colors[index],
+                    backgroundColor: colors[index % colors.length],
                     borderColor: 'transparent',
                     borderWidth: 0,
                     stack: 'Stack 0',
-                    order: index // Urutan stacking yang konsisten
+                    order: index
                 });
             });
-            
+
+            console.log('Final datasets:', datasets);
+            console.log('Final labels:', labels);
+
             chartInstances.push(new Chart(chartElement, {
                 type: 'bar',
                 data: {
@@ -132,7 +189,7 @@ function renderAllCharts() {
                         title: {
                             display: true,
                             text: `Komponen Nilai CPMK`,
-                            font: { 
+                            font: {
                                 size: fontTitle,
                                 weight: '600',
                                 family: 'Inter, system-ui, -apple-system, sans-serif'
@@ -147,7 +204,7 @@ function renderAllCharts() {
                             position: isMobile ? 'bottom' : 'top',
                             align: 'center',
                             labels: {
-                                font: { 
+                                font: {
                                     size: fontLegend,
                                     family: 'Inter, system-ui, -apple-system, sans-serif'
                                 },
@@ -158,11 +215,11 @@ function renderAllCharts() {
                             }
                         },
                         tooltip: {
-                            bodyFont: { 
+                            bodyFont: {
                                 size: fontLegend,
                                 family: 'Inter, system-ui, -apple-system, sans-serif'
                             },
-                            titleFont: { 
+                            titleFont: {
                                 size: fontLegend,
                                 family: 'Inter, system-ui, -apple-system, sans-serif'
                             },
@@ -194,7 +251,7 @@ function renderAllCharts() {
                             title: {
                                 display: true,
                                 text: 'CPMK',
-                                font: { 
+                                font: {
                                     size: fontAxis,
                                     weight: '600',
                                     family: 'Inter, system-ui, -apple-system, sans-serif'
@@ -205,7 +262,7 @@ function renderAllCharts() {
                                 }
                             },
                             ticks: {
-                                font: { 
+                                font: {
                                     size: fontTicks,
                                     family: 'Inter, system-ui, -apple-system, sans-serif'
                                 },
@@ -213,14 +270,8 @@ function renderAllCharts() {
                                 maxRotation: isMobile ? 45 : (isTablet ? 30 : 0),
                                 minRotation: isMobile ? 45 : (isTablet ? 30 : 0),
                                 padding: isMobile ? 6 : 10,
-                                callback: function(value, index, values) {
-                                    const label = this.getLabelForValue(value);
-                                    // Untuk tablet, potong label jika terlalu panjang
-                                    if (isTablet && label.length > 15) {
-                                        return label.substring(0, 12) + '...';
-                                    }
-                                    return label;
-                                }
+                                autoSkip: false, // Paksa tampilkan semua labels
+                                maxTicksLimit: false // Tidak ada batas jumlah ticks
                             },
                             grid: {
                                 display: false
@@ -229,10 +280,11 @@ function renderAllCharts() {
                         y: {
                             stacked: true,
                             beginAtZero: true,
+                            max: 100, // Pastikan rentang grafik sampai 100
                             title: {
                                 display: true,
                                 text: 'Nilai',
-                                font: { 
+                                font: {
                                     size: fontAxis,
                                     weight: '600',
                                     family: 'Inter, system-ui, -apple-system, sans-serif'
@@ -243,7 +295,7 @@ function renderAllCharts() {
                                 }
                             },
                             ticks: {
-                                font: { 
+                                font: {
                                     size: fontTicks,
                                     family: 'Inter, system-ui, -apple-system, sans-serif'
                                 },
@@ -279,43 +331,34 @@ function renderCplDistribusiBarChart() {
     const chartElement = document.getElementById('cplDistribusiBarChart');
     if (!chartElement || cplCpmkData.length === 0) return;
 
-    // Siapkan data: label = CPL, stack = CPMK
+    // Siapkan data: label = CPL, data = nilai CPMK tertinggi per CPL
     const cplLabels = cplCpmkData.map(cpl => cpl.cpl_label);
-    // Kumpulkan semua label CPMK unik dari seluruh CPL
-    const allCpmkLabels = Array.from(new Set(cplCpmkData.flatMap(cpl => cpl.cpmk_data.map(cpmk => cpmk.label))));
-    // Siapkan dataset: satu dataset per CPMK, data per CPL (proporsi nilai CPMK terhadap nilai CPL, total bar CPL = nilai_cpl)
-    const datasets = allCpmkLabels.map((cpmkLabel, idx) => {
-        const data = cplCpmkData.map(cpl => {
-            const cpmk = cpl.cpmk_data.find(c => c.label === cpmkLabel);
-            // Proporsi nilai CPMK terhadap total nilai CPL
-            if (cpmk && cpl.total_nilai_cpl > 0) {
-                return (cpmk.total_nilai / cpl.total_nilai_cpl) * cpl.nilai_cpl;
-            }
-            return 0;
-        });
-        const colors = [
-            'rgba(239, 68, 68, 0.8)', // Red
-            'rgba(59, 130, 246, 0.8)', // Blue
-            'rgba(245, 158, 11, 0.8)', // Amber
-            'rgba(16, 185, 129, 0.8)', // Green
-            'rgba(139, 92, 246, 0.8)', // Purple
-            'rgba(251, 191, 36, 0.8)', // Yellow
-            'rgba(34, 197, 94, 0.8)', // Emerald
-            'rgba(236, 72, 153, 0.8)', // Pink
-            'rgba(14, 165, 233, 0.8)', // Sky
-            'rgba(168, 85, 247, 0.8)', // Violet
-            'rgba(251, 113, 133, 0.8)' // Rose
-        ];
-        return {
-            label: cpmkLabel,
-            data: data,
-            backgroundColor: colors[idx % colors.length],
-            borderColor: 'transparent',
-            borderWidth: 0,
-            stack: 'Stack 0',
-            order: idx
-        };
+
+    // Dataset tunggal: nilai CPMK tertinggi per CPL
+    const data = cplCpmkData.map(cpl => {
+        // Nilai CPL sudah berdasarkan CPMK tertinggi dari controller
+        return cpl.nilai_cpl;
     });
+
+    const datasets = [{
+        label: 'Nilai CPL (CPMK Tertinggi)',
+        data: data,
+        backgroundColor: [
+            'rgba(59, 130, 246, 0.8)',   // Blue
+            'rgba(16, 185, 129, 0.8)',   // Green
+            'rgba(245, 158, 11, 0.8)',   // Amber
+            'rgba(239, 68, 68, 0.8)',    // Red
+            'rgba(139, 92, 246, 0.8)',   // Purple
+            'rgba(251, 191, 36, 0.8)',   // Yellow
+            'rgba(34, 197, 94, 0.8)',    // Emerald
+            'rgba(236, 72, 153, 0.8)',   // Pink
+            'rgba(14, 165, 233, 0.8)',   // Sky
+            'rgba(168, 85, 247, 0.8)',   // Violet
+            'rgba(251, 113, 133, 0.8)'   // Rose
+        ].slice(0, cplLabels.length),
+        borderColor: 'transparent',
+        borderWidth: 0
+    }];
     // Sumbu Y tetap satuan 0-100, tooltip tampilkan satuan (tanpa %)
 
     if (window.cplDistribusiChartInstance) {
@@ -333,13 +376,13 @@ function renderCplDistribusiBarChart() {
             plugins: {
                 title: {
                     display: true,
-                    text: 'Distribusi Nilai CPL (Stack Bar)',
+                    text: 'Distribusi Nilai CPL (Berdasarkan CPMK Tertinggi)',
                     font: { size: 15, weight: '600', family: 'Inter, system-ui, -apple-system, sans-serif' },
                     color: '#374151',
                     padding: { top: 10, bottom: 10 }
                 },
                 legend: {
-                    display: false // Sembunyikan legend
+                    display: false // Tidak perlu legend karena hanya 1 dataset
                 },
                 tooltip: {
                     bodyFont: { size: 12, family: 'Inter, system-ui, -apple-system, sans-serif' },
@@ -352,7 +395,15 @@ function renderCplDistribusiBarChart() {
                     cornerRadius: 8,
                     callbacks: {
                         label: function(context) {
-                            return `${context.dataset.label}: ${context.parsed.y}`;
+                            const cplData = cplCpmkData[context.dataIndex];
+                            // Tampilkan CPMK mana yang tertinggi
+                            const cpmkTertinggi = cplData.cpmk_data.reduce((max, cpmk) =>
+                                cpmk.nilai_normal > max.nilai_normal ? cpmk : max
+                            );
+                            return [
+                                `Nilai CPL: ${context.parsed.y.toFixed(2)}`,
+                                `CPMK Tertinggi: ${cpmkTertinggi.label}`,
+                            ];
                         }
                     }
                 }
@@ -362,7 +413,6 @@ function renderCplDistribusiBarChart() {
             },
             scales: {
                 x: {
-                    stacked: true,
                     title: {
                         display: true,
                         text: 'CPL',
@@ -380,12 +430,11 @@ function renderCplDistribusiBarChart() {
                     grid: { display: false }
                 },
                 y: {
-                    stacked: true,
                     beginAtZero: true,
                     max: 100,
                     title: {
                         display: true,
-                        text: 'Nilai',
+                        text: 'Nilai CPL',
                         font: { size: 13, weight: '600', family: 'Inter, system-ui, -apple-system, sans-serif' },
                         color: '#374151',
                         padding: { bottom: 6 }
@@ -449,7 +498,7 @@ function renderCplRadarChartDistribusi() {
             plugins: {
                 title: {
                     display: true,
-                    text: 'Radar Nilai CPL',
+                    text: 'Radar Nilai CPL (Berdasarkan CPMK Tertinggi)',
                     font: { size: 15, weight: '600', family: 'Inter, system-ui, -apple-system, sans-serif' },
                     color: '#374151',
                     padding: { top: 10, bottom: 10 }
@@ -468,7 +517,7 @@ function renderCplRadarChartDistribusi() {
                     cornerRadius: 8,
                     callbacks: {
                         label: function(context) {
-                            return `${context.chart.data.labels[context.dataIndex]}: ${context.parsed.r}`;
+                            return `${context.chart.data.labels[context.dataIndex]}: ${context.parsed.r.toFixed(2)} (CPMK Tertinggi)`;
                         }
                     }
                 }

@@ -67,13 +67,20 @@
                     <!-- Password Field -->
                     <div>
                         <label for="password" class="block mb-2 text-sm font-medium text-gray-900">Password</label>
-                        <input type="password" 
-                               name="password" 
-                               id="password" 
-                               placeholder="••••••••" 
-                               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-green-500 focus:border-green-500 block w-full p-2.5" 
-                               required 
-                               autocomplete="current-password">
+                        <div class="relative">
+                            <input type="password" 
+                                   name="password" 
+                                   id="password" 
+                                   placeholder="••••••••" 
+                                   class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-green-500 focus:border-green-500 block w-full p-2.5 pr-10" 
+                                   required 
+                                   autocomplete="current-password">
+                            <button type="button" 
+                                    id="togglePassword" 
+                                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 focus:outline-none">
+                                <i class="bx bx-hide text-lg" id="eyeIcon"></i>
+                            </button>
+                        </div>
                         @error('password')
                             <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -127,5 +134,29 @@
 
     <!-- Flowbite JS -->
     <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.1/dist/flowbite.min.js"></script>
+    
+    <!-- Password Toggle Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const togglePassword = document.getElementById('togglePassword');
+            const password = document.getElementById('password');
+            const eyeIcon = document.getElementById('eyeIcon');
+            
+            togglePassword.addEventListener('click', function() {
+                // Toggle password visibility
+                const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+                password.setAttribute('type', type);
+                
+                // Toggle eye icon
+                if (type === 'password') {
+                    eyeIcon.classList.remove('bx-show');
+                    eyeIcon.classList.add('bx-hide');
+                } else {
+                    eyeIcon.classList.remove('bx-hide');
+                    eyeIcon.classList.add('bx-show');
+                }
+            });
+        });
+    </script>
 </body>
 </html>

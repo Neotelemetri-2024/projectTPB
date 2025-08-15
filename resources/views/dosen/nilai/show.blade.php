@@ -581,6 +581,38 @@
     </div>
 </div>
 
+<!-- Detail Nilai Modal -->
+<div id="detail-modal" class="fixed inset-0 overflow-y-auto overflow-x-hidden flex justify-center items-center min-h-screen w-full z-50 hidden" style="background: rgba(0,0,0,0.6);">
+    <div class="relative p-4 w-full max-w-6xl max-h-full transform transition-all duration-300 ease-out modal-content scale-95 opacity-0">
+        <div class="relative bg-white rounded-lg shadow-xl">
+            <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t">
+                <h3 class="text-lg font-semibold text-gray-900" id="detail-modal-title">Detail Nilai Mahasiswa</h3>
+                <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center transition-colors duration-200" data-modal-hide="detail-modal">
+                    <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                    </svg>
+                    <span class="sr-only">Close modal</span>
+                </button>
+            </div>
+
+            <div class="p-4 md:p-5 overflow-y-auto max-h-[70vh]">
+                <div class="mb-4 bg-blue-50 rounded-lg p-3 border border-blue-200">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <p class="text-sm text-gray-700"><strong>NIM:</strong> <span id="detail-modal-nim"></span></p>
+                        <p class="text-sm text-gray-700"><strong>Nama:</strong> <span id="detail-modal-nama"></span></p>
+                    </div>
+                </div>
+
+                <div id="detail-content-placeholder" class="space-y-4">
+                    <div class="flex justify-center py-8">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Notifikasi Import Results -->
 <!-- Reset Confirmation Modal -->
 <x-confirm-modal
@@ -708,937 +740,104 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Variables to track changes
-    let hasUnsavedChanges = false;
-    let allowNavigation = false;
-    let pendingNavigation = null;
-
-    // Function to check for unsaved changes
-    function checkForUnsavedChanges() {
-        const inputs = document.querySelectorAll('.nilai-input');
-        hasUnsavedChanges = false;
-        console.log('checkForUnsavedChanges: checking', inputs.length, 'inputs');
-
-        inputs.forEach(input => {
-            const originalValue = input.getAttribute('data-original-value') || '';
-            const currentValue = input.value || '';
-
-            if (originalValue !== currentValue) {
-                hasUnsavedChanges = true;
-                console.log('Found change: original =', originalValue, 'current =', currentValue);
-            }
-        });
-
-        console.log('hasUnsavedChanges final result:', hasUnsavedChanges);
-        // REMOVED infinite loop - don't call updateSaveButtonStates() here
-    }
-
-    // Function to update save button states
-    function updateSaveButtonStates() {
-        console.log('=== updateSaveButtonStates START ===');
-        try {
-            // First, update the global hasUnsavedChanges without calling this function
-            const inputs = document.querySelectorAll('.nilai-input');
-            hasUnsavedChanges = false;
-
-            inputs.forEach(input => {
-                const originalValue = input.getAttribute('data-original-value') || '';
-                const currentValue = input.value || '';
-                if (originalValue !== currentValue) {
-                    hasUnsavedChanges = true;
-                }
-            });
-
-            console.log('hasUnsavedChanges calculated:', hasUnsavedChanges);
-
-            // For bulk mode
-            const bulkSaveBtn = document.getElementById('bulk-save-btn');
-            const confirmCheckbox = document.getElementById('confirm-bulk-save');
-            console.log('bulkSaveBtn found:', !!bulkSaveBtn, 'confirmCheckbox found:', !!confirmCheckbox);
-
-            if (bulkSaveBtn) {
-                console.log('bulkSaveBtn element:', bulkSaveBtn);
-                console.log('bulkSaveBtn parent visible:', !bulkSaveBtn.closest('.hidden'));
-            }
-
-            if (bulkSaveBtn) {
-                if (confirmCheckbox) {
-                    const canSave = hasUnsavedChanges && confirmCheckbox.checked;
-                    const oldDisabled = bulkSaveBtn.disabled;
-                    bulkSaveBtn.disabled = !canSave;
-                    console.log('Bulk save button - hasUnsavedChanges:', hasUnsavedChanges, 'checkbox.checked:', confirmCheckbox.checked, 'canSave:', canSave);
-                    console.log('Bulk save button - oldDisabled:', oldDisabled, 'newDisabled:', bulkSaveBtn.disabled);
-                    console.log('Bulk save button classes:', bulkSaveBtn.className);
-                } else {
-                    // If no checkbox, just check for changes
-                    bulkSaveBtn.disabled = !hasUnsavedChanges;
-                    console.log('Bulk save button disabled status (no checkbox):', bulkSaveBtn.disabled);
-                }
-            } else {
-                console.log('bulkSaveBtn not found!');
-            }
-
-            // For individual mode - update each student's save button
-            console.log('Updating individual save buttons...');
-            const individualSaveBtns = document.querySelectorAll('[id^="save-btn-"]');
-            console.log('Found', individualSaveBtns.length, 'individual save buttons');
-
-            individualSaveBtns.forEach(btn => {
-                const mahasiswaId = btn.id.replace('save-btn-', '');
-                const hasDataForStudent = checkForData(mahasiswaId);
-                const hasChangesForStudent = checkForChanges(mahasiswaId);
-                console.log('Student', mahasiswaId, '- hasData:', hasDataForStudent, 'hasChanges:', hasChangesForStudent);
-
-                if (hasDataForStudent || hasChangesForStudent) {
-                    btn.disabled = false;
-                    console.log('Enabled save button for student', mahasiswaId);
-                } else {
-                    btn.disabled = true;
-                    console.log('Disabled save button for student', mahasiswaId);
-                }
-            });
-
-        } catch (error) {
-            console.error('Error in updateSaveButtonStates:', error);
-        }
-        console.log('=== updateSaveButtonStates END ===');
-    }
-
-    // Function to show unsaved changes modal
-    function showUnsavedChangesModal() {
-        const modal = document.getElementById('unsaved-changes-modal');
-        const modalContent = modal.querySelector('[data-modal-content]');
-
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-
-        // Trigger animation
-        setTimeout(() => {
-            modal.classList.remove('bg-opacity-0');
-            modal.classList.add('bg-opacity-10');
-            modalContent.classList.remove('scale-95', 'opacity-0');
-            modalContent.classList.add('scale-100', 'opacity-100');
-        }, 10);
-    }
-
-    // Function to hide unsaved changes modal
-    function hideUnsavedChangesModal() {
-        const modal = document.getElementById('unsaved-changes-modal');
-        const modalContent = modal.querySelector('[data-modal-content]');
-
-        modalContent.classList.add('scale-95', 'opacity-0');
-        modalContent.classList.remove('scale-100', 'opacity-100');
-        modal.classList.remove('bg-opacity-10');
-        modal.classList.add('bg-opacity-0');
-
-        setTimeout(() => {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }, 300);
-    }
-
-    // Handle beforeunload event (page refresh, close tab, etc.)
-    window.addEventListener('beforeunload', function(e) {
-        if (hasUnsavedChanges && !allowNavigation) {
-            e.preventDefault();
-            e.returnValue = 'Anda memiliki perubahan yang belum disimpan. Yakin ingin meninggalkan halaman?';
-            return e.returnValue;
-        }
-    });
-
-    // Handle navigation attempts (internal links)
-    document.addEventListener('click', function(e) {
-        const link = e.target.closest('a');
-        if (link && link.href && hasUnsavedChanges && !allowNavigation) {
-            e.preventDefault();
-            pendingNavigation = link.href;
-            showUnsavedChangesModal();
-        }
-    });    // Handle form submissions that might navigate away
-    document.addEventListener('submit', function(e) {
-        // Skip if it's our save forms
-        if (e.target.id === 'bulk-nilai-form' || e.target.id.startsWith('form-')) {
-            return;
-        }
-
-        // Handle modal form submission (Tinggalkan Halaman)
-        if (e.target.closest('#unsaved-changes-modal')) {
-            e.preventDefault();
-            allowNavigation = true;
-            hideUnsavedChangesModal();
-
-            if (pendingNavigation) {
-                window.location.href = pendingNavigation;
-            }
-            return;
-        }
-
-        if (hasUnsavedChanges && !allowNavigation) {
-            e.preventDefault();
-            pendingNavigation = e.target.action;
-            showUnsavedChangesModal();
-        }
-    });    // Modal button handlers
-    document.addEventListener('click', function(e) {
-        // Handle cancel button (Tetap di Halaman)
-        if (e.target.matches('[data-modal-hide="unsaved-changes-modal"]')) {
-            hideUnsavedChangesModal();
-            pendingNavigation = null;
-        }
-    });
-
-    // Listen for input changes
-    document.addEventListener('input', function(e) {
-        if (e.target.classList.contains('nilai-input')) {
-            checkForUnsavedChanges();
-        }
-    });
-
-    // Listen for successful saves to reset the unsaved changes flag
-    document.addEventListener('valuesSaved', function() {
-        hasUnsavedChanges = false;
-        allowNavigation = false;
-
-        // Update original values
-        const inputs = document.querySelectorAll('.nilai-input');
-        inputs.forEach(input => {
-            input.setAttribute('data-original-value', input.value || '');
-        });
-
-        updateSaveButtonStates();
-    });
-
-    // Tab functionality for students with pagination support
-    const tabButtons = document.querySelectorAll('.tab-button');
-
-    function switchTab(activeTab) {
-        // Get current URL and update tab parameter
-        const url = new URL(window.location);
-        url.searchParams.set('tab', activeTab);
-        url.searchParams.set('sort', '{{ $sortBy }}');
-        url.searchParams.set('direction', '{{ $sortDirection }}');
-        @if(request('search'))
-        url.searchParams.set('search', '{{ request('search') }}');
-        @endif
-        url.searchParams.delete('page'); // Reset to page 1 when switching tabs
-
-        // Navigate to new URL (this will reload the page with correct pagination)
-        window.location.href = url.toString();
-    }    // Add click event listeners to tab buttons
-    tabButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const targetTab = this.dataset.tab;
-            switchTab(targetTab);
-        });
-    });
-
-    // Initialize with current active tab from server
-    const currentTab = '{{ $activeTab ?? "all" }}';
-
-    // Initialize input functionality
-    initializeInputs();
-
-    // Update pagination links to maintain current tab and sorting
-    const paginationLinks = document.querySelectorAll('.pagination a');
-    paginationLinks.forEach(link => {
-        if (link.href) {
-            const url = new URL(link.href);
-            url.searchParams.set('tab', currentTab);
-            url.searchParams.set('sort', '{{ $sortBy }}');
-            url.searchParams.set('direction', '{{ $sortDirection }}');
-            @if(request('search'))
-            url.searchParams.set('search', '{{ request('search') }}');
-            @endif
-            @if($isBulkMode)
-                url.searchParams.set('bulk', '1');
-            @endif
-            link.href = url.toString();
-        }
-    });
-
-    // Sorting functionality
-    const sortableHeaders = document.querySelectorAll('.sortable-header');
-    sortableHeaders.forEach(header => {
-        header.addEventListener('click', function() {
-            const sortBy = this.getAttribute('data-sort');
-            const currentSort = '{{ $sortBy }}';
-            const currentDirection = '{{ $sortDirection }}';
-
-            let newDirection = 'asc';
-            if (currentSort === sortBy && currentDirection === 'asc') {
-                newDirection = 'desc';
-            }
-
-            // Get current URL and update sort parameters
-            const url = new URL(window.location);
-            url.searchParams.set('sort', sortBy);
-            url.searchParams.set('direction', newDirection);
-            @if(request('search'))
-            url.searchParams.set('search', '{{ request('search') }}');
-            @endif
-            url.searchParams.delete('page'); // Reset to page 1 when sorting
-
-            // Navigate to new URL
-            window.location.href = url.toString();
-        });
-    });
-
-    // Initialize bulk input functionality if in bulk mode
-    @if($isBulkMode)
-        initializeBulkInput();
-    @endif
-
-    // Bulk mode functionality
-    @if($isBulkMode)
-        const bulkForm = document.getElementById('bulk-nilai-form');
-        const confirmCheckbox = document.getElementById('confirm-bulk-save');
-        const bulkSaveBtn = document.getElementById('bulk-save-btn');
-
-        if (bulkForm) {
-            const bulkInputs = bulkForm.querySelectorAll('input[type="number"]');
-
-            // Listen for changes
-            bulkInputs.forEach(input => {
-                input.addEventListener('input', function() {
-                    checkForUnsavedChanges();
-                    // Validate input
-                    let value = parseFloat(this.value);
-                    if (isNaN(value) || value < 0) {
-                        this.value = '';
-                    } else if (value > 100) {
-                        this.value = '100';
-                    }
-                });
-            });
-
-            function checkForBulkChanges() {
-                checkForUnsavedChanges(); // Use the global function
-                updateBulkSaveState();
-            }
-
-            function updateBulkSaveState() {
-                const canSave = hasUnsavedChanges && confirmCheckbox.checked;
-                bulkSaveBtn.disabled = !canSave;
-
-                if (canSave) {
-                    bulkSaveBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
-                    bulkSaveBtn.classList.add('bg-green-600', 'hover:bg-green-700');
-                } else {
-                    bulkSaveBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
-                    bulkSaveBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
-                }
-            }
-
-            // Checkbox change listener
-            if (confirmCheckbox) {
-                confirmCheckbox.addEventListener('change', updateBulkSaveState);
-            }
-
-            // Bulk save button
-            if (bulkSaveBtn) {
-                bulkSaveBtn.addEventListener('click', function() {
-                    if (hasUnsavedChanges && confirmCheckbox && confirmCheckbox.checked) {
-                        // Show loading state
-                        bulkSaveBtn.disabled = true;
-                        bulkSaveBtn.innerHTML = `
-                            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Menyimpan...
-                        `;
-
-                        // Dispatch custom event to reset unsaved changes flag
-                        document.dispatchEvent(new CustomEvent('valuesSaved'));
-
-                        // Allow navigation since we're saving
-                        allowNavigation = true;
-
-                        // Submit the form
-                        bulkForm.submit();
-                    }
-                });
-            }
-
-            // Initialize
-            checkForBulkChanges();
-        }
-    @endif
-
-    // Initialize bulk input functionality when switching to bulk mode
-    function initializeBulkInput() {
-        const bulkInputs = document.querySelectorAll('.bulk-input');
-
-        bulkInputs.forEach(input => {
-            // Add event listener for input changes (prevent duplicate listeners)
-            if (!input.hasAttribute('data-listener-added')) {
-                input.addEventListener('input', function() {
-                    checkForUnsavedChanges(); // Use global function
-
-                    const mahasiswaId = this.getAttribute('data-mahasiswa-id');
-                    const bulkSaveBtn = document.getElementById('bulk-save-btn-' + mahasiswaId);
-
-                    if (bulkSaveBtn) {
-                        const hasChanges = checkForChanges(mahasiswaId);
-                        const hasData = checkForData(mahasiswaId);
-
-                        if (hasChanges || hasData) {
-                            bulkSaveBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-gray-400');
-                            bulkSaveBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
-                            bulkSaveBtn.disabled = false;
-                        } else {
-                            bulkSaveBtn.classList.add('opacity-50', 'cursor-not-allowed', 'bg-gray-400');
-                            bulkSaveBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                            bulkSaveBtn.disabled = true;
-                        }
-                    }
-                });
-                input.setAttribute('data-listener-added', 'true');
+    // Initialize Flowbite modals
+    if (typeof Flowbite !== 'undefined') {
+        // Force re-initialization of all modals
+        const modals = document.querySelectorAll('[data-modal-toggle]');
+        modals.forEach(modal => {
+            if (modal.id) {
+                console.log('Initializing modal:', modal.id);
             }
         });
     }
 
-    function checkForData(mahasiswaId) {
-        const row = document.querySelector(`tr[data-mahasiswa-id="${mahasiswaId}"]`);
-        if (!row) return false;
-
-        const inputs = row.querySelectorAll('.nilai-input');
-        let hasData = false;
-
-        inputs.forEach(input => {
-            if (input.value && input.value.trim() !== '') {
-                hasData = true;
+    // Detail modal functionality
+    function showDetailModal(mahasiswaId, nim, nama) {
+        const modal = document.getElementById('detail-modal');
+        const modalTitle = document.getElementById('detail-modal-title');
+        const modalNim = document.getElementById('detail-modal-nim');
+        const modalNama = document.getElementById('detail-modal-nama');
+        
+        if (modal && modalTitle && modalNim && modalNama) {
+            modalTitle.textContent = `Detail Nilai Mahasiswa`;
+            modalNim.textContent = nim;
+            modalNama.textContent = nama;
+            
+            // Load detail data
+            loadDetailData(mahasiswaId);
+            
+            // Show modal
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            // Add animation classes
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) {
+                modalContent.classList.add('scale-100', 'opacity-100');
+                modalContent.classList.remove('scale-95', 'opacity-0');
             }
-        });
-
-        return hasData;
-    }
-
-    function checkForChanges(mahasiswaId) {
-        const row = document.querySelector(`tr[data-mahasiswa-id="${mahasiswaId}"]`);
-        if (!row) return false;
-
-        const inputs = row.querySelectorAll('.nilai-input');
-        let hasChanges = false;
-
-        inputs.forEach(input => {
-            const originalValue = input.getAttribute('data-original-value') || '';
-            const currentValue = input.value || '';
-
-            if (originalValue !== currentValue) {
-                hasChanges = true;
-            }
-        });
-
-        return hasChanges;
-    }
-
-// Function to save individual student grades
-    window.saveIndividualNilai = function(mahasiswaId) {
-        console.log('saveIndividualNilai called for mahasiswa:', mahasiswaId);
-        const row = document.querySelector(`tr[data-mahasiswa-id="${mahasiswaId}"]`);
-        const saveBtn = document.getElementById('save-btn-' + mahasiswaId);
-
-        console.log('Row found:', !!row, 'Save button found:', !!saveBtn);
-        if (!row || !saveBtn) return;
-
-        // Get all inputs for this student
-        const inputs = row.querySelectorAll('.nilai-input');
-        let hasData = false;
-
-        // Check if there's any data to save
-        inputs.forEach(input => {
-            if (input.value && input.value.trim() !== '') {
-                hasData = true;
-            }
-        });
-
-        if (!hasData) {
-            alert('Tidak ada nilai yang diinput untuk mahasiswa ini.');
-            return;
+        } else {
+            console.error('Modal elements not found');
         }
-
-        // Show loading state
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = `
-            <svg class="animate-spin -ml-1 mr-1 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Menyimpan...
-        `;
-
-        // Create FormData with only this student's data
-        const formData = new FormData();
-        formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-
-        // Add student class ID
-        const studentClassInput = row.querySelector(`input[name="student_class_id[${mahasiswaId}]"]`);
-        if (studentClassInput) {
-            formData.append(`student_class_id[${mahasiswaId}]`, studentClassInput.value);
-        }
-
-        // Add nilai array for this specific student using the correct format
-        inputs.forEach(input => {
-            if (input.value && input.value.trim() !== '') {
-                const komponenId = input.getAttribute('data-komponen-id');
-                const fieldName = `nilai[${mahasiswaId}][${komponenId}]`;
-                formData.append(fieldName, input.value);
-            }
-        });
-
-        // Send AJAX request to bulk store endpoint (same as bulk)
-        fetch('{{ route("dosen.nilai.bulk-store", $tahunAjaranMatkul->id) }}', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Show success message
-                showNotification('Nilai berhasil disimpan!', 'success');
-
-                // Dispatch custom event to reset unsaved changes flag
-                document.dispatchEvent(new CustomEvent('valuesSaved'));
-
-                // Refresh the page to update total nilai and grade
-                setTimeout(function() {
-                    allowNavigation = true;
-                    window.location.href = window.location.pathname;
-                }, 1000);
-            } else {
-                showNotification(data.message || 'Terjadi kesalahan saat menyimpan nilai.', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showNotification('Terjadi kesalahan saat menyimpan nilai.', 'error');
-        })
-        .finally(() => {
-            // Reset button state
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = `
-                <svg class="w-3 h-3 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                Simpan
-            `;
-        });
-    };
-
-    // Function to initialize inputs
-    function initializeInputs() {
-        const inputs = document.querySelectorAll('.individual-input, .bulk-input');
-
-        inputs.forEach(input => {
-            // Add event listener for input changes
-            input.addEventListener('input', function() {
-                checkForUnsavedChanges();
-
-                // Validate input
-                let value = parseFloat(this.value);
-                if (isNaN(value) || value < 0) {
-                    this.value = '';
-                } else if (value > 100) {
-                    this.value = '100';
-                }
-
-                // Update save button states
-                updateSaveButtonStates();
-            });
-        });
-    }
-
-    // REMOVED DUPLICATE FUNCTION - using the first one with proper debug logs
-
-    // REMOVED DUPLICATE FUNCTIONS - using the first ones with proper debug logs
-
-    // Function to show notification
-    function showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg text-white font-medium ${
-            type === 'success' ? 'bg-green-500' :
-            type === 'error' ? 'bg-red-500' :
-            'bg-blue-500'
-        }`;
-        notification.textContent = message;
-
-        document.body.appendChild(notification);
-
-        // Remove notification after 3 seconds
-        setTimeout(() => {
-            notification.remove();
-        }, 3000);
-    }
-
-    // Initial check for unsaved changes
-    checkForUnsavedChanges();
-
-    // Debug: Log nilai isPenilaianSiap di console
-    console.log('Debug isPenilaianSiap:', @json($isPenilaianSiap));
-    console.log('Debug totalBobotKeseluruhan:', @json($totalBobotKeseluruhan ?? 'N/A'));
-
-    // Modal warning untuk bulk mode
-    const btnBulk = document.getElementById('activate-bulk-mode-btn');
-    if (btnBulk) {
-        let bulkUrl = @json($bulkUrl ?? '');
-        let isPenilaianSiap = @json($isPenilaianSiap);
-        btnBulk.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('Button clicked, isPenilaianSiap:', isPenilaianSiap);
-            if (!isPenilaianSiap) {
-                // Tampilkan modal warning
-                const modal = document.getElementById('bobot-warning-modal');
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-                setTimeout(() => {
-                    const modalContent = modal.querySelector('[data-modal-content]');
-                    modal.classList.remove('bg-opacity-0');
-                    modal.classList.add('bg-opacity-10');
-                    modalContent.classList.remove('scale-95', 'opacity-0');
-                    modalContent.classList.add('scale-100', 'opacity-100');
-                }, 10);
-            } else {
-                window.location.href = bulkUrl;
-            }
-        });
-    }
-
-    // Toggle mode edit input nilai
-    const toggleEditBtn = document.getElementById('toggle-edit-nilai');
-    let editMode = false;
-
-    function setEditMode(active) {
-        editMode = active;
-
-        // Tampilkan/hide input dan plain text
-        document.querySelectorAll('.nilai-input').forEach(input => {
-            input.classList.toggle('hidden', !editMode);
-        });
-        document.querySelectorAll('.nilai-plain').forEach(span => {
-            span.classList.toggle('hidden', editMode);
-        });
-
-        // Tampilkan/hide kolom grade dan aksi
-        document.querySelectorAll('.grade-column').forEach(col => {
-            col.classList.toggle('hidden', editMode);
-        });
-        document.querySelectorAll('.aksi-column').forEach(col => {
-            col.classList.toggle('hidden', !editMode);
-        });
-
-        // Tampilkan/hide tombol simpan per mahasiswa
-        document.querySelectorAll('.btn-simpan-nilai').forEach(btn => {
-            btn.classList.toggle('hidden', !editMode);
-        });
-
-        // Tampilkan/hide area simpan semua
-        document.querySelectorAll('.btn-simpan-semua').forEach(btn => {
-            btn.classList.toggle('hidden', !editMode);
-        });
-
-        // Tampilkan/hide tombol reset
-        const resetBtn = document.getElementById('reset-nilai');
-        if (resetBtn) {
-            resetBtn.classList.toggle('hidden', !editMode);
-        }
-
-        // Update teks tombol
-        toggleEditBtn.textContent = editMode ? 'Nonaktifkan Input Nilai' : 'Aktifkan Input Nilai';
-        toggleEditBtn.classList.toggle('bg-amber-600', !editMode);
-        toggleEditBtn.classList.toggle('bg-red-600', editMode);
-
-        // Update state tombol simpan - AFTER elements are visible
-        if (editMode) {
-            // Add small delay to ensure DOM updates are complete
-            setTimeout(() => {
-                updateSaveButtonStates();
-            }, 10);
-        }
-    }
-
-    // Set mode awal (non-edit)
-    setEditMode(false);
-
-    // Event listener untuk toggle
-    toggleEditBtn.addEventListener('click', function() {
-        console.log('Toggle edit button clicked, current editMode:', editMode);
-        setEditMode(!editMode);
-        console.log('Edit mode set to:', editMode);
-    });
-
-    // Initialize save button states on page load
-    updateSaveButtonStates();
-
-    // Add event listeners to all nilai input fields
-    console.log('Adding event listeners to', document.querySelectorAll('.nilai-input').length, 'input fields');
-    document.querySelectorAll('.nilai-input').forEach(input => {
-        input.addEventListener('input', function() {
-            console.log('Input changed:', this.value, 'for mahasiswa:', this.getAttribute('data-mahasiswa-id'));
-            console.log('About to call updateSaveButtonStates...');
-            updateSaveButtonStates();
-            console.log('updateSaveButtonStates called');
-        });
-    });
-
-    // Add event listeners to all individual save buttons
-    document.querySelectorAll('[id^="save-btn-"]').forEach(btn => {
-        const mahasiswaId = btn.id.replace('save-btn-', '');
-        btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('Individual save button clicked for mahasiswa:', mahasiswaId);
-            console.log('Button disabled status:', this.disabled);
-            if (!this.disabled) {
-                saveIndividualNilai(mahasiswaId);
-            }
-        });
-    });
-
-    // Add event listener for confirmation checkbox
-    const confirmCheckbox = document.getElementById('confirm-bulk-save');
-    if (confirmCheckbox) {
-        console.log('Checkbox found and event listener added');
-        confirmCheckbox.addEventListener('change', function() {
-            console.log('Checkbox changed! Checked:', this.checked);
-            updateSaveButtonStates();
-        });
-    } else {
-        console.log('Checkbox NOT found!');
-    }
-
-    // Add event listener for bulk save button (universal, not just bulk mode)
-    const bulkSaveBtn = document.getElementById('bulk-save-btn');
-    if (bulkSaveBtn) {
-        console.log('Bulk save button found and event listener added');
-        bulkSaveBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('Bulk save button clicked, disabled status:', this.disabled);
-            if (!this.disabled) {
-                // Show loading state
-                this.disabled = true;
-                this.innerHTML = `
-                    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 74 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Menyimpan...
-                `;
-
-                // Create form data from all nilai inputs
-                const formData = new FormData();
-                formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
-
-                // Collect all nilai data
-                document.querySelectorAll('.nilai-input').forEach(input => {
-                    if (input.value && input.value.trim() !== '') {
-                        const mahasiswaId = input.getAttribute('data-mahasiswa-id');
-                        const komponenId = input.getAttribute('data-komponen-id');
-                        const fieldName = `nilai[${mahasiswaId}][${komponenId}]`;
-                        formData.append(fieldName, input.value);
-                    }
-                });
-
-                // Collect student class IDs
-                document.querySelectorAll('input[name^="student_class_id["]').forEach(input => {
-                    formData.append(input.name, input.value);
-                });
-
-                // Submit via AJAX
-                fetch('{{ route("dosen.nilai.bulk-store", $tahunAjaranMatkul->id) }}', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showNotification('Semua nilai berhasil disimpan!', 'success');
-
-                        // Reset unsaved changes flag
-                        document.dispatchEvent(new CustomEvent('valuesSaved'));
-
-                        // Refresh page to show updated data
-                        setTimeout(() => {
-                            allowNavigation = true;
-                            window.location.reload();
-                        }, 1500);
-                    } else {
-                        showNotification(data.message || 'Terjadi kesalahan saat menyimpan nilai.', 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showNotification('Terjadi kesalahan saat menyimpan nilai.', 'error');
-                })
-                .finally(() => {
-                    // Reset button state
-                    this.disabled = false;
-                    this.innerHTML = `
-                        <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                        Simpan Semua Nilai
-                    `;
-                });
-            }
-        });
-    }
-
-    // Note: Reset functionality now handled by confirm modal component
-
-    // Functions for Import Modal
-    window.showImportModal = function() {
-        const modal = document.getElementById('import-modal');
-        const modalContent = modal.querySelector('[data-modal-content]');
-
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-
-        // Trigger animation
-        setTimeout(() => {
-            modal.classList.remove('bg-opacity-0');
-            modal.classList.add('bg-opacity-10');
-            modalContent.classList.remove('scale-95', 'opacity-0');
-            modalContent.classList.add('scale-100', 'opacity-100');
-        }, 10);
-    };
-
-    window.hideImportModal = function() {
-        const modal = document.getElementById('import-modal');
-        const modalContent = modal.querySelector('[data-modal-content]');
-
-        modalContent.classList.add('scale-95', 'opacity-0');
-        modalContent.classList.remove('scale-100', 'opacity-100');
-        modal.classList.remove('bg-opacity-10');
-        modal.classList.add('bg-opacity-0');
-
-        setTimeout(() => {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }, 300);
-    };
-
-    window.hideCreatedStudentsModal = function() {
-        const modal = document.getElementById('created-students-modal');
-        if (modal) {
-            modal.remove();
-        }
-    };
-
-    window.hideImportErrorsModal = function() {
-        const modal = document.getElementById('import-errors-modal');
-        if (modal) {
-            modal.remove();
-        }
-    };
-
-    // Close modal when clicking outside
-    document.addEventListener('click', function(e) {
-        const modal = document.getElementById('import-modal');
-        if (e.target === modal) {
-            hideImportModal();
-        }
-    });
-
-    // Detail Nilai Modal
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('.btn-detail-nilai')) {
-            const button = e.target.closest('.btn-detail-nilai');
-            const mahasiswaId = button.getAttribute('data-mahasiswa-id');
-            const mahasiswaNama = button.getAttribute('data-mahasiswa-nama');
-            const nim = button.getAttribute('data-nim');
-
-            // Tampilkan modal detail
-            showDetailModal(mahasiswaId, mahasiswaNama, nim);
-        }
-    });
-
-    function showDetailModal(mahasiswaId, mahasiswaNama, nim) {
-        // Buat modal content dengan style yang mirip dengan modal yang sudah ada
-        const modalContent = `
-            <div class="fixed inset-0 overflow-y-auto overflow-x-hidden flex justify-center items-center min-h-screen w-full z-50 transition-opacity duration-300 ease-out" id="detail-modal" style="background: rgba(0,0,0,0.6);">
-                <div class="relative p-4 w-full max-w-6xl max-h-full transform transition-all duration-300 ease-out scale-95 opacity-0" data-modal-content>
-                    <div class="relative bg-white rounded-lg shadow-xl">
-                    <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t">
-                        <h3 class="text-lg font-semibold text-gray-900">Detail Nilai Mahasiswa</h3>
-                        <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center transition-colors duration-200" data-modal-hide="detail-modal">
-                            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
-                            </svg>
-                            <span class="sr-only">Close modal</span>
-                        </button>
-                    </div>
-
-                    <div class="p-4 md:p-5 overflow-y-auto max-h-[70vh]">
-                        <div class="mb-4 bg-blue-50 rounded-lg p-3 border border-blue-200">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                <p class="text-sm text-gray-700"><strong>NIM:</strong> ${nim}</p>
-                                <p class="text-sm text-gray-700"><strong>Nama:</strong> ${mahasiswaNama}</p>
-                            </div>
-                        </div>
-
-                        <div id="detail-content-${mahasiswaId}" class="space-y-4">
-                            <div class="flex justify-center py-8">
-                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        `;
-
-        // Tambahkan modal ke body
-        document.body.insertAdjacentHTML('beforeend', modalContent);
-
-        // Trigger animation
-        setTimeout(() => {
-            const modal = document.getElementById('detail-modal');
-            const modalContent = modal.querySelector('[data-modal-content]');
-            modalContent.classList.remove('scale-95', 'opacity-0');
-            modalContent.classList.add('scale-100', 'opacity-100');
-        }, 10);
-
-        // Load detail data via AJAX
-        loadDetailData(mahasiswaId);
     }
 
     function hideDetailModal() {
         const modal = document.getElementById('detail-modal');
         if (modal) {
-            const modalContent = modal.querySelector('[data-modal-content]');
-            modalContent.classList.add('scale-95', 'opacity-0');
-            modalContent.classList.remove('scale-100', 'opacity-100');
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) {
+                modalContent.classList.remove('scale-100', 'opacity-100');
+                modalContent.classList.add('scale-95', 'opacity-0');
+            }
 
             setTimeout(() => {
-                modal.remove();
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
             }, 300);
         }
     }
 
     function loadDetailData(mahasiswaId) {
-        const url = `{{ route('dosen.nilai.detail', ['id' => $tahunAjaranMatkul->id]) }}?mahasiswa_id=${mahasiswaId}`;
+        // Gunakan URL yang aman untuk HTTPS
+        const baseUrl = window.location.protocol + '//' + window.location.host;
+        const url = `${baseUrl}/dosen/nilai/{{ $tahunAjaranMatkul->id }}/detail?mahasiswa_id=${mahasiswaId}`;
 
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                const contentDiv = document.getElementById(`detail-content-${mahasiswaId}`);
-                if (data.success) {
-                    contentDiv.innerHTML = data.html;
-                } else {
-                    contentDiv.innerHTML = '<p class="text-red-600">Gagal memuat detail nilai</p>';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                const contentDiv = document.getElementById(`detail-content-${mahasiswaId}`);
-                contentDiv.innerHTML = '<p class="text-red-600">Terjadi kesalahan saat memuat data</p>';
-            });
+        console.log('Loading detail for mahasiswa:', mahasiswaId, 'URL:', url);
+
+        // Show loading state
+        const contentDiv = document.getElementById('detail-content-placeholder');
+        if (contentDiv) {
+            contentDiv.innerHTML = `
+                <div class="flex justify-center py-8">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+            `;
+        }
+
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                contentDiv.innerHTML = data.html;
+            } else {
+                contentDiv.innerHTML = '<p class="text-red-600">Gagal memuat detail nilai: ' + (data.message || 'Unknown error') + '</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading detail:', error);
+            contentDiv.innerHTML = '<p class="text-red-600">Terjadi kesalahan saat memuat data: ' + error.message + '</p>';
+        });
     }
 
     // Close modal when clicking outside
@@ -1661,6 +860,26 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('click', function(e) {
         if (e.target.closest('[data-modal-hide="detail-modal"]')) {
             hideDetailModal();
+        }
+    });
+
+    // Make functions globally available
+    window.showDetailModal = showDetailModal;
+    window.hideDetailModal = hideDetailModal;
+
+    // Add event listener for detail buttons
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-detail-nilai')) {
+            e.preventDefault();
+            const button = e.target.closest('.btn-detail-nilai');
+            const mahasiswaId = button.getAttribute('data-mahasiswa-id');
+            const mahasiswaNama = button.getAttribute('data-mahasiswa-nama');
+            const nim = button.getAttribute('data-nim');
+
+            console.log('Detail button clicked:', { mahasiswaId, mahasiswaNama, nim });
+
+            // Show detail modal
+            showDetailModal(mahasiswaId, nim, mahasiswaNama);
         }
     });
 });

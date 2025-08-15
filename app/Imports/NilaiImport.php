@@ -17,6 +17,9 @@ use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Maatwebsite\Excel\Concerns\WithBatchInserts;
+use Illuminate\Support\Facades\Log;
 
 class NilaiImport implements WithMultipleSheets
 {
@@ -44,7 +47,7 @@ class NilaiImport implements WithMultipleSheets
     }
 }
 
-class NilaiImportSheet implements ToCollection
+class NilaiImportSheet implements ToCollection, WithChunkReading, WithBatchInserts
 {
     protected $tahunAjaranMatkulId;
     protected $dosenId;
@@ -58,95 +61,181 @@ class NilaiImportSheet implements ToCollection
         'created_student_list' => []
     ];
 
+    // Cache untuk data yang sering diakses
+    protected $mahasiswaCache = [];
+    protected $kelasCache = [];
+    protected $bobotCache = [];
+    protected $dosenPengampuCache = [];
+
     public function __construct($tahunAjaranMatkulId, $dosenId)
     {
         $this->tahunAjaranMatkulId = $tahunAjaranMatkulId;
         $this->dosenId = $dosenId;
         
-        // Load data yang diperlukan
+        // Pre-load semua data yang diperlukan untuk menghindari N+1 queries
+        $this->preloadData();
+    }
+
+    /**
+     * Pre-load semua data yang diperlukan
+     */
+    private function preloadData()
+    {
+        // Load tahun ajaran matkul dengan relasi
         $this->tahunAjaranMatkul = TahunAjaranMatkul::with(['mataKuliah', 'tahunAjaran'])
-            ->findOrFail($tahunAjaranMatkulId);
+            ->findOrFail($this->tahunAjaranMatkulId);
         
-        // Load komponen yang sudah ada bobot di mata kuliah ini (tidak semua komponen)
-        $this->komponen = Komponen::whereHas('bobot', function($query) use ($tahunAjaranMatkulId) {
-            $query->where('tahunAjaranMatkulId', $tahunAjaranMatkulId);
+        // Load komponen yang sudah ada bobot
+        $this->komponen = Komponen::whereHas('bobot', function($query) {
+            $query->where('tahunAjaranMatkulId', $this->tahunAjaranMatkulId);
         })->orderBy('nama')->get()->keyBy('nama');
+
+        // Pre-load semua mahasiswa yang mungkin ada
+        $this->mahasiswaCache = Mahasiswa::select('id', 'nim', 'nama', 'userId')
+            ->get()
+            ->keyBy('nim');
+
+        // Pre-load semua kelas untuk mata kuliah ini
+        $this->kelasCache = Kelas::whereHas('tahunAjaranMatkul', function($query) {
+            $query->where('mataKuliahId', $this->tahunAjaranMatkul->mataKuliahId)
+                  ->where('tahunAjaranId', $this->tahunAjaranMatkul->tahunAjaranId);
+        })->with('tahunAjaranMatkul')->get();
+
+        // Pre-load semua bobot untuk komponen ini
+        $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $this->tahunAjaranMatkul->mataKuliahId)
+            ->where('tahunAjaranId', $this->tahunAjaranMatkul->tahunAjaranId)
+            ->pluck('id');
+
+        $this->bobotCache = Bobot::whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds)
+            ->with('cpmk')
+            ->get()
+            ->groupBy('komponenId');
+
+        // Pre-load dosen pengampu kelas
+        $this->dosenPengampuCache = DosenPengampuKelas::where('dosenId', $this->dosenId)
+            ->whereHas('kelas', function($query) use ($allTahunAjaranMatkulIds) {
+                $query->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
+            })
+            ->get()
+            ->keyBy('kelasId');
+    }
+
+    /**
+     * Chunk size untuk membaca Excel
+     */
+    public function chunkSize(): int
+    {
+        return 50; // Proses 50 rows per chunk
+    }
+
+    /**
+     * Batch size untuk insert
+     */
+    public function batchSize(): int
+    {
+        return 100; // Insert 100 records per batch
     }
 
     public function collection(Collection $rows)
     {
         try {
-            DB::beginTransaction();
-
             // Skip header rows (baris 1-3)
             $dataRows = $rows->skip(3);
 
-            foreach ($dataRows as $rowIndex => $row) {
-                $actualRowNumber = $rowIndex + 4; // Karena skip 3 baris
-
-                try {
-                    $this->processRow($row, $actualRowNumber);
-                } catch (\Exception $e) {
-                    $this->importResults['errors'][] = "Baris {$actualRowNumber}: " . $e->getMessage();
-                    \Log::error("Import error at row {$actualRowNumber}: " . $e->getMessage(), ['row' => $row->toArray()]);
-                }
-            }
-
-            DB::commit();
-            \Log::info('Import completed', $this->importResults);
+            // Batch process data
+            $this->processBatch($dataRows);
             
         } catch (\Exception $e) {
-            DB::rollback();
-            $this->importResults['errors'][] = "Error umum: " . $e->getMessage();
-            \Log::error('Import failed: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            $this->importResults['errors'][] = "Error dalam chunk ini: " . $e->getMessage();
+            Log::error('Import chunk error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
         }
     }
 
+    /**
+     * Process data dalam batch untuk performa yang lebih baik
+     */
+    private function processBatch(Collection $dataRows)
+    {
+        $mahasiswaToCreate = [];
+        $kelasMahasiswaToCreate = [];
+        $nilaiToCreate = [];
+        $nilaiToUpdate = [];
+
+        foreach ($dataRows as $rowIndex => $row) {
+            $actualRowNumber = $rowIndex + 4;
+
+            try {
+                $result = $this->processRow($row, $actualRowNumber);
+                
+                if ($result) {
+                    // Collect data untuk batch insert/update
+                    if (isset($result['mahasiswa'])) {
+                        $mahasiswaToCreate[] = $result['mahasiswa'];
+                    }
+                    if (isset($result['kelasMahasiswa'])) {
+                        $kelasMahasiswaToCreate[] = $result['kelasMahasiswa'];
+                    }
+                    if (isset($result['nilai'])) {
+                        $nilaiToCreate[] = $result['nilai'];
+                    }
+                    if (isset($result['nilaiUpdate'])) {
+                        $nilaiToUpdate[] = $result['nilaiUpdate'];
+                    }
+                }
+
+            } catch (\Exception $e) {
+                $this->importResults['errors'][] = "Baris {$actualRowNumber}: " . $e->getMessage();
+                Log::error("Import error at row {$actualRowNumber}: " . $e->getMessage(), ['row' => $row->toArray()]);
+            }
+        }
+
+        // Batch insert/update data
+        $this->batchInsertData($mahasiswaToCreate, $kelasMahasiswaToCreate, $nilaiToCreate, $nilaiToUpdate);
+    }
+
+    /**
+     * Process single row
+     */
     private function processRow($row, $rowNumber)
     {
-        // Ambil data dari row
         $nim = trim($row[0] ?? '');
         $nama = trim($row[1] ?? '');
         $kelasNama = trim($row[2] ?? '');
 
-        // Skip jika NIM kosong
         if (empty($nim)) {
-            return;
+            return null;
         }
 
-        // Validate NIM format (exactly 10 digits)
+        // Validate NIM format
         if (!preg_match('/^\d{10}$/', $nim)) {
             throw new \Exception("NIM harus 10 digit angka (sekarang: {$nim})");
         }
 
-        // Validate required fields
-        if (empty($nama)) {
-            throw new \Exception("Nama mahasiswa tidak boleh kosong");
-        }
-        if (empty($kelasNama)) {
-            throw new \Exception("Kelas tidak boleh kosong");
+        if (empty($nama) || empty($kelasNama)) {
+            throw new \Exception("Nama mahasiswa dan kelas tidak boleh kosong");
         }
 
         // Cari atau buat mahasiswa
         $mahasiswa = $this->findOrCreateMahasiswa($nim, $nama);
-
-        // Pastikan mahasiswa terdaftar di kelas yang sesuai
-        $this->ensureStudentInClass($mahasiswa, $kelasNama);
+        
+        // Pastikan mahasiswa terdaftar di kelas
+        $kelasMahasiswa = $this->ensureStudentInClass($mahasiswa, $kelasNama);
 
         // Proses nilai untuk setiap komponen
-        $komponenIndex = 3; // Kolom komponen mulai dari index 3
+        $komponenIndex = 3;
+        $nilaiData = [];
+        
         foreach ($this->komponen as $komponenNama => $komponen) {
             $nilaiValue = $row[$komponenIndex] ?? '';
             
             if (!empty($nilaiValue) && is_numeric($nilaiValue)) {
                 $nilai = (float)$nilaiValue;
                 
-                // Validate nilai range (0-100)
                 if ($nilai < 0 || $nilai > 100) {
                     throw new \Exception("Nilai {$komponenNama} harus antara 0-100 (sekarang: {$nilai})");
                 }
                 
-                $this->saveNilai($mahasiswa->id, $komponen->id, $nilai);
+                $nilaiData[] = $this->prepareNilaiData($mahasiswa->id, $komponen->id, $nilai);
                 $this->importResults['updated_grades']++;
             }
             
@@ -154,39 +243,43 @@ class NilaiImportSheet implements ToCollection
         }
 
         $this->importResults['success']++;
+
+        return [
+            'mahasiswa' => isset($mahasiswa->wasRecentlyCreated) ? $mahasiswa->getAttributes() : null,
+            'kelasMahasiswa' => $kelasMahasiswa,
+            'nilai' => $nilaiData
+        ];
     }
 
+    /**
+     * Find or create mahasiswa dengan cache
+     */
     private function findOrCreateMahasiswa($nim, $nama)
     {
-        // Cari mahasiswa berdasarkan NIM
-        $mahasiswa = Mahasiswa::where('nim', $nim)->first();
-
-        if ($mahasiswa) {
-            // Jika mahasiswa ada, update nama jika perlu
-            if (!empty($nama) && $mahasiswa->nama !== $nama) {
+        // Cek cache dulu
+        if (isset($this->mahasiswaCache[$nim])) {
+            $mahasiswa = $this->mahasiswaCache[$nim];
+            
+            // Update nama jika perlu
+            if ($mahasiswa->nama !== $nama) {
                 $mahasiswa->update(['nama' => $nama]);
             }
+            
             return $mahasiswa;
         }
 
-        // Jika mahasiswa belum ada, buat baru
-        if (empty($nama)) {
-            throw new \Exception("Nama mahasiswa tidak boleh kosong untuk NIM baru: {$nim}");
-        }
-
-        // Ambil tahun masuk dari 2 digit pertama NIM
+        // Buat mahasiswa baru
         $tahunMasukFromNim = substr($nim, 0, 2);
-        $tahunMasuk = 2000 + intval($tahunMasukFromNim); // 22 -> 2022
-
-        // Generate email format: nim_namaawal@student.unand.ac.id (lowercase)
-        $namaAwal = strtolower(explode(' ', trim($nama))[0]); // Ambil kata pertama dari nama dan lowercase
+        $tahunMasuk = 2000 + intval($tahunMasukFromNim);
+        
+        $namaAwal = strtolower(explode(' ', trim($nama))[0]);
         $email = strtolower($nim . '_' . $namaAwal . '@student.unand.ac.id');
 
-        // Buat user terlebih dahulu
+        // Buat user
         $user = User::create([
             'name' => $nama,
             'email' => $email,
-            'password' => Hash::make($nim), // Password = NIM
+            'password' => Hash::make($nim),
             'role' => 'mahasiswa'
         ]);
 
@@ -198,6 +291,9 @@ class NilaiImportSheet implements ToCollection
             'tahunMasuk' => $tahunMasuk,
         ]);
 
+        // Update cache
+        $this->mahasiswaCache[$nim] = $mahasiswa;
+        
         $this->importResults['created_students']++;
         $this->importResults['created_student_list'][] = [
             'nim' => $nim,
@@ -210,95 +306,104 @@ class NilaiImportSheet implements ToCollection
         return $mahasiswa;
     }
 
+    /**
+     * Ensure student is in class
+     */
     private function ensureStudentInClass($mahasiswa, $kelasNama)
     {
-        // Cari semua tahun ajaran matkul untuk mata kuliah dan tahun ajaran yang sama
-        $allTahunAjaranMatkul = TahunAjaranMatkul::where('mataKuliahId', $this->tahunAjaranMatkul->mataKuliahId)
-            ->where('tahunAjaranId', $this->tahunAjaranMatkul->tahunAjaranId)
-            ->with('kelas')
-            ->get();
-
-        $kelas = null;
-        $tahunAjaranMatkulId = null;
-
-        // Cari kelas berdasarkan nama di semua tahun ajaran matkul
-        foreach ($allTahunAjaranMatkul as $tam) {
-            $foundKelas = $tam->kelas->where('namaKelas', $kelasNama)->first();
-            if ($foundKelas) {
-                $kelas = $foundKelas;
-                $tahunAjaranMatkulId = $tam->id;
-                break;
-            }
-        }
-
+        // Cari kelas berdasarkan nama
+        $kelas = $this->kelasCache->where('namaKelas', $kelasNama)->first();
+        
         if (!$kelas) {
-            // Jika kelas tidak ditemukan, gunakan kelas pertama yang tersedia
-            foreach ($allTahunAjaranMatkul as $tam) {
-                if ($tam->kelas->isNotEmpty()) {
-                    $kelas = $tam->kelas->first();
-                    $tahunAjaranMatkulId = $tam->id;
-                    break;
-                }
-            }
+            // Gunakan kelas pertama yang tersedia
+            $kelas = $this->kelasCache->first();
             
             if (!$kelas) {
                 throw new \Exception("Tidak ada kelas tersedia untuk mata kuliah ini");
             }
         }
 
-        // Cek apakah mahasiswa sudah terdaftar di kelas
+        // Cek apakah mahasiswa sudah terdaftar
         $kelasMahasiswa = KelasMahasiswa::where('mahasiswaId', $mahasiswa->id)
             ->where('kelasId', $kelas->id)
             ->first();
 
         if (!$kelasMahasiswa) {
-            // Daftarkan mahasiswa ke kelas
-            KelasMahasiswa::create([
+            return [
                 'mahasiswaId' => $mahasiswa->id,
                 'kelasId' => $kelas->id,
-                'tahunAjaranMatkulId' => $tahunAjaranMatkulId,
-            ]);
+                'tahunAjaranMatkulId' => $kelas->tahunAjaranMatkulId,
+            ];
         }
+
+        return null;
     }
 
-    private function saveNilai($mahasiswaId, $komponenId, $nilaiValue)
+    /**
+     * Prepare nilai data untuk batch insert
+     */
+    private function prepareNilaiData($mahasiswaId, $komponenId, $nilaiValue)
     {
-        // Cari semua tahun ajaran matkul untuk mata kuliah dan tahun ajaran yang sama
-        $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $this->tahunAjaranMatkul->mataKuliahId)
-            ->where('tahunAjaranId', $this->tahunAjaranMatkul->tahunAjaranId)
-            ->pluck('id');
-
-        // Cari semua bobot untuk komponen ini di semua kelas mata kuliah ini
-        $bobotList = Bobot::where('komponenId', $komponenId)
-            ->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds)
-            ->with('cpmk')
-            ->get();
-
-        if ($bobotList->isEmpty()) {
-            // Jika belum ada bobot, skip (harus setup CPMK dan bobot dulu)
-            return;
-        }
-
-        // Untuk setiap bobot, simpan nilai
+        $bobotList = $this->bobotCache->get($komponenId, collect());
+        
+        $nilaiData = [];
         foreach ($bobotList as $bobot) {
-            // Get dosen pengampu kelas untuk tahun ajaran matkul ini
-            $dosenPengampuKelas = DosenPengampuKelas::where('dosenId', $this->dosenId)
-                ->whereHas('kelas', function($query) use ($bobot) {
-                    $query->where('tahunAjaranMatkulId', $bobot->tahunAjaranMatkulId);
-                })
-                ->first();
-
+            $dosenPengampuKelas = $this->dosenPengampuCache->get($bobot->kelasId);
+            
             if ($dosenPengampuKelas) {
-                Nilai::updateOrCreate([
+                $nilaiData[] = [
                     'mahasiswaId' => $mahasiswaId,
                     'tahunAjaranMatkulId' => $bobot->tahunAjaranMatkulId,
                     'bobotId' => $bobot->id,
-                ], [
                     'cpmkId' => $bobot->cpmkId,
                     'dosenPengampuKelasId' => $dosenPengampuKelas->id,
-                    'nilai' => $nilaiValue, // Simpan nilai apa adanya
-                ]);
+                    'nilai' => $nilaiValue,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
             }
+        }
+        
+        return $nilaiData;
+    }
+
+    /**
+     * Batch insert/update data
+     */
+    private function batchInsertData($mahasiswaToCreate, $kelasMahasiswaToCreate, $nilaiToCreate, $nilaiToUpdate)
+    {
+        try {
+            DB::beginTransaction();
+
+            // Batch insert mahasiswa baru
+            if (!empty($mahasiswaToCreate)) {
+                User::insert(array_column($mahasiswaToCreate, 'user'));
+                Mahasiswa::insert(array_column($mahasiswaToCreate, 'mahasiswa'));
+            }
+
+            // Batch insert kelas mahasiswa
+            if (!empty($kelasMahasiswaToCreate)) {
+                KelasMahasiswa::insert($kelasMahasiswaToCreate);
+            }
+
+            // Batch insert nilai baru
+            if (!empty($nilaiToCreate)) {
+                // Flatten array
+                $flatNilai = [];
+                foreach ($nilaiToCreate as $nilaiGroup) {
+                    $flatNilai = array_merge($flatNilai, $nilaiGroup);
+                }
+                
+                if (!empty($flatNilai)) {
+                    Nilai::insert($flatNilai);
+                }
+            }
+
+            DB::commit();
+            
+        } catch (\Exception $e) {
+            DB::rollback();
+            throw $e;
         }
     }
 

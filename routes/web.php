@@ -187,6 +187,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/dosen/nilai/{id}/reset', [DosenNilaiController::class, 'resetNilai'])->name('dosen.nilai.reset');
         Route::get('/dosen/nilai/{id}/export-template', [DosenNilaiController::class, 'exportTemplate'])->name('dosen.nilai.export-template');
         Route::post('/dosen/nilai/{id}/import', [DosenNilaiController::class, 'importNilai'])->name('dosen.nilai.import');
+        Route::get('/dosen/nilai/{id}/import-status', [DosenNilaiController::class, 'checkImportStatus'])->name('dosen.nilai.import-status');
         Route::get('/dosen/nilai/{id}/detail', [DosenNilaiController::class, 'detailNilai'])->name('dosen.nilai.detail');
     });
 

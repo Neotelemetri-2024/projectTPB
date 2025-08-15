@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Log;
 use App\Exports\NilaiTemplateExport;
 use App\Imports\NilaiImport;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Jobs\ProcessNilaiImport;
 
 class NilaiController extends Controller
 {
@@ -761,49 +762,59 @@ class NilaiController extends Controller
         })->findOrFail($id);
 
         $request->validate([
-            'excel_file' => 'required|file|mimes:xlsx,xls|max:2048'
+            'excel_file' => 'required|file|mimes:xlsx,xls|max:10240' // Increased to 10MB
         ], [
             'excel_file.required' => 'File Excel harus dipilih.',
             'excel_file.mimes' => 'File harus berformat Excel (.xlsx atau .xls).',
-            'excel_file.max' => 'Ukuran file maksimal 2MB.'
+            'excel_file.max' => 'Ukuran file maksimal 10MB.'
         ]);
 
         try {
-            $import = new NilaiImport($id, $dosen->id);
-            Excel::import($import, $request->file('excel_file'));
-
-            // Get import results
-            $results = $import->getImportResults();
-            \Log::info('Import results received in controller:', $results);
-
-            $message = "Import berhasil! ";
-            $message .= "Berhasil memproses " . ($results['success'] ?? 0) . " mahasiswa. ";
+            // Store file temporarily
+            $filePath = $request->file('excel_file')->store('temp/imports');
             
-            if (($results['created_students'] ?? 0) > 0) {
-                $message .= "Dibuat " . $results['created_students'] . " akun mahasiswa baru. ";
-            }
+            // Dispatch background job
+            ProcessNilaiImport::dispatch($filePath, $id, $dosen->id, $user->id);
             
-            if (($results['updated_grades'] ?? 0) > 0) {
-                $message .= "Diperbarui " . $results['updated_grades'] . " nilai. ";
-            }
-
-            if (!empty($results['errors'])) {
-                $message .= "Terdapat " . count($results['errors']) . " error.";
-                
-                // Store errors in session for detailed display
-                session()->flash('import_errors', $results['errors']);
-            }
-
-            // Store created students info in session
-            if (!empty($results['created_student_list'])) {
-                session()->flash('created_students', $results['created_student_list']);
-            }
-
-            return redirect()->back()->with('success', $message);
+            // Store import info in session
+            session()->flash('import_started', true);
+            session()->flash('import_file', $request->file('excel_file')->getClientOriginalName());
+            
+            return redirect()->back()->with('info', 'Import sedang diproses di background. Anda akan mendapat notifikasi ketika selesai. Silakan refresh halaman untuk melihat status.');
 
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat import: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat memulai import: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Check import status
+     */
+    public function checkImportStatus(Request $request, $id)
+    {
+        $user = Auth::user();
+        $cacheKey = "import_results_{$user->id}_{$id}";
+        
+        $results = cache()->get($cacheKey);
+        
+        if (!$results) {
+            return response()->json(['status' => 'processing']);
+        }
+        
+        // Clear cache after retrieving
+        cache()->forget($cacheKey);
+        
+        if (isset($results['error'])) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $results['message']
+            ]);
+        }
+        
+        return response()->json([
+            'status' => 'completed',
+            'results' => $results
+        ]);
     }
 
     /**

@@ -90,6 +90,12 @@ class NilaiImportSheet implements ToCollection, WithChunkReading, WithBatchInser
             $query->where('tahunAjaranMatkulId', $this->tahunAjaranMatkulId);
         })->orderBy('nama')->get()->keyBy('nama');
 
+        // Log komponen yang di-load
+        \Log::info("Komponen loaded", [
+            'count' => $this->komponen->count(),
+            'komponen' => $this->komponen->keys()->toArray()
+        ]);
+
         // Pre-load semua mahasiswa yang mungkin ada
         $this->mahasiswaCache = Mahasiswa::select('id', 'nim', 'nama', 'userId')
             ->get()
@@ -225,8 +231,25 @@ class NilaiImportSheet implements ToCollection, WithChunkReading, WithBatchInser
         $komponenIndex = 3;
         $nilaiData = [];
         
+        // Log data Excel yang diproses
+        \Log::info("Processing Excel row", [
+            'rowNumber' => $rowNumber,
+            'nim' => $nim,
+            'nama' => $nama,
+            'kelas' => $kelasNama,
+            'rowData' => $row->toArray()
+        ]);
+        
         foreach ($this->komponen as $komponenNama => $komponen) {
             $nilaiValue = $row[$komponenIndex] ?? '';
+            
+            // Log setiap komponen yang diproses
+            \Log::info("Processing komponen", [
+                'komponenNama' => $komponenNama,
+                'komponenId' => $komponen->id,
+                'nilaiValue' => $nilaiValue,
+                'komponenIndex' => $komponenIndex
+            ]);
             
             if (!empty($nilaiValue) && is_numeric($nilaiValue)) {
                 $nilai = (float)$nilaiValue;
@@ -235,7 +258,8 @@ class NilaiImportSheet implements ToCollection, WithChunkReading, WithBatchInser
                     throw new \Exception("Nilai {$komponenNama} harus antara 0-100 (sekarang: {$nilai})");
                 }
                 
-                $nilaiData[] = $this->prepareNilaiData($mahasiswa->id, $komponen->id, $nilai);
+                // Gunakan array_merge untuk menggabungkan array, bukan menambahkan sebagai elemen baru
+                $nilaiData = array_merge($nilaiData, $this->prepareNilaiData($mahasiswa->id, $komponen->id, $nilai));
                 $this->importResults['updated_grades']++;
             }
             
@@ -332,7 +356,7 @@ class NilaiImportSheet implements ToCollection, WithChunkReading, WithBatchInser
             return [
                 'mahasiswaId' => $mahasiswa->id,
                 'kelasId' => $kelas->id,
-                'tahunAjaranMatkulId' => $kelas->tahunAjaranMatkulId,
+                // tahunAjaranMatkulId tidak perlu karena sudah ada di tabel kelas
             ];
         }
 
@@ -346,23 +370,64 @@ class NilaiImportSheet implements ToCollection, WithChunkReading, WithBatchInser
     {
         $bobotList = $this->bobotCache->get($komponenId, collect());
         
+        // Log data bobot yang di-load
+        \Log::info("Loading bobot for komponen {$komponenId}", [
+            'komponenId' => $komponenId,
+            'bobotCount' => $bobotList->count(),
+            'sampleBobot' => $bobotList->first() ? $bobotList->first()->toArray() : null
+        ]);
+        
         $nilaiData = [];
         foreach ($bobotList as $bobot) {
-            $dosenPengampuKelas = $this->dosenPengampuCache->get($bobot->kelasId);
+            // Cari kelas yang terkait dengan bobot ini melalui tahunAjaranMatkulId
+            $kelas = $this->kelasCache->where('tahunAjaranMatkulId', $bobot->tahunAjaranMatkulId)->first();
             
-            if ($dosenPengampuKelas) {
-                $nilaiData[] = [
-                    'mahasiswaId' => $mahasiswaId,
-                    'tahunAjaranMatkulId' => $bobot->tahunAjaranMatkulId,
+            if ($kelas) {
+                $dosenPengampuKelas = $this->dosenPengampuCache->get($kelas->id);
+                
+                // Log data dosenPengampuKelas
+                \Log::info("Checking dosenPengampuKelas", [
                     'bobotId' => $bobot->id,
-                    'cpmkId' => $bobot->cpmkId,
-                    'dosenPengampuKelasId' => $dosenPengampuKelas->id,
-                    'nilai' => $nilaiValue,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ];
+                    'tahunAjaranMatkulId' => $bobot->tahunAjaranMatkulId,
+                    'kelasId' => $kelas->id,
+                    'kelasNama' => $kelas->namaKelas,
+                    'dosenPengampuKelas' => $dosenPengampuKelas ? $dosenPengampuKelas->toArray() : null
+                ]);
+                
+                if ($dosenPengampuKelas) {
+                    // Validasi data tidak boleh kosong
+                    if (empty($bobot->cpmkId)) {
+                        \Log::warning("Bobot {$bobot->id} tidak memiliki cpmkId", ['bobot' => $bobot->toArray()]);
+                        continue; // Skip jika cpmkId kosong
+                    }
+                    
+                    if (empty($bobot->tahunAjaranMatkulId)) {
+                        \Log::warning("Bobot {$bobot->id} tidak memiliki tahunAjaranMatkulId", ['bobot' => $bobot->toArray()]);
+                        continue; // Skip jika tahunAjaranMatkulId kosong
+                    }
+                    
+                    $nilaiData[] = [
+                        'mahasiswaId' => $mahasiswaId,
+                        'tahunAjaranMatkulId' => $bobot->tahunAjaranMatkulId,
+                        'bobotId' => $bobot->id,
+                        'cpmkId' => $bobot->cpmkId,
+                        'dosenPengampuKelasId' => $dosenPengampuKelas->id,
+                        'nilai' => $nilaiValue,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
             }
         }
+        
+        // Log data yang akan dikembalikan
+        \Log::info("prepareNilaiData result", [
+            'mahasiswaId' => $mahasiswaId,
+            'komponenId' => $komponenId,
+            'nilaiValue' => $nilaiValue,
+            'resultCount' => count($nilaiData),
+            'resultData' => $nilaiData
+        ]);
         
         return $nilaiData;
     }
@@ -395,6 +460,12 @@ class NilaiImportSheet implements ToCollection, WithChunkReading, WithBatchInser
                 }
                 
                 if (!empty($flatNilai)) {
+                    // Log data yang akan di-insert
+                    \Log::info("Inserting nilai data", [
+                        'count' => count($flatNilai),
+                        'sample_data' => array_slice($flatNilai, 0, 3) // Log 3 data pertama
+                    ]);
+                    
                     Nilai::insert($flatNilai);
                 }
             }

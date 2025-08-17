@@ -39,55 +39,26 @@ class DashboardController extends Controller
         // Get filter parameter
         $selectedTahunAjaranId = $request->get('tahun_ajaran_filter');
 
-        // Statistics Cards Data
-        $totalMahasiswa = \App\Models\Mahasiswa::count();
-        $totalDosen = \App\Models\Dosen::count();
-        $totalMataKuliah = \App\Models\MataKuliah::count();
-        $totalCPL = \App\Models\Cpl::count();
-        $totalCPMK = \App\Models\Cpmk::count();
-
-        // Active courses this academic year
-        $latestTahunAjaran = \App\Models\TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->first();
-        $activeCourses = \App\Models\TahunAjaranMatkul::where('tahunAjaranId', $latestTahunAjaran->id ?? 0)->count();
+        // OPTIMIZED: Batch load all statistics in single queries
+        $statistics = $this->getDashboardStatistics();
 
         // Get all tahun ajaran for filter dropdown
         $tahunAjaranList = \App\Models\TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->get();
 
-        // Data for Average Score History Chart (Line Chart) - NO FILTER, show all years
+        // OPTIMIZED: Load all chart data with efficient queries
         $chartData = $this->getAverageScoreHistoryData();
-
-        // Data for detailed course charts (individual courses)
         $detailedCourseCharts = $this->getDetailedCourseCharts($selectedTahunAjaranId);
-
-        // Data for CPL Achievement Chart (Bar Chart) - FIXED
         $cplAchievementData = $this->getCPLAchievementData($selectedTahunAjaranId);
-
-        // Data for Grade Distribution Chart (Donut Chart) - FIXED
         $matkulPerformanceData = $this->getMatkulPerformanceData($selectedTahunAjaranId);
-
-        // Data for Course Completion Rate - FIXED
         $courseCompletionData = $this->getCourseCompletionData($selectedTahunAjaranId);
-
-        // Data for Course Type Distribution (Pie Chart) - FIXED
         $courseTypeData = $this->getCourseTypeDistribution($selectedTahunAjaranId);
-
-        // Data for Top Performing Students (Bar Chart)
         $topStudentsData = $this->getTopStudentsData($selectedTahunAjaranId);
-
-        // Recent Activities Data
         $recentActivities = $this->getRecentActivities();
-
-        // System Health Data
         $systemHealth = $this->getSystemHealthData();
 
         return view('admin.dashboard', compact(
             'user',
-            'totalMahasiswa',
-            'totalDosen',
-            'totalMataKuliah',
-            'totalCPL',
-            'totalCPMK',
-            'activeCourses',
+            'statistics',
             'tahunAjaranList',
             'selectedTahunAjaranId',
             'chartData',
@@ -103,48 +74,70 @@ class DashboardController extends Controller
     }
 
     /**
-     * Get average score history data for line chart - SHOW ALL YEARS (no filter) - LIMIT TO TOP 5
+     * OPTIMIZED: Get all dashboard statistics in batch
+     */
+    private function getDashboardStatistics()
+    {
+        // Get latest tahun ajaran once
+        $latestTahunAjaran = \App\Models\TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->first();
+
+        return [
+            'totalMahasiswa' => \App\Models\Mahasiswa::count(),
+            'totalDosen' => \App\Models\Dosen::count(),
+            'totalMataKuliah' => \App\Models\MataKuliah::count(),
+            'totalCPL' => \App\Models\Cpl::count(),
+            'totalCPMK' => \App\Models\Cpmk::count(),
+            'activeCourses' => \App\Models\TahunAjaranMatkul::where('tahunAjaranId', $latestTahunAjaran->id ?? 0)->count(),
+        ];
+    }
+
+    /**
+     * OPTIMIZED: Get average score history data for line chart - SHOW ALL YEARS (no filter) - LIMIT TO TOP 5
      */
     private function getAverageScoreHistoryData()
     {
-        // Get top 5 courses by student enrollment to avoid clutter
-        $topCourses = \App\Models\TahunAjaranMatkul::with(['mataKuliah', 'kelasMahasiswa'])
-            ->get()
+        // OPTIMIZED: Use single query with proper joins and aggregation
+        $topCourses = \App\Models\TahunAjaranMatkul::select('mataKuliahId')
+            ->selectRaw('COUNT(DISTINCT km.mahasiswaId) as total_students')
+            ->join('kelas as k', 'tahun_ajaran_matkul.id', '=', 'k.tahunAjaranMatkulId')
+            ->join('kelas_mahasiswa as km', 'k.id', '=', 'km.kelasId')
             ->groupBy('mataKuliahId')
-            ->map(function($courses) {
-                return [
-                    'mataKuliah' => $courses->first()->mataKuliah,
-                    'totalStudents' => $courses->sum(function($course) {
-                        return $course->kelasMahasiswa->count();
-                    })
-                ];
-            })
-            ->sortByDesc('totalStudents')
-            ->take(5)
-            ->pluck('mataKuliah.id');
+            ->orderByDesc('total_students')
+            ->limit(5)
+            ->pluck('mataKuliahId');
 
-        // Get data for top courses only
-        $data = \App\Models\TahunAjaranMatkul::with(['tahunAjaran', 'mataKuliah', 'kelasMahasiswa'])
-            ->whereIn('mataKuliahId', $topCourses)
+        // OPTIMIZED: Single query with all necessary data
+        $data = \App\Models\TahunAjaranMatkul::select([
+                'tahun_ajaran_matkul.id',
+                'tahun_ajaran_matkul.mataKuliahId',
+                'mata_kuliah.namaMatkul',
+                'tahun_ajaran.tahun',
+                'tahun_ajaran.periode'
+            ])
+            ->selectRaw('AVG(km.totalNilai) as avg_score')
+            ->join('mata_kuliah', 'tahun_ajaran_matkul.mataKuliahId', '=', 'mata_kuliah.id')
+            ->join('tahun_ajaran', 'tahun_ajaran_matkul.tahunAjaranId', '=', 'tahun_ajaran.id')
+            ->join('kelas as k', 'tahun_ajaran_matkul.id', '=', 'k.tahunAjaranMatkulId')
+            ->join('kelas_mahasiswa as km', 'k.id', '=', 'km.kelasId')
+            ->whereIn('tahun_ajaran_matkul.mataKuliahId', $topCourses)
+            ->whereNotNull('km.totalNilai')
+            ->groupBy('tahun_ajaran_matkul.id', 'tahun_ajaran_matkul.mataKuliahId', 'mata_kuliah.namaMatkul', 'tahun_ajaran.tahun', 'tahun_ajaran.periode')
             ->get()
             ->groupBy('mataKuliahId');
 
         $chartLabels = [];
         $chartDatasets = [];
 
-        foreach ($data as $matkulId => $tahunAjaranMatkuls) {
-            $matkulName = $tahunAjaranMatkuls->first()->mataKuliah->namaMatkul;
-
+        foreach ($data as $matkulId => $records) {
+            $matkulName = $records->first()->namaMatkul;
             $averagesByYear = [];
 
-            foreach ($tahunAjaranMatkuls as $tam) {
-                $yearLabel = $tam->tahunAjaran->tahun . ' - ' . ucfirst($tam->tahunAjaran->periode);
+            foreach ($records as $record) {
+                $yearLabel = $record->tahun . ' - ' . ucfirst($record->periode);
+                $avgScore = round($record->avg_score, 2);
 
-                // Calculate average score for this mata kuliah in this year
-                $totalScore = $tam->kelasMahasiswa->where('totalNilai', '!=', null)->avg('totalNilai');
-
-                if ($totalScore !== null) {
-                    $averagesByYear[$yearLabel] = round($totalScore, 2);
+                if ($avgScore > 0) {
+                    $averagesByYear[$yearLabel] = $avgScore;
 
                     if (!in_array($yearLabel, $chartLabels)) {
                         $chartLabels[] = $yearLabel;
@@ -195,57 +188,64 @@ class DashboardController extends Controller
     }
 
     /**
-     * Get detailed course charts - individual chart per course
+     * OPTIMIZED: Get detailed course charts - individual chart per course
      */
     private function getDetailedCourseCharts($selectedTahunAjaranId = null)
     {
-        $query = \App\Models\TahunAjaranMatkul::with(['tahunAjaran', 'mataKuliah', 'kelasMahasiswa']);
+        // OPTIMIZED: Single query with proper joins and aggregation
+        $query = \App\Models\TahunAjaranMatkul::select([
+                'tahun_ajaran_matkul.mataKuliahId',
+                'mata_kuliah.kodeMatkul',
+                'mata_kuliah.namaMatkul',
+                'tahun_ajaran.tahun',
+                'tahun_ajaran.periode'
+            ])
+            ->selectRaw('AVG(km.totalNilai) as avg_score')
+            ->selectRaw('COUNT(DISTINCT km.mahasiswaId) as student_count')
+            ->join('mata_kuliah', 'tahun_ajaran_matkul.mataKuliahId', '=', 'mata_kuliah.id')
+            ->join('tahun_ajaran', 'tahun_ajaran_matkul.tahunAjaranId', '=', 'tahun_ajaran.id')
+            ->join('kelas as k', 'tahun_ajaran_matkul.id', '=', 'k.tahunAjaranMatkulId')
+            ->join('kelas_mahasiswa as km', 'k.id', '=', 'km.kelasId')
+            ->whereNotNull('km.totalNilai');
 
         if ($selectedTahunAjaranId) {
-            $query->where('tahunAjaranId', $selectedTahunAjaranId);
+            $query->where('tahun_ajaran_matkul.tahunAjaranId', $selectedTahunAjaranId);
         }
 
-        // Get top 4 courses for individual detailed charts
-        $courses = $query->get()
+        // Get top 4 courses by student enrollment
+        $topCourses = \App\Models\TahunAjaranMatkul::select('mataKuliahId')
+            ->selectRaw('COUNT(DISTINCT km.mahasiswaId) as total_students')
+            ->join('kelas as k', 'tahun_ajaran_matkul.id', '=', 'k.tahunAjaranMatkulId')
+            ->join('kelas_mahasiswa as km', 'k.id', '=', 'km.kelasId')
             ->groupBy('mataKuliahId')
-            ->map(function($courseGroup) {
-                $firstCourse = $courseGroup->first();
-                $totalStudents = $courseGroup->sum(function($course) {
-                    return $course->kelasMahasiswa->count();
-                });
+            ->orderByDesc('total_students')
+            ->limit(4)
+            ->pluck('mataKuliahId');
 
-                return [
-                    'mataKuliah' => $firstCourse->mataKuliah,
-                    'courses' => $courseGroup,
-                    'totalStudents' => $totalStudents
-                ];
-            })
-            ->sortByDesc('totalStudents')
-            ->take(4);
+        $courses = $query->whereIn('tahun_ajaran_matkul.mataKuliahId', $topCourses)
+            ->groupBy('tahun_ajaran_matkul.mataKuliahId', 'mata_kuliah.kodeMatkul', 'mata_kuliah.namaMatkul', 'tahun_ajaran.tahun', 'tahun_ajaran.periode')
+            ->get()
+            ->groupBy('mataKuliahId');
 
         $detailedCharts = [];
 
-        foreach ($courses as $courseData) {
-            $mataKuliah = $courseData['mataKuliah'];
-            $courseGroup = $courseData['courses'];
+        foreach ($courses as $mataKuliahId => $courseGroup) {
+            $firstCourse = $courseGroup->first();
 
             $labels = [];
             $avgScores = [];
             $studentCounts = [];
 
             foreach ($courseGroup as $course) {
-                $yearLabel = $course->tahunAjaran->tahun . '-' . $course->tahunAjaran->periode;
-                $avgScore = $course->kelasMahasiswa->where('totalNilai', '!=', null)->avg('totalNilai');
-                $studentCount = $course->kelasMahasiswa->count();
-
+                $yearLabel = $course->tahun . '-' . $course->periode;
                 $labels[] = $yearLabel;
-                $avgScores[] = round($avgScore ?? 0, 2);
-                $studentCounts[] = $studentCount;
+                $avgScores[] = round($course->avg_score ?? 0, 2);
+                $studentCounts[] = $course->student_count;
             }
 
             $detailedCharts[] = [
-                'courseCode' => $mataKuliah->kodeMatkul,
-                'courseName' => $mataKuliah->namaMatkul,
+                'courseCode' => $firstCourse->kodeMatkul,
+                'courseName' => $firstCourse->namaMatkul,
                 'labels' => $labels,
                 'avgScores' => $avgScores,
                 'studentCounts' => $studentCounts,
@@ -257,40 +257,36 @@ class DashboardController extends Controller
     }
 
     /**
-     * Get CPL achievement data for bar chart - FIXED
+     * OPTIMIZED: Get CPL achievement data for bar chart - FIXED
      */
     private function getCPLAchievementData($selectedTahunAjaranId = null)
     {
-        $cpls = \App\Models\Cpl::with(['cpmk'])->get();
+        // OPTIMIZED: Single query with proper joins and aggregation using pivot table
+        $query = \App\Models\Cpl::select([
+                'cpl.id',
+                'cpl.kodeCpl'
+            ])
+            ->selectRaw('AVG(n.nilai) as avg_score')
+            ->join('cpmk_cpl', 'cpl.id', '=', 'cpmk_cpl.cplId')
+            ->join('cpmk', 'cpmk_cpl.cpmkId', '=', 'cpmk.id')
+            ->join('nilai as n', 'cpmk.id', '=', 'n.cpmkId')
+            ->where('n.nilai', '>', 0);
+
+        if ($selectedTahunAjaranId) {
+            $query->join('tahun_ajaran_matkul as tam', 'n.tahunAjaranMatkulId', '=', 'tam.id')
+                  ->where('tam.tahunAjaranId', $selectedTahunAjaranId);
+        }
+
+        $cplData = $query->groupBy('cpl.id', 'cpl.kodeCpl')
+            ->get();
 
         $labels = [];
         $data = [];
         $backgroundColors = [];
 
-        foreach ($cpls as $cpl) {
+        foreach ($cplData as $cpl) {
             $labels[] = $cpl->kodeCpl;
-
-            // Calculate average achievement for this CPL
-            $cpmkScores = [];
-
-            foreach ($cpl->cpmk as $cpmk) {
-                // Get all nilai for this CPMK
-                $nilaiQuery = \App\Models\Nilai::where('cpmkId', $cpmk->id);
-
-                if ($selectedTahunAjaranId) {
-                    $nilaiQuery->whereHas('tahunAjaranMatkul', function($q) use ($selectedTahunAjaranId) {
-                        $q->where('tahunAjaranId', $selectedTahunAjaranId);
-                    });
-                }
-
-                $avgScore = $nilaiQuery->avg('nilai');
-                if ($avgScore !== null && $avgScore > 0) {
-                    $cpmkScores[] = $avgScore;
-                }
-            }
-
-            $cplAverage = count($cpmkScores) > 0 ? array_sum($cpmkScores) / count($cpmkScores) : 0;
-            $data[] = round($cplAverage, 2);
+            $data[] = round($cpl->avg_score, 2);
             $backgroundColors[] = $this->getRandomColor(true);
         }
 
@@ -302,24 +298,26 @@ class DashboardController extends Controller
     }
 
     /**
-     * Get mata kuliah performance data for donut chart - FIXED
+     * OPTIMIZED: Get mata kuliah performance data for donut chart - FIXED
      */
     private function getMatkulPerformanceData($selectedTahunAjaranId = null)
     {
-        $query = \App\Models\KelasMahasiswa::with(['kelas.tahunAjaranMatkul.mataKuliah', 'kelas.tahunAjaranMatkul.tahunAjaran']);
+        // OPTIMIZED: Single query with proper joins and aggregation
+        $query = \App\Models\KelasMahasiswa::select('grade')
+            ->selectRaw('COUNT(*) as count')
+            ->join('kelas', 'kelas_mahasiswa.kelasId', '=', 'kelas.id')
+            ->join('tahun_ajaran_matkul as tam', 'kelas.tahunAjaranMatkulId', '=', 'tam.id')
+            ->whereNotNull('kelas_mahasiswa.grade')
+            ->whereNotNull('kelas_mahasiswa.totalNilai')
+            ->where('kelas_mahasiswa.totalNilai', '>', 0);
 
         if ($selectedTahunAjaranId) {
-            $query->whereHas('kelas.tahunAjaranMatkul', function($q) use ($selectedTahunAjaranId) {
-                $q->where('tahunAjaranId', $selectedTahunAjaranId);
-            });
+            $query->where('tam.tahunAjaranId', $selectedTahunAjaranId);
         }
 
-        // Get all grades with data
-        $grades = $query->whereNotNull('grade')
-            ->whereNotNull('totalNilai')
-            ->where('totalNilai', '>', 0)
-            ->get()
-            ->groupBy('grade');
+        $grades = $query->groupBy('grade')
+            ->pluck('count', 'grade')
+            ->toArray();
 
         $labels = [];
         $data = [];
@@ -342,7 +340,7 @@ class DashboardController extends Controller
 
         foreach ($allGrades as $grade) {
             $labels[] = "Grade {$grade}";
-            $count = $grades->has($grade) ? $grades[$grade]->count() : 0;
+            $count = $grades[$grade] ?? 0;
             $data[] = $count;
             $backgroundColors[] = $gradeColors[$grade];
         }
@@ -362,34 +360,40 @@ class DashboardController extends Controller
     }
 
     /**
-     * Get course completion rate data - FIXED
+     * OPTIMIZED: Get course completion rate data - FIXED
      */
     private function getCourseCompletionData($selectedTahunAjaranId = null)
     {
-        $query = \App\Models\TahunAjaranMatkul::with(['mataKuliah', 'kelasMahasiswa']);
+        // OPTIMIZED: Single query with proper joins and aggregation
+        $query = \App\Models\TahunAjaranMatkul::select([
+                'tahun_ajaran_matkul.id',
+                'mata_kuliah.kodeMatkul'
+            ])
+            ->selectRaw('COUNT(CASE WHEN km.totalNilai IS NOT NULL THEN 1 END) as total_students')
+            ->selectRaw('COUNT(CASE WHEN km.grade IS NOT NULL AND km.grade != "E" THEN 1 END) as passed_students')
+            ->join('mata_kuliah', 'tahun_ajaran_matkul.mataKuliahId', '=', 'mata_kuliah.id')
+            ->join('kelas as k', 'tahun_ajaran_matkul.id', '=', 'k.tahunAjaranMatkulId')
+            ->join('kelas_mahasiswa as km', 'k.id', '=', 'km.kelasId')
+            ->groupBy('tahun_ajaran_matkul.id', 'mata_kuliah.kodeMatkul')
+            ->having('total_students', '>', 0)
+            ->orderByDesc('total_students')
+            ->limit(8);
 
         if ($selectedTahunAjaranId) {
-            $query->where('tahunAjaranId', $selectedTahunAjaranId);
+            $query->where('tahun_ajaran_matkul.tahunAjaranId', $selectedTahunAjaranId);
         }
 
-        $courses = $query->whereHas('kelasMahasiswa', function($q) {
-            $q->whereNotNull('totalNilai');
-        })->get()->take(8); // Limit for readability
+        $courses = $query->get();
 
         $labels = [];
         $completionRates = [];
         $backgroundColors = [];
 
         foreach ($courses as $course) {
-            $labels[] = $course->mataKuliah->kodeMatkul;
+            $labels[] = $course->kodeMatkul;
 
-            $totalStudents = $course->kelasMahasiswa->whereNotNull('totalNilai')->count();
-            $passedStudents = $course->kelasMahasiswa
-                ->whereNotNull('grade')
-                ->whereNotIn('grade', ['E'])
-                ->count();
-
-            $completionRate = $totalStudents > 0 ? ($passedStudents / $totalStudents) * 100 : 0;
+            $completionRate = $course->total_students > 0 ?
+                ($course->passed_students / $course->total_students) * 100 : 0;
             $completionRates[] = round($completionRate, 2);
 
             // Color based on completion rate
@@ -410,28 +414,28 @@ class DashboardController extends Controller
     }
 
     /**
-     * Get course type distribution (Pie Chart) - FIXED
+     * OPTIMIZED: Get course type distribution (Pie Chart) - FIXED
      */
     private function getCourseTypeDistribution($selectedTahunAjaranId = null)
     {
-        $query = \App\Models\TahunAjaranMatkul::with(['mataKuliah']);
+        // OPTIMIZED: Single query with proper joins and aggregation
+        $query = \App\Models\TahunAjaranMatkul::select('mata_kuliah.jenis')
+            ->selectRaw('COUNT(*) as count')
+            ->join('mata_kuliah', 'tahun_ajaran_matkul.mataKuliahId', '=', 'mata_kuliah.id')
+            ->groupBy('mata_kuliah.jenis');
 
         if ($selectedTahunAjaranId) {
-            $query->where('tahunAjaranId', $selectedTahunAjaranId);
+            $query->where('tahun_ajaran_matkul.tahunAjaranId', $selectedTahunAjaranId);
         }
 
-        $courseTypes = $query->get()
-            ->groupBy('mataKuliah.jenis')
-            ->map(function($courses) {
-                return $courses->count();
-            });
+        $courseTypes = $query->pluck('count', 'jenis')->toArray();
 
         $labels = [];
         $data = [];
         $backgroundColors = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6'];
 
         // Ensure we have at least some data
-        if ($courseTypes->count() > 0) {
+        if (count($courseTypes) > 0) {
             foreach ($courseTypes as $type => $count) {
                 $labels[] = ucfirst($type ?? 'Lainnya');
                 $data[] = $count;
@@ -451,61 +455,68 @@ class DashboardController extends Controller
     }
 
     /**
-     * Get top performing students (Bar Chart)
+     * OPTIMIZED: Get top performing students (Bar Chart)
      */
     private function getTopStudentsData($selectedTahunAjaranId = null)
     {
-        $query = \App\Models\KelasMahasiswa::with(['mahasiswa', 'kelas.tahunAjaranMatkul'])
-            ->whereNotNull('totalNilai');
+        // OPTIMIZED: Single query with proper joins and aggregation
+        $query = \App\Models\KelasMahasiswa::select([
+                'kelas_mahasiswa.mahasiswaId',
+                'mahasiswa.nama',
+                'mahasiswa.nim'
+            ])
+            ->selectRaw('AVG(kelas_mahasiswa.totalNilai) as avg_score')
+            ->join('mahasiswa', 'kelas_mahasiswa.mahasiswaId', '=', 'mahasiswa.id')
+            ->join('kelas', 'kelas_mahasiswa.kelasId', '=', 'kelas.id')
+            ->join('tahun_ajaran_matkul as tam', 'kelas.tahunAjaranMatkulId', '=', 'tam.id')
+            ->whereNotNull('kelas_mahasiswa.totalNilai');
 
         if ($selectedTahunAjaranId) {
-            $query->whereHas('kelas.tahunAjaranMatkul', function($q) use ($selectedTahunAjaranId) {
-                $q->where('tahunAjaranId', $selectedTahunAjaranId);
-            });
+            $query->where('tam.tahunAjaranId', $selectedTahunAjaranId);
         }
 
-        $topStudents = $query->get()
-            ->groupBy('mahasiswaId')
-            ->map(function($studentGrades, $mahasiswaId) {
-                $student = $studentGrades->first()->mahasiswa;
-                $avgScore = $studentGrades->avg('totalNilai');
-
-                return [
-                    'nama' => $student->nama,
-                    'nim' => $student->nim,
-                    'avgScore' => round($avgScore, 2)
-                ];
-            })
-            ->sortByDesc('avgScore')
-            ->take(10);
+        $topStudents = $query->groupBy('kelas_mahasiswa.mahasiswaId', 'mahasiswa.nama', 'mahasiswa.nim')
+            ->orderByDesc('avg_score')
+            ->limit(10)
+            ->get();
 
         $labels = [];
         $data = [];
         $backgroundColors = [];
+        $students = [];
 
         foreach ($topStudents as $student) {
-            $labels[] = $student['nim'];
-            $data[] = $student['avgScore'];
+            $labels[] = $student->nim;
+            $data[] = round($student->avg_score, 2);
             $backgroundColors[] = $this->getRandomColor(true);
+            $students[] = [
+                'nama' => $student->nama,
+                'nim' => $student->nim,
+                'avgScore' => round($student->avg_score, 2)
+            ];
         }
 
         return [
             'labels' => $labels,
             'data' => $data,
             'backgroundColor' => $backgroundColors,
-            'students' => $topStudents->values()->toArray()
+            'students' => $students
         ];
     }
 
     /**
-     * Get recent activities
+     * OPTIMIZED: Get recent activities
      */
     private function getRecentActivities()
     {
         $activities = [];
 
-        // Recent students added
-        $recentStudents = \App\Models\Mahasiswa::latest()->limit(3)->get();
+        // OPTIMIZED: Single query for recent students
+        $recentStudents = \App\Models\Mahasiswa::select('nama', 'created_at')
+            ->latest()
+            ->limit(3)
+            ->get();
+
         foreach ($recentStudents as $student) {
             $activities[] = [
                 'type' => 'student',
@@ -515,19 +526,28 @@ class DashboardController extends Controller
             ];
         }
 
-        // Recent courses added
-        $recentCourses = \App\Models\TahunAjaranMatkul::with(['mataKuliah'])->latest()->limit(3)->get();
+        // OPTIMIZED: Single query for recent courses
+        $recentCourses = \App\Models\TahunAjaranMatkul::select('mata_kuliah.namaMatkul', 'tahun_ajaran_matkul.created_at')
+            ->join('mata_kuliah', 'tahun_ajaran_matkul.mataKuliahId', '=', 'mata_kuliah.id')
+            ->latest('tahun_ajaran_matkul.created_at')
+            ->limit(3)
+            ->get();
+
         foreach ($recentCourses as $course) {
             $activities[] = [
                 'type' => 'course',
-                'message' => "Mata kuliah {$course->mataKuliah->namaMatkul} dibuka",
+                'message' => "Mata kuliah {$course->namaMatkul} dibuka",
                 'time' => $course->created_at->diffForHumans(),
                 'icon' => 'book'
             ];
         }
 
-        // Recent CPMK updates
-        $recentCPMK = \App\Models\Cpmk::latest('updated_at')->limit(2)->get();
+        // OPTIMIZED: Single query for recent CPMK updates
+        $recentCPMK = \App\Models\Cpmk::select('kodeCpmk', 'updated_at')
+            ->latest('updated_at')
+            ->limit(2)
+            ->get();
+
         foreach ($recentCPMK as $cpmk) {
             $activities[] = [
                 'type' => 'cpmk',

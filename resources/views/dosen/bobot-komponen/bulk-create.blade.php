@@ -58,6 +58,8 @@
                         <div class="text-sm text-blue-700 mt-1">
                             <p>• Pilih komponen penilaian yang akan digunakan terlebih dahulu</p>
                             <p>• Atur bobot untuk setiap kombinasi CPMK dan Komponen penilaian</p>
+                            <p>• <strong>Parent CPMK dengan sub-CPMK:</strong> Bobot hanya diatur pada sub-CPMK</p>
+                            <p>• <strong>Parent CPMK tanpa sub-CPMK:</strong> Bobot diatur langsung pada parent CPMK</p>
                             <p>• Total bobot maksimal 100%</p>
                             <p>• Bobot yang sudah memiliki nilai mahasiswa akan terkunci (tidak dapat diubah)</p>
                         </div>
@@ -146,7 +148,10 @@
                             <thead class="bg-gray-50">
                                 <tr id="table-header-row">
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-r border-gray-200">
-                                        CPMK
+                                        Parent CPMK
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-r border-gray-200">
+                                        Sub-CPMK
                                     </th>
                                     <!-- Komponen headers will be added dynamically here -->
                                     @foreach($komponen as $komponenItem)
@@ -159,41 +164,110 @@
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody id="table-body" class="divide-y divide-gray-200">
+                                                        <tbody id="table-body" class="divide-y divide-gray-200">
                                 @foreach($cpmkList as $cpmk)
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-4 py-3 text-sm font-medium text-gray-900 border-r border-gray-200 bg-gray-50">
-                                        <div class="flex flex-col">
-                                            <span class="font-semibold">{{ $cpmk->kodeCpmk ?? 'N/A' }}</span>
-                                            <span class="text-xs text-gray-600 mt-1">{{ Str::limit($cpmk->deskripsi ?? '', 60) }}</span>
-                                        </div>
-                                    </td>
-                                    @php $totalCpmk = 0; @endphp
-                                    @foreach($komponen as $komponenItem)
-                                        @php
-                                            $inputName = $cpmk->id . '_' . $komponenItem->id;
-                                            $bobotValue = old('bobot.' . $inputName, $existingCombinations[$inputName] ?? '');
-                                            $totalCpmk += floatval($bobotValue);
-                                        @endphp
-                                        <td class="px-4 py-3 text-center">
-                                            <input type="number" name="bobot[{{ $inputName }}]" value="{{ $bobotValue }}" min="0" max="100" step="0.01" class="w-20 text-center border rounded" />
-                                        </td>
-                                    @endforeach
-                                    <td class="px-4 py-3 text-center font-bold text-blue-700">
-                                        {{ number_format($totalCpmk, 2) }}
-                                    </td>
-                                </tr>
+                                    @php
+                                        $hasChildren = $cpmk->children && $cpmk->children->count() > 0;
+                                        $isParent = !$cpmk->parent_id;
+                                        $isChild = $cpmk->parent_id;
+                                    @endphp
+
+                                    @if($isParent && $hasChildren)
+                                        <!-- Parent CPMK dengan children -->
+                                        @foreach($cpmk->children as $index => $childCpmk)
+                                            <tr class="hover:bg-gray-50">
+                                                @if($index == 0)
+                                                    <!-- Parent CPMK cell with rowspan -->
+                                                    <td class="px-4 py-3 text-sm font-medium text-gray-900 border-r border-gray-200 bg-blue-50" rowspan="{{ $cpmk->children->count() }}">
+                                                        <div class="flex flex-col">
+                                                            <span class="font-semibold text-blue-800">{{ $cpmk->kodeCpmk ?? 'N/A' }}</span>
+                                                            <span class="text-xs text-gray-600 mt-1">{{ Str::limit($cpmk->deskripsi ?? '', 50) }}</span>
+                                                            <span class="text-xs text-blue-600 mt-1 font-medium">Parent CPMK</span>
+                                                        </div>
+                                                    </td>
+                                                @endif
+
+                                                <!-- Sub-CPMK cell -->
+                                                <td class="px-4 py-3 text-sm font-medium text-gray-900 border-r border-gray-200">
+                                                    <div class="flex flex-col">
+                                                        <span class="font-semibold text-green-700">{{ $childCpmk->kodeCpmk ?? 'N/A' }}</span>
+                                                        <span class="text-xs text-gray-600 mt-1">{{ Str::limit($childCpmk->deskripsi ?? '', 50) }}</span>
+                                                    </div>
+                                                </td>
+
+                                                @php $totalCpmk = 0; @endphp
+                                                @foreach($komponen as $komponenItem)
+                                                    @php
+                                                        $inputName = $childCpmk->id . '_' . $komponenItem->id;
+                                                        $bobotValue = old('bobot.' . $inputName, $existingCombinations[$inputName] ?? '');
+                                                        $totalCpmk += floatval($bobotValue);
+                                                    @endphp
+                                                    <td class="px-4 py-3 text-center">
+                                                        <input type="number" name="bobot[{{ $inputName }}]" value="{{ $bobotValue }}" min="0" max="100" step="0.01" class="w-20 text-center border rounded" />
+                                                    </td>
+                                                @endforeach
+                                                <td class="px-4 py-3 text-center font-bold text-blue-700">
+                                                    {{ number_format($totalCpmk, 2) }}
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    @elseif($isParent && !$hasChildren)
+                                        <!-- Parent CPMK tanpa children -->
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-3 text-sm font-medium text-gray-900 border-r border-gray-200">
+                                                <div class="flex flex-col">
+                                                    <span class="font-semibold">{{ $cpmk->kodeCpmk ?? 'N/A' }}</span>
+                                                    <span class="text-xs text-gray-600 mt-1">{{ Str::limit($cpmk->deskripsi ?? '', 50) }}</span>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3 text-sm text-gray-500 border-r border-gray-200 bg-gray-50">
+                                                <span class="italic">Tidak ada sub-CPMK</span>
+                                            </td>
+                                            @php $totalCpmk = 0; @endphp
+                                            @foreach($komponen as $komponenItem)
+                                                @php
+                                                    $inputName = $cpmk->id . '_' . $komponenItem->id;
+                                                    $bobotValue = old('bobot.' . $inputName, $existingCombinations[$inputName] ?? '');
+                                                    $totalCpmk += floatval($bobotValue);
+                                                @endphp
+                                                <td class="px-4 py-3 text-center">
+                                                    <input type="number" name="bobot[{{ $inputName }}]" value="{{ $bobotValue }}" min="0" max="100" step="0.01" class="w-20 text-center border rounded" />
+                                                </td>
+                                            @endforeach
+                                            <td class="px-4 py-3 text-center font-bold text-blue-700">
+                                                {{ number_format($totalCpmk, 2) }}
+                                            </td>
+                                        </tr>
+                                    @elseif($isChild)
+                                        <!-- Child CPMK yang sudah ditampilkan di atas - skip -->
+                                        @continue
+                                    @endif
                                 @endforeach
                                 <!-- ROW TOTAL BOBOT PER KOMPONEN -->
                                 <tr class="bg-blue-50 font-bold">
-                                    <td class="px-4 py-3 text-blue-900 text-base text-center">Total per Komponen</td>
+                                    <td class="px-4 py-3 text-blue-900 text-base text-center" colspan="2">Total per Komponen</td>
                                     @foreach($komponen as $komponenItem)
                                         @php
                                             $totalPerKomponen = 0;
                                             foreach($cpmkList as $cpmk) {
-                                                $inputName = $cpmk->id . '_' . $komponenItem->id;
-                                                $bobotValue = old('bobot.' . $inputName, $existingCombinations[$inputName] ?? '');
-                                                $totalPerKomponen += floatval($bobotValue);
+                                                $hasChildren = $cpmk->children && $cpmk->children->count() > 0;
+                                                $isParent = !$cpmk->parent_id;
+                                                $isChild = $cpmk->parent_id;
+
+                                                if ($isParent && $hasChildren) {
+                                                    // Hitung dari sub-CPMK
+                                                    foreach($cpmk->children as $childCpmk) {
+                                                        $inputName = $childCpmk->id . '_' . $komponenItem->id;
+                                                        $bobotValue = old('bobot.' . $inputName, $existingCombinations[$inputName] ?? '');
+                                                        $totalPerKomponen += floatval($bobotValue);
+                                                    }
+                                                } elseif ($isParent && !$hasChildren) {
+                                                    // Hitung dari parent CPMK tanpa children
+                                                    $inputName = $cpmk->id . '_' . $komponenItem->id;
+                                                    $bobotValue = old('bobot.' . $inputName, $existingCombinations[$inputName] ?? '');
+                                                    $totalPerKomponen += floatval($bobotValue);
+                                                }
+                                                // Skip child CPMK yang sudah dihitung di atas
                                             }
                                         @endphp
                                         <td class="px-4 py-3 text-center text-blue-900 text-base">{{ number_format($totalPerKomponen, 2) }}</td>

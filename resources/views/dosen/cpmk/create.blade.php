@@ -23,7 +23,7 @@
                     <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
                 </svg>
             </li>
-            <li class="text-gray-900 font-medium">Tambah CPMK</li>
+            <li class="text-gray-900 font-medium">Tambah CPMK Utama</li>
         </ol>
     </nav>
     <!-- Header -->
@@ -31,7 +31,7 @@
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Tambah CPMK</h1>
+                    <h1 class="text-2xl font-bold text-gray-900">Tambah CPMK Utama</h1>
                     <p class="text-gray-600 mt-1">{{ $tahunAjaranMatkul->mataKuliah->namaMatkul }} • {{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }}</p>
                 </div>
                 <a href="{{ route('dosen.cpmk.show', $tahunAjaranMatkul->id) }}"
@@ -48,8 +48,8 @@
     <!-- Form -->
     <div class="bg-white rounded-lg shadow-md">
         <div class="p-6 border-b border-gray-200">
-            <h2 class="text-xl font-semibold text-gray-900">Informasi CPMK</h2>
-            <p class="text-sm text-gray-600 mt-1">Lengkapi informasi CPMK baru</p>
+            <h2 class="text-xl font-semibold text-gray-900">Informasi CPMK Utama</h2>
+            <p class="text-sm text-gray-600 mt-1">Lengkapi informasi CPMK utama baru (bukan sub-CPMK)</p>
         </div>
 
         <form action="{{ route('dosen.cpmk.store', $tahunAjaranMatkul->id) }}" method="POST" class="p-6">
@@ -91,7 +91,7 @@
                 <!-- Kode CPMK -->
                 <div>
                     <label for="kodeCpmk" class="block text-sm font-medium text-gray-700 mb-2">
-                        Kode CPMK <span class="text-red-500">*</span>
+                        Kode CPMK Utama <span class="text-red-500">*</span>
                     </label>
                     <input type="text" name="kodeCpmk" id="kodeCpmk" required maxlength="20"
                            value="{{ old('kodeCpmk') }}"
@@ -100,13 +100,15 @@
                     @error('kodeCpmk')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
-                    <p class="mt-1 text-sm text-gray-500">Kode unik untuk identifikasi CPMK (maksimal 20 karakter)</p>
+                    <p class="mt-1 text-sm text-gray-500">Kode unik untuk identifikasi CPMK utama (maksimal 20 karakter)</p>
                 </div>
+
+
 
                 <!-- Deskripsi -->
                 <div>
                     <label for="deskripsi" class="block text-sm font-medium text-gray-700 mb-2">
-                        Deskripsi CPMK <span class="text-red-500">*</span>
+                        Deskripsi CPMK Utama <span class="text-red-500">*</span>
                     </label>
                     <textarea name="deskripsi" id="deskripsi" rows="5" required maxlength="1000"
                               placeholder="Masukkan deskripsi capaian pembelajaran mata kuliah yang jelas dan terukur..."
@@ -115,7 +117,7 @@
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                     <div class="flex justify-between mt-1">
-                        <p class="text-sm text-gray-500">Deskripsikan kemampuan yang harus dicapai mahasiswa</p>
+                        <p class="text-sm text-gray-500">Deskripsikan kemampuan utama yang harus dicapai mahasiswa</p>
                         <span class="text-sm text-gray-500"><span id="charCount">0</span>/1000</span>
                     </div>
                 </div>
@@ -132,7 +134,7 @@
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
-                    Simpan CPMK
+                    Simpan CPMK Utama
                 </button>
             </div>
         </form>
@@ -190,7 +192,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (deskripsi.length < 10) {
             e.preventDefault();
-            alert('Deskripsi CPMK minimal 10 karakter');
+            alert('Deskripsi CPMK utama minimal 10 karakter');
             deskripsiTextarea.focus();
             return false;
         }

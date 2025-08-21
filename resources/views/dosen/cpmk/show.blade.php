@@ -47,7 +47,7 @@
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                     </svg>
-                    Tambah CPMK
+                    Tambah CPMK Utama
                 </a>
                 @if($cpmkList->isNotEmpty())
                     <a href="{{ route('dosen.bobot-komponen.bulk-create', $tahunAjaranMatkul->id) }}"
@@ -150,27 +150,50 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        @foreach($cpmkList as $cpmk)
-                        <tr class="hover:bg-gray-50 transition-colors">
-                            @if(!$editBobot)
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <input type="checkbox" class="cpmk-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                       value="{{ $cpmk->id }}" data-kode="{{ $cpmk->kodeCpmk }}">
-                            </td>
-                            @endif
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800">
-                                    {{ $cpmk->kodeCpmk }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="text-sm text-gray-900">
-                                    {{ $cpmk->deskripsi }}
-                                </div>
-                            </td>
+                        @foreach($cpmkHierarchy as $hierarchy)
+                            @php
+                                $parent = $hierarchy['parent'];
+                                $children = $hierarchy['children'];
+                            @endphp
+
+                            <!-- Parent CPMK Row -->
+                            <tr class="hover:bg-gray-50 transition-colors {{ $parent->parent_id ? 'bg-gray-50' : 'bg-white' }}">
+                                @if(!$editBobot)
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <input type="checkbox" class="cpmk-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                           value="{{ $parent->id }}" data-kode="{{ $parent->kodeCpmk }}">
+                                </td>
+                                @endif
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        @if($parent->parent_id)
+                                            <div class="w-4 h-4 mr-2 text-gray-400">
+                                                <svg fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                </svg>
+                                            </div>
+                                        @endif
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $parent->parent_id ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800' }}">
+                                            {{ $parent->kodeCpmk }}
+                                            @if($parent->parent_id)
+                                                <span class="ml-1 text-xs">(Sub)</span>
+                                            @endif
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-900">
+                                        {{ $parent->deskripsi }}
+                                        @if($parent->parent_id && $parent->parent)
+                                            <div class="text-xs text-gray-500 mt-1">
+                                                Parent: {{ $parent->parent->kodeCpmk }}
+                                            </div>
+                                        @endif
+                                    </div>
+                                </td>
                             <td class="px-6 py-4 whitespace-nowrap hidden md:table-cell">
                                 <div class="grid grid-cols-3 gap-1">
-                                    @foreach($cpmk->cpl as $cpl)
+                                    @foreach($parent->cpl as $cpl)
                                         <span class="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                             {{ $cpl->kodeCpl }}
                                         </span>
@@ -180,24 +203,24 @@
                             @if($editBobot)
                             <td class="px-6 py-4 whitespace-nowrap text-center">
                                 <div class="flex items-center justify-center">
-                                    <input type="number" name="bobotCpmk[{{ $cpmk->id }}]" step="0.01" min="0" max="100" class="bobot-cpmk-input w-24 px-2 py-1 rounded text-sm text-center @if(!$editBobot) border-0 bg-transparent focus:outline-none @else border border-gray-300 @endif" value="{{ $cpmk->cpmkMatKul[0]->bobotCpmk ?? '' }}" required>
+                                    <input type="number" name="bobotCpmk[{{ $parent->id }}]" step="0.01" min="0" max="100" class="bobot-cpmk-input w-24 px-2 py-1 rounded text-sm text-center @if(!$editBobot) border-0 bg-transparent focus:outline-none @else border border-gray-300 @endif" value="{{ $parent->cpmkMatKul[0]->bobotCpmk ?? '' }}" required>
                                 </div>
                             </td>
                             @else
                             <td class="px-6 py-4 whitespace-nowrap text-center">
                                 <div class="text-sm text-gray-900">
-                                    {{ number_format($cpmk->bobot->sum('bobot'), 2) }} %
+                                    {{ number_format($parent->bobot->sum('bobot'), 2) }} %
                                 </div>
                             </td>
                             @endif
                             @if(!$editBobot)
                             <td class="px-6 py-4 whitespace-nowrap text-center">
-                                @if($cpmk->lastModified)
-                                    <div class="text-xs text-gray-900 font-medium" title="Last updated: {{ \Carbon\Carbon::parse($cpmk->lastModified)->format('d M Y, H:i') }}">
-                                        {{ \Carbon\Carbon::parse($cpmk->lastModified)->format('d/m/Y H:i') }}
+                                @if($parent->lastModified)
+                                    <div class="text-xs text-gray-900 font-medium" title="Last updated: {{ \Carbon\Carbon::parse($parent->lastModified)->format('d M Y, H:i') }}">
+                                        {{ \Carbon\Carbon::parse($parent->lastModified)->format('d/m/Y H:i') }}
                                     </div>
                                     <div class="text-xs text-gray-500 mt-1">
-                                        {{ \Carbon\Carbon::parse($cpmk->lastModified)->diffForHumans() }}
+                                        {{ \Carbon\Carbon::parse($parent->lastModified)->diffForHumans() }}
                                     </div>
                                 @else
                                     <div class="text-xs text-gray-500">-</div>
@@ -205,21 +228,27 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex items-center justify-center space-x-2">
-                                    <a href="{{ route('dosen.cpmk.detail', [$tahunAjaranMatkul->id, $cpmk->id]) }}"
+                                    <a href="{{ route('dosen.cpmk.detail', [$tahunAjaranMatkul->id, $parent->id]) }}"
                                        class="text-blue-600 hover:text-blue-700 p-1" title="Lihat Detail">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                         </svg>
                                     </a>
-                                    <a href="{{ route('dosen.cpmk.edit', [$tahunAjaranMatkul->id, $cpmk->id]) }}"
+                                    <a href="{{ route('dosen.cpmk.edit', [$tahunAjaranMatkul->id, $parent->id]) }}"
                                        class="text-amber-600 hover:text-amber-700 p-1" title="Edit">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                         </svg>
                                     </a>
+                                    <a href="{{ route('dosen.cpmk.sub-cpmk.create', [$tahunAjaranMatkul->id, $parent->id]) }}"
+                                       class="text-green-600 hover:text-green-700 p-1" title="Tambah Sub-CPMK">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                        </svg>
+                                    </a>
                                     <button type="button" class="delete-btn text-red-600 hover:text-red-700 p-1" title="Hapus"
-                                            data-id="{{ $cpmk->id }}" data-kode="{{ $cpmk->kodeCpmk }}" data-modal-toggle="deleteModal">
+                                            data-id="{{ $parent->id }}" data-kode="{{ $parent->kodeCpmk }}" data-modal-toggle="deleteModal">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                         </svg>
@@ -228,6 +257,90 @@
                             </td>
                             @endif
                         </tr>
+
+                        <!-- Child CPMK Rows -->
+                        @foreach($children as $child)
+                        <tr class="hover:bg-gray-50 transition-colors bg-gray-50">
+                            @if(!$editBobot)
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <input type="checkbox" class="cpmk-checkbox rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                       value="{{ $child->id }}" data-kode="{{ $child->kodeCpmk }}">
+                            </td>
+                            @endif
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center pl-6">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                                        {{ $child->kodeCpmk }}
+                                        <span class="ml-1 text-xs">(Sub)</span>
+                                    </span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-900">
+                                    {{ $child->deskripsi }}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap hidden md:table-cell">
+                                <div class="grid grid-cols-3 gap-1">
+                                    @foreach($child->cpl as $cpl)
+                                        <span class="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            {{ $cpl->kodeCpl }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                            </td>
+                            @if($editBobot)
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                <div class="flex items-center justify-center">
+                                    <input type="number" name="bobotCpmk[{{ $child->id }}]" step="0.01" min="0" max="100" class="bobot-cpmk-input w-24 px-2 py-1 rounded text-sm text-center @if(!$editBobot) border-0 bg-transparent focus:outline-none @else border border-gray-300 @endif" value="{{ $child->cpmkMatKul[0]->bobotCpmk ?? '' }}" required>
+                                </div>
+                            </td>
+                            @else
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                <div class="text-sm text-gray-900">
+                                    {{ number_format($child->bobot->sum('bobot'), 2) }} %
+                                </div>
+                            </td>
+                            @endif
+                            @if(!$editBobot)
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                @if($child->lastModified)
+                                    <div class="text-xs text-gray-900 font-medium" title="Last updated: {{ \Carbon\Carbon::parse($child->lastModified)->format('d M Y, H:i') }}">
+                                        {{ \Carbon\Carbon::parse($child->lastModified)->format('d/m/Y H:i') }}
+                                    </div>
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        {{ \Carbon\Carbon::parse($child->lastModified)->diffForHumans() }}
+                                    </div>
+                                @else
+                                    <div class="text-xs text-gray-500">-</div>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div class="flex items-center justify-center space-x-2">
+                                    <a href="{{ route('dosen.cpmk.detail', [$tahunAjaranMatkul->id, $child->id]) }}"
+                                       class="text-blue-600 hover:text-blue-700 p-1" title="Lihat Detail">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                        </svg>
+                                    </a>
+                                    <a href="{{ route('dosen.cpmk.sub-cpmk.edit', [$tahunAjaranMatkul->id, $child->id]) }}"
+                                       class="text-amber-600 hover:text-amber-700 p-1" title="Edit Sub-CPMK">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                        </svg>
+                                    </a>
+                                    <button type="button" class="delete-btn text-red-600 hover:text-red-700 p-1" title="Hapus"
+                                            data-id="{{ $child->id }}" data-kode="{{ $child->kodeCpmk }}" data-modal-toggle="deleteModal">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </td>
+                            @endif
+                        </tr>
+                        @endforeach
                         @endforeach
                         <tr class="bg-blue-50 font-bold">
                             <td class="px-6 py-3 text-blue-900 text-sm" colspan="{{ $editBobot ? 3 : 6 }}">Total Bobot CPMK</td>

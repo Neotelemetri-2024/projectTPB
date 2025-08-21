@@ -168,6 +168,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk', [DosenCpmkController::class, 'showMataKuliah'])->name('dosen.cpmk.show');
         Route::get('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk/create', [DosenCpmkController::class, 'create'])->name('dosen.cpmk.create');
         Route::post('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk', [DosenCpmkController::class, 'store'])->name('dosen.cpmk.store');
+
+        // Sub-CPMK routes
+        Route::get('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk/{parentId}/sub-cpmk/create', [DosenCpmkController::class, 'createSubCpmk'])->name('dosen.cpmk.sub-cpmk.create');
+        Route::post('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk/{parentId}/sub-cpmk', [DosenCpmkController::class, 'storeSubCpmk'])->name('dosen.cpmk.sub-cpmk.store');
+        Route::get('/dosen/mata-kuliah/{tahunAjaranMatkulId}/sub-cpmk/{cpmkId}/edit', [DosenCpmkController::class, 'editSubCpmk'])->name('dosen.cpmk.sub-cpmk.edit');
+        Route::put('/dosen/mata-kuliah/{tahunAjaranMatkulId}/sub-cpmk/{cpmkId}', [DosenCpmkController::class, 'updateSubCpmk'])->name('dosen.cpmk.sub-cpmk.update');
+
         Route::get('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk/{id}', [DosenCpmkController::class, 'showDetail'])->name('dosen.cpmk.detail');
         Route::get('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk/{id}/edit', [DosenCpmkController::class, 'edit'])->name('dosen.cpmk.edit');
         Route::put('/dosen/mata-kuliah/{tahunAjaranMatkulId}/cpmk/{id}', [DosenCpmkController::class, 'update'])->name('dosen.cpmk.update');

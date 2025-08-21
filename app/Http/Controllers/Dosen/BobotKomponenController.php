@@ -41,7 +41,7 @@ class BobotKomponenController extends Controller
 
         // Get CPMK that are assigned to this mata kuliah (from all classes with same dosen)
         $cpmkList = CpmkMatKul::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
-            ->with('cpmk.cpl') // Include CPL relationship
+            ->with(['cpmk.cpl', 'cpmk.children', 'cpmk.parent']) // Include CPL, children, and parent relationships
             ->get()
             ->unique('cpmkId') // Remove duplicates based on cpmkId
             ->map(function($cpmkMatKul) {
@@ -61,12 +61,12 @@ class BobotKomponenController extends Controller
 
         // Get existing bobot with all necessary relationships (from all related classes)
         $existingBobot = Bobot::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
-            ->with(['komponen', 'cpmk.cpl', 'nilai'])
+            ->with(['komponen', 'cpmk.cpl', 'cpmk.children', 'cpmk.parent', 'nilai'])
             ->get();
 
         // Get existing bobot from all classes with same mataKuliahId, tahunAjaranId, and dosen for usedKomponenIds
         $allExistingBobot = Bobot::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
-            ->with(['komponen', 'cpmk.cpl', 'nilai'])
+            ->with(['komponen', 'cpmk.cpl', 'cpmk.children', 'cpmk.parent', 'nilai'])
             ->get();
 
         // Create array of existing combinations for easier lookup
@@ -81,7 +81,7 @@ class BobotKomponenController extends Controller
         // Check if any bobot has nilai (for locking mechanism) - fresh query to avoid cache
         $bobotIds = $existingBobot->pluck('id');
         $bobotWithNilaiIds = \App\Models\Nilai::whereIn('bobotId', $bobotIds)->pluck('bobotId')->unique();
-        
+
         $bobotWithNilai = $existingBobot->filter(function($bobot) use ($bobotWithNilaiIds) {
             return $bobotWithNilaiIds->contains($bobot->id);
         })->mapWithKeys(function($bobot) {
@@ -145,6 +145,36 @@ class BobotKomponenController extends Controller
             'bobot' => 'required|array',
             'bobot.*' => 'nullable|numeric|min:0|max:100',
         ]);
+
+        // Get CPMK list to check hierarchy
+        $cpmkList = CpmkMatKul::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
+            ->with(['cpmk.children', 'cpmk.parent'])
+            ->get()
+            ->unique('cpmkId')
+            ->map(function($cpmkMatKul) {
+                return $cpmkMatKul->cpmk;
+            })
+            ->filter(function($cpmk) {
+                return $cpmk !== null;
+            });
+
+        // Check if any parent CPMK with children has bobot set (should not be allowed)
+        $parentCpmkWithChildren = $cpmkList->filter(function($cpmk) {
+            return !$cpmk->parent_id && $cpmk->children && $cpmk->children->count() > 0;
+        });
+
+        foreach ($parentCpmkWithChildren as $parentCpmk) {
+            foreach ($request->bobot as $combination => $bobotValue) {
+                if ($bobotValue > 0) {
+                    list($cpmkId, $komponenId) = explode('_', $combination);
+                    if ($cpmkId == $parentCpmk->id) {
+                        return redirect()->back()
+                            ->withInput()
+                            ->with('error', "CPMK {$parentCpmk->kodeCpmk} memiliki sub-CPMK. Bobot hanya boleh diatur pada sub-CPMK, bukan pada parent CPMK.");
+                    }
+                }
+            }
+        }
 
         // Validasi total bobot keseluruhan (bukan per komponen)
         $totalBobot = 0;
@@ -214,7 +244,7 @@ class BobotKomponenController extends Controller
 
             $jumlahKelas = $relatedTahunAjaranMatkulIds->count();
             return redirect()->route('dosen.cpmk.show', $tahunAjaranMatkulId)
-                ->with('success', 'Bobot komponen berhasil disimpan untuk ' . $jumlahKelas . ' kelas yang Anda ampu.');
+                ->with('success', 'Bobot komponen berhasil disimpan untuk ' . $jumlahKelas . ' kelas yang Anda ampu. Parent CPMK dengan sub-CPMK menggunakan bobot dari sub-CPMK.');
 
         } catch (\Exception $e) {
             DB::rollback();

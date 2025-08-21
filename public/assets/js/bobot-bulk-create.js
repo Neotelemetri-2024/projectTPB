@@ -37,12 +37,12 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
 
             const btn = e.target.classList.contains('toggle-komponen-btn') ? e.target : e.target.closest('.toggle-komponen-btn');
-            
+
             // Check if button is disabled (locked)
             if (btn.disabled) {
                 return;
             }
-            
+
             const card = btn.closest('.komponen-card');
             const komponenId = card.getAttribute('data-id').toString(); // Ensure string
             const komponenNama = card.getAttribute('data-nama');
@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 // Not selected - show as available with + icon
                 card.classList.remove('border-green-500', 'bg-green-50', 'border-red-500', 'bg-red-50');
-                
+
                 // If any komponen is locked, disable adding new komponen
                 if (hasAnyLockedKomponen) {
                     card.classList.add('border-gray-300', 'bg-gray-100', 'cursor-not-allowed');
@@ -161,10 +161,12 @@ document.addEventListener('DOMContentLoaded', function() {
             currentInputValues[input.name] = input.value;
         });
 
-        // Clear existing komponen headers (keep CPMK header)
-        const cpmkHeader = tableHeaderRow.querySelector('th:first-child');
+        // Clear existing komponen headers (keep Parent CPMK and Sub-CPMK headers)
+        const parentCpmkHeader = tableHeaderRow.querySelector('th:first-child');
+        const subCpmkHeader = tableHeaderRow.querySelector('th:nth-child(2)');
         tableHeaderRow.innerHTML = '';
-        tableHeaderRow.appendChild(cpmkHeader);
+        tableHeaderRow.appendChild(parentCpmkHeader);
+        tableHeaderRow.appendChild(subCpmkHeader);
 
         // Add komponen headers
         selectedKomponen.forEach(function(komponen) {
@@ -182,70 +184,172 @@ document.addEventListener('DOMContentLoaded', function() {
         // Bersihkan body tabel
         tableBody.innerHTML = '';
 
-        // Render baris CPMK
+        // Render baris CPMK dengan hierarki menggunakan struktur kolom
         cpmkListData.forEach(function(cpmkData, rowIndex) {
-            const tr = document.createElement('tr');
-            tr.className = 'hover:bg-gray-50';
+            const hasChildren = cpmkData.children && cpmkData.children.length > 0;
+            const isParent = !cpmkData.parent_id;
+            const isChild = cpmkData.parent_id;
 
-            // Kolom CPMK
-            const tdCpmk = document.createElement('td');
-            tdCpmk.className = 'px-4 py-3 text-sm font-medium text-gray-900 border-r border-gray-200 bg-gray-50';
-            tdCpmk.innerHTML = `<div class="flex flex-col"><span class="font-semibold">${cpmkData.kodeCpmk ?? 'N/A'}</span><span class="text-xs text-gray-600 mt-1">${(cpmkData.deskripsi ?? '').substring(0, 60)}</span></div>`;
-            tr.appendChild(tdCpmk);
+            if (isParent && hasChildren) {
+                // Parent CPMK dengan children
+                cpmkData.children.forEach(function(childCpmk, index) {
+                    const childTr = document.createElement('tr');
+                    childTr.className = 'hover:bg-gray-50';
 
-            // Kolom bobot per komponen
-            let totalCpmk = 0;
-            selectedKomponen.forEach(function(komponen) {
-                const combination = cpmkData.id + '_' + komponen.id;
-                let existingValue = existingCombinationsData[combination] || 0;
-                const hasNilai = bobotWithNilaiData.hasOwnProperty(combination);
-                const isKomponenLocked = komponenLockedData[komponen.id] || false;
-                
-                // Jika ada input, gunakan value input
-                const inputName = 'bobot[' + combination + ']';
-                const inputElem = document.querySelector(`input[name='${inputName}']`);
-                if (inputElem && inputElem.value !== '') {
-                    existingValue = parseFloat(inputElem.value) || 0;
-                }
-                totalCpmk += parseFloat(existingValue) || 0;
-
-                const td = document.createElement('td');
-                td.className = 'px-2 py-3 text-center border-r border-gray-200';
-
-                // Lock if either this specific combination has nilai OR the entire komponen is locked
-                if (hasNilai || isKomponenLocked) {
-                    td.innerHTML = '<div class="relative inline-block"><input type="number" step="0.1" min="0" max="100" value="' + existingValue + '" class="w-20 px-2 py-1 border border-gray-300 rounded text-sm text-center bg-gray-100" disabled><div class="absolute -top-1 -right-1"><svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z" clip-rule="evenodd"></path></svg></div></div><div class="text-xs text-red-600 mt-1">Terkunci</div>';
-                } else {
-                    const input = document.createElement('input');
-                    input.type = 'number';
-                    input.step = '0.1';
-                    input.min = '0';
-                    input.max = '100';
-                    input.name = inputName;
-                    if (currentInputValues[inputName] !== undefined) {
-                        input.value = currentInputValues[inputName];
-                    } else {
-                        input.value = existingValue > 0 ? existingValue : '';
+                    if (index === 0) {
+                        // Parent CPMK cell dengan rowspan
+                        const tdParent = document.createElement('td');
+                        tdParent.className = 'px-4 py-3 text-sm font-medium text-gray-900 border-r border-gray-200 bg-blue-50';
+                        tdParent.rowSpan = cpmkData.children.length;
+                        tdParent.innerHTML = `
+                            <div class="flex flex-col">
+                                <span class="font-semibold text-blue-800">${cpmkData.kodeCpmk ?? 'N/A'}</span>
+                                <span class="text-xs text-gray-600 mt-1">${(cpmkData.deskripsi ?? '').substring(0, 50)}</span>
+                                <span class="text-xs text-blue-600 mt-1 font-medium">Parent CPMK</span>
+                            </div>
+                        `;
+                        childTr.appendChild(tdParent);
                     }
-                    input.setAttribute('data-original', existingValue);
-                    input.placeholder = '0.0';
-                    input.className = 'w-20 px-2 py-1 border border-gray-300 rounded text-sm text-center bobot-input focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
 
-                    // Add event listeners
-                    input.addEventListener('input', updateTotalBobotRowRealtime);
-                    input.addEventListener('change', updateTotalBobotRowRealtime);
+                    // Sub-CPMK cell
+                    const tdSub = document.createElement('td');
+                    tdSub.className = 'px-4 py-3 text-sm font-medium text-gray-900 border-r border-gray-200';
+                    tdSub.innerHTML = `
+                        <div class="flex flex-col">
+                            <span class="font-semibold text-green-700">${childCpmk.kodeCpmk ?? 'N/A'}</span>
+                            <span class="text-xs text-gray-600 mt-1">${(childCpmk.deskripsi ?? '').substring(0, 50)}</span>
+                        </div>
+                    `;
+                    childTr.appendChild(tdSub);
 
-                    td.appendChild(input);
-                }
-                tr.appendChild(td);
-            });
-            // Kolom total bobot CPMK
-            const tdTotalCpmk = document.createElement('td');
-            tdTotalCpmk.className = 'px-4 py-3 text-center font-bold text-blue-700';
-            tdTotalCpmk.textContent = totalCpmk.toFixed(2);
-            tr.appendChild(tdTotalCpmk);
+                    // Kolom bobot per komponen untuk sub-CPMK
+                    let totalCpmk = 0;
+                    selectedKomponen.forEach(function(komponen) {
+                        const combination = childCpmk.id + '_' + komponen.id;
+                        let existingValue = existingCombinationsData[combination] || 0;
+                        const hasNilai = bobotWithNilaiData.hasOwnProperty(combination);
+                        const isKomponenLocked = komponenLockedData[komponen.id] || false;
 
-            tableBody.appendChild(tr);
+                        // Jika ada input, gunakan value input
+                        const inputName = 'bobot[' + combination + ']';
+                        const inputElem = document.querySelector(`input[name='${inputName}']`);
+                        if (inputElem && inputElem.value !== '') {
+                            existingValue = parseFloat(inputElem.value) || 0;
+                        }
+                        totalCpmk += parseFloat(existingValue) || 0;
+
+                        const td = document.createElement('td');
+                        td.className = 'px-2 py-3 text-center border-r border-gray-200';
+
+                        // Lock if either this specific combination has nilai OR the entire komponen is locked
+                        if (hasNilai || isKomponenLocked) {
+                            td.innerHTML = '<div class="relative inline-block"><input type="number" step="0.1" min="0" max="100" value="' + existingValue + '" class="w-20 px-2 py-1 border border-gray-300 rounded text-sm text-center bg-gray-100" disabled><div class="absolute -top-1 -right-1"><svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z" clip-rule="evenodd"></path></svg></div></div><div class="text-xs text-red-600 mt-1">Terkunci</div>';
+                        } else {
+                            const input = document.createElement('input');
+                            input.type = 'number';
+                            input.step = '0.1';
+                            input.min = '0';
+                            input.max = '100';
+                            input.name = inputName;
+                            if (currentInputValues[inputName] !== undefined) {
+                                input.value = currentInputValues[inputName];
+                            } else {
+                                input.value = existingValue > 0 ? existingValue : '';
+                            }
+                            input.setAttribute('data-original', existingValue);
+                            input.placeholder = '0.0';
+                            input.className = 'w-20 px-2 py-1 border border-gray-300 rounded text-sm text-center bobot-input focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
+
+                            // Add event listeners
+                            input.addEventListener('input', updateTotalBobotRowRealtime);
+                            input.addEventListener('change', updateTotalBobotRowRealtime);
+
+                            td.appendChild(input);
+                        }
+                        childTr.appendChild(td);
+                    });
+
+                    // Kolom total bobot CPMK untuk sub-CPMK
+                    const tdTotalCpmk = document.createElement('td');
+                    tdTotalCpmk.className = 'px-4 py-3 text-center font-bold text-blue-700';
+                    tdTotalCpmk.textContent = totalCpmk.toFixed(2);
+                    childTr.appendChild(tdTotalCpmk);
+
+                    tableBody.appendChild(childTr);
+                });
+            } else if (isParent && !hasChildren) {
+                // Parent CPMK tanpa children
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50';
+
+                // Kolom Parent CPMK
+                const tdParent = document.createElement('td');
+                tdParent.className = 'px-4 py-3 text-sm font-medium text-gray-900 border-r border-gray-200';
+                tdParent.innerHTML = `<div class="flex flex-col"><span class="font-semibold">${cpmkData.kodeCpmk ?? 'N/A'}</span><span class="text-xs text-gray-600 mt-1">${(cpmkData.deskripsi ?? '').substring(0, 50)}</span></div>`;
+                tr.appendChild(tdParent);
+
+                // Kolom Sub-CPMK (kosong)
+                const tdSub = document.createElement('td');
+                tdSub.className = 'px-4 py-3 text-sm text-gray-500 border-r border-gray-200 bg-gray-50';
+                tdSub.innerHTML = '<span class="italic">Tidak ada sub-CPMK</span>';
+                tr.appendChild(tdSub);
+
+                // Kolom bobot per komponen
+                let totalCpmk = 0;
+                selectedKomponen.forEach(function(komponen) {
+                    const combination = cpmkData.id + '_' + komponen.id;
+                    let existingValue = existingCombinationsData[combination] || 0;
+                    const hasNilai = bobotWithNilaiData.hasOwnProperty(combination);
+                    const isKomponenLocked = komponenLockedData[komponen.id] || false;
+
+                    // Jika ada input, gunakan value input
+                    const inputName = 'bobot[' + combination + ']';
+                    const inputElem = document.querySelector(`input[name='${inputName}']`);
+                    if (inputElem && inputElem.value !== '') {
+                        existingValue = parseFloat(inputElem.value) || 0;
+                    }
+                    totalCpmk += parseFloat(existingValue) || 0;
+
+                    const td = document.createElement('td');
+                    td.className = 'px-2 py-3 text-center border-r border-gray-200';
+
+                    // Lock if either this specific combination has nilai OR the entire komponen is locked
+                    if (hasNilai || isKomponenLocked) {
+                        td.innerHTML = '<div class="relative inline-block"><input type="number" step="0.1" min="0" max="100" value="' + existingValue + '" class="w-20 px-2 py-1 border border-gray-300 rounded text-sm text-center bg-gray-100" disabled><div class="absolute -top-1 -right-1"><svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z" clip-rule="evenodd"></path></svg></div></div><div class="text-xs text-red-600 mt-1">Terkunci</div>';
+                    } else {
+                        const input = document.createElement('input');
+                        input.type = 'number';
+                        input.step = '0.1';
+                        input.min = '0';
+                        input.max = '100';
+                        input.name = inputName;
+                        if (currentInputValues[inputName] !== undefined) {
+                            input.value = currentInputValues[inputName];
+                        } else {
+                            input.value = existingValue > 0 ? existingValue : '';
+                        }
+                        input.setAttribute('data-original', existingValue);
+                        input.placeholder = '0.0';
+                        input.className = 'w-20 px-2 py-1 border border-gray-300 rounded text-sm text-center bobot-input focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
+
+                                                // Add event listeners
+                        input.addEventListener('input', updateTotalBobotRowRealtime);
+                        input.addEventListener('change', updateTotalBobotRowRealtime);
+
+
+                        td.appendChild(input);
+                    }
+                    tr.appendChild(td);
+                });
+                // Kolom total bobot CPMK
+                const tdTotalCpmk = document.createElement('td');
+                tdTotalCpmk.className = 'px-4 py-3 text-center font-bold text-blue-700';
+                tdTotalCpmk.textContent = totalCpmk.toFixed(2);
+                tr.appendChild(tdTotalCpmk);
+
+                tableBody.appendChild(tr);
+            }
+            // Skip child CPMK yang sudah ditampilkan di atas
         });
 
         // Baris total per komponen
@@ -253,21 +357,43 @@ document.addEventListener('DOMContentLoaded', function() {
         trTotal.className = 'bg-blue-50 font-bold';
         const tdLabel = document.createElement('td');
         tdLabel.className = 'px-4 py-3 text-blue-900 text-base text-center';
+        tdLabel.colSpan = 2;
         tdLabel.textContent = 'Total per Komponen';
         trTotal.appendChild(tdLabel);
         let totalKeseluruhan = 0;
         selectedKomponen.forEach(function(komponen) {
             let totalPerKomponen = 0;
             cpmkListData.forEach(function(cpmkData) {
-                const combination = cpmkData.id + '_' + komponen.id;
-                let existingValue = existingCombinationsData[combination] || 0;
-                // Jika ada input, gunakan value input
-                const inputName = 'bobot[' + combination + ']';
-                const inputElem = document.querySelector(`input[name='${inputName}']`);
-                if (inputElem && inputElem.value !== '') {
-                    existingValue = parseFloat(inputElem.value) || 0;
+                const hasChildren = cpmkData.children && cpmkData.children.length > 0;
+                const isParent = !cpmkData.parent_id;
+                const isChild = cpmkData.parent_id;
+
+                if (isParent && hasChildren) {
+                    // Hitung dari sub-CPMK
+                    cpmkData.children.forEach(function(childCpmk) {
+                        const combination = childCpmk.id + '_' + komponen.id;
+                        let existingValue = existingCombinationsData[combination] || 0;
+                        // Jika ada input, gunakan value input
+                        const inputName = 'bobot[' + combination + ']';
+                        const inputElem = document.querySelector(`input[name='${inputName}']`);
+                        if (inputElem && inputElem.value !== '') {
+                            existingValue = parseFloat(inputElem.value) || 0;
+                        }
+                        totalPerKomponen += parseFloat(existingValue) || 0;
+                    });
+                } else if (isParent && !hasChildren) {
+                    // Hitung dari parent CPMK tanpa children
+                    const combination = cpmkData.id + '_' + komponen.id;
+                    let existingValue = existingCombinationsData[combination] || 0;
+                    // Jika ada input, gunakan value input
+                    const inputName = 'bobot[' + combination + ']';
+                    const inputElem = document.querySelector(`input[name='${inputName}']`);
+                    if (inputElem && inputElem.value !== '') {
+                        existingValue = parseFloat(inputElem.value) || 0;
+                    }
+                    totalPerKomponen += parseFloat(existingValue) || 0;
                 }
-                totalPerKomponen += parseFloat(existingValue) || 0;
+                // Skip child CPMK yang sudah dihitung di atas
             });
             totalKeseluruhan += totalPerKomponen;
             const td = document.createElement('td');
@@ -294,20 +420,45 @@ document.addEventListener('DOMContentLoaded', function() {
         for (let i = 0; i < selectedKomponen.length; i++) komponenTotals[i] = 0;
         for (let i = 0; i < cpmkListData.length; i++) cpmkTotals[i] = 0;
 
-        // Loop semua input dan akumulasi ke array
+        // Loop semua input dan akumulasi ke array dengan mempertimbangkan hierarki CPMK
         tableBody.querySelectorAll('input[type="number"]').forEach(input => {
             const name = input.name;
             const match = name.match(/bobot\[(\d+)_([\w-]+)\]/);
             if (match) {
                 const cpmkId = match[1];
                 const komponenId = match[2];
-                const cpmkIdx = cpmkListData.findIndex(c => c.id == cpmkId);
+                const cpmkData = cpmkListData.find(c => c.id == cpmkId);
                 const komponenIdx = selectedKomponen.findIndex(k => k.id == komponenId);
                 const value = parseFloat(input.value) || 0;
-                if (cpmkIdx >= 0 && komponenIdx >= 0) {
-                    komponenTotals[komponenIdx] += value;
-                    cpmkTotals[cpmkIdx] += value;
-                    totalKeseluruhan += value;
+
+                if (cpmkData && komponenIdx >= 0) {
+                    // Cek apakah ini adalah sub-CPMK
+                    const isChild = cpmkData.parent_id;
+                    const isParentWithChildren = !cpmkData.parent_id && cpmkData.children && cpmkData.children.length > 0;
+
+                    // Hanya hitung jika bukan parent CPMK dengan children
+                    if (!isParentWithChildren) {
+                        komponenTotals[komponenIdx] += value;
+                        totalKeseluruhan += value;
+
+                        // Untuk total CPMK, hitung berdasarkan hierarki
+                        if (isChild) {
+                            // Cari parent CPMK
+                            const parentCpmk = cpmkListData.find(c => c.id == cpmkData.parent_id);
+                            if (parentCpmk) {
+                                const parentIdx = cpmkListData.findIndex(c => c.id == parentCpmk.id);
+                                if (parentIdx >= 0) {
+                                    cpmkTotals[parentIdx] += value;
+                                }
+                            }
+                        } else {
+                            // Parent CPMK tanpa children
+                            const cpmkIdx = cpmkListData.findIndex(c => c.id == cpmkId);
+                            if (cpmkIdx >= 0) {
+                                cpmkTotals[cpmkIdx] += value;
+                            }
+                        }
+                    }
                 }
             }
         });
@@ -317,7 +468,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const lastRow = tableBodyRows2[tableBodyRows2.length - 1];
             // Update cell total per komponen
             for (let i = 0; i < selectedKomponen.length; i++) {
-                const td = lastRow.children[i+1]; // +1 karena kolom label
+                const td = lastRow.children[i+2]; // +2 karena ada 2 kolom label (Parent CPMK + Sub-CPMK)
                 if (td) td.textContent = komponenTotals[i].toFixed(2);
             }
             // Update cell total keseluruhan
@@ -334,13 +485,48 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         }
-        // Update kolom total bobot CPMK (per baris)
+        // Update kolom total bobot CPMK (per baris) dengan mempertimbangkan hierarki
+        let rowIndex = 0;
         for (let i = 0; i < cpmkListData.length; i++) {
-            const row = tableBodyRows2[i];
-            if (row) {
-                const td = row.lastElementChild;
-                if (td) td.textContent = cpmkTotals[i].toFixed(2);
+            const cpmkData = cpmkListData[i];
+            const hasChildren = cpmkData.children && cpmkData.children.length > 0;
+            const isParent = !cpmkData.parent_id;
+            const isChild = cpmkData.parent_id;
+
+            if (isParent && hasChildren) {
+                // Skip parent CPMK row (header row)
+                rowIndex++;
+                // Update sub-CPMK rows
+                cpmkData.children.forEach(function(childCpmk) {
+                    const row = tableBodyRows2[rowIndex];
+                    if (row) {
+                        const td = row.lastElementChild;
+                        if (td) {
+                            // Hitung total untuk sub-CPMK ini
+                            let subCpmkTotal = 0;
+                            selectedKomponen.forEach(function(komponen) {
+                                const combination = childCpmk.id + '_' + komponen.id;
+                                const inputName = 'bobot[' + combination + ']';
+                                const inputElem = document.querySelector(`input[name='${inputName}']`);
+                                if (inputElem && inputElem.value !== '') {
+                                    subCpmkTotal += parseFloat(inputElem.value) || 0;
+                                }
+                            });
+                            td.textContent = subCpmkTotal.toFixed(2);
+                        }
+                    }
+                    rowIndex++;
+                });
+            } else if (isParent && !hasChildren) {
+                // Parent CPMK tanpa children
+                const row = tableBodyRows2[rowIndex];
+                if (row) {
+                    const td = row.lastElementChild;
+                    if (td) td.textContent = cpmkTotals[i].toFixed(2);
+                }
+                rowIndex++;
             }
+            // Skip child CPMK yang sudah diupdate di atas
         }
         // Tambahkan/hapus icon warning di setiap input jika total keseluruhan > 100
         tableBody.querySelectorAll('input[type="number"]').forEach(input => {
@@ -363,7 +549,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update status tombol submit
         let allValid = true;
         let adaIsi = false;
-        
+
         // Validasi per komponen (maksimal 100% per komponen)
         for (let i = 0; i < selectedKomponen.length; i++) {
             if (komponenTotals[i] > 100) {
@@ -373,19 +559,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 adaIsi = true;
             }
         }
-        
+
         // Cek juga jika ada input bobot > 0
         if (!adaIsi) {
             tableBody.querySelectorAll('input[type="number"]').forEach(input => {
                 if (parseFloat(input.value) > 0) adaIsi = true;
             });
         }
-        
+
         // Validasi total keseluruhan tidak boleh lebih dari 100
         if (totalKeseluruhan > 100) {
             allValid = false;
         }
-        
+
         if (allValid && adaIsi && selectedKomponen.length > 0) {
             submitBtn.disabled = false;
             submitBtn.className = 'w-full sm:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500';
@@ -419,13 +605,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Pilih minimal satu komponen penilaian');
                 return false;
             }
-            
+
             // Validasi per komponen
             const komponenTotals = {};
             selectedKomponen.forEach(komponen => {
                 komponenTotals[komponen.id] = 0;
             });
-            
+
             document.querySelectorAll('input[type="number"]').forEach(input => {
                 if (input.name && input.name.startsWith('bobot[')) {
                     const match = input.name.match(/bobot\[(\d+)_([\w-]+)\]/);
@@ -438,10 +624,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
             });
-            
+
             let allValid = true;
             let errorMessage = '';
-            
+
             Object.keys(komponenTotals).forEach(komponenId => {
                 if (komponenTotals[komponenId] > 100) {
                     allValid = false;
@@ -450,18 +636,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     errorMessage += `• Total bobot untuk komponen "${komponenNama}" melebihi 100% (${komponenTotals[komponenId].toFixed(2)}%)\n`;
                 }
             });
-            
+
             // Validasi total keseluruhan
             let totalKeseluruhan = 0;
             Object.values(komponenTotals).forEach(total => {
                 totalKeseluruhan += total;
             });
-            
+
             if (totalKeseluruhan > 100) {
                 allValid = false;
                 errorMessage += `• Total bobot keseluruhan melebihi 100% (${totalKeseluruhan.toFixed(2)}%)\n`;
             }
-            
+
             if (!allValid) {
                 e.preventDefault();
                 alert('Validasi bobot gagal:\n\n' + errorMessage + '\nMohon periksa kembali.');
@@ -485,7 +671,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         }
-        
+
         // Also add komponen that are locked (have nilai)
         if (komponenLockedData) {
             Object.keys(komponenLockedData).forEach(komponenId => {

@@ -113,7 +113,7 @@
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>
                     <h1 class="text-3xl font-bold text-gray-900">Dashboard Administrator</h1>
-                    <p class="mt-2 text-gray-600">Selamat datang, {{ $user->name }}!</p>
+                    <p class="mt-2 text-gray-600">Selamat datang di Portal TPB!</p>
                 </div>
 
                 <!-- Filter Tahun Ajaran -->
@@ -223,6 +223,12 @@
                     <div class="flex items-center space-x-2">
                         <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
                         <span class="text-sm text-gray-600">Per Tahun Ajaran</span>
+                        <button onclick="maximizeChart('historyChart', 'Tren Historis Top 5 Mata Kuliah')" 
+                                class="p-1 text-gray-400 hover:text-gray-600 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                            </svg>
+                        </button>
                     </div>
                 </div>
                 <div class="relative h-80">
@@ -240,6 +246,12 @@
                     <div class="flex items-center space-x-2">
                         <div class="w-3 h-3 bg-green-500 rounded-full"></div>
                         <span class="text-sm text-gray-600">Rata-rata (%)</span>
+                        <button onclick="maximizeChart('cplChart', 'Capaian Pembelajaran Lulusan')" 
+                                class="p-1 text-gray-400 hover:text-gray-600 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                            </svg>
+                        </button>
                     </div>
                 </div>
                 <div class="relative h-80">
@@ -255,8 +267,14 @@
                 <div class="flex items-center justify-between mb-4">
                     <div>
                         <h3 class="text-lg font-semibold text-gray-900">Distribusi Grade</h3>
-                        <p class="text-sm text-gray-600">Sebaran nilai mahasiswa</p>
+                        <p class="text-sm text-gray-600">Sebaran nilai per mata kuliah (Top 5)</p>
                     </div>
+                    <button onclick="maximizeChart('gradeChart', 'Distribusi Grade')" 
+                            class="p-1 text-gray-400 hover:text-gray-600 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                        </svg>
+                    </button>
                 </div>
                 <div class="relative h-64">
                     <canvas id="gradeChart"></canvas>
@@ -268,8 +286,14 @@
                 <div class="flex items-center justify-between mb-4">
                     <div>
                         <h3 class="text-lg font-semibold text-gray-900">Jenis Mata Kuliah</h3>
-                        <p class="text-sm text-gray-600">Distribusi wajib vs pilihan</p>
+                        <p class="text-sm text-gray-600">Distribusi wajib vs pilihan (Master Data)</p>
                     </div>
+                    <button onclick="maximizeChart('courseTypeChart', 'Jenis Mata Kuliah')" 
+                            class="p-1 text-gray-400 hover:text-gray-600 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                        </svg>
+                    </button>
                 </div>
                 <div class="relative h-64">
                     <canvas id="courseTypeChart"></canvas>
@@ -283,6 +307,12 @@
                         <h3 class="text-lg font-semibold text-gray-900">Tingkat Kelulusan</h3>
                         <p class="text-sm text-gray-600">Per mata kuliah</p>
                     </div>
+                    <button onclick="maximizeChart('completionChart', 'Tingkat Kelulusan')" 
+                            class="p-1 text-gray-400 hover:text-gray-600 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                        </svg>
+                    </button>
                 </div>
                 <div class="relative h-64">
                     <canvas id="completionChart"></canvas>
@@ -296,6 +326,12 @@
                         <h3 class="text-lg font-semibold text-gray-900">Top 10 Mahasiswa</h3>
                         <p class="text-sm text-gray-600">Berdasarkan rata-rata nilai</p>
                     </div>
+                    <button onclick="maximizeChart('topStudentsChart', 'Top 10 Mahasiswa')" 
+                            class="p-1 text-gray-400 hover:text-gray-600 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                        </svg>
+                    </button>
                 </div>
                 <div class="relative h-64">
                     <canvas id="topStudentsChart"></canvas>
@@ -339,6 +375,9 @@
     </div>
 </div>
 
+<!-- Include Chart Modal Component -->
+@include('components.chart-modal')
+
 <script>
 // Loading state management
 document.addEventListener('DOMContentLoaded', function() {
@@ -361,183 +400,223 @@ const courseCompletionData = @json($courseCompletionData);
 const courseTypeData = @json($courseTypeData);
 const topStudentsData = @json($topStudentsData);
 
+// Make chart data globally accessible for maximize function
+window.chartData = chartData;
+window.cplAchievementData = cplAchievementData;
+window.matkulPerformanceData = matkulPerformanceData;
+window.courseCompletionData = courseCompletionData;
+window.courseTypeData = courseTypeData;
+window.topStudentsData = topStudentsData;
+
 // Initialize all charts
 function initializeCharts() {
-    // Initialize History Chart (Line Chart)
-    const historyCtx = document.getElementById('historyChart').getContext('2d');
-    const historyChart = new Chart(historyCtx, {
-        type: 'line',
-        data: chartData,
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    title: {
-                        display: true,
-                        text: 'Rata-rata Nilai'
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Tahun Ajaran'
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        usePointStyle: true,
-                        padding: 15
-                    }
-                }
-            }
-        }
-    });
-
-    // Initialize CPL Achievement Chart (Bar Chart)
-    const cplCtx = document.getElementById('cplChart').getContext('2d');
-    const cplChart = new Chart(cplCtx, {
-        type: 'bar',
-        data: cplAchievementData,
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    title: {
-                        display: true,
-                        text: 'Rata-rata Pencapaian (%)'
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Kode CPL'
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                }
-            }
-        }
-    });
-
-    // Initialize Grade Distribution Chart (Doughnut Chart)
-    const gradeCtx = document.getElementById('gradeChart').getContext('2d');
-    const gradeChart = new Chart(gradeCtx, {
-        type: 'doughnut',
-        data: matkulPerformanceData,
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        usePointStyle: true,
-                        padding: 8,
-                        font: {
-                            size: 10
+    try {
+        // Initialize History Chart (Line Chart)
+        const historyCtx = document.getElementById('historyChart');
+        if (historyCtx) {
+            new Chart(historyCtx.getContext('2d'), {
+                type: 'line',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Rata-rata Nilai'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Tahun Ajaran'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15
+                            }
                         }
                     }
                 }
-            }
+            });
         }
-    });
 
-    // Initialize Course Type Chart (Pie Chart)
-    const courseTypeCtx = document.getElementById('courseTypeChart').getContext('2d');
-    const courseTypeChart = new Chart(courseTypeCtx, {
-        type: 'pie',
-        data: courseTypeData,
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        usePointStyle: true,
-                        padding: 15
+        // Initialize CPL Achievement Chart (Bar Chart)
+        const cplCtx = document.getElementById('cplChart');
+        if (cplCtx) {
+            new Chart(cplCtx.getContext('2d'), {
+                type: 'bar',
+                data: cplAchievementData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Rata-rata Pencapaian (%)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Kode CPL'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
                     }
                 }
-            }
+            });
         }
-    });
 
-    // Initialize Course Completion Chart
-    const completionCtx = document.getElementById('completionChart').getContext('2d');
-    const completionChart = new Chart(completionCtx, {
-        type: 'bar',
-        data: courseCompletionData,
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    title: {
-                        display: true,
-                        text: 'Tingkat Kelulusan (%)'
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Kode Mata Kuliah'
+        // Initialize Grade Distribution Chart (Bar Chart)
+        const gradeCtx = document.getElementById('gradeChart');
+        if (gradeCtx) {
+            new Chart(gradeCtx.getContext('2d'), {
+                type: 'bar',
+                data: matkulPerformanceData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Jumlah Mahasiswa'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Grade'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 8,
+                                font: {
+                                    size: 10
+                                }
+                            }
+                        }
                     }
                 }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                }
-            }
+            });
         }
-    });
 
-    // Initialize Top Students Chart
-    const topStudentsCtx = document.getElementById('topStudentsChart').getContext('2d');
-    const topStudentsChart = new Chart(topStudentsCtx, {
-        type: 'bar',
-        data: topStudentsData,
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            indexAxis: 'y',
-            scales: {
-                x: {
-                    beginAtZero: true,
-                    max: 100,
-                    title: {
-                        display: true,
-                        text: 'Rata-rata Nilai'
-                    }
-                },
-                y: {
-                    title: {
-                        display: true,
-                        text: 'NIM Mahasiswa'
+        // Initialize Course Type Chart (Pie Chart)
+        const courseTypeCtx = document.getElementById('courseTypeChart');
+        if (courseTypeCtx) {
+            new Chart(courseTypeCtx.getContext('2d'), {
+                type: 'pie',
+                data: courseTypeData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15
+                            }
+                        }
                     }
                 }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                }
-            }
+            });
         }
-    });
+
+        // Initialize Course Completion Chart
+        const completionCtx = document.getElementById('completionChart');
+        if (completionCtx) {
+            new Chart(completionCtx.getContext('2d'), {
+                type: 'bar',
+                data: courseCompletionData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Tingkat Kelulusan (%)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Kode Mata Kuliah'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize Top Students Chart
+        const topStudentsCtx = document.getElementById('topStudentsChart');
+        if (topStudentsCtx) {
+            new Chart(topStudentsCtx.getContext('2d'), {
+                type: 'bar',
+                data: topStudentsData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Rata-rata Nilai'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'NIM Mahasiswa'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+        
+    } catch (error) {
+        console.error('Error initializing charts:', error);
+    }
 }
 
 // Filter function

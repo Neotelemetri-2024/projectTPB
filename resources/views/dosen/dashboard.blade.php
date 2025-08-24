@@ -39,16 +39,40 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div class="bg-white rounded-lg shadow p-4">
-            <h3 class="font-semibold mb-2">Jumlah Mahasiswa per Mata Kuliah</h3>
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold">Jumlah Mahasiswa per Mata Kuliah</h3>
+                <button onclick="maximizeChart('barChart', 'Jumlah Mahasiswa per Mata Kuliah')" 
+                        class="text-amber-600 hover:text-amber-700 p-1 rounded">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                    </svg>
+                </button>
+            </div>
             <canvas id="barChart"></canvas>
         </div>
         <div class="bg-white rounded-lg shadow p-4">
-            <h3 class="font-semibold mb-2">Distribusi Grade</h3>
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold">Distribusi Grade</h3>
+                <button onclick="maximizeChart('pieChart', 'Distribusi Grade')" 
+                        class="text-amber-600 hover:text-amber-700 p-1 rounded">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                    </svg>
+                </button>
+            </div>
             <canvas id="pieChart"></canvas>
         </div>
     </div>
     <div class="bg-white rounded-lg shadow p-4 mb-6">
-        <h3 class="font-semibold mb-2">Progress Rata-rata Nilai per MK (Tiap Tahun Ajaran)</h3>
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold">Progress Rata-rata Nilai per MK (Tiap Tahun Ajaran)</h3>
+            <button onclick="maximizeChart('lineChart', 'Progress Rata-rata Nilai per MK')" 
+                    class="text-amber-600 hover:text-amber-700 p-1 rounded">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                </svg>
+            </button>
+        </div>
         <canvas id="lineChart"></canvas>
     </div>
 
@@ -133,6 +157,8 @@
         </div>
     </div>
 </div>
+
+@include('components.chart-modal')
 
 <!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

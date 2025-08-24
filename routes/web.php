@@ -196,6 +196,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/dosen/nilai/{id}/import', [DosenNilaiController::class, 'importNilai'])->name('dosen.nilai.import');
         Route::get('/dosen/nilai/{id}/import-status', [DosenNilaiController::class, 'checkImportStatus'])->name('dosen.nilai.import-status');
         Route::get('/dosen/nilai/{id}/detail', [DosenNilaiController::class, 'detailNilai'])->name('dosen.nilai.detail');
+        
+        // Laporan CPMK
+        Route::get('/dosen/cpmk-laporan', [\App\Http\Controllers\Dosen\CpmkLaporanController::class, 'index'])->name('dosen.cpmk-laporan.index');
+        Route::get('/dosen/cpmk-laporan/{tahunAjaranMatkulId}', [\App\Http\Controllers\Dosen\CpmkLaporanController::class, 'show'])->name('dosen.cpmk-laporan.show');
     });
 
     // Mahasiswa Dashboard

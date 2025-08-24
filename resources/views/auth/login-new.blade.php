@@ -120,14 +120,11 @@
                     </button>
 
                     <!-- Register Link -->
-                    @if (Route::has('register'))
-                        <p class="text-sm text-gray-600 text-center">
-                            Belum punya akun? 
-                            <a href="{{ route('register') }}" class="font-semibold text-amber-600 hover:text-amber-700 transition-colors duration-200">
-                                Daftar sekarang
-                            </a>
+                    <div class="text-center">
+                        <p class="text-sm text-gray-600">
+                            Belum punya akun? Hubungi administrator untuk membuat akun.
                         </p>
-                    @endif
+                    </div>
                 </form>
             </div>
         </div>

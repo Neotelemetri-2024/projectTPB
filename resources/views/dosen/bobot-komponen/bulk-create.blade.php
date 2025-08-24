@@ -143,152 +143,22 @@
                         <p class="text-gray-500">Belum ada CPMK yang ditetapkan untuk mata kuliah ini.</p>
                     </div>
                 @else
-                    <div class="overflow-x-auto">
-                                                <table id="bobot-table" class="min-w-full bg-white border border-gray-200 rounded-lg">
+                    <!-- Bobot Table -->
+                    <div id="bobot-table" class="mt-6">
+                        <!-- Table will be rendered by JavaScript -->
+                        <table class="min-w-full bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm" id="bobot-matrix-table">
                             <thead class="bg-gray-50">
                                 <tr id="table-header-row">
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-r border-gray-200">
                                         CPMK
                                     </th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-r border-gray-200">
-                                        Sub CPMK
-                                    </th>
-                                    @foreach($komponen as $komponenItem)
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
-                                            {{ $komponenItem->nama }}
-                                        </th>
-                                    @endforeach
-                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">
-                                        Total Bobot CPMK
+                                        SUB CPMK
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody id="table-body" class="divide-y divide-gray-200">
-                                                                @php
-                                    // Collect all CPMKs to display (sub-CPMKs first, then parent CPMKs without children)
-                                    $displayCpmks = collect();
-
-                                    foreach($cpmkList as $cpmk) {
-                                        $hasChildren = $cpmk->children && $cpmk->children->count() > 0;
-                                        $isParent = !$cpmk->parent_id;
-                                        $isChild = $cpmk->parent_id;
-
-                                        if ($isParent && $hasChildren) {
-                                            // Add all child CPMKs first (parent CPMK dengan children TIDAK memiliki baris sendiri)
-                                            foreach($cpmk->children as $childCpmk) {
-                                                $displayCpmks->push([
-                                                    'type' => 'child',
-                                                    'cpmk' => $childCpmk,
-                                                    'parent' => $cpmk
-                                                ]);
-                                            }
-                                        } elseif ($isParent && !$hasChildren) {
-                                            // Add parent CPMK without children (hanya parent tanpa children yang memiliki baris)
-                                            $displayCpmks->push([
-                                                'type' => 'parent',
-                                                'cpmk' => $cpmk,
-                                                'parent' => null
-                                            ]);
-                                        }
-                                        // Skip child CPMKs that are already added above
-                                    }
-                                @endphp
-
-                                                                @php
-                                    // Group child CPMKs by parent for rowspan calculation
-                                    $childGroups = [];
-                                    foreach($displayCpmks as $displayCpmk) {
-                                        if ($displayCpmk['type'] === 'child') {
-                                            $parentId = $displayCpmk['parent']->id;
-                                            if (!isset($childGroups[$parentId])) {
-                                                $childGroups[$parentId] = [];
-                                            }
-                                            $childGroups[$parentId][] = $displayCpmk;
-                                        }
-                                    }
-                                @endphp
-
-                                @foreach($displayCpmks as $index => $displayCpmk)
-                                    @php
-                                        $cpmk = $displayCpmk['cpmk'];
-                                        $parent = $displayCpmk['parent'];
-                                        $isChild = $displayCpmk['type'] === 'child';
-
-                                        // Check if this is the first child of a parent
-                                        $isFirstChild = false;
-                                        if ($isChild) {
-                                            $parentId = $parent->id;
-                                            $firstChildInGroup = $childGroups[$parentId][0] ?? null;
-                                            $isFirstChild = ($firstChildInGroup && $firstChildInGroup['cpmk']->id === $cpmk->id);
-                                        }
-                                    @endphp
-
-                                    <tr class="hover:bg-gray-50">
-                                        <!-- CPMK cell -->
-                                        <td class="px-4 py-3 text-sm font-medium text-gray-900 border-r border-gray-200 @if($isChild && $isFirstChild) bg-blue-50 @endif"
-                                            @if($isChild && $isFirstChild) rowspan="{{ count($childGroups[$parent->id]) }}" @endif>
-                                            <div class="flex flex-col">
-                                                @if($isChild && $isFirstChild)
-                                                    <span class="font-semibold text-blue-800">{{ $parent->kodeCpmk ?? 'N/A' }}</span>
-                                                    <span class="text-xs text-gray-600 mt-1">{{ Str::limit($parent->deskripsi ?? '', 50) }}</span>
-                                                    <span class="text-xs text-blue-600 mt-1 font-medium">Parent CPMK</span>
-                                                @elseif(!$isChild)
-                                                    <span class="font-semibold">{{ $cpmk->kodeCpmk ?? 'N/A' }}</span>
-                                                    <span class="text-xs text-gray-600 mt-1">{{ Str::limit($cpmk->deskripsi ?? '', 50) }}</span>
-                                                @endif
-                                            </div>
-                                        </td>
-
-                                        <!-- Sub CPMK cell -->
-                                        <td class="px-4 py-3 text-sm font-medium text-gray-900 border-r border-gray-200">
-                                            <div class="flex flex-col">
-                                                @if($isChild)
-                                                    <span class="font-semibold text-green-700">{{ $cpmk->kodeCpmk ?? 'N/A' }}</span>
-                                                    <span class="text-xs text-gray-600 mt-1">{{ Str::limit($cpmk->deskripsi ?? '', 50) }}</span>
-                                                @else
-                                                    <span class="italic text-gray-500">Tidak ada sub-CPMK</span>
-                                                @endif
-                                            </div>
-                                        </td>
-
-                                        <!-- Komponen input fields -->
-                                        @foreach($komponen as $komponenItem)
-                                            @php
-                                                $inputName = $cpmk->id . '_' . $komponenItem->id;
-                                                $bobotValue = old('bobot.' . $inputName, $existingCombinations[$inputName] ?? '');
-                                            @endphp
-                                            <td class="px-4 py-3 text-center">
-                                                <input type="number"
-                                                       name="bobot[{{ $inputName }}]"
-                                                       value="{{ $bobotValue }}"
-                                                       min="0"
-                                                       max="100"
-                                                       step="0.01"
-                                                       class="w-20 text-center border rounded bobot-input"
-                                                       data-cpmk-id="{{ $cpmk->id }}"
-                                                       @if($isChild) data-parent-cpmk-id="{{ $parent->id }}" @endif
-                                                       data-komponen-id="{{ $komponenItem->id }}" />
-                                            </td>
-                                        @endforeach
-
-                                        <!-- Total Bobot CPMK cell -->
-                                        <td class="px-4 py-3 text-center font-bold text-blue-700 total-cpmk" data-cpmk-id="{{ $cpmk->id }}">
-                                            0.00
-                                        </td>
-                                    </tr>
-                                @endforeach
-                                <!-- Total per Komponen row -->
-                                <tr class="bg-blue-50 font-bold">
-                                    <td class="px-4 py-3 text-blue-900 text-base text-center" colspan="2">Total per Komponen</td>
-                                    @foreach($komponen as $komponenItem)
-                                        <td class="px-4 py-3 text-center text-blue-900 text-base total-per-komponen" data-komponen-id="{{ $komponenItem->id }}">
-                                            0.00
-                                        </td>
-                                    @endforeach
-                                    <td class="px-4 py-3 text-center text-orange-600 text-base total-overall">
-                                        0.00
-                                    </td>
-                                </tr>
+                            <tbody id="table-body">
+                                <!-- Table body will be populated by JavaScript -->
                             </tbody>
                         </table>
 

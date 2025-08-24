@@ -51,15 +51,14 @@
                         </div>
                     @else
                         <!-- User is not logged in -->
-                        <a href="{{ route('login') }}" class="w-full text-white bg-yellow-600 hover:bg-yellow-700 focus:ring-4 focus:outline-none focus:ring-yellow-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-colors duration-200 border border-yellow-600">
-                            {{ __('Masuk') }}
-                        </a>
-
-                        @if (Route::has('register'))
-                            <a href="{{ route('register') }}" class="w-full text-gray-900 bg-white hover:bg-gray-50 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-colors duration-200 border border-gray-300">
-                                {{ __('Daftar') }}
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <a href="{{ route('login') }}" class="w-full sm:w-auto text-gray-900 bg-white hover:bg-gray-50 focus:ring-4 focus:outline-none focus:ring-gray-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-colors duration-200">
+                                Login
                             </a>
-                        @endif
+                            <p class="text-sm text-gray-600 text-center sm:text-left">
+                                Hubungi administrator untuk membuat akun.
+                            </p>
+                        </div>
                     @endauth
                 </div>
                 </div>

@@ -757,19 +757,19 @@ document.addEventListener('DOMContentLoaded', function() {
         const modalTitle = document.getElementById('detail-modal-title');
         const modalNim = document.getElementById('detail-modal-nim');
         const modalNama = document.getElementById('detail-modal-nama');
-        
+
         if (modal && modalTitle && modalNim && modalNama) {
             modalTitle.textContent = `Detail Nilai Mahasiswa`;
             modalNim.textContent = nim;
             modalNama.textContent = nama;
-            
+
             // Load detail data
             loadDetailData(mahasiswaId);
-            
+
             // Show modal
             modal.classList.remove('hidden');
             modal.classList.add('flex');
-            
+
             // Add animation classes
             const modalContent = modal.querySelector('.modal-content');
             if (modalContent) {
@@ -880,6 +880,285 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Show detail modal
             showDetailModal(mahasiswaId, nim, mahasiswaNama);
+        }
+    });
+
+    // Tab functionality
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.tab-button')) {
+            e.preventDefault();
+            const button = e.target.closest('.tab-button');
+            const tabName = button.getAttribute('data-tab');
+
+            console.log('Tab clicked:', tabName);
+
+            // Update URL with tab parameter
+            const url = new URL(window.location);
+            if (tabName === 'all') {
+                url.searchParams.delete('tab');
+            } else {
+                url.searchParams.set('tab', tabName);
+            }
+
+            // Navigate to new URL
+            window.location.href = url.toString();
+        }
+    });
+
+    // Import Modal Functions
+    function showImportModal() {
+        const modal = document.getElementById('import-modal');
+        const modalContent = modal.querySelector('[data-modal-content]');
+
+        if (modal && modalContent) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            // Trigger animation
+            setTimeout(() => {
+                modal.classList.remove('bg-opacity-0');
+                modal.classList.add('bg-opacity-10');
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+    }
+
+    function hideImportModal() {
+        const modal = document.getElementById('import-modal');
+        const modalContent = modal.querySelector('[data-modal-content]');
+
+        if (modal && modalContent) {
+            modalContent.classList.add('scale-95', 'opacity-0');
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modal.classList.remove('bg-opacity-10');
+            modal.classList.add('bg-opacity-0');
+
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+        }
+    }
+
+    // Toggle Edit Nilai Functionality
+    const toggleEditBtn = document.getElementById('toggle-edit-nilai');
+    const resetBtn = document.getElementById('reset-nilai');
+    const nilaiInputs = document.querySelectorAll('.nilai-input');
+    const nilaiPlains = document.querySelectorAll('.nilai-plain');
+    const aksiColumns = document.querySelectorAll('.aksi-column');
+    const gradeColumns = document.querySelectorAll('.grade-column');
+    const bulkActions = document.getElementById('bulk-actions');
+    const bulkSaveBtn = document.getElementById('bulk-save-btn');
+    const confirmBulkSave = document.getElementById('confirm-bulk-save');
+
+    if (toggleEditBtn) {
+        toggleEditBtn.addEventListener('click', function() {
+            const isEditMode = this.textContent.includes('Aktifkan');
+
+            if (isEditMode) {
+                // Switch to edit mode
+                this.innerHTML = `
+                    <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    Nonaktifkan Input Nilai
+                `;
+                this.classList.remove('bg-amber-600', 'hover:bg-amber-700');
+                this.classList.add('bg-red-600', 'hover:bg-red-700');
+
+                // Show input fields and hide plain text
+                nilaiInputs.forEach(input => input.classList.remove('hidden'));
+                nilaiPlains.forEach(plain => plain.classList.add('hidden'));
+                aksiColumns.forEach(col => col.classList.remove('hidden'));
+                gradeColumns.forEach(col => col.classList.add('hidden'));
+
+                // Show bulk actions
+                if (bulkActions) {
+                    bulkActions.classList.remove('hidden');
+                }
+
+                // Show reset button
+                if (resetBtn) {
+                    resetBtn.classList.remove('hidden');
+                }
+            } else {
+                // Switch back to view mode
+                this.innerHTML = `
+                    <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6 6M3 17v2a2 2 0 002 2h2m14-6v6a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h6"></path>
+                    </svg>
+                    Aktifkan Input Nilai
+                `;
+                this.classList.remove('bg-red-600', 'hover:bg-red-700');
+                this.classList.add('bg-amber-600', 'hover:bg-amber-700');
+
+                // Hide input fields and show plain text
+                nilaiInputs.forEach(input => input.classList.add('hidden'));
+                nilaiPlains.forEach(plain => plain.classList.remove('hidden'));
+                aksiColumns.forEach(col => col.classList.add('hidden'));
+                gradeColumns.forEach(col => col.classList.remove('hidden'));
+
+                // Hide bulk actions
+                if (bulkActions) {
+                    bulkActions.classList.add('hidden');
+                }
+
+                // Hide reset button
+                if (resetBtn) {
+                    resetBtn.classList.add('hidden');
+                }
+            }
+        });
+    }
+
+    // Individual nilai input change tracking
+    nilaiInputs.forEach(input => {
+        input.addEventListener('input', function() {
+            const mahasiswaId = this.getAttribute('data-mahasiswa-id');
+            const komponenId = this.getAttribute('data-komponen-id');
+            const originalValue = this.getAttribute('data-original-value');
+            const currentValue = this.value;
+            const saveBtn = document.getElementById(`save-btn-${mahasiswaId}`);
+
+            // Check if value has changed
+            const hasChanged = currentValue !== originalValue;
+
+            if (saveBtn) {
+                saveBtn.disabled = !hasChanged;
+                if (hasChanged) {
+                    saveBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                    saveBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                } else {
+                    saveBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                    saveBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                }
+            }
+        });
+    });
+
+    // Individual save button functionality
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.btn-simpan-nilai')) {
+            e.preventDefault();
+            const button = e.target.closest('.btn-simpan-nilai');
+            const mahasiswaId = button.getAttribute('data-mahasiswa-id');
+
+            // Get all nilai inputs for this mahasiswa
+            const nilaiInputs = document.querySelectorAll(`input[data-mahasiswa-id="${mahasiswaId}"]`);
+            const nilaiData = {};
+
+            nilaiInputs.forEach(input => {
+                const komponenId = input.getAttribute('data-komponen-id');
+                const nilai = input.value;
+                if (nilai !== '') {
+                    nilaiData[komponenId] = parseFloat(nilai);
+                }
+            });
+
+            // Send AJAX request to save nilai
+            const formData = new FormData();
+            formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+
+            // Add nilai data in the expected format
+            Object.keys(nilaiData).forEach(komponenId => {
+                formData.append(`nilai[${mahasiswaId}][${komponenId}]`, nilaiData[komponenId]);
+            });
+
+            // Add student class ID
+            const studentClassId = document.querySelector(`input[name="student_class_id[${mahasiswaId}]"]`).value;
+            formData.append(`student_class_id[${mahasiswaId}]`, studentClassId);
+
+            fetch(`/dosen/nilai/{{ $tahunAjaranMatkul->id }}/individual-store`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update original values and disable save button
+                    nilaiInputs.forEach(input => {
+                        input.setAttribute('data-original-value', input.value);
+                    });
+                    button.disabled = true;
+                    button.classList.add('bg-gray-400', 'cursor-not-allowed');
+                    button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+
+                    // Show success message
+                    if (typeof showToast === 'function') {
+                        showToast('Nilai berhasil disimpan', 'success');
+                    }
+                } else {
+                    if (typeof showToast === 'function') {
+                        showToast('Gagal menyimpan nilai: ' + data.message, 'error');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error saving nilai:', error);
+                if (typeof showToast === 'function') {
+                    showToast('Terjadi kesalahan saat menyimpan nilai', 'error');
+                }
+            });
+        }
+    });
+
+    // Bulk save functionality
+    if (confirmBulkSave) {
+        confirmBulkSave.addEventListener('change', function() {
+            if (bulkSaveBtn) {
+                bulkSaveBtn.disabled = !this.checked;
+                if (this.checked) {
+                    bulkSaveBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                    bulkSaveBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                } else {
+                    bulkSaveBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                    bulkSaveBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                }
+            }
+        });
+    }
+
+    if (bulkSaveBtn) {
+        bulkSaveBtn.addEventListener('click', function() {
+            if (confirmBulkSave && confirmBulkSave.checked) {
+                document.getElementById('bulk-nilai-form').submit();
+            }
+        });
+    }
+
+    // Make functions globally available
+    window.showImportModal = showImportModal;
+    window.hideImportModal = hideImportModal;
+    window.hideCreatedStudentsModal = function() {
+        const modal = document.getElementById('created-students-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    };
+    window.hideImportErrorsModal = function() {
+        const modal = document.getElementById('import-errors-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    };
+
+    // Close import modal when clicking outside
+    document.addEventListener('click', function(e) {
+        const importModal = document.getElementById('import-modal');
+        if (e.target === importModal) {
+            hideImportModal();
+        }
+    });
+
+    // Close import modal on escape key
+    document.addEventListener('keydown', function(e) {
+        const importModal = document.getElementById('import-modal');
+        if (e.key === 'Escape' && importModal && !importModal.classList.contains('hidden')) {
+            hideImportModal();
         }
     });
 });

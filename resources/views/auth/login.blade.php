@@ -12,53 +12,57 @@
     <!-- Vite CSS & JS -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     
-    <!-- Flowbite CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/flowbite@2.5.1/dist/flowbite.min.css" rel="stylesheet" />
+    <!-- Boxicons -->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
-<body class="bg-gray-50">
-    <div class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
+<body class="bg-gradient-to-br from-amber-50 to-yellow-100 min-h-screen">
+    <div class="flex flex-col items-center justify-center px-6 py-8 mx-auto min-h-screen">
         <!-- Logo & Brand -->
-        <div class="flex items-center mb-6 text-2xl font-semibold text-gray-900">
-            {{-- <img class="w-10 h-10 mr-3" src="/assets/images/unand.png" alt="Logo Unand"> --}}
-            <span class="text-amber-700">Portal TPB</span>
+        <div class="flex items-center mb-8 text-3xl font-bold text-amber-700">
+            <span>Portal TPB</span>
         </div>
         
         <!-- Login Card -->
-        <div class="w-full bg-white rounded-lg shadow-lg border border-gray-200 md:mt-0 sm:max-w-md xl:p-0">
-            <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
+        <div class="w-full bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 md:mt-0 sm:max-w-md xl:p-0">
+            <div class="p-8 space-y-6">
                 <!-- Header -->
                 <div class="text-center">
-                    <h1 class="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl">
-                        Masuk ke Akun Anda
+                    <h1 class="text-2xl font-bold text-gray-900">
+                        Selamat Datang Kembali
                     </h1>
-                    <p class="mt-2 text-sm text-gray-600">
-                        Sistem Informasi Akademik TPB
+                    <p class="mt-2 text-gray-600">
+                        Masuk ke akun Anda untuk melanjutkan
                     </p>
                 </div>
 
                 <!-- Session Status -->
                 @if (session('status'))
-                    <div class="p-4 mb-4 text-sm text-amber-800 rounded-lg bg-amber-50 border border-amber-200" role="alert">
+                    <div class="p-4 text-sm text-amber-800 rounded-xl bg-amber-50 border border-amber-200" role="alert">
                         {{ session('status') }}
                     </div>
                 @endif
 
                 <!-- Login Form -->
-                <form class="space-y-4 md:space-y-6" method="POST" action="{{ route('login') }}">
+                <form class="space-y-6" method="POST" action="{{ route('login') }}">
                     @csrf
                     
                     <!-- Email Field -->
                     <div>
-                        <label for="email" class="block mb-2 text-sm font-medium text-gray-900">Email</label>
-                        <input type="email" 
-                               name="email" 
-                               id="email" 
-                               value="{{ old('email') }}" 
-                               class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5" 
-                               placeholder="name@example.com" 
-                               required 
-                               autofocus 
-                               autocomplete="username">
+                        <label for="email" class="block mb-2 text-sm font-semibold text-gray-700">Email</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="bx bx-envelope text-gray-400"></i>
+                            </div>
+                            <input type="email" 
+                                   name="email" 
+                                   id="email" 
+                                   value="{{ old('email') }}" 
+                                   class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 block w-full pl-10 p-3 transition-all duration-200" 
+                                   placeholder="Masukkan email Anda" 
+                                   required 
+                                   autofocus 
+                                   autocomplete="username">
+                        </div>
                         @error('email')
                             <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -66,19 +70,22 @@
 
                     <!-- Password Field -->
                     <div>
-                        <label for="password" class="block mb-2 text-sm font-medium text-gray-900">Password</label>
+                        <label for="password" class="block mb-2 text-sm font-semibold text-gray-700">Password</label>
                         <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="bx bx-lock-alt text-gray-400"></i>
+                            </div>
                             <input type="password" 
                                    name="password" 
                                    id="password" 
-                                   placeholder="••••••••" 
-                                   class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 pr-10" 
+                                   placeholder="Masukkan password Anda" 
+                                   class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 block w-full pl-10 pr-10 p-3 transition-all duration-200" 
                                    required 
                                    autocomplete="current-password">
                             <button type="button" 
                                     id="togglePassword" 
-                                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700 focus:outline-none">
-                                <i class="bx bx-hide text-lg" id="eyeIcon"></i>
+                                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none transition-colors duration-200">
+                                <i class="bx bx-hide text-xl" id="eyeIcon"></i>
                             </button>
                         </div>
                         @error('password')
@@ -93,30 +100,31 @@
                                 <input id="remember" 
                                        name="remember" 
                                        type="checkbox" 
-                                       class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-amber-300 text-amber-600">
+                                       class="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-2 focus:ring-amber-300 text-amber-600">
                             </div>
                             <div class="ml-3 text-sm">
-                                <label for="remember" class="text-gray-500">{{ __('Remember me') }}</label>
+                                <label for="remember" class="text-gray-600">Ingat saya</label>
                             </div>
                         </div>
                         @if (Route::has('password.request'))
-                            <a href="{{ route('password.request') }}" class="text-sm font-medium text-amber-600 hover:underline">
-                                {{ __('Forgot your password?') }}
+                            <a href="{{ route('password.request') }}" class="text-sm font-medium text-amber-600 hover:text-amber-700 transition-colors duration-200">
+                                Lupa password?
                             </a>
                         @endif
                     </div>
 
                     <!-- Login Button -->
-                    <button type="submit" class="w-full text-white bg-yellow-600 hover:bg-yellow-700 focus:ring-4 focus:outline-none focus:ring-yellow-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-colors duration-200 border border-yellow-600">
-                        {{ __('Log in') }}
+                    <button type="submit" class="w-full text-white bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 focus:ring-4 focus:ring-amber-300 font-semibold rounded-xl text-sm px-5 py-3 text-center transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]">
+                        <i class="bx bx-log-in mr-2"></i>
+                        Masuk
                     </button>
 
                     <!-- Register Link -->
                     @if (Route::has('register'))
-                        <p class="text-sm font-light text-gray-500 text-center">
-                            {{ __("Don't have an account yet?") }} 
-                            <a href="{{ route('register') }}" class="font-medium text-amber-600 hover:underline">
-                                {{ __('Sign up') }}
+                        <p class="text-sm text-gray-600 text-center">
+                            Belum punya akun? 
+                            <a href="{{ route('register') }}" class="font-semibold text-amber-600 hover:text-amber-700 transition-colors duration-200">
+                                Daftar sekarang
                             </a>
                         </p>
                     @endif
@@ -126,14 +134,11 @@
 
         <!-- Footer -->
         <div class="mt-8 text-center">
-            <p class="text-xs text-gray-500">
+            <p class="text-sm text-gray-500">
                 © {{ date('Y') }} Portal TPB by Neo Telemetri. All Rights Reserved.
             </p>
         </div>
     </div>
-
-    <!-- Flowbite JS -->
-    <script src="https://cdn.jsdelivr.net/npm/flowbite@2.5.1/dist/flowbite.min.js"></script>
     
     <!-- Password Toggle Script -->
     <script>
@@ -143,11 +148,9 @@
             const eyeIcon = document.getElementById('eyeIcon');
             
             togglePassword.addEventListener('click', function() {
-                // Toggle password visibility
                 const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
                 password.setAttribute('type', type);
                 
-                // Toggle eye icon
                 if (type === 'text') {
                     eyeIcon.classList.remove('bx-hide');
                     eyeIcon.classList.add('bx-show');

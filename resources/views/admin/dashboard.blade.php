@@ -75,30 +75,6 @@
             </div>
         </div>
 
-        <!-- Detail Course Charts Section Skeleton -->
-        <div class="mb-8">
-            <div class="h-6 bg-gray-200 rounded w-64 mb-6"></div>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                @for($i = 0; $i < 4; $i++)
-                <div class="bg-white rounded-lg shadow p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <div class="h-6 bg-gray-200 rounded w-32 mb-2"></div>
-                            <div class="h-4 bg-gray-200 rounded w-48"></div>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <div class="w-3 h-3 bg-gray-200 rounded-full"></div>
-                            <div class="h-4 bg-gray-200 rounded w-28"></div>
-                        </div>
-                    </div>
-                    <div class="relative h-64">
-                        <div class="w-full h-full bg-gray-200 rounded"></div>
-                    </div>
-                </div>
-                @endfor
-            </div>
-        </div>
-
         <!-- Secondary Charts Row Skeleton -->
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-8">
             @for($i = 0; $i < 4; $i++)
@@ -114,54 +90,6 @@
                 </div>
             </div>
             @endfor
-        </div>
-
-        <!-- System Status Row Skeleton -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <!-- System Health Skeleton -->
-            <div class="space-y-6">
-                <div class="bg-white rounded-lg shadow p-6">
-                    <div class="h-6 bg-gray-200 rounded w-32 mb-4"></div>
-                    <div class="space-y-4">
-                        @for($i = 0; $i < 5; $i++)
-                        <div class="flex items-center justify-between">
-                            <div class="h-4 bg-gray-200 rounded w-24"></div>
-                            <div class="h-4 bg-gray-200 rounded w-16"></div>
-                        </div>
-                        @endfor
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-lg shadow p-6">
-                    <div class="h-6 bg-gray-200 rounded w-32 mb-4"></div>
-                    <div class="space-y-4">
-                        @for($i = 0; $i < 2; $i++)
-                        <div class="flex items-center justify-between">
-                            <div class="h-4 bg-gray-200 rounded w-28"></div>
-                            <div class="h-4 bg-gray-200 rounded w-8"></div>
-                        </div>
-                        @endfor
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recent Activities Skeleton -->
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="h-6 bg-gray-200 rounded w-40 mb-4"></div>
-                <div class="space-y-4">
-                    @for($i = 0; $i < 6; $i++)
-                    <div class="flex items-start">
-                        <div class="flex-shrink-0">
-                            <div class="w-8 h-8 bg-gray-200 rounded-full"></div>
-                        </div>
-                        <div class="ml-3 flex-1">
-                            <div class="h-4 bg-gray-200 rounded w-full mb-1"></div>
-                            <div class="h-3 bg-gray-200 rounded w-20"></div>
-                        </div>
-                    </div>
-                    @endfor
-                </div>
-            </div>
         </div>
 
         <!-- Quick Actions Skeleton -->
@@ -320,30 +248,6 @@
             </div>
         </div>
 
-        <!-- Detail Course Charts Section -->
-        <div class="mb-8">
-            <h3 class="text-xl font-semibold text-gray-900 mb-6">Detail Tren Per Mata Kuliah</h3>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                @foreach($detailedCourseCharts as $index => $courseChart)
-                <div class="bg-white rounded-lg shadow p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <h4 class="text-lg font-semibold text-gray-900">{{ $courseChart['courseCode'] }}</h4>
-                            <p class="text-sm text-gray-600">{{ $courseChart['courseName'] }}</p>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <div class="w-3 h-3 rounded-full" style="background-color: {{ $courseChart['color'] }}"></div>
-                            <span class="text-sm text-gray-600">Rata-rata & Jumlah Mhs</span>
-                        </div>
-                    </div>
-                    <div class="relative h-64">
-                        <canvas id="courseChart{{ $index }}"></canvas>
-                    </div>
-                </div>
-                @endforeach
-            </div>
-        </div>
-
         <!-- Secondary Charts Row -->
         <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-8">
             <!-- Grade Distribution -->
@@ -395,95 +299,6 @@
                 </div>
                 <div class="relative h-64">
                     <canvas id="topStudentsChart"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- System Status Row -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <!-- System Health & Info -->
-            <div class="space-y-6">
-                <!-- System Health -->
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Status Sistem</h3>
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">Database</span>
-                            <div class="flex items-center">
-                                <div class="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-                                <span class="text-sm font-medium text-gray-900">{{ ucfirst($systemHealth['database']) }}</span>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">Storage</span>
-                            <span class="text-sm font-medium text-gray-900">{{ $systemHealth['storage'] }}% Used</span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">Users Online</span>
-                            <span class="text-sm font-medium text-gray-900">{{ $systemHealth['users_online'] }}</span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">Uptime</span>
-                            <span class="text-sm font-medium text-gray-900">{{ $systemHealth['uptime'] }}%</span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">Response Time</span>
-                            <span class="text-sm font-medium text-gray-900">{{ $systemHealth['response_time'] }}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- System Alerts -->
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Sistem Alert</h3>
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">Nilai Pending</span>
-                            <span class="text-sm font-medium text-orange-600">{{ $systemHealth['pending_grades'] }}</span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm text-gray-600">CPMK Belum Lengkap</span>
-                            <span class="text-sm font-medium text-red-600">{{ $systemHealth['incomplete_cpmk'] }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recent Activities -->
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Aktivitas Terbaru</h3>
-                <div class="space-y-4">
-                    @forelse($recentActivities as $activity)
-                        <div class="flex items-start">
-                            <div class="flex-shrink-0">
-                                @if($activity['icon'] == 'user-plus')
-                                    <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                        </svg>
-                                    </div>
-                                @elseif($activity['icon'] == 'book')
-                                    <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                                        </svg>
-                                    </div>
-                                @elseif($activity['icon'] == 'star')
-                                    <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                                        <svg class="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
-                                        </svg>
-                                    </div>
-                                @endif
-                            </div>
-                            <div class="ml-3 flex-1">
-                                <p class="text-sm text-gray-900">{{ $activity['message'] }}</p>
-                                <p class="text-xs text-gray-500">{{ $activity['time'] }}</p>
-                            </div>
-                        </div>
-                    @empty
-                        <p class="text-sm text-gray-500 text-center">Belum ada aktivitas terbaru</p>
-                    @endforelse
                 </div>
             </div>
         </div>
@@ -540,7 +355,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Chart data from backend
 const chartData = @json($chartData);
-const detailedCourseCharts = @json($detailedCourseCharts);
 const cplAchievementData = @json($cplAchievementData);
 const matkulPerformanceData = @json($matkulPerformanceData);
 const courseCompletionData = @json($courseCompletionData);
@@ -583,72 +397,6 @@ function initializeCharts() {
                 }
             }
         }
-    });
-
-    // Initialize Detailed Course Charts
-    detailedCourseCharts.forEach((courseData, index) => {
-        const ctx = document.getElementById(`courseChart${index}`).getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: courseData.labels,
-                datasets: [
-                    {
-                        label: 'Rata-rata Nilai',
-                        data: courseData.avgScores,
-                        borderColor: courseData.color,
-                        backgroundColor: courseData.color + '20',
-                        yAxisID: 'y',
-                        tension: 0.4
-                    },
-                    {
-                        label: 'Jumlah Mahasiswa',
-                        data: courseData.studentCounts,
-                        borderColor: '#6B7280',
-                        backgroundColor: '#6B728020',
-                        yAxisID: 'y1',
-                        tension: 0.4
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        max: 100,
-                        title: {
-                            display: true,
-                            text: 'Rata-rata Nilai'
-                        }
-                    },
-                    y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        title: {
-                            display: true,
-                            text: 'Jumlah Mahasiswa'
-                        },
-                        grid: {
-                            drawOnChartArea: false,
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            usePointStyle: true,
-                            padding: 10
-                        }
-                    }
-                }
-            }
-        });
     });
 
     // Initialize CPL Achievement Chart (Bar Chart)

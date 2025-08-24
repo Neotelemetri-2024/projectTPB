@@ -47,14 +47,11 @@ class DashboardController extends Controller
 
         // OPTIMIZED: Load all chart data with efficient queries
         $chartData = $this->getAverageScoreHistoryData();
-        $detailedCourseCharts = $this->getDetailedCourseCharts($selectedTahunAjaranId);
         $cplAchievementData = $this->getCPLAchievementData($selectedTahunAjaranId);
         $matkulPerformanceData = $this->getMatkulPerformanceData($selectedTahunAjaranId);
         $courseCompletionData = $this->getCourseCompletionData($selectedTahunAjaranId);
         $courseTypeData = $this->getCourseTypeDistribution($selectedTahunAjaranId);
         $topStudentsData = $this->getTopStudentsData($selectedTahunAjaranId);
-        $recentActivities = $this->getRecentActivities();
-        $systemHealth = $this->getSystemHealthData();
 
         return view('admin.dashboard', compact(
             'user',
@@ -62,14 +59,11 @@ class DashboardController extends Controller
             'tahunAjaranList',
             'selectedTahunAjaranId',
             'chartData',
-            'detailedCourseCharts',
             'cplAchievementData',
             'matkulPerformanceData',
             'courseCompletionData',
             'courseTypeData',
-            'topStudentsData',
-            'recentActivities',
-            'systemHealth'
+            'topStudentsData'
         ));
     }
 
@@ -181,79 +175,24 @@ class DashboardController extends Controller
             $dataset['data'] = $sortedData;
         }
 
+        // If no data, show placeholder
+        if (empty($chartLabels)) {
+            $chartLabels = ['Belum Ada Data'];
+            $chartDatasets = [
+                [
+                    'label' => 'Tidak Ada Data',
+                    'data' => [0],
+                    'borderColor' => '#9CA3AF',
+                    'backgroundColor' => '#9CA3AF80',
+                    'tension' => 0.4
+                ]
+            ];
+        }
+
         return [
             'labels' => $chartLabels,
             'datasets' => $chartDatasets
         ];
-    }
-
-    /**
-     * OPTIMIZED: Get detailed course charts - individual chart per course
-     */
-    private function getDetailedCourseCharts($selectedTahunAjaranId = null)
-    {
-        // OPTIMIZED: Single query with proper joins and aggregation
-        $query = \App\Models\TahunAjaranMatkul::select([
-                'tahun_ajaran_matkul.mataKuliahId',
-                'mata_kuliah.kodeMatkul',
-                'mata_kuliah.namaMatkul',
-                'tahun_ajaran.tahun',
-                'tahun_ajaran.periode'
-            ])
-            ->selectRaw('AVG(km.totalNilai) as avg_score')
-            ->selectRaw('COUNT(DISTINCT km.mahasiswaId) as student_count')
-            ->join('mata_kuliah', 'tahun_ajaran_matkul.mataKuliahId', '=', 'mata_kuliah.id')
-            ->join('tahun_ajaran', 'tahun_ajaran_matkul.tahunAjaranId', '=', 'tahun_ajaran.id')
-            ->join('kelas as k', 'tahun_ajaran_matkul.id', '=', 'k.tahunAjaranMatkulId')
-            ->join('kelas_mahasiswa as km', 'k.id', '=', 'km.kelasId')
-            ->whereNotNull('km.totalNilai');
-
-        if ($selectedTahunAjaranId) {
-            $query->where('tahun_ajaran_matkul.tahunAjaranId', $selectedTahunAjaranId);
-        }
-
-        // Get top 4 courses by student enrollment
-        $topCourses = \App\Models\TahunAjaranMatkul::select('mataKuliahId')
-            ->selectRaw('COUNT(DISTINCT km.mahasiswaId) as total_students')
-            ->join('kelas as k', 'tahun_ajaran_matkul.id', '=', 'k.tahunAjaranMatkulId')
-            ->join('kelas_mahasiswa as km', 'k.id', '=', 'km.kelasId')
-            ->groupBy('mataKuliahId')
-            ->orderByDesc('total_students')
-            ->limit(4)
-            ->pluck('mataKuliahId');
-
-        $courses = $query->whereIn('tahun_ajaran_matkul.mataKuliahId', $topCourses)
-            ->groupBy('tahun_ajaran_matkul.mataKuliahId', 'mata_kuliah.kodeMatkul', 'mata_kuliah.namaMatkul', 'tahun_ajaran.tahun', 'tahun_ajaran.periode')
-            ->get()
-            ->groupBy('mataKuliahId');
-
-        $detailedCharts = [];
-
-        foreach ($courses as $mataKuliahId => $courseGroup) {
-            $firstCourse = $courseGroup->first();
-
-            $labels = [];
-            $avgScores = [];
-            $studentCounts = [];
-
-            foreach ($courseGroup as $course) {
-                $yearLabel = $course->tahun . '-' . $course->periode;
-                $labels[] = $yearLabel;
-                $avgScores[] = round($course->avg_score ?? 0, 2);
-                $studentCounts[] = $course->student_count;
-            }
-
-            $detailedCharts[] = [
-                'courseCode' => $firstCourse->kodeMatkul,
-                'courseName' => $firstCourse->namaMatkul,
-                'labels' => $labels,
-                'avgScores' => $avgScores,
-                'studentCounts' => $studentCounts,
-                'color' => $this->getRandomColor()
-            ];
-        }
-
-        return $detailedCharts;
     }
 
     /**
@@ -290,6 +229,13 @@ class DashboardController extends Controller
             $backgroundColors[] = $this->getRandomColor(true);
         }
 
+        // If no data, show placeholder
+        if (empty($labels)) {
+            $labels = ['Belum Ada Data'];
+            $data = [0];
+            $backgroundColors = ['#9CA3AF'];
+        }
+
         return [
             'labels' => $labels,
             'data' => $data,
@@ -298,7 +244,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * OPTIMIZED: Get mata kuliah performance data for donut chart - FIXED
+     * OPTIMIZED: Get grade distribution data (Doughnut Chart) - FIXED
      */
     private function getMatkulPerformanceData($selectedTahunAjaranId = null)
     {
@@ -406,6 +352,13 @@ class DashboardController extends Controller
             }
         }
 
+        // If no data, show placeholder
+        if (empty($labels)) {
+            $labels = ['Belum Ada Data'];
+            $completionRates = [0];
+            $backgroundColors = ['#9CA3AF'];
+        }
+
         return [
             'labels' => $labels,
             'data' => $completionRates,
@@ -496,91 +449,19 @@ class DashboardController extends Controller
             ];
         }
 
+        // If no data, show placeholder
+        if (empty($labels)) {
+            $labels = ['Belum Ada Data'];
+            $data = [0];
+            $backgroundColors = ['#9CA3AF'];
+            $students = [];
+        }
+
         return [
             'labels' => $labels,
             'data' => $data,
             'backgroundColor' => $backgroundColors,
             'students' => $students
-        ];
-    }
-
-    /**
-     * OPTIMIZED: Get recent activities
-     */
-    private function getRecentActivities()
-    {
-        $activities = [];
-
-        // OPTIMIZED: Single query for recent students
-        $recentStudents = \App\Models\Mahasiswa::select('nama', 'created_at')
-            ->latest()
-            ->limit(3)
-            ->get();
-
-        foreach ($recentStudents as $student) {
-            $activities[] = [
-                'type' => 'student',
-                'message' => "Mahasiswa {$student->nama} ditambahkan",
-                'time' => $student->created_at->diffForHumans(),
-                'icon' => 'user-plus'
-            ];
-        }
-
-        // OPTIMIZED: Single query for recent courses
-        $recentCourses = \App\Models\TahunAjaranMatkul::select('mata_kuliah.namaMatkul', 'tahun_ajaran_matkul.created_at')
-            ->join('mata_kuliah', 'tahun_ajaran_matkul.mataKuliahId', '=', 'mata_kuliah.id')
-            ->latest('tahun_ajaran_matkul.created_at')
-            ->limit(3)
-            ->get();
-
-        foreach ($recentCourses as $course) {
-            $activities[] = [
-                'type' => 'course',
-                'message' => "Mata kuliah {$course->namaMatkul} dibuka",
-                'time' => $course->created_at->diffForHumans(),
-                'icon' => 'book'
-            ];
-        }
-
-        // OPTIMIZED: Single query for recent CPMK updates
-        $recentCPMK = \App\Models\Cpmk::select('kodeCpmk', 'updated_at')
-            ->latest('updated_at')
-            ->limit(2)
-            ->get();
-
-        foreach ($recentCPMK as $cpmk) {
-            $activities[] = [
-                'type' => 'cpmk',
-                'message' => "CPMK {$cpmk->kodeCpmk} diperbarui",
-                'time' => $cpmk->updated_at->diffForHumans(),
-                'icon' => 'star'
-            ];
-        }
-
-        // Sort by created_at/updated_at
-        usort($activities, function($a, $b) {
-            return strtotime($b['time']) <=> strtotime($a['time']);
-        });
-
-        return array_slice($activities, 0, 6);
-    }
-
-    /**
-     * Get system health data
-     */
-    private function getSystemHealthData()
-    {
-        $pendingGrades = \App\Models\KelasMahasiswa::whereNull('totalNilai')->count();
-        $incompleteCPMK = \App\Models\TahunAjaranMatkul::whereDoesntHave('cpmkMatKul')->count();
-
-        return [
-            'database' => 'healthy',
-            'storage' => '78',
-            'users_online' => \App\Models\User::where('updated_at', '>=', now()->subMinutes(15))->count(),
-            'uptime' => '99.8',
-            'response_time' => '120ms',
-            'pending_grades' => $pendingGrades,
-            'incomplete_cpmk' => $incompleteCPMK
         ];
     }
 

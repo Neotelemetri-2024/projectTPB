@@ -81,6 +81,107 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+                        // SIMPLE AND CORRECT: New calculation system for sub-CPMK first approach
+    function calculateAllTotals() {
+        // Step 1: Calculate individual CPMK totals (row totals)
+        calculateIndividualCpmkTotals();
+
+        // Step 2: Calculate komponen totals (column totals)
+        calculateKomponenTotals();
+
+        // Step 3: Calculate overall total
+        calculateOverallTotal();
+    }
+
+    // Calculate total for each individual CPMK row
+    function calculateIndividualCpmkTotals() {
+        // Get all unique CPMK IDs from inputs
+        const cpmkIds = new Set();
+        document.querySelectorAll('.bobot-input').forEach(input => {
+            cpmkIds.add(input.getAttribute('data-cpmk-id'));
+        });
+
+        // Calculate total for each CPMK
+        cpmkIds.forEach(cpmkId => {
+            const inputs = document.querySelectorAll(`input[data-cpmk-id="${cpmkId}"]`);
+            let total = 0;
+
+            inputs.forEach(input => {
+                const value = parseFloat(input.value) || 0;
+                total += value;
+            });
+
+            // Update the total cell for this CPMK
+            const totalCell = document.querySelector(`.total-cpmk[data-cpmk-id="${cpmkId}"]`);
+            if (totalCell) {
+                totalCell.textContent = total.toFixed(2);
+            }
+        });
+    }
+
+    // Calculate total per komponen (column totals)
+    function calculateKomponenTotals() {
+        // Get all komponen IDs that are currently selected/displayed
+        const displayedKomponenIds = new Set();
+        document.querySelectorAll('.bobot-input').forEach(input => {
+            displayedKomponenIds.add(input.getAttribute('data-komponen-id'));
+        });
+
+        // Calculate total for each displayed komponen
+        displayedKomponenIds.forEach(komponenId => {
+            // Find all inputs for this komponen
+            const inputs = document.querySelectorAll(`input[data-komponen-id="${komponenId}"]`);
+            let total = 0;
+
+            // Sum all values for this komponen
+            inputs.forEach(input => {
+                const value = parseFloat(input.value) || 0;
+                total += value;
+            });
+
+            // Update the total cell for this komponen
+            const totalCell = document.querySelector(`.total-per-komponen[data-komponen-id="${komponenId}"]`);
+            if (totalCell) {
+                totalCell.textContent = total.toFixed(2);
+            }
+        });
+    }
+
+    // Calculate overall total (sum of all komponen totals)
+    function calculateOverallTotal() {
+        let overallTotal = 0;
+
+        // Get all komponen IDs that are currently displayed
+        const displayedKomponenIds = new Set();
+        document.querySelectorAll('.bobot-input').forEach(input => {
+            displayedKomponenIds.add(input.getAttribute('data-komponen-id'));
+        });
+
+        // Sum all displayed komponen totals
+        displayedKomponenIds.forEach(komponenId => {
+            const totalCell = document.querySelector(`.total-per-komponen[data-komponen-id="${komponenId}"]`);
+            if (totalCell) {
+                overallTotal += parseFloat(totalCell.textContent) || 0;
+            }
+        });
+
+        // Update overall total cell
+        const overallTotalCell = document.querySelector('.total-overall');
+        if (overallTotalCell) {
+            overallTotalCell.textContent = overallTotal.toFixed(2);
+        }
+    }
+
+    // Add event listeners for real-time updates
+    function addBobotInputListeners() {
+        document.querySelectorAll('.bobot-input').forEach(input => {
+            input.addEventListener('input', function() {
+                // Recalculate all totals when any input changes
+                calculateAllTotals();
+            });
+        });
+    }
+
     // Update komponen cards state based on selections
     function updateKomponenCardsState() {
 
@@ -411,66 +512,45 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Fungsi untuk update baris total bobot per komponen secara realtime
     function updateTotalBobotRowRealtime() {
-        // Hitung total per komponen (kolom)
-        const tableBodyRows = tableBody.querySelectorAll('tr');
+        // Hitung total per komponen (kolom) berdasarkan komponen yang dipilih
         let totalKeseluruhan = 0;
-        let komponenTotals = [];
-        let cpmkTotals = [];
-        // Inisialisasi array
-        for (let i = 0; i < selectedKomponen.length; i++) komponenTotals[i] = 0;
-        for (let i = 0; i < cpmkListData.length; i++) cpmkTotals[i] = 0;
+        let komponenTotals = {};
 
-        // Loop semua input dan akumulasi ke array dengan mempertimbangkan hierarki CPMK
+        // Inisialisasi total untuk setiap komponen yang dipilih
+        selectedKomponen.forEach(komponen => {
+            komponenTotals[komponen.id] = 0;
+        });
+
+        // Loop semua input dan hitung total per komponen
         tableBody.querySelectorAll('input[type="number"]').forEach(input => {
             const name = input.name;
-            const match = name.match(/bobot\[(\d+)_([\w-]+)\]/);
+            const match = name.match(/bobot\[(\d+)_(\d+)\]/);
             if (match) {
                 const cpmkId = match[1];
                 const komponenId = match[2];
-                const cpmkData = cpmkListData.find(c => c.id == cpmkId);
-                const komponenIdx = selectedKomponen.findIndex(k => k.id == komponenId);
                 const value = parseFloat(input.value) || 0;
 
-                if (cpmkData && komponenIdx >= 0) {
-                    // Cek apakah ini adalah sub-CPMK
-                    const isChild = cpmkData.parent_id;
-                    const isParentWithChildren = !cpmkData.parent_id && cpmkData.children && cpmkData.children.length > 0;
-
-                    // Hanya hitung jika bukan parent CPMK dengan children
-                    if (!isParentWithChildren) {
-                        komponenTotals[komponenIdx] += value;
-                        totalKeseluruhan += value;
-
-                        // Untuk total CPMK, hitung berdasarkan hierarki
-                        if (isChild) {
-                            // Cari parent CPMK
-                            const parentCpmk = cpmkListData.find(c => c.id == cpmkData.parent_id);
-                            if (parentCpmk) {
-                                const parentIdx = cpmkListData.findIndex(c => c.id == parentCpmk.id);
-                                if (parentIdx >= 0) {
-                                    cpmkTotals[parentIdx] += value;
-                                }
-                            }
-                        } else {
-                            // Parent CPMK tanpa children
-                            const cpmkIdx = cpmkListData.findIndex(c => c.id == cpmkId);
-                            if (cpmkIdx >= 0) {
-                                cpmkTotals[cpmkIdx] += value;
-                            }
-                        }
-                    }
+                // Tambahkan ke total komponen jika komponen ini dipilih
+                if (komponenTotals.hasOwnProperty(komponenId)) {
+                    komponenTotals[komponenId] += value;
+                    totalKeseluruhan += value;
                 }
             }
         });
+
         // Update baris total per komponen (row terakhir)
-        const tableBodyRows2 = tableBody.querySelectorAll('tr');
-        if (tableBodyRows2.length > 0) {
-            const lastRow = tableBodyRows2[tableBodyRows2.length - 1];
-            // Update cell total per komponen
-            for (let i = 0; i < selectedKomponen.length; i++) {
-                const td = lastRow.children[i+2]; // +2 karena ada 2 kolom label (Parent CPMK + Sub-CPMK)
-                if (td) td.textContent = komponenTotals[i].toFixed(2);
-            }
+        const tableBodyRows = tableBody.querySelectorAll('tr');
+        if (tableBodyRows.length > 0) {
+            const lastRow = tableBodyRows[tableBodyRows.length - 1];
+
+            // Update cell total per komponen - pastikan urutan sesuai dengan header
+            selectedKomponen.forEach((komponen, index) => {
+                const td = lastRow.children[index + 2]; // +2 karena ada 2 kolom label (Parent CPMK + Sub-CPMK)
+                if (td) {
+                    td.textContent = komponenTotals[komponen.id].toFixed(2);
+                }
+            });
+
             // Update cell total keseluruhan
             const tdTotal = lastRow.lastElementChild;
             if (tdTotal) {
@@ -485,17 +565,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         }
-        // Update kolom total bobot CPMK (per baris) dengan mempertimbangkan hierarki
+
+        // Update kolom total bobot CPMK (per baris)
+        const tableBodyRows2 = tableBody.querySelectorAll('tr');
         let rowIndex = 0;
-        for (let i = 0; i < cpmkListData.length; i++) {
-            const cpmkData = cpmkListData[i];
+
+        cpmkListData.forEach(function(cpmkData) {
             const hasChildren = cpmkData.children && cpmkData.children.length > 0;
             const isParent = !cpmkData.parent_id;
             const isChild = cpmkData.parent_id;
 
             if (isParent && hasChildren) {
-                // Skip parent CPMK row (header row)
-                rowIndex++;
                 // Update sub-CPMK rows
                 cpmkData.children.forEach(function(childCpmk) {
                     const row = tableBodyRows2[rowIndex];
@@ -522,12 +602,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 const row = tableBodyRows2[rowIndex];
                 if (row) {
                     const td = row.lastElementChild;
-                    if (td) td.textContent = cpmkTotals[i].toFixed(2);
+                    if (td) {
+                        // Hitung total untuk parent CPMK ini
+                        let parentCpmkTotal = 0;
+                        selectedKomponen.forEach(function(komponen) {
+                            const combination = cpmkData.id + '_' + komponen.id;
+                            const inputName = 'bobot[' + combination + ']';
+                            const inputElem = document.querySelector(`input[name='${inputName}']`);
+                            if (inputElem && inputElem.value !== '') {
+                                parentCpmkTotal += parseFloat(inputElem.value) || 0;
+                            }
+                        });
+                        td.textContent = parentCpmkTotal.toFixed(2);
+                    }
                 }
                 rowIndex++;
             }
             // Skip child CPMK yang sudah diupdate di atas
-        }
+        });
         // Tambahkan/hapus icon warning di setiap input jika total keseluruhan > 100
         tableBody.querySelectorAll('input[type="number"]').forEach(input => {
             // Cari parent relative
@@ -551,14 +643,14 @@ document.addEventListener('DOMContentLoaded', function() {
         let adaIsi = false;
 
         // Validasi per komponen (maksimal 100% per komponen)
-        for (let i = 0; i < selectedKomponen.length; i++) {
-            if (komponenTotals[i] > 100) {
+        selectedKomponen.forEach(komponen => {
+            if (komponenTotals[komponen.id] > 100) {
                 allValid = false;
             }
-            if (komponenTotals[i] > 0) {
+            if (komponenTotals[komponen.id] > 0) {
                 adaIsi = true;
             }
-        }
+        });
 
         // Cek juga jika ada input bobot > 0
         if (!adaIsi) {
@@ -688,11 +780,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Initial setup - with delay to ensure DOM is fully ready
+        // Initial setup - with delay to ensure DOM is fully ready
     setTimeout(function() {
         initializeUsedKomponen();
         updateKomponenCardsState();
         renderTable();
+
+        // Initialize totals and add listeners after table is rendered
+        setTimeout(function() {
+            calculateAllTotals();
+            addBobotInputListeners();
+        }, 200);
     }, 100);
 
     } catch (error) {

@@ -38,7 +38,14 @@ class NilaiController extends Controller
         $latestTahunAjaran = TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->first();
         
         // Set default filter to latest tahun ajaran if no filter is selected
-        $selectedTahunAjaranId = $request->filled('tahun_ajaran_id') ? $request->tahun_ajaran_id : ($latestTahunAjaran ? $latestTahunAjaran->id : null);
+        // Check if tahun_ajaran_id parameter exists in request (even if empty)
+        if ($request->has('tahun_ajaran_id')) {
+            // Parameter exists, use the value (could be empty for "Semua Tahun Ajaran")
+            $selectedTahunAjaranId = $request->tahun_ajaran_id;
+        } else {
+            // Parameter doesn't exist, use default (latest tahun ajaran)
+            $selectedTahunAjaranId = $latestTahunAjaran ? $latestTahunAjaran->id : null;
+        }
 
         // Get filter parameters
         $jenis = $request->get('jenis');
@@ -273,12 +280,26 @@ class NilaiController extends Controller
             // Apply tab filtering
             if ($activeTab !== 'all') {
                 $kelasSlug = str_replace('kelas-', '', $activeTab);
+                // Convert slug back to original kelas name format
                 $kelasNama = strtoupper($kelasSlug);
                 
                 if (isset($mahasiswaByKelas[$kelasNama])) {
                     $mahasiswa = collect($mahasiswaByKelas[$kelasNama]);
                 } else {
-                    $mahasiswa = collect();
+                    // If exact match not found, try to find by partial match
+                    $foundKelas = null;
+                    foreach ($mahasiswaByKelas as $kelasKey => $mahasiswaList) {
+                        if (strtolower(str_replace(' ', '-', $kelasKey)) === $kelasSlug) {
+                            $foundKelas = $kelasKey;
+                            break;
+                        }
+                    }
+                    
+                    if ($foundKelas) {
+                        $mahasiswa = collect($mahasiswaByKelas[$foundKelas]);
+                    } else {
+                        $mahasiswa = collect();
+                    }
                 }
             } else {
                 $mahasiswa = $allMahasiswaCollection;

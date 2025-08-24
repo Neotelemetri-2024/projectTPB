@@ -36,7 +36,14 @@ class CpmkController extends Controller
         $latestTahunAjaran = TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->first();
 
         // Set default filter to latest tahun ajaran if no filter is selected
-        $selectedTahunAjaranId = $request->filled('tahun_ajaran_id') ? $request->tahun_ajaran_id : ($latestTahunAjaran ? $latestTahunAjaran->id : null);
+        // Check if tahun_ajaran_id parameter exists in request (even if empty)
+        if ($request->has('tahun_ajaran_id')) {
+            // Parameter exists, use the value (could be empty for "Semua Tahun Ajaran")
+            $selectedTahunAjaranId = $request->tahun_ajaran_id;
+        } else {
+            // Parameter doesn't exist, use default (latest tahun ajaran)
+            $selectedTahunAjaranId = $latestTahunAjaran ? $latestTahunAjaran->id : null;
+        }
 
         // Start with base query - use new schema with dosen_pengampu_kelas
         $query = TahunAjaranMatkul::whereHas('kelas.dosenPengampuKelas', function ($q) use ($dosen) {

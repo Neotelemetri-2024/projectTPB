@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 class CpmkLaporanController extends Controller
 {
@@ -112,6 +114,7 @@ class CpmkLaporanController extends Controller
             
             \Log::info("CPMK {$cpmk->kodeCpmk}: All nilai count", ['count' => $allNilai->count()]);
             
+            // Ambil nilai untuk mahasiswa yang mengambil mata kuliah ini
             $nilaiList = \App\Models\Nilai::where('cpmkId', $cpmk->id)
                 ->where('tahunAjaranMatkulId', $tahunAjaranMatkul->id)
                 ->whereIn('mahasiswaId', $mahasiswaIds)
@@ -119,22 +122,36 @@ class CpmkLaporanController extends Controller
                 ->filter()
                 ->toArray();
             
-            \Log::info("CPMK {$cpmk->kodeCpmk}: Filtered nilai count", ['count' => count($nilaiList)]);
+            // Hitung jumlah mahasiswa yang memiliki nilai (bukan jumlah nilai)
+            $mahasiswaDenganNilai = \App\Models\Nilai::where('cpmkId', $cpmk->id)
+                ->where('tahunAjaranMatkulId', $tahunAjaranMatkul->id)
+                ->whereIn('mahasiswaId', $mahasiswaIds)
+                ->distinct('mahasiswaId')
+                ->count();
             
-            $mahasiswaDenganNilai = count($nilaiList);
+            \Log::info("CPMK {$cpmk->kodeCpmk}: Nilai count", ['nilai_count' => count($nilaiList), 'mahasiswa_count' => $mahasiswaDenganNilai]);
             
             if ($mahasiswaDenganNilai == 0) continue;
+
+            // Hitung rata-rata nilai per mahasiswa
+            $nilaiPerMahasiswa = \App\Models\Nilai::where('cpmkId', $cpmk->id)
+                ->where('tahunAjaranMatkulId', $tahunAjaranMatkul->id)
+                ->whereIn('mahasiswaId', $mahasiswaIds)
+                ->selectRaw('mahasiswaId, AVG(nilai) as rata_nilai')
+                ->groupBy('mahasiswaId')
+                ->pluck('rata_nilai')
+                ->toArray();
 
             $distribution = [];
             $histogramData = [];
             
-            // Hitung distribusi nilai untuk pie chart
+            // Hitung distribusi nilai untuk pie chart berdasarkan rata-rata per mahasiswa
             foreach ($nilaiRanges as $grade => $range) {
-                $count = count(array_filter($nilaiList, function($nilai) use ($range) {
+                $count = count(array_filter($nilaiPerMahasiswa, function($nilai) use ($range) {
                     return $nilai >= $range['min'] && $nilai <= $range['max'];
                 }));
                 
-                $percentage = $mahasiswaDenganNilai > 0 ? round(($count / $mahasiswaDenganNilai) * 100, 2) : 0;
+                $percentage = count($nilaiPerMahasiswa) > 0 ? round(($count / count($nilaiPerMahasiswa)) * 100, 2) : 0;
                 
                 $distribution[$grade] = [
                     'count' => $count,
@@ -144,7 +161,7 @@ class CpmkLaporanController extends Controller
                 ];
             }
 
-            // Buat histogram data dengan range yang lebih detail
+            // Buat histogram data dengan range yang lebih detail berdasarkan rata-rata per mahasiswa
             $histogramRanges = [
                 ['min' => 0, 'max' => 19, 'label' => '0-19'],
                 ['min' => 20, 'max' => 39, 'label' => '20-39'],
@@ -156,28 +173,45 @@ class CpmkLaporanController extends Controller
             ];
 
             foreach ($histogramRanges as $range) {
-                $count = count(array_filter($nilaiList, function($nilai) use ($range) {
+                $count = count(array_filter($nilaiPerMahasiswa, function($nilai) use ($range) {
                     return $nilai >= $range['min'] && $nilai <= $range['max'];
                 }));
                 
                 $histogramData[] = [
                     'range' => $range['label'],
                     'count' => $count,
-                    'percentage' => $mahasiswaDenganNilai > 0 ? round(($count / $mahasiswaDenganNilai) * 100, 2) : 0
+                    'percentage' => count($nilaiPerMahasiswa) > 0 ? round(($count / count($nilaiPerMahasiswa)) * 100, 2) : 0
                 ];
             }
 
-            // Hitung rata-rata nilai
-            $averageNilai = $mahasiswaDenganNilai > 0 ? round(array_sum($nilaiList) / $mahasiswaDenganNilai, 2) : 0;
+            // Hitung rata-rata nilai dari rata-rata per mahasiswa
+            $averageNilai = count($nilaiPerMahasiswa) > 0 ? round(array_sum($nilaiPerMahasiswa) / count($nilaiPerMahasiswa), 2) : 0;
 
-            // Hitung kompeten vs tidak kompeten
-            $competentCount = count(array_filter($nilaiList, function($nilai) {
+            // Hitung kompeten vs tidak kompeten berdasarkan rata-rata per mahasiswa
+            $competentCount = count(array_filter($nilaiPerMahasiswa, function($nilai) {
                 return $nilai >= 60;
             }));
-            $notCompetentCount = $mahasiswaDenganNilai - $competentCount;
+            $notCompetentCount = count($nilaiPerMahasiswa) - $competentCount;
             
-            $competentPercentage = $mahasiswaDenganNilai > 0 ? round(($competentCount / $mahasiswaDenganNilai) * 100, 2) : 0;
-            $notCompetentPercentage = $mahasiswaDenganNilai > 0 ? round(($notCompetentCount / $mahasiswaDenganNilai) * 100, 2) : 0;
+            $competentPercentage = count($nilaiPerMahasiswa) > 0 ? round(($competentCount / count($nilaiPerMahasiswa)) * 100, 2) : 0;
+            $notCompetentPercentage = count($nilaiPerMahasiswa) > 0 ? round(($notCompetentCount / count($nilaiPerMahasiswa)) * 100, 2) : 0;
+
+            // Ambil bobot komponen untuk CPMK ini
+            $bobotKomponen = \App\Models\Bobot::where('cpmkId', $cpmk->id)
+                ->where('tahunAjaranMatkulId', $tahunAjaranMatkul->id)
+                ->with('komponen')
+                ->get()
+                ->map(function($bobot) {
+                    return [
+                        'komponen' => $bobot->komponen->namaKomponen,
+                        'bobot' => $bobot->bobot,
+                        'persentase' => $bobot->bobot . '%'
+                    ];
+                })
+                ->toArray();
+
+            // Hitung total bobot
+            $totalBobot = collect($bobotKomponen)->sum('bobot');
 
             $data[] = [
                 'cpmk' => $cpmk,
@@ -190,10 +224,52 @@ class CpmkLaporanController extends Controller
                 'notCompetentCount' => $notCompetentCount,
                 'competentPercentage' => $competentPercentage,
                 'notCompetentPercentage' => $notCompetentPercentage,
-                'nilaiList' => $nilaiList
+                'nilaiList' => $nilaiList,
+                'bobotKomponen' => $bobotKomponen,
+                'totalBobot' => $totalBobot
             ];
         }
 
         return $data;
+    }
+
+    public function exportPdf($tahunAjaranMatkulId)
+    {
+        $tahunAjaranMatkul = \App\Models\TahunAjaranMatkul::with(['mataKuliah', 'tahunAjaran'])->findOrFail($tahunAjaranMatkulId);
+        $cpmkData = $this->getCpmkData($tahunAjaranMatkul);
+
+        $html = view('exports.cpmk-laporan-pdf', [
+            'tahunAjaranMatkul' => $tahunAjaranMatkul,
+            'cpmkData' => $cpmkData
+        ])->render();
+
+        // Configure DOMPDF
+        $options = new Options();
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isPhpEnabled', true);
+        $options->set('isRemoteEnabled', true);
+
+        // Create DOMPDF instance
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $fileName = 'laporan-cpmk-' . $tahunAjaranMatkul->mataKuliah->kodeMatkul . '_' . date('Y-m-d') . '.pdf';
+
+        return response()->streamDownload(function() use ($dompdf) {
+            echo $dompdf->output();
+        }, $fileName, [
+            'Content-Type' => 'application/pdf',
+        ]);
+    }
+
+    public function exportExcel($tahunAjaranMatkulId)
+    {
+        $tahunAjaranMatkul = \App\Models\TahunAjaranMatkul::with(['mataKuliah', 'tahunAjaran'])->findOrFail($tahunAjaranMatkulId);
+        $cpmkData = $this->getCpmkData($tahunAjaranMatkul);
+
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\CpmkLaporanExport($tahunAjaranMatkul, $cpmkData), 
+            'laporan-cpmk-' . $tahunAjaranMatkul->mataKuliah->kodeMatkul . '_' . date('Y-m-d') . '.xlsx');
     }
 }

@@ -200,6 +200,8 @@ Route::middleware('auth')->group(function () {
         // Laporan CPMK
         Route::get('/dosen/cpmk-laporan', [\App\Http\Controllers\Dosen\CpmkLaporanController::class, 'index'])->name('dosen.cpmk-laporan.index');
         Route::get('/dosen/cpmk-laporan/{tahunAjaranMatkulId}', [\App\Http\Controllers\Dosen\CpmkLaporanController::class, 'show'])->name('dosen.cpmk-laporan.show');
+        Route::get('/dosen/cpmk-laporan/{tahunAjaranMatkulId}/export-pdf', [\App\Http\Controllers\Dosen\CpmkLaporanController::class, 'exportPdf'])->name('dosen.cpmk-laporan.export-pdf');
+        Route::get('/dosen/cpmk-laporan/{tahunAjaranMatkulId}/export-excel', [\App\Http\Controllers\Dosen\CpmkLaporanController::class, 'exportExcel'])->name('dosen.cpmk-laporan.export-excel');
     });
 
     // Mahasiswa Dashboard

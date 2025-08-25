@@ -264,12 +264,5 @@ class CpmkLaporanController extends Controller
         ]);
     }
 
-    public function exportExcel($tahunAjaranMatkulId)
-    {
-        $tahunAjaranMatkul = \App\Models\TahunAjaranMatkul::with(['mataKuliah', 'tahunAjaran'])->findOrFail($tahunAjaranMatkulId);
-        $cpmkData = $this->getCpmkData($tahunAjaranMatkul);
 
-        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\CpmkLaporanExport($tahunAjaranMatkul, $cpmkData), 
-            'laporan-cpmk-' . $tahunAjaranMatkul->mataKuliah->kodeMatkul . '_' . date('Y-m-d') . '.xlsx');
-    }
 }

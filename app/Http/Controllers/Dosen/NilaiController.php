@@ -36,7 +36,7 @@ class NilaiController extends Controller
 
         // Get the latest tahun ajaran for default filter
         $latestTahunAjaran = TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->first();
-        
+
         // Set default filter to latest tahun ajaran if no filter is selected
         // Check if tahun_ajaran_id parameter exists in request (even if empty)
         if ($request->has('tahun_ajaran_id')) {
@@ -282,7 +282,7 @@ class NilaiController extends Controller
                 $kelasSlug = str_replace('kelas-', '', $activeTab);
                 // Convert slug back to original kelas name format
                 $kelasNama = strtoupper($kelasSlug);
-                
+
                 if (isset($mahasiswaByKelas[$kelasNama])) {
                     $mahasiswa = collect($mahasiswaByKelas[$kelasNama]);
                 } else {
@@ -294,7 +294,7 @@ class NilaiController extends Controller
                             break;
                         }
                     }
-                    
+
                     if ($foundKelas) {
                         $mahasiswa = collect($mahasiswaByKelas[$foundKelas]);
                     } else {
@@ -318,7 +318,7 @@ class NilaiController extends Controller
                     ]
                 );
                 $mahasiswaPaginated->appends($request->query());
-                
+
                 // Update $mahasiswa to only contain data for current page
                 $mahasiswa = $mahasiswa->forPage($currentPage, $perPage);
             } else {
@@ -367,7 +367,7 @@ class NilaiController extends Controller
         // Hitung total bobot setiap komponen penilaian (untuk display) - dari semua kelas yang terkait
         $totalBobotKomponen = [];
         $allBobot = Bobot::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)->get();
-        
+
         foreach ($allBobot as $bobot) {
             $totalBobotKomponen[$bobot->komponenId] = ($totalBobotKomponen[$bobot->komponenId] ?? 0) + $bobot->bobot;
         }
@@ -519,7 +519,7 @@ class NilaiController extends Controller
             return redirect()->back()->with('success', 'Nilai berhasil disimpan.');
         } catch (\Exception $e) {
             \Log::error('Error saving grades: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            
+
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'message' => 'Terjadi kesalahan saat menyimpan nilai: ' . $e->getMessage()], 500);
             }
@@ -650,19 +650,19 @@ class NilaiController extends Controller
                 $nilaiPerCpmk = $allNilai->groupBy('cpmkId');
                 $totalNilaiKeseluruhan = 0;
                 $totalBobotKeseluruhan = 0;
-                
+
                 // Calculate nilai per CPMK
                 foreach ($nilaiPerCpmk as $cpmkId => $nilaiCpmk) {
                     $nilaiCpmkTotal = 0;
                     $bobotCpmkTotal = 0;
-                    
+
                     foreach ($nilaiCpmk as $nilai) {
                         if ($nilai->bobot && $nilai->bobot->bobot > 0) {
                             $nilaiCpmkTotal += ($nilai->nilai * $nilai->bobot->bobot);
                             $bobotCpmkTotal += $nilai->bobot->bobot;
                         }
                     }
-                    
+
                     // Jika bobot CPMK > 0, hitung rata-rata terbobot
                     if ($bobotCpmkTotal > 0) {
                         $nilaiRataRataCpmk = $nilaiCpmkTotal / $bobotCpmkTotal;
@@ -670,7 +670,7 @@ class NilaiController extends Controller
                         $totalBobotKeseluruhan += 1; // Setiap CPMK dihitung sebagai 1 unit
                     }
                 }
-                
+
                 // Hitung nilai akhir (rata-rata dari semua CPMK)
                 $totalNilai = $totalBobotKeseluruhan > 0 ? $totalNilaiKeseluruhan / $totalBobotKeseluruhan : 0;
 
@@ -759,7 +759,7 @@ class NilaiController extends Controller
             $query->where('dosenId', $dosen->id);
         })->with(['mataKuliah', 'tahunAjaran'])->findOrFail($id);
 
-        $fileName = 'Template_Nilai_' . str_replace(' ', '_', $tahunAjaranMatkul->mataKuliah->namaMatkul) . '_' . 
+        $fileName = 'Template_Nilai_' . str_replace(' ', '_', $tahunAjaranMatkul->mataKuliah->namaMatkul) . '_' .
                    $tahunAjaranMatkul->tahunAjaran->tahun . '_' . $tahunAjaranMatkul->tahunAjaran->periode . '.xlsx';
 
         return Excel::download(new NilaiTemplateExport($id), $fileName);
@@ -793,14 +793,14 @@ class NilaiController extends Controller
         try {
             // Store file temporarily
             $filePath = $request->file('excel_file')->store('temp/imports');
-            
+
             // Dispatch background job
             ProcessNilaiImport::dispatch($filePath, $id, $dosen->id, $user->id);
-            
+
             // Store import info in session
             session()->flash('import_started', true);
             session()->flash('import_file', $request->file('excel_file')->getClientOriginalName());
-            
+
             return redirect()->back()->with('info', 'Import sedang diproses di background. Anda akan mendapat notifikasi ketika selesai. Silakan refresh halaman untuk melihat status.');
 
         } catch (\Exception $e) {
@@ -815,23 +815,23 @@ class NilaiController extends Controller
     {
         $user = Auth::user();
         $cacheKey = "import_results_{$user->id}_{$id}";
-        
+
         $results = cache()->get($cacheKey);
-        
+
         if (!$results) {
             return response()->json(['status' => 'processing']);
         }
-        
+
         // Clear cache after retrieving
         cache()->forget($cacheKey);
-        
+
         if (isset($results['error'])) {
             return response()->json([
                 'status' => 'error',
                 'message' => $results['message']
             ]);
         }
-        
+
         return response()->json([
             'status' => 'completed',
             'results' => $results
@@ -873,7 +873,7 @@ class NilaiController extends Controller
             // Reset totalNilai and grade in kelasMahasiswa
             // Get all kelasIds from the related classes
             $kelasIds = \App\Models\Kelas::whereIn('tahunAjaranMatkulId', $relatedClasses)->pluck('id');
-            
+
             \DB::table('kelas_mahasiswa')
                 ->whereIn('kelasId', $kelasIds)
                 ->update([
@@ -883,7 +883,7 @@ class NilaiController extends Controller
 
             if ($request->ajax()) {
                 return response()->json([
-                    'success' => true, 
+                    'success' => true,
                     'message' => "Berhasil menghapus {$deletedCount} nilai."
                 ]);
             }
@@ -892,7 +892,7 @@ class NilaiController extends Controller
 
         } catch (\Exception $e) {
             \Log::error('Error resetting grades: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            
+
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'message' => 'Terjadi kesalahan saat menghapus nilai: ' . $e->getMessage()], 500);
             }
@@ -961,19 +961,19 @@ class NilaiController extends Controller
             foreach ($cpmkList as $cpmk) {
                 $nilaiCpmkTotal = 0;
                 $bobotCpmkTotal = 0;
-                
+
                 $nilaiRecords = $nilaiData->where('cpmkId', $cpmk->id);
-                
+
                 foreach ($nilaiRecords as $nilai) {
                     if ($nilai->bobot && $nilai->bobot->bobot > 0) {
                         $nilaiCpmkTotal += ($nilai->nilai * $nilai->bobot->bobot);
                         $bobotCpmkTotal += $nilai->bobot->bobot;
                     }
                 }
-                
+
                 // Nilai CPMK yang sudah dikalikan bobot CPMK (nilai rata-rata × bobot CPMK)
                 $nilaiCpmkTerbobot = $bobotCpmkTotal > 0 ? ($nilaiCpmkTotal / $bobotCpmkTotal) * ($bobotCpmkTotal / 100) : null;
-                
+
                 $nilaiPerCpmk[] = [
                     'cpmk' => $cpmk,
                     'nilai' => $nilaiCpmkTerbobot, // Nilai yang sudah dikalikan bobot
@@ -981,17 +981,17 @@ class NilaiController extends Controller
                     'bobot_total' => $bobotCpmkTotal,
                     'detail_komponen' => []
                 ];
-                
+
                 // Get detail per komponen for this CPMK
                 foreach ($allKomponen as $komponen) {
                     $nilaiKomponen = $nilaiData->where('cpmkId', $cpmk->id)
                         ->where('bobot.komponenId', $komponen->id)
                         ->first();
-                    
+
                     $bobotKomponen = $bobotData->where('cpmkId', $cpmk->id)
                         ->where('komponenId', $komponen->id)
                         ->first();
-                    
+
                     $nilaiPerCpmk[count($nilaiPerCpmk) - 1]['detail_komponen'][] = [
                         'komponen' => $komponen,
                         'nilai' => $nilaiKomponen ? $nilaiKomponen->nilai : null,
@@ -1003,14 +1003,14 @@ class NilaiController extends Controller
             // Calculate total nilai akhir menggunakan nilai rata-rata CPMK
             $totalNilaiKeseluruhan = 0;
             $totalBobotKeseluruhan = 0;
-            
+
             foreach ($nilaiPerCpmk as $cpmkNilai) {
                 if ($cpmkNilai['nilai_rata_rata'] !== null) {
                     $totalNilaiKeseluruhan += $cpmkNilai['nilai_rata_rata'];
                     $totalBobotKeseluruhan += 1;
                 }
             }
-            
+
             $totalNilaiAkhir = $totalBobotKeseluruhan > 0 ? $totalNilaiKeseluruhan / $totalBobotKeseluruhan : 0;
 
             // Hitung grade

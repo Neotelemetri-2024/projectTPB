@@ -970,7 +970,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Show input fields and hide plain text
                 nilaiInputs.forEach(input => input.classList.remove('hidden'));
                 nilaiPlains.forEach(plain => plain.classList.add('hidden'));
-                aksiColumns.forEach(col => col.classList.remove('hidden'));
+                // Keep aksi columns hidden - aksiColumns.forEach(col => col.classList.remove('hidden'));
                 gradeColumns.forEach(col => col.classList.add('hidden'));
 
                 // Show bulk actions
@@ -1058,21 +1058,39 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Send AJAX request to save nilai
             const formData = new FormData();
-            formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+            // Get CSRF token with null check
+            const csrfElement = document.querySelector('meta[name="csrf-token"]');
+            if (!csrfElement) {
+                console.error('CSRF token not found');
+                if (typeof showToast === 'function') {
+                    showToast('Error: Token keamanan tidak ditemukan', 'error');
+                }
+                return;
+            }
+            formData.append('_token', csrfElement.getAttribute('content'));
 
             // Add nilai data in the expected format
             Object.keys(nilaiData).forEach(komponenId => {
                 formData.append(`nilai[${mahasiswaId}][${komponenId}]`, nilaiData[komponenId]);
             });
 
-            // Add student class ID
-            const studentClassId = document.querySelector(`input[name="student_class_id[${mahasiswaId}]"]`).value;
-            formData.append(`student_class_id[${mahasiswaId}]`, studentClassId);
+            // Add student class ID with null check
+            const studentClassElement = document.querySelector(`input[name="student_class_id[${mahasiswaId}]"]`);
+            if (studentClassElement) {
+                const studentClassId = studentClassElement.value;
+                formData.append(`student_class_id[${mahasiswaId}]`, studentClassId);
+            } else {
+                console.error(`Student class ID element not found for mahasiswa ${mahasiswaId}`);
+                if (typeof showToast === 'function') {
+                    showToast('Error: Data mahasiswa tidak lengkap', 'error');
+                }
+                return;
+            }
 
             fetch(`/dosen/nilai/{{ $tahunAjaranMatkul->id }}/individual-store`, {
                 method: 'POST',
                 headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    'X-CSRF-TOKEN': csrfElement.getAttribute('content')
                 },
                 body: formData
             })

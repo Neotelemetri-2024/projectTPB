@@ -23,15 +23,15 @@ class TahunAjaranMatkulController extends Controller
     public function index(Request $request)
     {
         $query = TahunAjaranMatkul::with([
-            'tahunAjaran', 
-            'mataKuliah', 
-            'kelas.dosenPengampuKelas.dosen', 
+            'tahunAjaran',
+            'mataKuliah',
+            'kelas.dosenPengampuKelas.dosen',
             'kelas.kelasMahasiswa.mahasiswa'
         ]);
 
         // Get the latest tahun ajaran for default filter
         $latestTahunAjaran = TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->first();
-        
+
         // Set default filter to latest tahun ajaran if no filter is selected
         // Check if tahun_ajaran_id parameter exists in request (even if empty)
         if ($request->has('tahun_ajaran_id')) {
@@ -57,7 +57,7 @@ class TahunAjaranMatkulController extends Controller
         }
 
         $tahunAjaranMatkuls = $query->orderBy('created_at', 'desc')->paginate(10);
-        
+
         // Append query parameters to pagination links
         $tahunAjaranMatkuls->appends($request->query());
 
@@ -160,9 +160,9 @@ class TahunAjaranMatkulController extends Controller
     public function show(Request $request, $id)
     {
         $tahunAjaranMatkul = TahunAjaranMatkul::with([
-            'tahunAjaran', 
-            'mataKuliah', 
-            'kelas.dosenPengampuKelas.dosen', 
+            'tahunAjaran',
+            'mataKuliah',
+            'kelas.dosenPengampuKelas.dosen',
             'kelas.kelasMahasiswa.mahasiswa.user'
         ])->findOrFail($id);
 
@@ -187,20 +187,20 @@ class TahunAjaranMatkulController extends Controller
 
         // Get all unique mahasiswa IDs that are already in any class of this tahun ajaran matkul
         $existingMahasiswaIds = $tahunAjaranMatkul->kelas->flatMap->kelasMahasiswa->pluck('mahasiswaId')->unique();
-        
+
         // Get available mahasiswas (not in any class of this tahun ajaran matkul)
         $availableMahasiswas = Mahasiswa::whereNotIn('id', $existingMahasiswaIds)->get();
 
         // Get all unique dosen IDs that are already teaching any class of this tahun ajaran matkul
         $existingDosenIds = $tahunAjaranMatkul->kelas->flatMap->dosenPengampuKelas->pluck('dosenId')->unique();
-        
+
         // Get available dosens (not teaching any class of this tahun ajaran matkul)
         $availableDosens = Dosen::whereNotIn('id', $existingDosenIds)->get();
 
         return view('admin.tahun-ajaran-matkul.show', compact(
-            'tahunAjaranMatkul', 
-            'kelasMahasiswa', 
-            'availableMahasiswas', 
+            'tahunAjaranMatkul',
+            'kelasMahasiswa',
+            'availableMahasiswas',
             'availableDosens'
         ));
     }
@@ -257,19 +257,19 @@ class TahunAjaranMatkulController extends Controller
             // Delete related records in correct order
             // 1. Delete nilai records (if any)
             $tahunAjaranMatkul->nilai()->delete();
-            
+
             // 2. Delete kelas_mahasiswa records
             KelasMahasiswa::whereIn('kelasId', $existingKelasIds)->delete();
-            
+
             // 3. Delete dosen_pengampu_kelas records
             DosenPengampuKelas::whereIn('kelasId', $existingKelasIds)->delete();
-            
+
             // 4. Delete existing kelas records
             $tahunAjaranMatkul->kelas()->delete();
 
             // Create new kelas and dosen pengampu
             $existingKelasIds = $tahunAjaranMatkul->kelas->pluck('id')->toArray();
-            
+
             foreach ($request->kelasNames as $index => $kelasName) {
                 $kelas = Kelas::create([
                     'namaKelas' => $kelasName,
@@ -310,26 +310,26 @@ class TahunAjaranMatkulController extends Controller
     public function destroy($id)
     {
         $tahunAjaranMatkul = TahunAjaranMatkul::findOrFail($id);
-        
+
         DB::beginTransaction();
         try {
             // Delete related records in correct order
             // 1. Delete nilai records (if any)
             $tahunAjaranMatkul->nilai()->delete();
-            
+
             // 2. Delete kelas_mahasiswa records
             $kelasIds = $tahunAjaranMatkul->kelas->pluck('id');
             KelasMahasiswa::whereIn('kelasId', $kelasIds)->delete();
-            
+
             // 3. Delete dosen_pengampu_kelas records
             DosenPengampuKelas::whereIn('kelasId', $kelasIds)->delete();
-            
+
             // 4. Delete kelas records
             $tahunAjaranMatkul->kelas()->delete();
-            
+
             // 5. Delete tahun_ajaran_matkul
             $tahunAjaranMatkul->delete();
-            
+
             DB::commit();
             return redirect()->route('admin.tahun-ajaran-matkul.index')->with('success', 'Data berhasil dihapus.');
         } catch (\Exception $e) {
@@ -420,8 +420,8 @@ class TahunAjaranMatkulController extends Controller
     public function manageMahasiswa(Request $request, $id)
     {
         $tahunAjaranMatkul = TahunAjaranMatkul::with([
-            'tahunAjaran', 
-            'mataKuliah', 
+            'tahunAjaran',
+            'mataKuliah',
             'kelas.kelasMahasiswa.mahasiswa'
         ])->findOrFail($id);
 
@@ -453,8 +453,8 @@ class TahunAjaranMatkulController extends Controller
             ->pluck('tahunMasuk');
 
         return view('admin.tahun-ajaran-matkul.manage-mahasiswa', compact(
-            'tahunAjaranMatkul', 
-            'availableMahasiswas', 
+            'tahunAjaranMatkul',
+            'availableMahasiswas',
             'tahunMasukOptions'
         ));
     }
@@ -512,7 +512,7 @@ class TahunAjaranMatkulController extends Controller
         // Check for duplicate kelas names
         $existingKelasNames = $tahunAjaranMatkul->kelas->pluck('namaKelas')->toArray();
         $duplicateKelas = array_intersect($kelasNames, $existingKelasNames);
-        
+
         if (!empty($duplicateKelas)) {
             return back()->withErrors(['kelasNames' => 'Kelas ' . implode(', ', $duplicateKelas) . ' sudah ada.'])->withInput();
         }
@@ -609,10 +609,10 @@ class TahunAjaranMatkulController extends Controller
 
             $message = "Import berhasil! ";
             $message .= "Berhasil memproses " . ($results['success'] ?? 0) . " data. ";
-            
+
             if (!empty($results['errors'])) {
                 $message .= "Terdapat " . count($results['errors']) . " error.";
-                
+
                 // Store errors in session for detailed display
                 session()->flash('import_errors', $results['errors']);
             }
@@ -694,4 +694,4 @@ class TahunAjaranMatkulController extends Controller
                 ->withInput();
         }
     }
-} 
+}

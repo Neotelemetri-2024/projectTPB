@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="p-6">
-    <!-- Loading Skeleton -->
+    <!-- Loading Skeleton testing -->
     <div id="loading-skeleton" class="animate-pulse">
         <!-- Header Skeleton -->
         <div class="mb-8">
@@ -235,7 +235,7 @@
                         <h3 class="text-lg font-semibold text-gray-900">Jumlah Mahasiswa per Mata Kuliah</h3>
                         <p class="text-sm text-gray-600">Distribusi mahasiswa di setiap mata kuliah</p>
                     </div>
-                    <button onclick="maximizeChart('barChart', 'Jumlah Mahasiswa per Mata Kuliah')" 
+                    <button onclick="maximizeChart('barChart', 'Jumlah Mahasiswa per Mata Kuliah')"
                             class="text-amber-600 hover:text-amber-700 p-1 rounded transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
@@ -254,7 +254,7 @@
                         <h3 class="text-lg font-semibold text-gray-900">Distribusi Grade</h3>
                         <p class="text-sm text-gray-600">Sebaran nilai mahasiswa</p>
                     </div>
-                    <button onclick="maximizeChart('pieChart', 'Distribusi Grade')" 
+                    <button onclick="maximizeChart('pieChart', 'Distribusi Grade')"
                             class="text-amber-600 hover:text-amber-700 p-1 rounded transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
@@ -274,7 +274,7 @@
                     <h3 class="text-lg font-semibold text-gray-900">Progress Rata-rata Nilai per MK</h3>
                     <p class="text-sm text-gray-600">Tren nilai per mata kuliah tiap tahun ajaran</p>
                 </div>
-                <button onclick="maximizeChart('lineChart', 'Progress Rata-rata Nilai per MK')" 
+                <button onclick="maximizeChart('lineChart', 'Progress Rata-rata Nilai per MK')"
                         class="text-amber-600 hover:text-amber-700 p-1 rounded transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
@@ -299,23 +299,23 @@
                         <div class="flex justify-between items-center mb-3">
                                 <h4 class="font-medium text-sm text-gray-900">{{ $mk['kodeMatkul'] }}</h4>
                                 <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">{{ $mk['totalMahasiswa'] }} mahasiswa</span>
-                        </div>
-                        <p class="text-xs text-gray-600 mb-3">{{ $mk['mataKuliah'] }}</p>
-                        
-                        <div class="space-y-2">
-                            @php
-                                $grades = ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'D', 'E'];
-                                $colors = ['#10B981', '#34D399', '#60A5FA', '#3B82F6', '#6366F1', '#F59E0B', '#F97316', '#EF4444', '#DC2626'];
-                            @endphp
-                            @foreach($grades as $index => $grade)
-                                @if($mk['gradeCounts'][$grade] > 0)
-                                    @php
-                                        $percentage = $mk['totalMahasiswa'] > 0 ? round(($mk['gradeCounts'][$grade] / $mk['totalMahasiswa']) * 100, 1) : 0;
-                                        $color = $colors[$index];
-                                    @endphp
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center gap-2">
-                                            <div class="w-3 h-3 rounded-full" style="background-color: {{ $color }};"></div>
+                            </div>
+                            <p class="text-xs text-gray-600 mb-3">{{ $mk['mataKuliah'] }}</p>
+
+                            <div class="space-y-2">
+                                @php
+                                    $grades = ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'D', 'E'];
+                                    $colors = ['#10B981', '#34D399', '#60A5FA', '#3B82F6', '#6366F1', '#F59E0B', '#F97316', '#EF4444', '#DC2626'];
+                                @endphp
+                                @foreach($grades as $index => $grade)
+                                    @if($mk['gradeCounts'][$grade] > 0)
+                                        @php
+                                            $percentage = $mk['totalMahasiswa'] > 0 ? round(($mk['gradeCounts'][$grade] / $mk['totalMahasiswa']) * 100, 1) : 0;
+                                            $color = $colors[$index];
+                                        @endphp
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-3 h-3 rounded-full" style="background-color: {{ $color }};"></div>
                                                 <span class="text-xs font-medium text-gray-700">{{ $grade }}</span>
                                         </div>
                                         <div class="flex items-center gap-2">
@@ -402,7 +402,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(function() {
         document.getElementById('loading-skeleton').classList.add('hidden');
         document.getElementById('dashboard-content').classList.remove('hidden');
-        
+
         // Initialize charts
         initializeCharts();
     }, 1000);
@@ -424,7 +424,7 @@ const barChart = new Chart(document.getElementById('barChart'), {
     options: {
         responsive: true,
             maintainAspectRatio: false,
-            plugins: { 
+            plugins: {
                 legend: { display: false },
                 tooltip: {
                     backgroundColor: 'rgba(0, 0, 0, 0.8)',
@@ -462,7 +462,7 @@ const pieChart = new Chart(document.getElementById('pieChart'), {
                 borderColor: '#fff',
             }]
         },
-        options: { 
+        options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
@@ -492,8 +492,8 @@ const lineChart = new Chart(document.getElementById('lineChart'), {
     options: {
         responsive: true,
             maintainAspectRatio: false,
-            plugins: { 
-                legend: { 
+            plugins: {
+                legend: {
                     display: true,
                     position: 'top',
                 },
@@ -503,9 +503,9 @@ const lineChart = new Chart(document.getElementById('lineChart'), {
                     bodyColor: '#fff',
                 }
             },
-            scales: { 
-                y: { 
-                    beginAtZero: true, 
+            scales: {
+                y: {
+                    beginAtZero: true,
                     max: 100,
                     grid: {
                         color: 'rgba(0, 0, 0, 0.1)',

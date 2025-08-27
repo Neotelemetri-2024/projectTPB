@@ -157,7 +157,7 @@
                         <tr>
                             <td>Program Studi</td>
                             <td>:</td>
-                            <td>{{ $mahasiswa->prodi ?? 'Teknik Informatika' }}</td>
+                            <td>{{ $mahasiswa->prodi ?? 'Teknik Pertanian dan Biosistem' }}</td>
                         </tr>
                     </table>
                 </td>

@@ -9,6 +9,7 @@ use App\Models\TahunAjaranMatkul;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 use App\Models\CpmkMatKul;
 use App\Models\Bobot;
 use App\Models\TahunAjaran;
@@ -156,7 +157,7 @@ class CpmkController extends Controller
         $query = Cpmk::whereHas('cpmkMatKul', function ($q) use ($allTahunAjaranMatkulIds) {
             $q->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
         })
-        ->with(['cpl', 'cpmkMatKul', 'parent.cpl', 'children.cpl']);
+        ->with(['cpl', 'cpmkMatKul', 'parents.cpl', 'children.cpl']);
 
         // Apply filters
         if ($request->filled('search')) {
@@ -173,37 +174,15 @@ class CpmkController extends Controller
             });
         }
 
-        $cpmkList = $query->orderBy('kodeCpmk')->paginate(10);
+        $cpmkList = $query->orderBy('kodeCpmk', 'asc')->paginate(10);
 
-        // Group CPMK by hierarchy (parent and children)
-        $cpmkHierarchy = $cpmkList->getCollection()->groupBy(function($cpmk) {
-            return $cpmk->parent_id ? $cpmk->parent_id : $cpmk->id;
-        })->map(function($group) {
-            $parent = $group->first();
-            if ($parent->parent_id) {
-                // This is a child group, find the actual parent with CPL loaded
-                $parent = Cpmk::with('cpl')->find($parent->parent_id);
-            }
+        // Separate main CPMK and sub-CPMK
+        $mainCpmkList = $cpmkList->getCollection()->filter(function($cpmk) {
+            return $cpmk->parents->count() === 0;
+        });
 
-            // Ensure children have CPL loaded and synchronized
-            $children = $group->where('parent_id', '!=', null)->map(function($child) use ($parent) {
-                if ($parent && $child->parent_id == $parent->id) {
-                    // Ensure CPL matches parent
-                    $parentCplIds = $parent->cpl->pluck('id')->toArray();
-                    $currentCplIds = $child->cpl->pluck('id')->toArray();
-
-                    if (sort($parentCplIds) !== sort($currentCplIds)) {
-                        $child->cpl()->sync($parentCplIds);
-                        $child->load('cpl');
-                    }
-                }
-                return $child;
-            });
-
-            return [
-                'parent' => $parent,
-                'children' => $children
-            ];
+        $subCpmkList = $cpmkList->getCollection()->filter(function($cpmk) {
+            return $cpmk->parents->count() > 0;
         });
 
         // Load bobot data separately and group by component to avoid duplicates
@@ -234,27 +213,34 @@ class CpmkController extends Controller
                 ->max('updated_at');
 
             // Get the latest between CPMK, Bobot, and CpmkMatKul updates
-            $lastModified = null;
-            foreach ([$cpmkLastUpdate, $bobotLastUpdate, $cpmkMatKulLastUpdate] as $dt) {
-                if ($dt && ($lastModified === null || $dt > $lastModified)) {
-                    $lastModified = $dt;
-                }
+            $lastModified = $cpmkLastUpdate; // Default to CPMK update time
+
+            if ($bobotLastUpdate && (!$lastModified || $bobotLastUpdate > $lastModified)) {
+                $lastModified = $bobotLastUpdate;
             }
+
+            if ($cpmkMatKulLastUpdate && (!$lastModified || $cpmkMatKulLastUpdate > $lastModified)) {
+                $lastModified = $cpmkMatKulLastUpdate;
+            }
+
             $cpmk->lastModified = $lastModified;
         }
 
         // Ensure CPL synchronization for sub-CPMKs
         foreach ($cpmkList as $cpmk) {
-            if ($cpmk->parent_id) {
-                // This is a sub-CPMK, ensure CPL matches parent
-                $parentCplIds = $cpmk->parent->cpl->pluck('id')->toArray();
-                $currentCplIds = $cpmk->cpl->pluck('id')->toArray();
+            if ($cpmk->parents->count() > 0) {
+                // This is a sub-CPMK, ensure CPL matches all parents
+                foreach ($cpmk->parents as $parent) {
+                    $parentCplIds = $parent->cpl->pluck('id')->toArray();
+                    $currentCplIds = $cpmk->cpl->pluck('id')->toArray();
 
-                // If CPL doesn't match, sync it
-                if (sort($parentCplIds) !== sort($currentCplIds)) {
-                    $cpmk->cpl()->sync($parentCplIds);
-                    // Reload the CPL relationship
-                    $cpmk->load('cpl');
+                    // If CPL doesn't match, sync it
+                    if (sort($parentCplIds) !== sort($currentCplIds)) {
+                        $cpmk->cpl()->sync($parentCplIds);
+                        // Reload the CPL relationship
+                        $cpmk->load('cpl');
+                        break; // Sync with first parent only
+                    }
                 }
             }
         }
@@ -267,7 +253,7 @@ class CpmkController extends Controller
             $q->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
         })->with('children')->get();
 
-        return view('dosen.cpmk.show', compact('cpmkList', 'cpmkHierarchy', 'tahunAjaranMatkul', 'cplList', 'allCpmkForParent'));
+        return view('dosen.cpmk.show', compact('cpmkList', 'mainCpmkList', 'subCpmkList', 'tahunAjaranMatkul', 'cplList', 'allCpmkForParent'));
     }
 
     /**
@@ -331,7 +317,6 @@ class CpmkController extends Controller
         })->findOrFail($tahunAjaranMatkulId);
 
         // Get all TahunAjaranMatkul records for the same mata kuliah and tahun ajaran
-        // that are taught by this dosen
         $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
             ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
             ->whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
@@ -339,6 +324,103 @@ class CpmkController extends Controller
             })
             ->pluck('id');
 
+        // Check if request has multiple CPMK or single CPMK
+        if ($request->has('cpmk') && is_array($request->cpmk)) {
+            // Multiple CPMK
+            return $this->storeMultipleCpmk($request, $tahunAjaranMatkul, $allTahunAjaranMatkulIds);
+        } else {
+            // Single CPMK (backward compatibility)
+            return $this->storeSingleCpmk($request, $tahunAjaranMatkul, $allTahunAjaranMatkulIds);
+        }
+    }
+
+    private function storeMultipleCpmk(Request $request, $tahunAjaranMatkul, $allTahunAjaranMatkulIds)
+    {
+        $validator = Validator::make($request->all(), [
+            'cpmk' => 'required|array|min:1',
+            'cpmk.*.cpl_ids' => 'required|array|min:1',
+            'cpmk.*.cpl_ids.*' => 'exists:cpl,id',
+            'cpmk.*.kodeCpmk' => 'required|string|max:20',
+            'cpmk.*.deskripsi' => 'required|string|max:1000',
+        ], [
+            'cpmk.required' => 'Data CPMK harus diisi.',
+            'cpmk.min' => 'Minimal satu CPMK harus ditambahkan.',
+            'cpmk.*.cpl_ids.required' => 'Minimal satu CPL harus dipilih untuk setiap CPMK.',
+            'cpmk.*.cpl_ids.min' => 'Minimal satu CPL harus dipilih untuk setiap CPMK.',
+            'cpmk.*.cpl_ids.*.exists' => 'CPL yang dipilih tidak valid.',
+            'cpmk.*.kodeCpmk.required' => 'Kode CPMK harus diisi.',
+            'cpmk.*.kodeCpmk.max' => 'Kode CPMK maksimal 20 karakter.',
+            'cpmk.*.deskripsi.required' => 'Deskripsi CPMK harus diisi.',
+            'cpmk.*.deskripsi.max' => 'Deskripsi CPMK maksimal 1000 karakter.',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        // Check for duplicate kode CPMK
+        $kodeCpmks = collect($request->cpmk)->pluck('kodeCpmk');
+        if ($kodeCpmks->count() !== $kodeCpmks->unique()->count()) {
+            return redirect()->back()
+                ->withErrors(['cpmk' => 'Kode CPMK tidak boleh duplikat.'])
+                ->withInput();
+        }
+
+        // Check if any kode CPMK already exists
+        $existingCpmks = Cpmk::whereIn('kodeCpmk', $kodeCpmks)
+            ->whereHas('cpmkMatKul', function ($query) use ($allTahunAjaranMatkulIds) {
+                $query->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
+            })
+            ->pluck('kodeCpmk');
+
+        if ($existingCpmks->count() > 0) {
+            return redirect()->back()
+                ->withErrors(['cpmk' => 'Kode CPMK berikut sudah digunakan: ' . $existingCpmks->implode(', ')])
+                ->withInput();
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $createdCpmks = [];
+            foreach ($request->cpmk as $cpmkData) {
+                // Create CPMK
+                $cpmk = Cpmk::create([
+                    'kodeCpmk' => $cpmkData['kodeCpmk'],
+                    'deskripsi' => $cpmkData['deskripsi'],
+                ]);
+
+                // Attach CPL relationships
+                $cpmk->cpl()->attach($cpmkData['cpl_ids']);
+
+                // Create relation to ALL mata kuliah classes taught by this dosen
+                foreach ($allTahunAjaranMatkulIds as $tahunAjaranMatkulId) {
+                    $cpmk->cpmkMatKul()->create([
+                        'tahunAjaranMatkulId' => $tahunAjaranMatkulId,
+                    ]);
+                }
+
+                $createdCpmks[] = $cpmk;
+            }
+
+            DB::commit();
+
+            $count = count($createdCpmks);
+            return redirect()->route('dosen.cpmk.show', $tahunAjaranMatkul->id)
+                ->with('success', "{$count} CPMK berhasil ditambahkan untuk " . $allTahunAjaranMatkulIds->count() . " kelas yang Anda ampu.");
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan saat menyimpan CPMK: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
+    private function storeSingleCpmk(Request $request, $tahunAjaranMatkul, $allTahunAjaranMatkulIds)
+    {
         // Custom validation for CPMK uniqueness within scope of mata kuliah + dosen
         $existingCpmk = Cpmk::where('kodeCpmk', $request->kodeCpmk)
             ->whereHas('cpmkMatKul', function ($query) use ($allTahunAjaranMatkulIds) {
@@ -355,7 +437,7 @@ class CpmkController extends Controller
         $validator = Validator::make($request->all(), [
             'cpl_ids' => 'required|array',
             'cpl_ids.*' => 'exists:cpl,id',
-            'kodeCpmk' => 'required|string|max:20', // removed unique
+            'kodeCpmk' => 'required|string|max:20',
             'deskripsi' => 'required|string|max:1000',
         ], [
             'cpl_ids.required' => 'Minimal satu CPL harus dipilih.',
@@ -370,24 +452,6 @@ class CpmkController extends Controller
         if ($validator->fails()) {
             return redirect()->back()
                 ->withErrors($validator)
-                ->withInput();
-        }
-
-        // Custom validation: kodeCpmk must be unique per mata kuliah (across all classes/years for that mata kuliah)
-        $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
-            ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
-            ->whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
-                $query->where('dosenId', $dosen->id);
-            })
-            ->pluck('id');
-        $exists = \App\Models\Cpmk::where('kodeCpmk', $request->kodeCpmk)
-            ->whereHas('cpmkMatKul', function($q) use ($allTahunAjaranMatkulIds) {
-                $q->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
-            })
-            ->exists();
-        if ($exists) {
-            return redirect()->back()
-                ->withErrors(['kodeCpmk' => 'Kode CPMK sudah digunakan pada mata kuliah ini.'])
                 ->withInput();
         }
 
@@ -408,7 +472,7 @@ class CpmkController extends Controller
                 ]);
             }
 
-            return redirect()->route('dosen.cpmk.show', $tahunAjaranMatkulId)
+            return redirect()->route('dosen.cpmk.show', $tahunAjaranMatkul->id)
                 ->with('success', 'CPMK berhasil ditambahkan untuk ' . $allTahunAjaranMatkulIds->count() . ' kelas yang Anda ampu.');
 
         } catch (\Exception $e) {
@@ -491,7 +555,7 @@ class CpmkController extends Controller
         // Get parent CPMK only (no sub-CPMK)
         $cpmk = Cpmk::with(['cpl', 'children'])->whereHas('cpmkMatKul', function ($q) use ($allTahunAjaranMatkulIds) {
             $q->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
-        })->whereNull('parent_id') // Only parent CPMK
+        })->whereDoesntHave('parents') // Only parent CPMK
           ->findOrFail($id);
 
         // Get CPL list
@@ -557,7 +621,7 @@ class CpmkController extends Controller
             'kodeCpmk.max' => 'Kode CPMK maksimal 20 karakter.',
             'deskripsi.required' => 'Deskripsi CPMK harus diisi.',
             'deskripsi.max' => 'Deskripsi CPMK maksimal 1000 karakter.',
-            'parent_id.exists' => 'CPMK parent yang dipilih tidak valid.',
+            'parent_ids.exists' => 'CPMK parent yang dipilih tidak valid.',
         ]);
 
         if ($validator->fails()) {
@@ -592,7 +656,7 @@ class CpmkController extends Controller
             $cpmk->cpl()->sync($request->cpl_ids);
 
             // Update CPL for all sub-CPMKs to match parent CPMK
-            $subCpmks = Cpmk::where('parent_id', $cpmk->id)->get();
+            $subCpmks = $cpmk->children;
             foreach ($subCpmks as $subCpmk) {
                 $subCpmk->cpl()->sync($request->cpl_ids);
             }
@@ -649,9 +713,7 @@ class CpmkController extends Controller
             }
 
             // Check if CPMK has sub-CPMKs with nilai
-            $subCpmksWithNilai = Cpmk::where('parent_id', $cpmk->id)
-                ->whereHas('nilai')
-                ->count();
+            $subCpmksWithNilai = $cpmk->children()->whereHas('nilai')->count();
 
             if ($subCpmksWithNilai > 0) {
                 return redirect()->back()
@@ -659,7 +721,7 @@ class CpmkController extends Controller
             }
 
             // Get sub-CPMKs count for message
-            $subCpmksCount = Cpmk::where('parent_id', $cpmk->id)->count();
+            $subCpmksCount = $cpmk->children()->count();
 
             // Delete related CpmkMatKul records first
             $cpmk->cpmkMatKul()->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds)->delete();
@@ -667,7 +729,7 @@ class CpmkController extends Controller
             // Delete CPMK if no other mata kuliah uses it
             if (!$cpmk->cpmkMatKul()->exists()) {
                 // Delete all sub-CPMKs first (cascade delete)
-                Cpmk::where('parent_id', $cpmk->id)->delete();
+                $cpmk->children()->detach();
                 $cpmk->delete();
             }
 
@@ -736,9 +798,9 @@ class CpmkController extends Controller
                 }
 
                 // Check if any CPMK has sub-CPMKs with nilai
-                $subCpmksWithNilai = Cpmk::whereIn('parent_id', $cpmkIds)
-                    ->whereHas('nilai')
-                    ->count();
+                $subCpmksWithNilai = Cpmk::whereHas('parents', function($q) use ($cpmkIds) {
+                    $q->whereIn('cpmk.id', $cpmkIds);
+                })->whereHas('nilai')->count();
 
                 if ($subCpmksWithNilai > 0) {
                     return response()->json([
@@ -755,7 +817,7 @@ class CpmkController extends Controller
 
                     if ($cpmk) {
                         // Count sub-CPMKs for this parent
-                        $subCpmkCount = Cpmk::where('parent_id', $cpmk->id)->count();
+                        $subCpmkCount = $cpmk->children()->count();
                         $subCpmkDeletedCount += $subCpmkCount;
 
                         // Delete related CpmkMatKul records first
@@ -764,7 +826,7 @@ class CpmkController extends Controller
                         // Delete CPMK if no other mata kuliah uses it
                         if (!$cpmk->cpmkMatKul()->exists()) {
                             // Delete all sub-CPMKs first (cascade delete)
-                            Cpmk::where('parent_id', $cpmk->id)->delete();
+                            $cpmk->children()->detach();
                             $cpmk->delete();
                         }
                         $deletedCount++;
@@ -829,7 +891,12 @@ class CpmkController extends Controller
             ];
         });
 
-        return view('dosen.cpmk.create-sub-cpmk', compact('tahunAjaranMatkul', 'parentCpmk', 'kelasInfo'));
+        // Get all main CPMK for parent selection (only CPMK without parents)
+        $allCpmkForParent = Cpmk::whereHas('cpmkMatKul', function ($q) use ($allTahunAjaranMatkulIds) {
+            $q->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds->pluck('id'));
+        })->whereDoesntHave('parents')->get();
+
+        return view('dosen.cpmk.create-sub-cpmk', compact('tahunAjaranMatkul', 'parentCpmk', 'kelasInfo', 'allCpmkForParent'));
     }
 
     /**
@@ -857,6 +924,116 @@ class CpmkController extends Controller
             })
             ->pluck('id');
 
+        // Check if request has multiple sub-CPMK or single sub-CPMK
+        if ($request->has('sub_cpmk') && is_array($request->sub_cpmk)) {
+            // Multiple sub-CPMK
+            return $this->storeMultipleSubCpmk($request, $tahunAjaranMatkul, $allTahunAjaranMatkulIds);
+        } else {
+            // Single sub-CPMK (backward compatibility)
+            return $this->storeSingleSubCpmk($request, $tahunAjaranMatkul, $allTahunAjaranMatkulIds, $parentId);
+        }
+    }
+
+    private function storeMultipleSubCpmk(Request $request, $tahunAjaranMatkul, $allTahunAjaranMatkulIds)
+    {
+        $validator = Validator::make($request->all(), [
+            'sub_cpmk' => 'required|array|min:1',
+            'sub_cpmk.*.parent_ids' => 'required|array|min:1',
+            'sub_cpmk.*.parent_ids.*' => 'exists:cpmk,id',
+            'sub_cpmk.*.kodeCpmk' => 'required|string|max:20',
+            'sub_cpmk.*.deskripsi' => 'required|string|max:1000',
+        ], [
+            'sub_cpmk.required' => 'Data Sub-CPMK harus diisi.',
+            'sub_cpmk.min' => 'Minimal satu Sub-CPMK harus ditambahkan.',
+            'sub_cpmk.*.parent_ids.required' => 'Minimal satu parent CPMK harus dipilih untuk setiap Sub-CPMK.',
+            'sub_cpmk.*.parent_ids.min' => 'Minimal satu parent CPMK harus dipilih untuk setiap Sub-CPMK.',
+            'sub_cpmk.*.parent_ids.*.exists' => 'Parent CPMK yang dipilih tidak valid.',
+            'sub_cpmk.*.kodeCpmk.required' => 'Kode Sub-CPMK harus diisi.',
+            'sub_cpmk.*.kodeCpmk.max' => 'Kode Sub-CPMK maksimal 20 karakter.',
+            'sub_cpmk.*.deskripsi.required' => 'Deskripsi Sub-CPMK harus diisi.',
+            'sub_cpmk.*.deskripsi.max' => 'Deskripsi Sub-CPMK maksimal 1000 karakter.',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator)
+                ->withInput();
+        }
+
+        // Check for duplicate kode Sub-CPMK
+        $kodeSubCpmks = collect($request->sub_cpmk)->pluck('kodeCpmk');
+        if ($kodeSubCpmks->count() !== $kodeSubCpmks->unique()->count()) {
+            return redirect()->back()
+                ->withErrors(['sub_cpmk' => 'Kode Sub-CPMK tidak boleh duplikat.'])
+                ->withInput();
+        }
+
+        // Check if any kode Sub-CPMK already exists
+        $existingSubCpmks = Cpmk::whereIn('kodeCpmk', $kodeSubCpmks)
+            ->whereHas('cpmkMatKul', function ($query) use ($allTahunAjaranMatkulIds) {
+                $query->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
+            })
+            ->pluck('kodeCpmk');
+
+        if ($existingSubCpmks->count() > 0) {
+            return redirect()->back()
+                ->withErrors(['sub_cpmk' => 'Kode Sub-CPMK berikut sudah digunakan: ' . $existingSubCpmks->implode(', ')])
+                ->withInput();
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $createdSubCpmks = [];
+            foreach ($request->sub_cpmk as $subCpmkData) {
+                // Create Sub-CPMK
+                $subCpmk = Cpmk::create([
+                    'kodeCpmk' => $subCpmkData['kodeCpmk'],
+                    'deskripsi' => $subCpmkData['deskripsi'],
+                ]);
+
+                // Attach parent relationships
+                $subCpmk->parents()->attach($subCpmkData['parent_ids']);
+
+                // Get CPL from all parent CPMKs and merge them
+                $allParentCplIds = collect();
+                foreach ($subCpmkData['parent_ids'] as $parentId) {
+                    $parentCpmk = Cpmk::find($parentId);
+                    if ($parentCpmk) {
+                        $allParentCplIds = $allParentCplIds->merge($parentCpmk->cpl->pluck('id'));
+                    }
+                }
+                $uniqueCplIds = $allParentCplIds->unique()->toArray();
+
+                // Attach CPL relationships
+                $subCpmk->cpl()->attach($uniqueCplIds);
+
+                // Create relation to ALL mata kuliah classes taught by this dosen
+                foreach ($allTahunAjaranMatkulIds as $tahunAjaranMatkulId) {
+                    $subCpmk->cpmkMatKul()->create([
+                        'tahunAjaranMatkulId' => $tahunAjaranMatkulId,
+                    ]);
+                }
+
+                $createdSubCpmks[] = $subCpmk;
+            }
+
+            DB::commit();
+
+            $count = count($createdSubCpmks);
+            return redirect()->route('dosen.cpmk.show', $tahunAjaranMatkul->id)
+                ->with('success', "{$count} Sub-CPMK berhasil ditambahkan untuk " . $allTahunAjaranMatkulIds->count() . " kelas yang Anda ampu.");
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan saat menyimpan Sub-CPMK: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
+    private function storeSingleSubCpmk(Request $request, $tahunAjaranMatkul, $allTahunAjaranMatkulIds, $parentId)
+    {
         // Verify parent CPMK exists and belongs to this dosen
         $parentCpmk = Cpmk::whereHas('cpmkMatKul', function ($q) use ($allTahunAjaranMatkulIds) {
             $q->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
@@ -892,12 +1069,14 @@ class CpmkController extends Controller
         }
 
         try {
-            // Create sub-CPMK with parent_id
+            // Create sub-CPMK
             $cpmk = Cpmk::create([
                 'kodeCpmk' => $request->kodeCpmk,
                 'deskripsi' => $request->deskripsi,
-                'parent_id' => $parentId,
             ]);
+
+            // Attach parent relationship
+            $cpmk->parents()->attach($parentId);
 
             // Attach CPL relationships from parent CPMK
             $parentCplIds = $parentCpmk->cpl->pluck('id')->toArray();
@@ -910,7 +1089,7 @@ class CpmkController extends Controller
                 ]);
             }
 
-            return redirect()->route('dosen.cpmk.show', $tahunAjaranMatkulId)
+            return redirect()->route('dosen.cpmk.show', $tahunAjaranMatkul->id)
                 ->with('success', 'Sub-CPMK berhasil ditambahkan dengan CPL yang sama dengan parent CPMK untuk ' . $allTahunAjaranMatkulIds->count() . ' kelas yang Anda ampu.');
 
         } catch (\Exception $e) {
@@ -946,7 +1125,7 @@ class CpmkController extends Controller
             ->pluck('id');
 
         // Get CPMK with all related data
-        $cpmk = Cpmk::with(['cpl', 'cpmkMatKul.tahunAjaranMatkul.mataKuliah', 'parent', 'children'])
+        $cpmk = Cpmk::with(['cpl', 'cpmkMatKul.tahunAjaranMatkul.mataKuliah', 'parents', 'children'])
             ->whereHas('cpmkMatKul', function ($q) use ($allTahunAjaranMatkulIds) {
                 $q->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
             })
@@ -986,11 +1165,11 @@ class CpmkController extends Controller
             ->pluck('id');
 
         // Get sub-CPMK with parent and CPL relationships
-        $cpmk = Cpmk::with(['parent.cpl', 'cpl'])
+        $cpmk = Cpmk::with(['parents.cpl', 'cpl'])
             ->whereHas('cpmkMatKul', function($q) use ($allTahunAjaranMatkulIds) {
                 $q->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
             })
-            ->where('parent_id', '!=', null) // Ensure this is a sub-CPMK
+            ->whereHas('parents') // Ensure this is a sub-CPMK
             ->findOrFail($cpmkId);
 
         return view('dosen.cpmk.edit-sub-cpmk', compact('tahunAjaranMatkul', 'cpmk'));
@@ -1017,11 +1196,11 @@ class CpmkController extends Controller
             ->pluck('id');
 
         // Get sub-CPMK with parent
-        $cpmk = Cpmk::with('parent.cpl')
+        $cpmk = Cpmk::with('parents.cpl')
             ->whereHas('cpmkMatKul', function($q) use ($allTahunAjaranMatkulIds) {
                 $q->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
             })
-            ->where('parent_id', '!=', null) // Ensure this is a sub-CPMK
+            ->whereHas('parents') // Ensure this is a sub-CPMK
             ->findOrFail($cpmkId);
 
         $validator = Validator::make($request->all(), [
@@ -1048,7 +1227,7 @@ class CpmkController extends Controller
             ]);
 
             // Sync CPL relationships with parent CPMK (in case parent CPL changed)
-            $parentCplIds = $cpmk->parent->cpl->pluck('id')->toArray();
+            $parentCplIds = $cpmk->parents->first()->cpl->pluck('id')->toArray();
             $cpmk->cpl()->sync($parentCplIds);
 
             return redirect()->route('dosen.cpmk.show', $tahunAjaranMatkulId)

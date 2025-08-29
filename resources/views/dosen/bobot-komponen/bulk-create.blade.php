@@ -216,6 +216,8 @@ window.komponenListData = {!! json_encode($komponen) !!};
 window.existingCombinationsData = {!! json_encode($existingCombinations) !!};
 window.bobotWithNilaiData = {!! json_encode($bobotWithNilai) !!};
 window.usedKomponenIdsData = {!! json_encode($allExistingBobot->pluck('komponenId')->unique()->values()) !!};
+
+
 </script>
 <script src="{{ asset('assets/js/bobot-bulk-create.js') }}"></script>
 @endsection

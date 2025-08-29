@@ -13,8 +13,7 @@ class Cpmk extends Model
 
     protected $fillable = [
         'kodeCpmk',
-        'deskripsi',
-        'parent_id'
+        'deskripsi'
     ];
 
     public function cpl()
@@ -37,34 +36,22 @@ class Cpmk extends Model
         return $this->hasMany(Bobot::class, 'cpmkId');
     }
 
-    // Relasi rekursif untuk parent CPMK
-    public function parent()
+    // Relasi many-to-many untuk parent CPMK
+    public function parents()
     {
-        return $this->belongsTo(Cpmk::class, 'parent_id');
+        return $this->belongsToMany(Cpmk::class, 'cpmk_parents', 'child_cpmk_id', 'parent_cpmk_id');
     }
 
-    // Relasi rekursif untuk child CPMK (sub-CPMK)
+    // Relasi many-to-many untuk child CPMK (sub-CPMK)
     public function children()
     {
-        return $this->hasMany(Cpmk::class, 'parent_id');
-    }
-
-    // Relasi untuk mendapatkan semua descendant (child, grandchild, dll)
-    public function descendants()
-    {
-        return $this->children()->with('descendants');
-    }
-
-    // Relasi untuk mendapatkan semua ancestor (parent, grandparent, dll)
-    public function ancestors()
-    {
-        return $this->parent()->with('ancestors');
+        return $this->belongsToMany(Cpmk::class, 'cpmk_parents', 'parent_cpmk_id', 'child_cpmk_id');
     }
 
     // Helper method untuk mengecek apakah CPMK memiliki parent
-    public function hasParent()
+    public function hasParents()
     {
-        return !is_null($this->parent_id);
+        return $this->parents()->count() > 0;
     }
 
     // Helper method untuk mengecek apakah CPMK memiliki children
@@ -76,12 +63,66 @@ class Cpmk extends Model
     // Helper method untuk mendapatkan root CPMK (CPMK tanpa parent)
     public function scopeRoot($query)
     {
-        return $query->whereNull('parent_id');
+        return $query->whereDoesntHave('parents');
     }
 
     // Helper method untuk mendapatkan leaf CPMK (CPMK tanpa children)
     public function scopeLeaf($query)
     {
         return $query->whereDoesntHave('children');
+    }
+
+    // Helper method untuk sync parents
+    public function syncParents($parentIds)
+    {
+        return $this->parents()->sync($parentIds);
+    }
+
+    // Helper method untuk attach parents
+    public function attachParents($parentIds)
+    {
+        return $this->parents()->attach($parentIds);
+    }
+
+    // Helper method untuk detach parents
+    public function detachParents($parentIds = null)
+    {
+        if ($parentIds === null) {
+            return $this->parents()->detach();
+        }
+        return $this->parents()->detach($parentIds);
+    }
+
+    // Helper method untuk sync children
+    public function syncChildren($childIds)
+    {
+        return $this->children()->sync($childIds);
+    }
+
+    // Helper method untuk attach children
+    public function attachChildren($childIds)
+    {
+        return $this->children()->attach($childIds);
+    }
+
+    // Helper method untuk detach children
+    public function detachChildren($childIds = null)
+    {
+        if ($childIds === null) {
+            return $this->children()->detach();
+        }
+        return $this->children()->detach($childIds);
+    }
+
+    // Helper method untuk mendapatkan semua parent IDs
+    public function getParentIds()
+    {
+        return $this->parents()->pluck('cpmk.id');
+    }
+
+    // Helper method untuk mendapatkan semua child IDs
+    public function getChildIds()
+    {
+        return $this->children()->pluck('cpmk.id');
     }
 }

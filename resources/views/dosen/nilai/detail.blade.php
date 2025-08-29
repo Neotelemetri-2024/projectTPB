@@ -1,6 +1,6 @@
 <div class="space-y-4">
     <h4 class="text-lg font-semibold text-gray-900">Detail Nilai Per CPMK</h4>
-    
+
     <!-- Info Mahasiswa dan Grade -->
     <div class="bg-blue-50 rounded-lg p-4 border border-blue-200 mb-4">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -10,21 +10,21 @@
             </div>
             <div class="text-center">
                 <p class="text-sm text-gray-700"><strong>Nilai Akhir:</strong></p>
-                <p class="text-lg font-bold text-blue-600">{{ number_format($totalNilaiAkhir, 1) }}</p>
+                <p class="text-lg font-bold text-blue-600">{{ number_format($totalNilaiAkhir, 2) }}</p>
             </div>
             <div class="text-center">
                 <p class="text-sm text-gray-700"><strong>Grade:</strong></p>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium 
-                    {{ $grade == 'A' || $grade == 'A-' ? 'bg-green-100 text-green-800' : 
-                       ($grade == 'B+' || $grade == 'B' || $grade == 'B-' ? 'bg-blue-100 text-blue-800' : 
-                       ($grade == 'C+' || $grade == 'C' ? 'bg-yellow-100 text-yellow-800' : 
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium
+                    {{ $grade == 'A' || $grade == 'A-' ? 'bg-green-100 text-green-800' :
+                       ($grade == 'B+' || $grade == 'B' || $grade == 'B-' ? 'bg-blue-100 text-blue-800' :
+                       ($grade == 'C+' || $grade == 'C' ? 'bg-yellow-100 text-yellow-800' :
                        ($grade == 'D' ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800'))) }}">
                     {{ $grade ?: '-' }}
                 </span>
             </div>
         </div>
     </div>
-    
+
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
@@ -88,7 +88,7 @@
                             @php
                                 $totalKontribusiKomponen = 0;
                                 $cpmkCount = 0;
-                                
+
                                 foreach($nilaiPerCpmk as $cpmkNilai) {
                                     $detailKomponen = collect($cpmkNilai['detail_komponen'])->firstWhere('komponen.id', $komponen->id);
                                     if($detailKomponen && $detailKomponen['nilai'] !== null) {
@@ -111,4 +111,4 @@
             </tfoot>
         </table>
     </div>
-</div> 
+</div>

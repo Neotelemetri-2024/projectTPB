@@ -2,484 +2,401 @@
 
 namespace App\Imports;
 
+use App\Models\Nilai;
+use App\Models\Bobot;
 use App\Models\Mahasiswa;
 use App\Models\User;
-use App\Models\TahunAjaranMatkul;
-use App\Models\Kelas;
-use App\Models\KelasMahasiswa;
-use App\Models\Komponen;
-use App\Models\Bobot;
-use App\Models\Nilai;
 use App\Models\DosenPengampuKelas;
+use App\Models\KelasMahasiswa;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
-use Maatwebsite\Excel\Concerns\WithMultipleSheets;
-use Maatwebsite\Excel\Concerns\WithChunkReading;
-use Maatwebsite\Excel\Concerns\WithBatchInserts;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
-class NilaiImport implements WithMultipleSheets
+class NilaiImport implements ToCollection, WithHeadingRow
 {
     protected $tahunAjaranMatkulId;
     protected $dosenId;
-    protected $importSheet;
-
-    public function __construct($tahunAjaranMatkulId, $dosenId)
-    {
-        $this->tahunAjaranMatkulId = $tahunAjaranMatkulId;
-        $this->dosenId = $dosenId;
-        $this->importSheet = new NilaiImportSheet($tahunAjaranMatkulId, $dosenId);
-    }
-
-    public function sheets(): array
-    {
-        return [
-            'Template Nilai' => $this->importSheet,
-        ];
-    }
-
-    public function getImportResults()
-    {
-        return $this->importSheet->getImportResults();
-    }
-}
-
-class NilaiImportSheet implements ToCollection, WithChunkReading, WithBatchInserts
-{
-    protected $tahunAjaranMatkulId;
-    protected $dosenId;
-    protected $tahunAjaranMatkul;
-    protected $komponen;
-    protected $importResults = [
-        'success' => 0,
-        'created_students' => 0,
-        'updated_grades' => 0,
-        'errors' => [],
-        'created_student_list' => []
+    protected $relatedClasses;
+    protected $results = [
+        'success' => true,
+        'message' => '',
+        'total_processed' => 0,
+        'total_success' => 0,
+        'total_errors' => 0,
+        'errors' => []
     ];
 
-    // Cache untuk data yang sering diakses
-    protected $mahasiswaCache = [];
-    protected $kelasCache = [];
-    protected $bobotCache = [];
-    protected $dosenPengampuCache = [];
-
-    public function __construct($tahunAjaranMatkulId, $dosenId)
+    public function __construct($tahunAjaranMatkulId, $dosenId, $relatedClasses)
     {
         $this->tahunAjaranMatkulId = $tahunAjaranMatkulId;
         $this->dosenId = $dosenId;
-        
-        // Pre-load semua data yang diperlukan untuk menghindari N+1 queries
-        $this->preloadData();
-    }
-
-    /**
-     * Pre-load semua data yang diperlukan
-     */
-    private function preloadData()
-    {
-        // Load tahun ajaran matkul dengan relasi
-        $this->tahunAjaranMatkul = TahunAjaranMatkul::with(['mataKuliah', 'tahunAjaran'])
-            ->findOrFail($this->tahunAjaranMatkulId);
-        
-        // Load komponen yang sudah ada bobot
-        $this->komponen = Komponen::whereHas('bobot', function($query) {
-            $query->where('tahunAjaranMatkulId', $this->tahunAjaranMatkulId);
-        })->orderBy('nama')->get()->keyBy('nama');
-
-        // Log komponen yang di-load
-        \Log::info("Komponen loaded", [
-            'count' => $this->komponen->count(),
-            'komponen' => $this->komponen->keys()->toArray()
-        ]);
-
-        // Pre-load semua mahasiswa yang mungkin ada
-        $this->mahasiswaCache = Mahasiswa::select('id', 'nim', 'nama', 'userId')
-            ->get()
-            ->keyBy('nim');
-
-        // Pre-load semua kelas untuk mata kuliah ini
-        $this->kelasCache = Kelas::whereHas('tahunAjaranMatkul', function($query) {
-            $query->where('mataKuliahId', $this->tahunAjaranMatkul->mataKuliahId)
-                  ->where('tahunAjaranId', $this->tahunAjaranMatkul->tahunAjaranId);
-        })->with('tahunAjaranMatkul')->get();
-
-        // Pre-load semua bobot untuk komponen ini
-        $allTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $this->tahunAjaranMatkul->mataKuliahId)
-            ->where('tahunAjaranId', $this->tahunAjaranMatkul->tahunAjaranId)
-            ->pluck('id');
-
-        $this->bobotCache = Bobot::whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds)
-            ->with('cpmk')
-            ->get()
-            ->groupBy('komponenId');
-
-        // Pre-load dosen pengampu kelas
-        $this->dosenPengampuCache = DosenPengampuKelas::where('dosenId', $this->dosenId)
-            ->whereHas('kelas', function($query) use ($allTahunAjaranMatkulIds) {
-                $query->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds);
-            })
-            ->get()
-            ->keyBy('kelasId');
-    }
-
-    /**
-     * Chunk size untuk membaca Excel
-     */
-    public function chunkSize(): int
-    {
-        return 50; // Proses 50 rows per chunk
-    }
-
-    /**
-     * Batch size untuk insert
-     */
-    public function batchSize(): int
-    {
-        return 100; // Insert 100 records per batch
+        $this->relatedClasses = $relatedClasses;
     }
 
     public function collection(Collection $rows)
     {
+        DB::beginTransaction();
+
         try {
-            // Skip header rows (baris 1-3)
-            $dataRows = $rows->skip(3);
+            // Debug: Log total rows received
+            Log::info('Total rows received from Excel:', ['count' => $rows->count()]);
 
-            // Batch process data
-            $this->processBatch($dataRows);
-            
-        } catch (\Exception $e) {
-            $this->importResults['errors'][] = "Error dalam chunk ini: " . $e->getMessage();
-            Log::error('Import chunk error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-        }
-    }
-
-    /**
-     * Process data dalam batch untuk performa yang lebih baik
-     */
-    private function processBatch(Collection $dataRows)
-    {
-        $mahasiswaToCreate = [];
-        $kelasMahasiswaToCreate = [];
-        $nilaiToCreate = [];
-        $nilaiToUpdate = [];
-
-        foreach ($dataRows as $rowIndex => $row) {
-            $actualRowNumber = $rowIndex + 4;
-
-            try {
-                $result = $this->processRow($row, $actualRowNumber);
-                
-                if ($result) {
-                    // Collect data untuk batch insert/update
-                    if (isset($result['mahasiswa'])) {
-                        $mahasiswaToCreate[] = $result['mahasiswa'];
-                    }
-                    if (isset($result['kelasMahasiswa'])) {
-                        $kelasMahasiswaToCreate[] = $result['kelasMahasiswa'];
-                    }
-                    if (isset($result['nilai'])) {
-                        $nilaiToCreate[] = $result['nilai'];
-                    }
-                    if (isset($result['nilaiUpdate'])) {
-                        $nilaiToUpdate[] = $result['nilaiUpdate'];
-                    }
-                }
-
-            } catch (\Exception $e) {
-                $this->importResults['errors'][] = "Baris {$actualRowNumber}: " . $e->getMessage();
-                Log::error("Import error at row {$actualRowNumber}: " . $e->getMessage(), ['row' => $row->toArray()]);
-            }
-        }
-
-        // Batch insert/update data
-        $this->batchInsertData($mahasiswaToCreate, $kelasMahasiswaToCreate, $nilaiToCreate, $nilaiToUpdate);
-    }
-
-    /**
-     * Process single row
-     */
-    private function processRow($row, $rowNumber)
-    {
-        $nim = trim($row[0] ?? '');
-        $nama = trim($row[1] ?? '');
-        $kelasNama = trim($row[2] ?? '');
-
-        if (empty($nim)) {
-            return null;
-        }
-
-        // Validate NIM format
-        if (!preg_match('/^\d{10}$/', $nim)) {
-            throw new \Exception("NIM harus 10 digit angka (sekarang: {$nim})");
-        }
-
-        if (empty($nama) || empty($kelasNama)) {
-            throw new \Exception("Nama mahasiswa dan kelas tidak boleh kosong");
-        }
-
-        // Cari atau buat mahasiswa
-        $mahasiswa = $this->findOrCreateMahasiswa($nim, $nama);
-        
-        // Pastikan mahasiswa terdaftar di kelas
-        $kelasMahasiswa = $this->ensureStudentInClass($mahasiswa, $kelasNama);
-
-        // Proses nilai untuk setiap komponen
-        $komponenIndex = 3;
-        $nilaiData = [];
-        
-        // Log data Excel yang diproses
-        \Log::info("Processing Excel row", [
-            'rowNumber' => $rowNumber,
-            'nim' => $nim,
-            'nama' => $nama,
-            'kelas' => $kelasNama,
-            'rowData' => $row->toArray()
-        ]);
-        
-        foreach ($this->komponen as $komponenNama => $komponen) {
-            $nilaiValue = $row[$komponenIndex] ?? '';
-            
-            // Log setiap komponen yang diproses
-            \Log::info("Processing komponen", [
-                'komponenNama' => $komponenNama,
-                'komponenId' => $komponen->id,
-                'nilaiValue' => $nilaiValue,
-                'komponenIndex' => $komponenIndex
+            // Debug: Log first few rows to see structure
+            Log::info('First 6 rows structure:', [
+                'row_1' => $rows->get(0) ? $rows->get(0)->toArray() : 'empty',
+                'row_2' => $rows->get(1) ? $rows->get(1)->toArray() : 'empty',
+                'row_3' => $rows->get(2) ? $rows->get(2)->toArray() : 'empty',
+                'row_4' => $rows->get(3) ? $rows->get(3)->toArray() : 'empty',
+                'row_5' => $rows->get(4) ? $rows->get(4)->toArray() : 'empty',
+                'row_6' => $rows->get(5) ? $rows->get(5)->toArray() : 'empty',
             ]);
-            
-            if (!empty($nilaiValue) && is_numeric($nilaiValue)) {
-                $nilai = (float)$nilaiValue;
-                
-                if ($nilai < 0 || $nilai > 100) {
-                    throw new \Exception("Nilai {$komponenNama} harus antara 0-100 (sekarang: {$nilai})");
-                }
-                
-                // Gunakan array_merge untuk menggabungkan array, bukan menambahkan sebagai elemen baru
-                $nilaiData = array_merge($nilaiData, $this->prepareNilaiData($mahasiswa->id, $komponen->id, $nilai));
-                $this->importResults['updated_grades']++;
+
+            // Get header from row 2 (index 1) - header yang benar
+            $headerRow = $rows->get(1);
+            if (!$headerRow) {
+                throw new \Exception("Header row tidak ditemukan di baris 2");
             }
-            
-            $komponenIndex++;
+
+            Log::info('Header row found:', $headerRow->toArray());
+
+            // Skip first 2 rows (info mata kuliah, header) dan mulai dari baris 3
+            $dataRows = $rows->skip(2);
+
+            Log::info('Data rows to process:', ['count' => $dataRows->count()]);
+
+            foreach ($dataRows as $index => $row) {
+                $this->results['total_processed']++;
+
+                try {
+                    // Baris data dimulai dari index 2 (baris ke-3 di Excel)
+                    $this->processRowWithHeader($row, $headerRow, $index + 3);
+                    $this->results['total_success']++;
+                } catch (\Exception $e) {
+                    $this->results['total_errors']++;
+                    $this->results['errors'][] = [
+                        'row' => $index + 3,
+                        'error' => $e->getMessage(),
+                        'data' => $row->toArray()
+                    ];
+
+                    // Log error but continue processing other rows
+                    Log::warning("Error processing row " . ($index + 3) . ": " . $e->getMessage());
+                }
+            }
+
+            // If there are errors, rollback and set success to false
+            if ($this->results['total_errors'] > 0) {
+                DB::rollBack();
+                $this->results['success'] = false;
+                $this->results['message'] = "Import selesai dengan {$this->results['total_errors']} error dari {$this->results['total_processed']} baris data.";
+            } else {
+                DB::commit();
+                $this->results['message'] = "Berhasil mengimport {$this->results['total_success']} baris data nilai.";
+            }
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $this->results['success'] = false;
+            $this->results['message'] = 'Terjadi kesalahan fatal: ' . $e->getMessage();
+            Log::error('Fatal error during import: ' . $e->getMessage());
         }
-
-        $this->importResults['success']++;
-
-        return [
-            'mahasiswa' => isset($mahasiswa->wasRecentlyCreated) ? $mahasiswa->getAttributes() : null,
-            'kelasMahasiswa' => $kelasMahasiswa,
-            'nilai' => $nilaiData
-        ];
     }
 
-    /**
-     * Find or create mahasiswa dengan cache
-     */
-    private function findOrCreateMahasiswa($nim, $nama)
+    protected function processRowWithHeader($row, $headerRow, $rowNumber)
     {
-        // Cek cache dulu
-        if (isset($this->mahasiswaCache[$nim])) {
-            $mahasiswa = $this->mahasiswaCache[$nim];
-            
-            // Update nama jika perlu
-            if ($mahasiswa->nama !== $nama) {
-                $mahasiswa->update(['nama' => $nama]);
-            }
-            
-            return $mahasiswa;
+        // Debug: Log the row being processed
+        Log::info("Processing row {$rowNumber}:", [
+            'row_data' => $row->toArray(),
+            'header_row' => $headerRow->toArray()
+        ]);
+
+        // Convert row to associative array using header
+        $data = [];
+        foreach ($headerRow as $index => $header) {
+            $data[$header] = $row[$index] ?? null;
         }
 
-        // Buat mahasiswa baru
-        $tahunMasukFromNim = substr($nim, 0, 2);
-        $tahunMasuk = 2000 + intval($tahunMasukFromNim);
-        
-        $namaAwal = strtolower(explode(' ', trim($nama))[0]);
-        $email = strtolower($nim . '_' . $namaAwal . '@student.unand.ac.id');
+        Log::info("Processed data:", $data);
 
-        // Buat user
+        // Validate required fields
+        if (empty($data['NIM']) || empty($data['Nama Mahasiswa'])) {
+            // Skip rows that don't have NIM/Nama (like instruction rows)
+            Log::info("Skipping row without NIM/Nama: " . json_encode($data));
+            return;
+        }
+
+        Log::info("Found NIM: {$data['NIM']}, Nama: {$data['Nama Mahasiswa']}");
+
+        // Find mahasiswa by NIM
+        $mahasiswa = Mahasiswa::where('nim', trim($data['NIM']))->first();
+        if (!$mahasiswa) {
+            // Create new mahasiswa if NIM not found (like in job version)
+            $tahunMasukFromNim = substr($data['NIM'], 0, 2);
+        $tahunMasuk = 2000 + intval($tahunMasukFromNim);
+
+            $namaAwal = strtolower(explode(' ', trim($data['Nama Mahasiswa']))[0]);
+            $email = strtolower($data['NIM'] . '_' . $namaAwal . '@student.unand.ac.id');
+
+            // Buat user dengan hashing yang lebih cepat untuk menghindari timeout
         $user = User::create([
-            'name' => $nama,
+                'name' => $data['Nama Mahasiswa'],
             'email' => $email,
-            'password' => Hash::make($nim),
-            'role' => 'mahasiswa'
+                'password' => Hash::make($data['NIM'], ['rounds' => 4]), // Reduce bcrypt rounds for faster hashing
+                'role' => 'mahasiswa',
         ]);
 
         // Buat mahasiswa
         $mahasiswa = Mahasiswa::create([
             'userId' => $user->id,
-            'nim' => $nim,
-            'nama' => $nama,
+                'nim' => $data['NIM'],
+                'nama' => $data['Nama Mahasiswa'],
             'tahunMasuk' => $tahunMasuk,
-        ]);
+                'jenisKelamin' => 'L', // Default
+                'tempatLahir' => 'Unknown',
+                'tanggalLahir' => now(),
+                'alamat' => 'Unknown',
+                'noTelp' => '0000000000000000',
+                'agama' => 'Islam',
+                'status' => 'Aktif',
+            ]);
 
-        // Update cache
-        $this->mahasiswaCache[$nim] = $mahasiswa;
-        
-        $this->importResults['created_students']++;
-        $this->importResults['created_student_list'][] = [
-            'nim' => $nim,
-            'nama' => $nama,
-            'email' => $user->email,
-            'password' => $nim,
-            'tahun_masuk' => $tahunMasuk
-        ];
-
-        return $mahasiswa;
-    }
-
-    /**
-     * Ensure student is in class
-     */
-    private function ensureStudentInClass($mahasiswa, $kelasNama)
-    {
-        // Cari kelas berdasarkan nama
-        $kelas = $this->kelasCache->where('namaKelas', $kelasNama)->first();
-        
-        if (!$kelas) {
-            // Gunakan kelas pertama yang tersedia
-            $kelas = $this->kelasCache->first();
-            
-            if (!$kelas) {
-                throw new \Exception("Tidak ada kelas tersedia untuk mata kuliah ini");
-            }
+            Log::info("Created new mahasiswa: {$data['NIM']} - {$data['Nama Mahasiswa']}");
         }
 
-        // Cek apakah mahasiswa sudah terdaftar
-        $kelasMahasiswa = KelasMahasiswa::where('mahasiswaId', $mahasiswa->id)
-            ->where('kelasId', $kelas->id)
+        // Find student's class
+        $studentClass = $this->findStudentClass($mahasiswa->id);
+        if (!$studentClass) {
+            throw new \Exception("Mahasiswa {$mahasiswa->nama} tidak terdaftar di kelas manapun untuk mata kuliah ini");
+        }
+
+        // Get dosen pengampu for this class
+        $dosenPengampuKelas = DosenPengampuKelas::where('dosenId', $this->dosenId)
+            ->whereHas('kelas', function($query) use ($studentClass) {
+                $query->where('tahunAjaranMatkulId', $studentClass->id);
+            })
             ->first();
 
-        if (!$kelasMahasiswa) {
-            return [
-                'mahasiswaId' => $mahasiswa->id,
-                'kelasId' => $kelas->id,
-                // tahunAjaranMatkulId tidak perlu karena sudah ada di tabel kelas
-            ];
+        if (!$dosenPengampuKelas) {
+            throw new \Exception("Dosen tidak memiliki akses ke kelas mahasiswa {$mahasiswa->nama}");
         }
 
-        return null;
-    }
+        // Process each komponen column
+        $komponenColumns = $this->getKomponenColumnsFromData($data);
 
-    /**
-     * Prepare nilai data untuk batch insert
-     */
-    private function prepareNilaiData($mahasiswaId, $komponenId, $nilaiValue)
-    {
-        $bobotList = $this->bobotCache->get($komponenId, collect());
-        
-        // Log data bobot yang di-load
-        \Log::info("Loading bobot for komponen {$komponenId}", [
-            'komponenId' => $komponenId,
-            'bobotCount' => $bobotList->count(),
-            'sampleBobot' => $bobotList->first() ? $bobotList->first()->toArray() : null
-        ]);
-        
-        $nilaiData = [];
-        foreach ($bobotList as $bobot) {
-            // Cari kelas yang terkait dengan bobot ini melalui tahunAjaranMatkulId
-            $kelas = $this->kelasCache->where('tahunAjaranMatkulId', $bobot->tahunAjaranMatkulId)->first();
-            
-            if ($kelas) {
-                $dosenPengampuKelas = $this->dosenPengampuCache->get($kelas->id);
-                
-                // Log data dosenPengampuKelas
-                \Log::info("Checking dosenPengampuKelas", [
-                    'bobotId' => $bobot->id,
-                    'tahunAjaranMatkulId' => $bobot->tahunAjaranMatkulId,
-                    'kelasId' => $kelas->id,
-                    'kelasNama' => $kelas->namaKelas,
-                    'dosenPengampuKelas' => $dosenPengampuKelas ? $dosenPengampuKelas->toArray() : null
-                ]);
-                
-                if ($dosenPengampuKelas) {
-                    // Validasi data tidak boleh kosong
-                    if (empty($bobot->cpmkId)) {
-                        \Log::warning("Bobot {$bobot->id} tidak memiliki cpmkId", ['bobot' => $bobot->toArray()]);
-                        continue; // Skip jika cpmkId kosong
-                    }
-                    
-                    if (empty($bobot->tahunAjaranMatkulId)) {
-                        \Log::warning("Bobot {$bobot->id} tidak memiliki tahunAjaranMatkulId", ['bobot' => $bobot->toArray()]);
-                        continue; // Skip jika tahunAjaranMatkulId kosong
-                    }
-                    
-                    $nilaiData[] = [
-                        'mahasiswaId' => $mahasiswaId,
-                        'tahunAjaranMatkulId' => $bobot->tahunAjaranMatkulId,
+        foreach ($komponenColumns as $komponenId => $nilai) {
+            if ($nilai !== null && $nilai !== '') {
+                // Validate nilai range
+                if (!is_numeric($nilai) || $nilai < 0 || $nilai > 100) {
+                    throw new \Exception("Nilai untuk komponen harus antara 0-100, ditemukan: {$nilai}");
+                }
+
+                // Get all bobot for this komponen in this student's specific class
+                $bobotList = Bobot::where('komponenId', $komponenId)
+                    ->where('tahunAjaranMatkulId', $studentClass->id)
+                    ->with('cpmk')
+                    ->get();
+
+                if ($bobotList->isEmpty()) {
+                    throw new \Exception("Tidak ada bobot yang ditemukan untuk komponen ID {$komponenId} di kelas ini");
+                }
+
+                // Create nilai entry for each bobot
+                foreach ($bobotList as $bobot) {
+                    Nilai::updateOrCreate([
+                        'mahasiswaId' => $mahasiswa->id,
+                        'tahunAjaranMatkulId' => $studentClass->id,
                         'bobotId' => $bobot->id,
+                    ], [
                         'cpmkId' => $bobot->cpmkId,
                         'dosenPengampuKelasId' => $dosenPengampuKelas->id,
-                        'nilai' => $nilaiValue,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ];
+                        'nilai' => $nilai,
+                    ]);
+                }
+            } else {
+                // Delete if value is empty - remove all nilai for this komponen
+                $bobotIds = Bobot::where('komponenId', $komponenId)
+                    ->where('tahunAjaranMatkulId', $studentClass->id)
+                    ->pluck('id');
+
+                if ($bobotIds->isNotEmpty()) {
+                    Nilai::where('mahasiswaId', $mahasiswa->id)
+                        ->where('tahunAjaranMatkulId', $studentClass->id)
+                        ->whereIn('bobotId', $bobotIds)
+                        ->delete();
                 }
             }
         }
-        
-        // Log data yang akan dikembalikan
-        \Log::info("prepareNilaiData result", [
-            'mahasiswaId' => $mahasiswaId,
-            'komponenId' => $komponenId,
-            'nilaiValue' => $nilaiValue,
-            'resultCount' => count($nilaiData),
-            'resultData' => $nilaiData
-        ]);
-        
-        return $nilaiData;
+
+        // Calculate and store total for this student
+        $this->calculateAndStoreTotal($mahasiswa->id, $studentClass->id);
     }
 
-    /**
-     * Batch insert/update data
-     */
-    private function batchInsertData($mahasiswaToCreate, $kelasMahasiswaToCreate, $nilaiToCreate, $nilaiToUpdate)
+    protected function findStudentClass($mahasiswaId)
+    {
+        foreach ($this->relatedClasses as $class) {
+            $studentInClass = $class->kelas->flatMap(function($kelas) use ($mahasiswaId) {
+                return $kelas->kelasMahasiswa->where('mahasiswaId', $mahasiswaId);
+            })->first();
+
+            if ($studentInClass) {
+                return $class;
+            }
+        }
+
+        // If student not found in any class, auto-create in the first available class
+        Log::info("Mahasiswa ID {$mahasiswaId} tidak terdaftar di kelas manapun, akan dibuatkan otomatis");
+
+        $firstClass = $this->relatedClasses->first();
+        if (!$firstClass) {
+            throw new \Exception("Tidak ada kelas yang tersedia untuk mata kuliah ini");
+        }
+
+        // Get the first available kelas
+        $firstKelas = $firstClass->kelas->first();
+        if (!$firstKelas) {
+            throw new \Exception("Tidak ada kelas yang tersedia untuk mata kuliah ini");
+        }
+
+                        // Create KelasMahasiswa - menggunakan kelasId yang benar
+        $kelasMahasiswa = KelasMahasiswa::create([
+            'mahasiswaId' => $mahasiswaId,
+            'kelasId' => $firstKelas->id,
+        ]);
+
+        Log::info("Created KelasMahasiswa: Mahasiswa ID {$mahasiswaId} - Kelas ID {$firstKelas->id}");
+
+        return $firstClass;
+    }
+
+    protected function getKomponenColumnsFromData($data)
+    {
+        $komponenColumns = [];
+
+        // Get all komponen that have bobot in this mata kuliah
+        $komponenIds = Bobot::whereIn('tahunAjaranMatkulId', $this->relatedClasses->pluck('id'))
+            ->pluck('komponenId')
+            ->unique();
+
+        // Debug: Log komponen yang ditemukan
+        Log::info('Komponen IDs found:', $komponenIds->toArray());
+
+        foreach ($komponenIds as $komponenId) {
+            $komponen = \App\Models\Komponen::find($komponenId);
+            if ($komponen) {
+                // Check if komponen name exists in data
+                if (isset($data[$komponen->nama]) && $data[$komponen->nama] !== null && $data[$komponen->nama] !== '') {
+                    $komponenColumns[$komponenId] = $data[$komponen->nama];
+                    Log::info("Found komponen '{$komponen->nama}' with value: {$data[$komponen->nama]}");
+                }
+            }
+        }
+
+        // Debug: Log final komponen columns found
+        Log::info('Final komponen columns found:', $komponenColumns);
+
+        return $komponenColumns;
+    }
+
+    protected function calculateAndStoreTotal($mahasiswaId, $matkulId)
     {
         try {
-            DB::beginTransaction();
+            // Get all nilai for this student in this specific class only
+            $allNilai = Nilai::where('mahasiswaId', $mahasiswaId)
+                ->where('tahunAjaranMatkulId', $matkulId)
+                ->with(['bobot.cpmk', 'bobot.komponen'])
+                ->get();
 
-            // Batch insert mahasiswa baru
-            if (!empty($mahasiswaToCreate)) {
-                User::insert(array_column($mahasiswaToCreate, 'user'));
-                Mahasiswa::insert(array_column($mahasiswaToCreate, 'mahasiswa'));
-            }
+            // Only calculate and update if there are actual grades
+            if ($allNilai->isNotEmpty()) {
+                // Group nilai by CPMK
+                $nilaiPerCpmk = $allNilai->groupBy('cpmkId');
+                $totalNilaiKeseluruhan = 0;
+                $totalBobotKeseluruhan = 0;
 
-            // Batch insert kelas mahasiswa
-            if (!empty($kelasMahasiswaToCreate)) {
-                KelasMahasiswa::insert($kelasMahasiswaToCreate);
-            }
+                // Calculate nilai per CPMK
+                foreach ($nilaiPerCpmk as $cpmkId => $nilaiCpmk) {
+                    $nilaiCpmkTotal = 0;
+                    $bobotCpmkTotal = 0;
 
-            // Batch insert nilai baru
-            if (!empty($nilaiToCreate)) {
-                // Flatten array
-                $flatNilai = [];
-                foreach ($nilaiToCreate as $nilaiGroup) {
-                    $flatNilai = array_merge($flatNilai, $nilaiGroup);
+                    foreach ($nilaiCpmk as $nilai) {
+                        if ($nilai->bobot && $nilai->bobot->bobot > 0) {
+                            $nilaiCpmkTotal += ($nilai->nilai * $nilai->bobot->bobot);
+                            $bobotCpmkTotal += $nilai->bobot->bobot;
+                        }
+                    }
+
+                    // Jika bobot CPMK > 0, hitung rata-rata terbobot
+                    if ($bobotCpmkTotal > 0) {
+                        $nilaiRataRataCpmk = $nilaiCpmkTotal / $bobotCpmkTotal;
+                        $totalNilaiKeseluruhan += $nilaiRataRataCpmk;
+                        $totalBobotKeseluruhan += 1; // Setiap CPMK dihitung sebagai 1 unit
+                    }
                 }
-                
-                if (!empty($flatNilai)) {
-                    // Log data yang akan di-insert
-                    \Log::info("Inserting nilai data", [
-                        'count' => count($flatNilai),
-                        'sample_data' => array_slice($flatNilai, 0, 3) // Log 3 data pertama
+
+                // Hitung nilai akhir (rata-rata dari semua CPMK)
+                $totalNilai = $totalBobotKeseluruhan > 0 ? $totalNilaiKeseluruhan / $totalBobotKeseluruhan : 0;
+
+                // Determine grade based on total score
+                $grade = $this->calculateGrade($totalNilai);
+
+                // Find the specific KelasMahasiswa record for this student in this class
+                $kelasMahasiswa = \App\Models\KelasMahasiswa::where('mahasiswaId', $mahasiswaId)
+                    ->whereHas('kelas', function($query) use ($matkulId) {
+                        $query->where('tahunAjaranMatkulId', $matkulId);
+                    })
+                    ->first();
+
+                if ($kelasMahasiswa) {
+                    $kelasMahasiswa->update([
+                        'totalNilai' => $totalNilai,
+                        'grade' => $grade,
                     ]);
-                    
-                    Nilai::insert($flatNilai);
                 }
             }
 
-            DB::commit();
-            
         } catch (\Exception $e) {
-            DB::rollback();
-            throw $e;
+            Log::error('Error calculating total score: ' . $e->getMessage());
         }
     }
 
-    public function getImportResults()
+    protected function calculateGrade($totalScore)
     {
-        return $this->importResults;
+        // Don't assign grade if total score is null (no grades inputted)
+        if ($totalScore === null) {
+            return null;
+        }
+
+        // If total score is 0 or negative, assign grade E
+        if ($totalScore <= 0) {
+            return 'E';
+        }
+
+        if ($totalScore >= 80) {
+            return 'A';
+        } elseif ($totalScore >= 75) {
+            return 'A-';
+        } elseif ($totalScore >= 70) {
+            return 'B+';
+        } elseif ($totalScore >= 65) {
+            return 'B';
+        } elseif ($totalScore >= 60) {
+            return 'B-';
+        } elseif ($totalScore >= 55) {
+            return 'C+';
+        } elseif ($totalScore >= 50) {
+            return 'C';
+        } elseif ($totalScore >= 45) {
+            return 'D';
+        } else {
+            return 'E';
+        }
     }
-} 
+
+    public function getResults()
+    {
+        return $this->results;
+    }
+}

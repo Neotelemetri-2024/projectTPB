@@ -47,90 +47,29 @@
             </div>
         </div>
 
-        <!-- Parent CPMK Information -->
-        <div class="p-6 border-b border-gray-200 bg-blue-50">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">CPMK</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Kode CPMK</label>
-                    <div class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg p-3">
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800">
-                            {{ $parentCpmk->kodeCpmk }}
-                        </span>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Deskripsi CPMK</label>
-                    <div class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg p-3 min-h-[60px]">
-                        {{ $parentCpmk->deskripsi }}
-                    </div>
-                </div>
-            </div>
-            <div class="mt-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">CPL Terkait CPMK</label>
-                <div class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg p-3">
-                    <div class="flex flex-wrap gap-2">
-                        @foreach($parentCpmk->cpl as $cpl)
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                {{ $cpl->kodeCpl }}
-                            </span>
-                        @endforeach
-                        @if($parentCpmk->cpl->isEmpty())
-                            <span class="text-gray-500 text-sm">Tidak ada CPL terkait</span>
-                        @endif
-                    </div>
-                </div>
-            </div>
-        </div>
 
 
-
+        <!-- Form Header -->
         <div class="p-6 border-b border-gray-200">
-            <h2 class="text-xl font-semibold text-gray-900">Informasi Sub-CPMK</h2>
-            <p class="text-sm text-gray-600 mt-1">Lengkapi informasi sub-CPMK yang akan ditambahkan</p>
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-900">Tambah Multiple Sub-CPMK</h2>
+                    <p class="text-sm text-gray-600 mt-1">Tambah beberapa sub-CPMK sekaligus dalam satu halaman</p>
+                </div>
+                <button type="button" id="addSubCpmkBtn"
+                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Tambah Sub-CPMK
+                </button>
+            </div>
         </div>
 
-        <form action="{{ route('dosen.cpmk.sub-cpmk.store', [$tahunAjaranMatkul->id, $parentCpmk->id]) }}" method="POST" class="p-6">
+        <form action="{{ route('dosen.cpmk.sub-cpmk.store', [$tahunAjaranMatkul->id, $parentCpmk->id]) }}" method="POST" class="p-6" id="subCpmkForm">
             @csrf
-
-            <!-- Hidden inputs for CPL IDs from parent -->
-            @foreach($parentCpmk->cpl as $cpl)
-                <input type="hidden" name="cpl_ids[]" value="{{ $cpl->id }}">
-            @endforeach
-
-            <div class="grid grid-cols-1 gap-6">
-
-                <!-- Kode Sub-CPMK -->
-                <div>
-                    <label for="kodeCpmk" class="block text-sm font-medium text-gray-700 mb-2">
-                        Kode Sub-CPMK <span class="text-red-500">*</span>
-                    </label>
-                    <input type="text" name="kodeCpmk" id="kodeCpmk" required maxlength="20"
-                           value="{{ old('kodeCpmk') }}"
-                           placeholder="Contoh: {{ $parentCpmk->kodeCpmk }}-1, {{ $parentCpmk->kodeCpmk }}-2, dst."
-                           class="bg-gray-50 border text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-3 {{ $errors->has('kodeCpmk') ? 'border-red-500' : 'border-gray-300' }}">
-                    @error('kodeCpmk')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                    <p class="mt-1 text-sm text-gray-500">Kode unik untuk identifikasi sub-CPMK (maksimal 20 karakter)</p>
-                </div>
-
-                <!-- Deskripsi -->
-                <div>
-                    <label for="deskripsi" class="block text-sm font-medium text-gray-700 mb-2">
-                        Deskripsi Sub-CPMK <span class="text-red-500">*</span>
-                    </label>
-                    <textarea name="deskripsi" id="deskripsi" rows="5" required maxlength="1000"
-                              placeholder="Masukkan deskripsi sub capaian pembelajaran mata kuliah..."
-                              class="bg-gray-50 border text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-3 {{ $errors->has('deskripsi') ? 'border-red-500' : 'border-gray-300' }}">{{ old('deskripsi') }}</textarea>
-                    @error('deskripsi')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                    <div class="flex justify-between mt-1">
-                        <p class="text-sm text-gray-500">Deskripsikan kemampuan yang lebih spesifik dari CPMK</p>
-                        <span class="text-sm text-gray-500"><span id="charCount">0</span>/1000</span>
-                    </div>
-                </div>
+            <div id="subCpmkContainer">
+                <!-- Sub-CPMK fields will be added here dynamically -->
             </div>
 
             <!-- Action Buttons -->
@@ -144,67 +83,225 @@
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
-                    Simpan Sub-CPMK
+                    Simpan Semua Sub-CPMK
                 </button>
             </div>
         </form>
     </div>
 </div>
 
+<!-- Template for Sub-CPMK field -->
+<template id="subCpmkTemplate">
+    <div class="sub-cpmk-field bg-gray-50 rounded-lg p-6 mb-6 border-2 border-gray-200">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900 sub-cpmk-title">Sub-CPMK #<span class="sub-cpmk-number">1</span></h3>
+            <button type="button" class="remove-sub-cpmk-btn text-red-600 hover:text-red-700 p-1" title="Hapus Sub-CPMK ini">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 gap-6">
+            <!-- Parent CPMK Selection -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Parent CPMK <span class="text-red-500">*</span>
+                </label>
+                <div class="bg-white border rounded-lg p-4 border-gray-300">
+                    <div class="space-y-3">
+                        @foreach($allCpmkForParent as $cpmk)
+                            <div class="flex items-start">
+                                <input type="checkbox"
+                                       name="sub_cpmk[sub_cpmk_index][parent_ids][]"
+                                       value="{{ $cpmk->id }}"
+                                       class="mt-1 mr-3 rounded border-gray-300 text-amber-600 focus:ring-amber-500 parent-checkbox">
+                                <label class="text-sm text-gray-700 cursor-pointer">
+                                    <span class="font-medium">{{ $cpmk->kodeCpmk }}</span>
+                                    <span class="text-gray-600"> - {{ Str::limit($cpmk->deskripsi, 50) }}</span>
+                                </label>
+                            </div>
+                        @endforeach
+                    </div>
+                    @if($allCpmkForParent->isEmpty())
+                        <p class="text-sm text-gray-500 text-center py-4">Belum ada CPMK yang tersedia</p>
+                    @endif
+                </div>
+                <p class="mt-1 text-sm text-gray-500">Pilih satu atau lebih parent CPMK untuk sub-CPMK ini</p>
+            </div>
+
+            <!-- Kode Sub-CPMK -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Kode Sub-CPMK <span class="text-red-500">*</span>
+                </label>
+                <input type="text" name="sub_cpmk[sub_cpmk_index][kodeCpmk]" required maxlength="20"
+                       placeholder="Contoh: {{ $parentCpmk->kodeCpmk }}-1, {{ $parentCpmk->kodeCpmk }}-2, dst."
+                       class="bg-white border text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-3 border-gray-300 kode-sub-cpmk-input">
+                <p class="mt-1 text-sm text-gray-500">Kode unik untuk identifikasi sub-CPMK (maksimal 20 karakter)</p>
+            </div>
+
+            <!-- Deskripsi -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Deskripsi Sub-CPMK <span class="text-red-500">*</span>
+                </label>
+                <textarea name="sub_cpmk[sub_cpmk_index][deskripsi]" rows="4" required maxlength="1000"
+                          placeholder="Masukkan deskripsi sub capaian pembelajaran mata kuliah..."
+                          class="bg-white border text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-3 border-gray-300 deskripsi-textarea"></textarea>
+                <div class="flex justify-between mt-1">
+                    <p class="text-sm text-gray-500">Deskripsikan kemampuan yang lebih spesifik dari parent CPMK</p>
+                    <span class="text-sm text-gray-500 char-count">0/1000</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const deskripsiTextarea = document.getElementById('deskripsi');
-    const charCount = document.getElementById('charCount');
+    const container = document.getElementById('subCpmkContainer');
+    const addBtn = document.getElementById('addSubCpmkBtn');
+    const template = document.getElementById('subCpmkTemplate');
+    const form = document.getElementById('subCpmkForm');
+    let subCpmkCount = 0;
 
-    // Character counter
-    function updateCharCount() {
-        const count = deskripsiTextarea.value.length;
-        charCount.textContent = count;
+    // Add first Sub-CPMK field by default
+    addSubCpmkField();
 
-        if (count > 900) {
-            charCount.parentElement.classList.add('text-red-500');
-            charCount.parentElement.classList.remove('text-gray-500');
-        } else {
-            charCount.parentElement.classList.remove('text-red-500');
-            charCount.parentElement.classList.add('text-gray-500');
-        }
+    // Add Sub-CPMK field
+    function addSubCpmkField() {
+        subCpmkCount++;
+        const clone = template.content.cloneNode(true);
+
+        // Update all placeholders and names
+        clone.querySelectorAll('[name*="sub_cpmk_index"]').forEach(input => {
+            input.name = input.name.replace('sub_cpmk_index', subCpmkCount - 1);
+        });
+
+        // Update title
+        clone.querySelector('.sub-cpmk-number').textContent = subCpmkCount;
+
+        // Add event listeners
+        const subCpmkField = clone.querySelector('.sub-cpmk-field');
+
+        // Character counter
+        const textarea = subCpmkField.querySelector('.deskripsi-textarea');
+        const charCount = subCpmkField.querySelector('.char-count');
+
+        textarea.addEventListener('input', function() {
+            const count = this.value.length;
+            charCount.textContent = count + '/1000';
+
+            if (count > 900) {
+                charCount.classList.add('text-red-500');
+                charCount.classList.remove('text-gray-500');
+            } else {
+                charCount.classList.remove('text-red-500');
+                charCount.classList.add('text-gray-500');
+            }
+        });
+
+        // Remove button
+        const removeBtn = subCpmkField.querySelector('.remove-sub-cpmk-btn');
+        removeBtn.addEventListener('click', function() {
+            if (container.children.length > 1) {
+                subCpmkField.remove();
+                updateSubCpmkNumbers();
+            } else {
+                alert('Minimal harus ada satu Sub-CPMK');
+            }
+        });
+
+        // Auto-generate kode Sub-CPMK
+        const kodeInput = subCpmkField.querySelector('.kode-sub-cpmk-input');
+        kodeInput.addEventListener('focus', function() {
+            if (!this.value) {
+                const parentKode = '{{ $parentCpmk->kodeCpmk }}';
+                this.value = parentKode + '-' + subCpmkCount;
+            }
+        });
+
+        container.appendChild(clone);
     }
 
-    deskripsiTextarea.addEventListener('input', updateCharCount);
-    updateCharCount(); // Initial count
+    // Update Sub-CPMK numbers after removal
+    function updateSubCpmkNumbers() {
+        const fields = container.querySelectorAll('.sub-cpmk-field');
+        fields.forEach((field, index) => {
+            field.querySelector('.sub-cpmk-number').textContent = index + 1;
+            field.querySelector('.sub-cpmk-title').textContent = 'Sub-CPMK #' + (index + 1);
 
-    // Auto-generate kode CPMK suggestion
-    const kodeCpmkInput = document.getElementById('kodeCpmk');
-    const parentKode = '{{ $parentCpmk->kodeCpmk }}';
+            // Update input names
+            const inputs = field.querySelectorAll('input, textarea');
+            inputs.forEach(input => {
+                if (input.name.includes('sub_cpmk[')) {
+                    input.name = input.name.replace(/sub_cpmk\[\d+\]/, `sub_cpmk[${index}]`);
+                }
+            });
+        });
+    }
 
-    kodeCpmkInput.addEventListener('focus', function() {
-        if (!this.value) {
-            // Auto-suggestion based on parent CPMK
-            this.placeholder = parentKode + '-1';
-        }
-    });
+    // Add button event
+    addBtn.addEventListener('click', addSubCpmkField);
 
     // Form validation
-    const form = document.querySelector('form');
     form.addEventListener('submit', function(e) {
-        const kodeCpmk = kodeCpmkInput.value.trim();
-        const deskripsi = deskripsiTextarea.value.trim();
+        const subCpmkFields = container.querySelectorAll('.sub-cpmk-field');
+        let isValid = true;
+        let errorMessage = '';
 
-        if (!kodeCpmk || !deskripsi) {
+        subCpmkFields.forEach((field, index) => {
+            const kodeInput = field.querySelector('.kode-sub-cpmk-input');
+            const deskripsiTextarea = field.querySelector('.deskripsi-textarea');
+            const parentCheckboxes = field.querySelectorAll('.parent-checkbox:checked');
+
+            // Check required fields
+            if (!kodeInput.value.trim()) {
+                isValid = false;
+                errorMessage = `Kode Sub-CPMK #${index + 1} harus diisi`;
+                kodeInput.focus();
+                return;
+            }
+
+            if (!deskripsiTextarea.value.trim()) {
+                isValid = false;
+                errorMessage = `Deskripsi Sub-CPMK #${index + 1} harus diisi`;
+                deskripsiTextarea.focus();
+                return;
+            }
+
+            if (parentCheckboxes.length === 0) {
+                isValid = false;
+                errorMessage = `Sub-CPMK #${index + 1} harus memilih minimal satu parent CPMK`;
+                return;
+            }
+
+            if (deskripsiTextarea.value.trim().length < 10) {
+                isValid = false;
+                errorMessage = `Deskripsi Sub-CPMK #${index + 1} minimal 10 karakter`;
+                deskripsiTextarea.focus();
+                return;
+            }
+        });
+
+        if (!isValid) {
             e.preventDefault();
-            alert('Harap lengkapi semua field yang wajib diisi');
+            alert(errorMessage);
             return false;
         }
 
-        if (deskripsi.length < 10) {
+        // Check for duplicate kode Sub-CPMK
+        const kodeInputs = container.querySelectorAll('.kode-sub-cpmk-input');
+        const kodeValues = Array.from(kodeInputs).map(input => input.value.trim());
+        const uniqueKodes = [...new Set(kodeValues)];
+
+        if (kodeValues.length !== uniqueKodes.length) {
             e.preventDefault();
-            alert('Deskripsi sub-CPMK minimal 10 karakter');
-            deskripsiTextarea.focus();
+            alert('Kode Sub-CPMK tidak boleh duplikat');
             return false;
         }
     });
-
-
 });
 </script>
 @endsection

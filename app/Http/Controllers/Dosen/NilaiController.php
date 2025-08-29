@@ -791,51 +791,37 @@ class NilaiController extends Controller
         ]);
 
         try {
-            // Store file temporarily
-            $filePath = $request->file('excel_file')->store('temp/imports');
+            // Get all related classes for this mata kuliah and dosen
+            $relatedClasses = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
+                ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
+                ->whereHas('kelas.dosenPengampuKelas', function($query) use ($dosen) {
+                    $query->where('dosenId', $dosen->id);
+                })
+                ->get();
 
-            // Dispatch background job
-            ProcessNilaiImport::dispatch($filePath, $id, $dosen->id, $user->id);
+            if ($relatedClasses->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'Tidak ada kelas yang ditemukan untuk mata kuliah ini.']);
+            }
 
-            // Store import info in session
-            session()->flash('import_started', true);
-            session()->flash('import_file', $request->file('excel_file')->getClientOriginalName());
+            // Import Excel data
+            $import = new NilaiImport($id, $dosen->id, $relatedClasses);
+            Excel::import($import, $request->file('excel_file'));
 
-            return redirect()->back()->with('info', 'Import sedang diproses di background. Anda akan mendapat notifikasi ketika selesai. Silakan refresh halaman untuk melihat status.');
+            $results = $import->getResults();
+
+            if ($results['success']) {
+                return redirect()->route('dosen.nilai.show', $id)
+                    ->with('success', $results['message']);
+            } else {
+                return redirect()->route('dosen.nilai.show', $id)
+                    ->with('error', $results['message']);
+            }
 
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat memulai import: ' . $e->getMessage());
+            Log::error('Error importing nilai: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return redirect()->route('dosen.nilai.show', $id)
+                ->with('error', 'Terjadi kesalahan saat import: ' . $e->getMessage());
         }
-    }
-
-    /**
-     * Check import status
-     */
-    public function checkImportStatus(Request $request, $id)
-    {
-        $user = Auth::user();
-        $cacheKey = "import_results_{$user->id}_{$id}";
-
-        $results = cache()->get($cacheKey);
-
-        if (!$results) {
-            return response()->json(['status' => 'processing']);
-        }
-
-        // Clear cache after retrieving
-        cache()->forget($cacheKey);
-
-        if (isset($results['error'])) {
-            return response()->json([
-                'status' => 'error',
-                'message' => $results['message']
-            ]);
-        }
-
-        return response()->json([
-            'status' => 'completed',
-            'results' => $results
-        ]);
     }
 
     /**
@@ -926,13 +912,17 @@ class NilaiController extends Controller
             // Get mahasiswa data
             $mahasiswa = Mahasiswa::findOrFail($mahasiswaId);
 
-            // Get all CPMK for this mata kuliah
-            $cpmkList = CpmkMatKul::with(['cpmk.cpl'])
+            // Get all CPMK for this mata kuliah - only leaf CPMK (without children)
+            $cpmkList = CpmkMatKul::with(['cpmk.cpl', 'cpmk.children'])
                 ->where('tahunAjaranMatkulId', $id)
                 ->get()
                 ->unique('cpmkId')
                 ->map(function($cpmkMatKul) {
                     return $cpmkMatKul->cpmk;
+                })
+                ->filter(function($cpmk) {
+                    // Only show CPMK that don't have children (leaf nodes)
+                    return !$cpmk->hasChildren();
                 });
 
             // Get all komponen

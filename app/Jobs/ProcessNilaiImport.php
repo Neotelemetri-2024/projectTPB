@@ -42,44 +42,44 @@ class ProcessNilaiImport implements ShouldQueue
     {
         try {
             Log::info('Starting background import for user: ' . $this->userId);
-            
+
             // Process import
             $import = new NilaiImport($this->tahunAjaranMatkulId, $this->dosenId);
             Excel::import($import, $this->filePath);
-            
+
             // Get results
             $results = $import->getImportResults();
-            
+
             // Store results in cache/session for user to retrieve
             $cacheKey = "import_results_{$this->userId}_{$this->tahunAjaranMatkulId}";
             cache()->put($cacheKey, $results, now()->addHours(1));
-            
+
             // Clean up temporary file
             if (Storage::exists($this->filePath)) {
                 Storage::delete($this->filePath);
             }
-            
+
             Log::info('Background import completed successfully', $results);
-            
+
         } catch (\Exception $e) {
             Log::error('Background import failed: ' . $e->getMessage(), [
                 'file' => $this->filePath,
                 'user_id' => $this->userId,
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             // Store error in cache
             $cacheKey = "import_results_{$this->userId}_{$this->tahunAjaranMatkulId}";
             cache()->put($cacheKey, [
                 'error' => true,
                 'message' => $e->getMessage()
             ], now()->addHours(1));
-            
+
             // Clean up temporary file
             if (Storage::exists($this->filePath)) {
                 Storage::delete($this->filePath);
             }
-            
+
             throw $e;
         }
     }
@@ -94,7 +94,7 @@ class ProcessNilaiImport implements ShouldQueue
             'user_id' => $this->userId,
             'error' => $exception->getMessage()
         ]);
-        
+
         // Clean up temporary file
         if (Storage::exists($this->filePath)) {
             Storage::delete($this->filePath);

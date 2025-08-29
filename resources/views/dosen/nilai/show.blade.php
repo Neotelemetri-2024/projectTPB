@@ -19,6 +19,25 @@
         </ol>
     </nav>
 
+    <!-- Flash Messages -->
+    @if(session('success'))
+        <div class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center">
+            <svg class="w-5 h-5 mr-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+            </svg>
+            <span class="font-medium">{{ session('success') }}</span>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center">
+            <svg class="w-5 h-5 mr-3 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+            </svg>
+            <span class="font-medium">{{ session('error') }}</span>
+        </div>
+    @endif
+
     <!-- Header -->
     <div class="bg-white rounded-lg shadow-md mb-6">
         <div class="p-6 border-b border-gray-200">
@@ -344,8 +363,8 @@
                                             <input type="hidden" name="student_class_id[{{ $mhs->id }}]" value="{{ $studentClassId }}">
                                         </td>
                                     @endforeach
-                                    <!-- Kolom Grade -->
-                                    <td class="px-4 py-4 whitespace-nowrap text-center grade-column">
+                                    <!-- Kolom Total Nilai -->
+                                    <td class="px-4 py-4 whitespace-nowrap text-center">
                                         @php
                                             // Ambil grade dan total nilai yang sudah dihitung dari kelas_mahasiswa
                                             $kelasMahasiswa = $mhs->kelasMahasiswa->where('tahunAjaranMatkulId', $tahunAjaranMatkul->id)->first();
@@ -395,18 +414,18 @@
                                                 else $grade = 'E';
                                             }
                                         @endphp
+                                        <span class="text-sm font-bold text-black">
+                                            {{ $totalNilai !== null ? number_format($totalNilai, 2) : '-' }}
+                                        </span>
+                                    </td>
+                                    <!-- Kolom Grade -->
+                                    <td class="px-4 py-4 whitespace-nowrap text-center grade-column">
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                             {{ $grade == 'A' || $grade == 'A-' ? 'bg-green-100 text-green-800' :
                                                ($grade == 'B+' || $grade == 'B' || $grade == 'B-' ? 'bg-blue-100 text-blue-800' :
                                                ($grade == 'C+' || $grade == 'C' ? 'bg-yellow-100 text-yellow-800' :
                                                ($grade == 'D' ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800'))) }}">
                                             {{ $grade ?: '-' }}
-                                        </span>
-                                    </td>
-                                    <!-- Kolom Total Nilai -->
-                                    <td class="px-4 py-4 whitespace-nowrap text-center">
-                                        <span class="text-sm font-medium text-gray-900">
-                                            {{ $totalNilai !== null ? number_format($totalNilai, 1) : '-' }}
                                         </span>
                                     </td>
                                     <!-- Kolom Detail -->
@@ -596,13 +615,6 @@
             </div>
 
             <div class="p-4 md:p-5 overflow-y-auto max-h-[70vh]">
-                <div class="mb-4 bg-blue-50 rounded-lg p-3 border border-blue-200">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        <p class="text-sm text-gray-700"><strong>NIM:</strong> <span id="detail-modal-nim"></span></p>
-                        <p class="text-sm text-gray-700"><strong>Nama:</strong> <span id="detail-modal-nama"></span></p>
-                    </div>
-                </div>
-
                 <div id="detail-content-placeholder" class="space-y-4">
                     <div class="flex justify-center py-8">
                         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -735,6 +747,94 @@
 </div>
 @endif
 
+<!-- Import Modal -->
+<div id="importModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-lg font-semibold text-gray-900">Import Nilai dari Excel</h3>
+                <button onclick="closeImportModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Import Form -->
+            <div id="importForm">
+                <form action="{{ route('dosen.nilai.import', $tahunAjaranMatkul->id) }}" method="POST" enctype="multipart/form-data" id="excelImportForm">
+                    @csrf
+                    <div class="mb-4">
+                        <label for="excel_file" class="block text-sm font-medium text-gray-700 mb-2">
+                            Pilih File Excel
+                        </label>
+                        <input type="file" name="excel_file" id="excel_file" accept=".xlsx,.xls"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        <p class="text-xs text-gray-500 mt-1">Format yang didukung: .xlsx, .xls (Maksimal 10MB)</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <a href="{{ route('dosen.nilai.export-template', $tahunAjaranMatkul->id) }}"
+                           class="text-blue-600 hover:text-blue-800 text-sm underline">
+                            Download Template Excel
+                        </a>
+                    </div>
+
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" onclick="closeImportModal()"
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">
+                            Batal
+                        </button>
+                        <button type="submit" id="importSubmitBtn"
+                                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            Import
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Loading State -->
+            <div id="importLoading" class="hidden">
+                <div class="text-center">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <h4 class="text-lg font-medium text-gray-900 mb-2">Sedang Memproses Import...</h4>
+                    <p class="text-sm text-gray-600 mb-4">Mohon tunggu, jangan tutup halaman ini</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openImportModal() {
+    document.getElementById('importModal').classList.remove('hidden');
+    resetImportModal();
+}
+
+function closeImportModal() {
+    document.getElementById('importModal').classList.add('hidden');
+    resetImportModal();
+}
+
+function resetImportModal() {
+    document.getElementById('importForm').classList.remove('hidden');
+    document.getElementById('importLoading').classList.add('hidden');
+    document.getElementById('excelImportForm').reset();
+}
+
+// Handle form submission - direct submit without AJAX
+document.getElementById('excelImportForm').addEventListener('submit', function(e) {
+    // Show loading state
+    document.getElementById('importForm').classList.add('hidden');
+    document.getElementById('importLoading').classList.remove('hidden');
+
+    // Let form submit normally - no preventDefault
+    // The page will reload after submission with flash message
+});
+
+// Functions removed - now using direct form submit with flash messages
+</script>
+
 @endsection
 
 @push('scripts')
@@ -755,13 +855,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function showDetailModal(mahasiswaId, nim, nama) {
         const modal = document.getElementById('detail-modal');
         const modalTitle = document.getElementById('detail-modal-title');
-        const modalNim = document.getElementById('detail-modal-nim');
-        const modalNama = document.getElementById('detail-modal-nama');
 
-        if (modal && modalTitle && modalNim && modalNama) {
+        if (modal && modalTitle) {
             modalTitle.textContent = `Detail Nilai Mahasiswa`;
-            modalNim.textContent = nim;
-            modalNama.textContent = nama;
 
             // Load detail data
             loadDetailData(mahasiswaId);

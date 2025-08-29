@@ -6,25 +6,23 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::table('cpmk', function (Blueprint $table) {
-            $table->unsignedBigInteger('parent_id')->nullable()->after('id');
-            $table->foreign('parent_id')->references('id')->on('cpmk')->onDelete('cascade');
+        Schema::create('cpmk_parents', function (Blueprint $table) {
+            $table->id();
+            $table->unsignedBigInteger('parent_cpmk_id');
+            $table->unsignedBigInteger('child_cpmk_id');
+            $table->timestamps();
+
+            $table->foreign('parent_cpmk_id')->references('id')->on('cpmk')->onDelete('cascade');
+            $table->foreign('child_cpmk_id')->references('id')->on('cpmk')->onDelete('cascade');
+
+            $table->unique(['parent_cpmk_id', 'child_cpmk_id']);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::table('cpmk', function (Blueprint $table) {
-            $table->dropForeign(['parent_id']);
-            $table->dropColumn('parent_id');
-        });
+        Schema::dropIfExists('cpmk_parents');
     }
 };

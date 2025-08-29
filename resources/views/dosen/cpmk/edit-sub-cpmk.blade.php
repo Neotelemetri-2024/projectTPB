@@ -55,14 +55,14 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Kode Parent CPMK</label>
                     <div class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg p-3">
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800">
-                            {{ $cpmk->parent->kodeCpmk }}
+                            {{ $cpmk->parents->first()->kodeCpmk }}
                         </span>
                     </div>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Deskripsi Parent CPMK</label>
                     <div class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg p-3 min-h-[60px]">
-                        {{ $cpmk->parent->deskripsi }}
+                        {{ $cpmk->parents->first()->deskripsi }}
                     </div>
                 </div>
             </div>
@@ -70,12 +70,12 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">CPL Terkait Parent CPMK</label>
                 <div class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg p-3">
                     <div class="flex flex-wrap gap-2">
-                        @foreach($cpmk->parent->cpl as $cpl)
+                        @foreach($cpmk->parents->first()->cpl as $cpl)
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                 {{ $cpl->kodeCpl }}
                             </span>
                         @endforeach
-                        @if($cpmk->parent->cpl->isEmpty())
+                        @if($cpmk->parents->first()->cpl->isEmpty())
                             <span class="text-gray-500 text-sm">Tidak ada CPL terkait</span>
                         @endif
                     </div>
@@ -93,7 +93,7 @@
             @method('PUT')
 
             <!-- Hidden inputs for CPL IDs from parent -->
-            @foreach($cpmk->parent->cpl as $cpl)
+            @foreach($cpmk->parents->first()->cpl as $cpl)
                 <input type="hidden" name="cpl_ids[]" value="{{ $cpl->id }}">
             @endforeach
 
@@ -105,7 +105,7 @@
                     </label>
                     <input type="text" name="kodeCpmk" id="kodeCpmk" required maxlength="20"
                            value="{{ old('kodeCpmk', $cpmk->kodeCpmk) }}"
-                           placeholder="Contoh: {{ $cpmk->parent->kodeCpmk }}-1, {{ $cpmk->parent->kodeCpmk }}-2, dst."
+                           placeholder="Contoh: {{ $cpmk->parents->first()->kodeCpmk }}-1, {{ $cpmk->parents->first()->kodeCpmk }}-2, dst."
                            class="bg-gray-50 border text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-3 {{ $errors->has('kodeCpmk') ? 'border-red-500' : 'border-gray-300' }}">
                     @error('kodeCpmk')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>

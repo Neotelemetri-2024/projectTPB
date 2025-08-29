@@ -40,8 +40,8 @@ class BobotKomponenController extends Controller
             ->pluck('id');
 
         // Get CPMK that are assigned to this mata kuliah (from all classes with same dosen)
-        $cpmkList = CpmkMatKul::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
-            ->with(['cpmk.cpl', 'cpmk.children', 'cpmk.parent']) // Include CPL, children, and parent relationships
+        $allCpmkList = CpmkMatKul::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
+            ->with(['cpmk.cpl', 'cpmk.children', 'cpmk.parents']) // Include CPL, children, and parents relationships
             ->get()
             ->unique('cpmkId') // Remove duplicates based on cpmkId
             ->map(function($cpmkMatKul) {
@@ -50,6 +50,25 @@ class BobotKomponenController extends Controller
             ->filter(function($cpmk) {
                 return $cpmk !== null; // Filter out null CPMK
             });
+
+        // Filter CPMK for bobot display: show only main CPMK without children OR sub-CPMK
+        $cpmkList = $allCpmkList->filter(function($cpmk) {
+            // If it's a main CPMK (no parents) and has children, don't show it
+            if (!$cpmk->hasParents() && $cpmk->hasChildren()) {
+                return false;
+            }
+            // Show main CPMK without children OR sub-CPMK
+            return true;
+        });
+
+        // Sort CPMK list: main CPMK first, then sub-CPMK
+        $cpmkList = $cpmkList->sortBy(function($cpmk) {
+            if (!$cpmk->hasParents()) {
+                return 'A' . $cpmk->kodeCpmk; // Main CPMK first
+            } else {
+                return 'B' . $cpmk->kodeCpmk; // Sub-CPMK second
+            }
+        })->values(); // Convert to array
 
         if ($cpmkList->isEmpty()) {
             return redirect()->route('dosen.cpmk.show', $tahunAjaranMatkulId)
@@ -61,12 +80,12 @@ class BobotKomponenController extends Controller
 
         // Get existing bobot with all necessary relationships (from all related classes)
         $existingBobot = Bobot::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
-            ->with(['komponen', 'cpmk.cpl', 'cpmk.children', 'cpmk.parent', 'nilai'])
+            ->with(['komponen', 'cpmk.cpl', 'cpmk.children', 'cpmk.parents', 'nilai'])
             ->get();
 
         // Get existing bobot from all classes with same mataKuliahId, tahunAjaranId, and dosen for usedKomponenIds
         $allExistingBobot = Bobot::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
-            ->with(['komponen', 'cpmk.cpl', 'cpmk.children', 'cpmk.parent', 'nilai'])
+            ->with(['komponen', 'cpmk.cpl', 'cpmk.children', 'cpmk.parents', 'nilai'])
             ->get();
 
         // Create array of existing combinations for easier lookup
@@ -147,8 +166,8 @@ class BobotKomponenController extends Controller
         ]);
 
         // Get CPMK list to check hierarchy
-        $cpmkList = CpmkMatKul::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
-            ->with(['cpmk.children', 'cpmk.parent'])
+        $allCpmkList = CpmkMatKul::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
+            ->with(['cpmk.children', 'cpmk.parents'])
             ->get()
             ->unique('cpmkId')
             ->map(function($cpmkMatKul) {
@@ -159,8 +178,8 @@ class BobotKomponenController extends Controller
             });
 
         // Check if any parent CPMK with children has bobot set (should not be allowed)
-        $parentCpmkWithChildren = $cpmkList->filter(function($cpmk) {
-            return !$cpmk->parent_id && $cpmk->children && $cpmk->children->count() > 0;
+        $parentCpmkWithChildren = $allCpmkList->filter(function($cpmk) {
+            return !$cpmk->hasParents() && $cpmk->hasChildren();
         });
 
         foreach ($parentCpmkWithChildren as $parentCpmk) {

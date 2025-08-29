@@ -79,7 +79,7 @@
                             <label class="block text-sm font-medium text-gray-700 mb-2">Kode CPMK</label>
                             <div class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg p-3">
                                 <div class="flex items-center gap-2">
-                                    @if($cpmk->parent_id)
+                                    @if($cpmk->parents->count() > 0)
                                         <div class="w-4 h-4 text-gray-400">
                                             <svg fill="currentColor" viewBox="0 0 20 20">
                                                 <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -95,9 +95,9 @@
                                         </span>
                                     @endif
                                 </div>
-                                @if($cpmk->parent_id && $cpmk->parent)
+                                @if($cpmk->parents->count() > 0 && $cpmk->parents->first())
                                     <div class="mt-2 text-xs text-gray-500">
-                                        Parent: <span class="font-medium">{{ $cpmk->parent->kodeCpmk }}</span>
+                                        Parent: <span class="font-medium">{{ $cpmk->parents->first()->kodeCpmk }}</span>
                                     </div>
                                 @endif
                             </div>
@@ -218,7 +218,7 @@
                 </div>
                 <div class="p-6">
                     <div class="space-y-3">
-                        @if(!$cpmk->parent_id)
+                        @if(!$cpmk->parents->count())
                         <a href="{{ route('dosen.cpmk.sub-cpmk.create', [$tahunAjaranMatkul->id, $cpmk->id]) }}"
                            class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center justify-center">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -227,7 +227,7 @@
                             Tambah Sub-CPMK
                         </a>
                         @endif
-                        @if($cpmk->parent_id)
+                        @if($cpmk->parents->count() > 0)
                         <a href="{{ route('dosen.cpmk.sub-cpmk.edit', [$tahunAjaranMatkul->id, $cpmk->id]) }}"
                            class="w-full bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg flex items-center justify-center">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

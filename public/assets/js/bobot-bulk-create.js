@@ -8,10 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const komponenLockedData = window.komponenLockedData || {};
         const usedKomponenIdsData = window.usedKomponenIdsData || [];
 
-        // Debug logging
-        console.log('CPMK List Data:', cpmkListData);
-        console.log('Komponen List Data:', komponenListData);
-        console.log('Existing Combinations:', existingCombinationsData);
+
     // DOM elements
     const availableKomponenDiv = document.getElementById('available-komponen');
     const bobotTable = document.getElementById('bobot-table');
@@ -47,7 +44,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const komponenId = card.getAttribute('data-id').toString(); // Ensure string
             const komponenNama = card.getAttribute('data-nama');
 
-            console.log('Komponen clicked:', komponenId, komponenNama);
 
             // Check if currently selected
             const isSelected = selectedKomponen.find(k => k.id === komponenId);
@@ -61,7 +57,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 // Remove from selected komponen
                 selectedKomponen = selectedKomponen.filter(k => k.id !== komponenId);
-                console.log('Komponen removed:', komponenId);
             } else {
                 // Check if any komponen is locked (has nilai)
                 const hasAnyLockedKomponen = Object.values(komponenLockedData).some(locked => locked);
@@ -83,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // SIMPLE AND CORRECT: Single calculation system using updateTotalBobotRowRealtime
     // Remove old calculation functions - they are replaced by updateTotalBobotRowRealtime
-    
+
     // Add event listeners for real-time updates
     function addBobotInputListeners() {
         document.querySelectorAll('.bobot-input').forEach(input => {
@@ -170,7 +165,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Render table based on selected komponen
     let currentInputValues = {};
     function renderTable() {
-        console.log('renderTable called with selectedKomponen:', selectedKomponen);
 
         const bobotMatrixTable = document.getElementById('bobot-matrix-table');
 
@@ -305,7 +299,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 td.appendChild(input);
                             }
                             childTr.appendChild(td);
-                        });
+                        });z
                     }
 
                     // Kolom total bobot CPMK untuk sub-CPMK (selalu muncul)
@@ -356,7 +350,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                         // Lock if either this specific combination has nilai OR the entire komponen is locked
                         if (hasNilai || isKomponenLocked) {
-                            td.innerHTML = '<div class="relative inline-block"><input type="number" step="0.1" min="0" max="100" value="' + existingValue + '" class="w-20 px-2 py-1 border border-gray-300 rounded text-sm text-center bg-gray-100" disabled><div class="absolute -top-1 -right-1"><svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z" clip-rule="evenodd"></path></svg></div></div><div class="text-xs text-red-600 mt-1">Terkunci</div>';
+                            td.innerHTML = '<div class="relative inline-block"><input type="number" step="0.1" min="0" max="100" value="' + existingValue + '" class="w-20 px-2 py-1 border border-gray-300 rounded text-sm text-center bg-gray-100" disabled data-cpmk-id="' + cpmkData.id + '" data-komponen-id="' + komponen.id + '"><div class="absolute -top-1 -right-1"><svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z" clip-rule="evenodd"></path></svg></div></div><div class="text-xs text-red-600 mt-1">Terkunci</div>';
                         } else {
                             const input = document.createElement('input');
                             input.type = 'number';
@@ -407,7 +401,7 @@ document.addEventListener('DOMContentLoaded', function() {
         tdLabel.colSpan = 2;
         tdLabel.textContent = 'Total per Komponen';
         trTotal.appendChild(tdLabel);
-        
+
         // Buat cell untuk setiap komponen jika ada komponen yang dipilih
         if (selectedKomponen.length > 0) {
             selectedKomponen.forEach(function(komponen) {
@@ -418,7 +412,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 trTotal.appendChild(td);
             });
         }
-        
+
         // Kolom total keseluruhan di pojok kanan bawah (selalu muncul)
         const tdTotalKeseluruhan = document.createElement('td');
         tdTotalKeseluruhan.className = 'px-4 py-3 text-center font-bold text-green-700 total-overall';
@@ -662,7 +656,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function initializeUsedKomponen() {
         // Reset selectedKomponen array
         selectedKomponen = [];
-        
+
         // Automatically add komponen that are already used (have existing bobot)
         if (usedKomponenIdsData && usedKomponenIdsData.length > 0) {
             usedKomponenIdsData.forEach(komponenId => {
@@ -692,8 +686,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         }
-        
-        console.log('Initialized komponen:', selectedKomponen);
+
     }
 
         // Initial setup - with delay to ensure DOM is fully ready

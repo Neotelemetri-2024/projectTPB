@@ -15,6 +15,7 @@ use App\Models\CpmkMatKul;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use App\Exports\NilaiTemplateExport;
 use App\Imports\NilaiImport;
 use Maatwebsite\Excel\Facades\Excel;
@@ -433,12 +434,6 @@ class NilaiController extends Controller
         ]);
 
         try {
-            \Log::info('Bulk store request received', [
-                'matkulId' => $matkulId,
-                'request_data' => $request->all(),
-                'is_ajax' => $request->ajax()
-            ]);
-
             // Get mata kuliah info
             $matkulClass = TahunAjaranMatkul::findOrFail($matkulId);
 
@@ -518,8 +513,6 @@ class NilaiController extends Controller
             }
             return redirect()->back()->with('success', 'Nilai berhasil disimpan.');
         } catch (\Exception $e) {
-            \Log::error('Error saving grades: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'message' => 'Terjadi kesalahan saat menyimpan nilai: ' . $e->getMessage()], 500);
             }
@@ -818,7 +811,6 @@ class NilaiController extends Controller
             }
 
         } catch (\Exception $e) {
-            Log::error('Error importing nilai: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return redirect()->route('dosen.nilai.show', $id)
                 ->with('error', 'Terjadi kesalahan saat import: ' . $e->getMessage());
         }
@@ -860,7 +852,7 @@ class NilaiController extends Controller
             // Get all kelasIds from the related classes
             $kelasIds = \App\Models\Kelas::whereIn('tahunAjaranMatkulId', $relatedClasses)->pluck('id');
 
-            \DB::table('kelas_mahasiswa')
+            DB::table('kelas_mahasiswa')
                 ->whereIn('kelasId', $kelasIds)
                 ->update([
                     'totalNilai' => null,
@@ -877,8 +869,6 @@ class NilaiController extends Controller
             return redirect()->back()->with('success', "Berhasil menghapus {$deletedCount} nilai.");
 
         } catch (\Exception $e) {
-            \Log::error('Error resetting grades: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
-
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'message' => 'Terjadi kesalahan saat menghapus nilai: ' . $e->getMessage()], 500);
             }

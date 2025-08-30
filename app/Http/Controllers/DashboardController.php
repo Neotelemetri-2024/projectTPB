@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB; // Added DB facade import
 
 class DashboardController extends Controller
@@ -40,7 +39,7 @@ class DashboardController extends Controller
             ->orderBy('tahun', 'desc')
             ->orderByRaw("FIELD(periode, 'ganjil', 'genap') DESC")
             ->first();
-        
+
         $selectedTahunAjaranId = $request->get('tahun_ajaran_filter', $latestTahunAjaran?->id);
 
         // OPTIMIZED: Load all data in parallel with efficient queries
@@ -57,7 +56,7 @@ class DashboardController extends Controller
         $courseCompletionData = $this->getCourseCompletionData($selectedTahunAjaranId);
         $courseTypeData = $this->getCourseTypeDistribution();
         $topStudentsData = $this->getTopStudentsData($selectedTahunAjaranId);
-        
+
         return view('admin.dashboard', compact(
             'statistics',
             'tahunAjaranList',
@@ -308,7 +307,7 @@ class DashboardController extends Controller
         // Define all possible grades
         $allGrades = ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'D', 'E'];
         $labels = $allGrades;
-        
+
         $datasets = [];
         $colors = ['#10B981', '#34D399', '#60A5FA', '#3B82F6', '#6366F1', '#F59E0B', '#F97316', '#EF4444', '#DC2626'];
 
@@ -316,7 +315,7 @@ class DashboardController extends Controller
             // Get grade distribution for this mata kuliah
             $gradeDistribution = DB::table('nilai as n')
                 ->select(DB::raw('
-                    CASE 
+                    CASE
                         WHEN AVG(n.nilai) >= 80 THEN "A"
                         WHEN AVG(n.nilai) >= 75 THEN "A-"
                         WHEN AVG(n.nilai) >= 70 THEN "B+"
@@ -578,11 +577,11 @@ class DashboardController extends Controller
         ];
 
         $color = $colors[$index % count($colors)];
-        
+
         if ($alpha) {
             return $color . '80'; // Add 50% transparency
         }
-        
+
         return $color;
     }
 
@@ -767,18 +766,25 @@ class DashboardController extends Controller
 
                 // 2. Kalikan nilai dengan bobot, 3. Ambil komponenId, 4. Simpan ke array
                 $nilaiPerKomponenRaw = [];
+                $komponenInfo = []; // Array to store komponen info
 
                 foreach ($allNilaiForCpmk as $index => $nilaiRecord) {
                     $nilaiMentah = $nilaiRecord->nilai;
                     $bobotPengali = $nilaiRecord->bobot->bobot;
                     $komponenId = $nilaiRecord->bobot->komponenId;
-                    $namaKomponen = $nilaiRecord->bobot->komponen->namaKomponen ?? 'Unknown';
+                    $namaKomponen = $nilaiRecord->bobot->komponen->nama ?? 'Unknown';
 
                     // Simpan ke array berdasarkan komponenId asli (tidak perlu mapping)
                     if (!isset($nilaiPerKomponenRaw[$komponenId])) {
                         $nilaiPerKomponenRaw[$komponenId] = 0;
                     }
                     $nilaiPerKomponenRaw[$komponenId] += $nilaiMentah * ($bobotPengali / 100);
+
+                    // Simpan info komponen
+                    $komponenInfo[$komponenId] = [
+                        'nama' => $namaKomponen,
+                        'bobot' => $bobotPengali
+                    ];
                 }
 
                 // 1. Cari total bobot untuk 1 CPMK dari tabel bobot
@@ -813,6 +819,7 @@ class DashboardController extends Controller
                 $cpmk_data[] = [
                     'label' => $label,
                     'komponen_nilai' => $nilaiPerKomponen,
+                    'komponen_info' => $komponenInfo, // Tambah info komponen
                     'total_nilai' => $nilaiNormal, // Gunakan nilai yang sudah dibulatkan untuk konsistensi
                     'total_bobot' => $totalBobotCpmk,
                     'nilai_normal' => $nilaiNormal

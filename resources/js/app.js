@@ -1,8 +1,8 @@
 import './bootstrap';
 
 import Alpine from 'alpinejs';
-import Toastify from 'toastify-js';
 import Chart from 'chart.js/auto';
+import Toastify from 'toastify-js';
 
 window.Alpine = Alpine;
 window.Toastify = Toastify;
@@ -66,11 +66,6 @@ function renderAllCharts() {
     const cplCpmkData = window.cplCpmkData || [];
 
     cplCpmkData.forEach((cpl, idx) => {
-        // Debug: Log data untuk setiap CPL
-        console.log(`CPL ${idx}: ${cpl.cpl_label}`);
-        console.log('CPMK data:', cpl.cpmk_data);
-        console.log('CPMK labels:', cpl.cpmk_data?.map(item => item.label));
-
         // Responsive chart height dan font sizes
         const isMobile = window.innerWidth < 768;
         const isTablet = window.innerWidth >= 768 && window.innerWidth < 1024;
@@ -104,10 +99,6 @@ function renderAllCharts() {
             });
             const datasets = [];
 
-            // Debug: Log labels yang akan digunakan
-            console.log('Labels untuk chart:', labels);
-            console.log('Jumlah labels:', labels.length);
-
             // Ambil semua komponen ID yang ada dari data
             const allKomponenIds = new Set();
             cpl.cpmk_data.forEach(item => {
@@ -115,27 +106,6 @@ function renderAllCharts() {
                     allKomponenIds.add(parseInt(id));
                 });
             });
-
-            // Debug: Log komponen IDs yang ditemukan
-            console.log('Komponen IDs yang ditemukan:', Array.from(allKomponenIds).sort());
-
-            // Buat mapping nama komponen (bisa ditambah sesuai kebutuhan)
-            const komponenNames = {
-                1: 'Kuis',
-                2: 'UAS',
-                3: 'UTS',
-                4: 'TB',
-                5: 'Tugas',
-                6: 'TB',
-                7: 'UAS',
-                8: 'Praktikum',
-                9: 'Quiz',
-                10: 'Tugas/PR',
-                11: 'Kuis',
-                12: 'Project',
-                13: 'Tugas Besar'
-                // Tambah mapping sesuai kebutuhan
-            };
 
             // Warna untuk chart (rotasi otomatis jika lebih dari 5 komponen)
             const colors = [
@@ -154,9 +124,17 @@ function renderAllCharts() {
             // Buat dataset untuk setiap komponen berdasarkan ID yang ada
             Array.from(allKomponenIds).sort().forEach((komponenId, index) => {
                 const data = cpl.cpmk_data.map(item => item.komponen_nilai[komponenId] || 0);
-                const componentName = komponenNames[komponenId] || `Komponen ${komponenId}`;
 
-                console.log(`Dataset ${componentName} (ID: ${komponenId}):`, data);
+                // Ambil nama komponen dari database (jika tersedia) atau gunakan fallback
+                let componentName = `Komponen ${komponenId}`;
+
+                // Cari nama komponen dari komponen_info yang tersedia
+                for (let cpmkItem of cpl.cpmk_data) {
+                    if (cpmkItem.komponen_info && cpmkItem.komponen_info[komponenId]) {
+                        componentName = cpmkItem.komponen_info[komponenId].nama || `Komponen ${komponenId}`;
+                        break;
+                    }
+                }
 
                 datasets.push({
                     label: componentName,
@@ -168,9 +146,6 @@ function renderAllCharts() {
                     order: index
                 });
             });
-
-            console.log('Final datasets:', datasets);
-            console.log('Final labels:', labels);
 
             chartInstances.push(new Chart(chartElement, {
                 type: 'bar',

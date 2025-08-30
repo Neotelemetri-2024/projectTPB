@@ -310,26 +310,36 @@
                                 @endforeach
                                 <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Total Nilai</th>
                                 <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider grade-column">Grade</th>
-                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Detail</th>
-                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider aksi-column hidden">Aksi</th>
+                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach($mahasiswa as $mhs)
-                                                                    @php
-                                        $kelasNama = 'Tidak Ada Kelas';
-                                        $studentClassId = null;
-                                        foreach($mataKuliahClasses as $tam) {
-                                            foreach($tam->kelas as $kelas) {
-                                                $studentInClass = $kelas->kelasMahasiswa->where('mahasiswaId', $mhs->id)->first();
-                                                if ($studentInClass) {
-                                                    $kelasNama = $kelas->namaKelas;
-                                                    $studentClassId = $tam->id;
-                                                    break 2;
+                                                                                                            @php
+                                            $kelasNama = 'Tidak Ada Kelas';
+                                            $studentClassId = null;
+
+                                            // Cari kelas mahasiswa
+                                            foreach($mataKuliahClasses as $tam) {
+                                                foreach($tam->kelas as $kelas) {
+                                                    $studentInClass = $kelas->kelasMahasiswa->where('mahasiswaId', $mhs->id)->first();
+                                                    if ($studentInClass) {
+                                                        $kelasNama = $kelas->namaKelas;
+                                                        $studentClassId = $tam->id;
+                                                        break 2;
+                                                    }
                                                 }
                                             }
-                                        }
-                                    @endphp
+
+                                            // Fallback: Jika tidak ada kelas, gunakan tahunAjaranMatkul->id
+                                            if (!$studentClassId) {
+                                                $studentClassId = $tahunAjaranMatkul->id;
+                                                $kelasNama = 'Default';
+                                            }
+
+                                            // Debug: Log studentClassId
+                                            \Log::info("Mahasiswa {$mhs->id} ({$mhs->nama}): studentClassId = {$studentClassId}, kelasNama = {$kelasNama}");
+                                        @endphp
                                 <tr data-mahasiswa-id="{{ $mhs->id }}">
                                     <td class="px-6 py-4 whitespace-nowrap">{{ $mhs->nim }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">{{ $mhs->nama }}</td>
@@ -360,7 +370,6 @@
                                                    data-komponen-id="{{ $komponen->id }}"
                                                    data-original-value="{{ $nilaiValue }}"
                                                    placeholder="0">
-                                            <input type="hidden" name="student_class_id[{{ $mhs->id }}]" value="{{ $studentClassId }}">
                                         </td>
                                     @endforeach
                                     <!-- Kolom Total Nilai -->
@@ -428,31 +437,39 @@
                                             {{ $grade ?: '-' }}
                                         </span>
                                     </td>
-                                    <!-- Kolom Detail -->
+                                                                        <!-- Kolom Aksi -->
                                     <td class="px-4 py-4 whitespace-nowrap text-center">
-                                        <button type="button"
-                                                class="btn-detail-nilai px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded transition-colors duration-200"
-                                                data-mahasiswa-id="{{ $mhs->id }}"
-                                                data-mahasiswa-nama="{{ $mhs->nama }}"
-                                                data-nim="{{ $mhs->nim }}">
-                                            <svg class="w-3 h-3 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                            </svg>
-                                            Detail
-                                        </button>
-                                    </td>
-                                    <!-- Kolom Aksi (hidden by default) -->
-                                    <td class="px-4 py-4 whitespace-nowrap text-center aksi-column hidden">
-                                        <button type="button"
-                                                id="save-btn-{{ $mhs->id }}"
-                                                class="btn-simpan-nilai px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                                                disabled>
-                                            <svg class="w-3 h-3 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                            </svg>
-                                            Simpan
-                                        </button>
+                                        <div class="flex items-center justify-center space-x-2">
+                                            <!-- Tombol Detail (selalu terlihat) -->
+                                            <button type="button"
+                                                    class="btn-detail-nilai px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded transition-colors duration-200"
+                                                    data-mahasiswa-id="{{ $mhs->id }}"
+                                                    data-mahasiswa-nama="{{ $mhs->nama }}"
+                                                    data-nim="{{ $mhs->nim }}">
+                                                <svg class="w-3 h-3 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                </svg>
+                                                Detail
+                                            </button>
+
+                                            <!-- Tombol Simpan (hanya muncul saat mode edit) -->
+                                            <div class="aksi-column hidden">
+                                                <button type="button"
+                                                        id="save-btn-{{ $mhs->id }}"
+                                                        class="btn-simpan-nilai px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                                        data-mahasiswa-id="{{ $mhs->id }}"
+                                                        disabled>
+                                                    <svg class="w-3 h-3 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                    </svg>
+                                                    Simpan
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Input hidden untuk student class ID -->
+                                        <input type="hidden" name="student_class_id[{{ $mhs->id }}]" value="{{ $studentClassId }}">
                                     </td>
                                 </tr>
                             @endforeach
@@ -1062,62 +1079,289 @@ document.addEventListener('DOMContentLoaded', function() {
     const bulkSaveBtn = document.getElementById('bulk-save-btn');
     const confirmBulkSave = document.getElementById('confirm-bulk-save');
 
+    // Function to enter edit mode
+    function enterEditMode() {
+        if (toggleEditBtn) {
+            // Switch to edit mode
+            toggleEditBtn.innerHTML = `
+                <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                Nonaktifkan Input Nilai
+            `;
+            toggleEditBtn.classList.remove('bg-amber-600', 'hover:bg-amber-700');
+            toggleEditBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+
+            // Show input fields and hide plain text
+            nilaiInputs.forEach(input => input.classList.remove('hidden'));
+            nilaiPlains.forEach(plain => plain.classList.add('hidden'));
+            // Show aksi columns
+            aksiColumns.forEach(col => col.classList.remove('hidden'));
+            gradeColumns.forEach(col => col.classList.add('hidden'));
+
+            // Show bulk actions
+            if (bulkActions) {
+                bulkActions.classList.remove('hidden');
+            }
+
+            // Show reset button
+            if (resetBtn) {
+                resetBtn.classList.remove('hidden');
+            }
+
+            // Save edit mode state to localStorage
+            localStorage.setItem('nilaiEditMode', 'true');
+
+            // Update bulk save button text
+            updateBulkSaveButtonText();
+        }
+    }
+
+    // Function to restore edit mode state from localStorage
+    function restoreEditModeState() {
+        const isEditMode = localStorage.getItem('nilaiEditMode') === 'true';
+        if (isEditMode) {
+            enterEditMode();
+            // Also restore changed values
+            restoreChangedValues();
+            // Update bulk save button text
+            updateBulkSaveButtonText();
+        }
+    }
+
+    // Function to save changed values to localStorage
+    function saveChangedValuesToStorage(mahasiswaId, komponenId, value) {
+        const key = `nilai_changes_${mahasiswaId}_${komponenId}`;
+        localStorage.setItem(key, value);
+    }
+
+    // Function to remove changed value from localStorage
+    function removeChangedValueFromStorage(mahasiswaId, komponenId) {
+        const key = `nilai_changes_${mahasiswaId}_${komponenId}`;
+        localStorage.removeItem(key);
+    }
+
+    // Function to restore changed values from localStorage
+    function restoreChangedValues() {
+        // Get all nilai inputs
+        const allNilaiInputs = document.querySelectorAll('.nilai-input');
+
+        allNilaiInputs.forEach(input => {
+            const mahasiswaId = input.getAttribute('data-mahasiswa-id');
+            const komponenId = input.getAttribute('data-komponen-id');
+            const key = `nilai_changes_${mahasiswaId}_${komponenId}`;
+            const savedValue = localStorage.getItem(key);
+
+            if (savedValue !== null) {
+                input.value = savedValue;
+                // Trigger change event to update save button state
+                input.dispatchEvent(new Event('input'));
+            }
+        });
+
+        // Update bulk save button text after restoring values
+        updateBulkSaveButtonText();
+    }
+
+    // Function to clear changed values from localStorage for a specific mahasiswa
+    function clearChangedValuesFromStorage(mahasiswaId) {
+        // Get all keys for this mahasiswa
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => {
+            if (key.startsWith(`nilai_changes_${mahasiswaId}_`)) {
+                localStorage.removeItem(key);
+            }
+        });
+
+        // Also clear student class ID for this mahasiswa
+        localStorage.removeItem(`student_class_id_${mahasiswaId}`);
+    }
+
+    // Function to clear all edit mode data from localStorage
+    function clearAllEditModeData() {
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => {
+            if (key.startsWith('nilai_changes_') ||
+                key.startsWith('student_class_id_') ||
+                key === 'nilaiEditMode') {
+                localStorage.removeItem(key);
+            }
+        });
+    }
+
+    // Function to collect all changed values from localStorage across all pages
+    function collectAllChangedValuesFromStorage() {
+        const allChangedValues = {};
+        const keys = Object.keys(localStorage);
+
+        keys.forEach(key => {
+            if (key.startsWith('nilai_changes_')) {
+                // Extract mahasiswaId and komponenId from key
+                const parts = key.replace('nilai_changes_', '').split('_');
+                if (parts.length === 2) {
+                    const mahasiswaId = parts[0];
+                    const komponenId = parts[1];
+                    const value = localStorage.getItem(key);
+
+                    if (!allChangedValues[mahasiswaId]) {
+                        allChangedValues[mahasiswaId] = {};
+                    }
+                    allChangedValues[mahasiswaId][komponenId] = value;
+                }
+            }
+        });
+
+        console.log('All changed values from localStorage:', allChangedValues);
+        return allChangedValues;
+    }
+
+        // Function to update bulk save button text with count
+    function updateBulkSaveButtonText() {
+        const allChangedValues = collectAllChangedValuesFromStorage();
+        const totalChanges = Object.keys(allChangedValues).length;
+
+        if (bulkSaveBtn) {
+            if (totalChanges > 0) {
+                bulkSaveBtn.innerHTML = `
+                    <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Simpan Semua Nilai (${totalChanges} perubahan)
+                `;
+            } else {
+                bulkSaveBtn.innerHTML = `
+                    <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Simpan Semua Nilai
+                `;
+            }
+        }
+    }
+
+    // Function to update nilai display (total nilai and grade)
+    function updateNilaiDisplay(mahasiswaId) {
+        // Get all nilai inputs for this mahasiswa
+        const nilaiInputs = document.querySelectorAll(`input[data-mahasiswa-id="${mahasiswaId}"]`);
+        let totalNilai = 0;
+        let validNilaiCount = 0;
+
+        // Calculate total nilai
+        nilaiInputs.forEach(input => {
+            const nilai = parseFloat(input.value);
+            if (!isNaN(nilai) && nilai >= 0) {
+                totalNilai += nilai;
+                validNilaiCount++;
+            }
+        });
+
+        // Calculate average if there are valid nilai
+        const averageNilai = validNilaiCount > 0 ? totalNilai / validNilaiCount : 0;
+
+        // Update total nilai display
+        const totalNilaiCell = document.querySelector(`tr[data-mahasiswa-id="${mahasiswaId}"] td:nth-child(7)`); // Adjust index based on your table structure
+        if (totalNilaiCell) {
+            const totalNilaiSpan = totalNilaiCell.querySelector('span');
+            if (totalNilaiSpan) {
+                totalNilaiSpan.textContent = averageNilai > 0 ? averageNilai.toFixed(2) : '-';
+            }
+        }
+
+        // Calculate and update grade
+        let grade = '-';
+        if (averageNilai > 0) {
+            if (averageNilai >= 80) grade = 'A';
+            else if (averageNilai >= 75) grade = 'A-';
+            else if (averageNilai >= 70) grade = 'B+';
+            else if (averageNilai >= 65) grade = 'B';
+            else if (averageNilai >= 60) grade = 'B-';
+            else if (averageNilai >= 55) grade = 'C+';
+            else if (averageNilai >= 50) grade = 'C';
+            else if (averageNilai >= 45) grade = 'D';
+            else grade = 'E';
+        }
+
+        // Update grade display
+        const gradeCell = document.querySelector(`tr[data-mahasiswa-id="${mahasiswaId}"] td:nth-child(8)`); // Adjust index based on your table structure
+        if (gradeCell) {
+            const gradeSpan = gradeCell.querySelector('span');
+            if (gradeSpan) {
+                // Update grade text
+                gradeSpan.textContent = grade;
+
+                // Update grade color classes
+                gradeSpan.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium';
+                if (grade === 'A' || grade === 'A-') {
+                    gradeSpan.classList.add('bg-green-100', 'text-green-800');
+                } else if (grade === 'B+' || grade === 'B' || grade === 'B-') {
+                    gradeSpan.classList.add('bg-blue-100', 'text-blue-800');
+                } else if (grade === 'C+' || grade === 'C') {
+                    gradeSpan.classList.add('bg-yellow-100', 'text-yellow-800');
+                } else if (grade === 'D') {
+                    gradeSpan.classList.add('bg-orange-100', 'text-orange-800');
+                } else if (grade !== '-') {
+                    gradeSpan.classList.add('bg-red-100', 'text-red-800');
+                }
+            }
+        }
+    }
+
+        // Function to exit edit mode
+    function exitEditMode() {
+        if (toggleEditBtn) {
+            // Switch back to view mode
+            toggleEditBtn.innerHTML = `
+                <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6 6M3 17v2a2 2 0 002 2h2m14-6v6a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h6"></path>
+                </svg>
+                Aktifkan Input Nilai
+            `;
+            toggleEditBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
+            toggleEditBtn.classList.add('bg-amber-600', 'hover:bg-amber-700');
+
+            // Hide input fields and show plain text
+            nilaiInputs.forEach(input => input.classList.add('hidden'));
+            nilaiPlains.forEach(plain => plain.classList.remove('hidden'));
+            aksiColumns.forEach(col => col.classList.add('hidden'));
+            gradeColumns.forEach(col => col.classList.remove('hidden'));
+
+            // Hide bulk actions
+            if (bulkActions) {
+                bulkActions.classList.add('hidden');
+            }
+
+            // Hide reset button
+            if (resetBtn) {
+                resetBtn.classList.add('hidden');
+            }
+
+            // Reset bulk save checkbox
+            if (confirmBulkSave) {
+                confirmBulkSave.checked = false;
+            }
+
+            // Disable bulk save button
+            if (bulkSaveBtn) {
+                bulkSaveBtn.disabled = true;
+                bulkSaveBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                bulkSaveBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+            }
+
+            // Save edit mode state to localStorage
+            localStorage.setItem('nilaiEditMode', 'false');
+        }
+    }
+
     if (toggleEditBtn) {
         toggleEditBtn.addEventListener('click', function() {
             const isEditMode = this.textContent.includes('Aktifkan');
 
             if (isEditMode) {
                 // Switch to edit mode
-                this.innerHTML = `
-                    <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                    Nonaktifkan Input Nilai
-                `;
-                this.classList.remove('bg-amber-600', 'hover:bg-amber-700');
-                this.classList.add('bg-red-600', 'hover:bg-red-700');
-
-                // Show input fields and hide plain text
-                nilaiInputs.forEach(input => input.classList.remove('hidden'));
-                nilaiPlains.forEach(plain => plain.classList.add('hidden'));
-                // Keep aksi columns hidden - aksiColumns.forEach(col => col.classList.remove('hidden'));
-                gradeColumns.forEach(col => col.classList.add('hidden'));
-
-                // Show bulk actions
-                if (bulkActions) {
-                    bulkActions.classList.remove('hidden');
-                }
-
-                // Show reset button
-                if (resetBtn) {
-                    resetBtn.classList.remove('hidden');
-                }
+                enterEditMode();
             } else {
-                // Switch back to view mode
-                this.innerHTML = `
-                    <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6 6M3 17v2a2 2 0 002 2h2m14-6v6a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h6"></path>
-                    </svg>
-                    Aktifkan Input Nilai
-                `;
-                this.classList.remove('bg-red-600', 'hover:bg-red-700');
-                this.classList.add('bg-amber-600', 'hover:bg-amber-700');
-
-                // Hide input fields and show plain text
-                nilaiInputs.forEach(input => input.classList.add('hidden'));
-                nilaiPlains.forEach(plain => plain.classList.remove('hidden'));
-                aksiColumns.forEach(col => col.classList.add('hidden'));
-                gradeColumns.forEach(col => col.classList.remove('hidden'));
-
-                // Hide bulk actions
-                if (bulkActions) {
-                    bulkActions.classList.add('hidden');
-                }
-
-                // Hide reset button
-                if (resetBtn) {
-                    resetBtn.classList.add('hidden');
-                }
+                // Switch back to view mode using the function
+                exitEditMode();
             }
         });
     }
@@ -1144,6 +1388,24 @@ document.addEventListener('DOMContentLoaded', function() {
                     saveBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
                 }
             }
+
+                        // Save changed values to localStorage for pagination persistence
+            if (hasChanged) {
+                saveChangedValuesToStorage(mahasiswaId, komponenId, currentValue);
+
+                // Also save student class ID for this mahasiswa
+                const studentClassElement = document.querySelector(`input[name="student_class_id[${mahasiswaId}]"]`);
+                if (studentClassElement) {
+                    localStorage.setItem(`student_class_id_${mahasiswaId}`, studentClassElement.value);
+                }
+            } else {
+                removeChangedValueFromStorage(mahasiswaId, komponenId);
+            }
+
+            // Update bulk save button text if bulk actions are visible
+            if (bulkActions && !bulkActions.classList.contains('hidden')) {
+                updateBulkSaveButtonText();
+            }
         });
     });
 
@@ -1154,17 +1416,36 @@ document.addEventListener('DOMContentLoaded', function() {
             const button = e.target.closest('.btn-simpan-nilai');
             const mahasiswaId = button.getAttribute('data-mahasiswa-id');
 
+            // Validate mahasiswaId
+            if (!mahasiswaId || mahasiswaId === 'null' || mahasiswaId === 'undefined') {
+                console.error('Invalid mahasiswaId:', mahasiswaId);
+                if (typeof showToast === 'function') {
+                    showToast('Error: ID mahasiswa tidak valid', 'error');
+                } else {
+                    alert('Error: ID mahasiswa tidak valid');
+                }
+                return;
+            }
+
+            console.log('Processing save for mahasiswa ID:', mahasiswaId);
+
             // Get all nilai inputs for this mahasiswa
             const nilaiInputs = document.querySelectorAll(`input[data-mahasiswa-id="${mahasiswaId}"]`);
             const nilaiData = {};
 
-            nilaiInputs.forEach(input => {
+            console.log(`Found ${nilaiInputs.length} nilai inputs for mahasiswa ${mahasiswaId}`);
+
+            nilaiInputs.forEach((input, index) => {
                 const komponenId = input.getAttribute('data-komponen-id');
                 const nilai = input.value;
-                if (nilai !== '') {
+                console.log(`Input ${index}: komponenId=${komponenId}, nilai=${nilai}`);
+
+                if (nilai !== '' && nilai !== null && nilai !== undefined) {
                     nilaiData[komponenId] = parseFloat(nilai);
                 }
             });
+
+            console.log('Final nilaiData:', nilaiData);
 
             // Send AJAX request to save nilai
             const formData = new FormData();
@@ -1180,21 +1461,64 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('_token', csrfElement.getAttribute('content'));
 
             // Add nilai data in the expected format
+            console.log(`Nilai data for mahasiswa ${mahasiswaId}:`, nilaiData);
+
+            // Check if there are any valid nilai to save
+            if (Object.keys(nilaiData).length === 0) {
+                console.warn('No valid nilai data to save');
+                if (typeof showToast === 'function') {
+                    showToast('Tidak ada nilai yang valid untuk disimpan', 'warning');
+                } else {
+                    alert('Tidak ada nilai yang valid untuk disimpan');
+                }
+                return;
+            }
+
             Object.keys(nilaiData).forEach(komponenId => {
                 formData.append(`nilai[${mahasiswaId}][${komponenId}]`, nilaiData[komponenId]);
             });
 
             // Add student class ID with null check
             const studentClassElement = document.querySelector(`input[name="student_class_id[${mahasiswaId}]"]`);
+            console.log(`Looking for student_class_id[${mahasiswaId}] element:`, studentClassElement);
+
             if (studentClassElement) {
                 const studentClassId = studentClassElement.value;
+                console.log(`Found student class ID for mahasiswa ${mahasiswaId}:`, studentClassId);
+
+                // Check if studentClassId is empty or null
+                if (!studentClassId || studentClassId.trim() === '') {
+                    console.error(`Student class ID is empty for mahasiswa ${mahasiswaId}`);
+                    if (typeof showToast === 'function') {
+                        showToast('Error: Data mahasiswa tidak lengkap - Student class ID kosong', 'error');
+                    } else {
+                        alert('Error: Data mahasiswa tidak lengkap - Student class ID kosong');
+                    }
+                    return;
+                }
+
                 formData.append(`student_class_id[${mahasiswaId}]`, studentClassId);
             } else {
                 console.error(`Student class ID element not found for mahasiswa ${mahasiswaId}`);
+                console.error('Available student_class_id elements:', document.querySelectorAll('input[name^="student_class_id"]'));
+                console.error('All hidden inputs:', document.querySelectorAll('input[type="hidden"]'));
+
+                // Debug: Check if there are any elements with similar names
+                const similarElements = document.querySelectorAll(`input[name*="${mahasiswaId}"]`);
+                console.error('Elements with similar names:', similarElements);
+
                 if (typeof showToast === 'function') {
-                    showToast('Error: Data mahasiswa tidak lengkap', 'error');
+                    showToast('Error: Data mahasiswa tidak lengkap - Student class ID tidak ditemukan', 'error');
+                } else {
+                    alert('Error: Data mahasiswa tidak lengkap - Student class ID tidak ditemukan');
                 }
                 return;
+            }
+
+            // Debug: Log formData contents
+            console.log('FormData contents:');
+            for (let [key, value] of formData.entries()) {
+                console.log(`${key}: ${value}`);
             }
 
             fetch(`/dosen/nilai/{{ $tahunAjaranMatkul->id }}/individual-store`, {
@@ -1205,7 +1529,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: formData
             })
             .then(response => response.json())
-            .then(data => {
+                        .then(data => {
                 if (data.success) {
                     // Update original values and disable save button
                     nilaiInputs.forEach(input => {
@@ -1215,10 +1539,34 @@ document.addEventListener('DOMContentLoaded', function() {
                     button.classList.add('bg-gray-400', 'cursor-not-allowed');
                     button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
 
+                    // Update nilai plain text display to show new values
+                    nilaiInputs.forEach(input => {
+                        const mahasiswaId = input.getAttribute('data-mahasiswa-id');
+                        const komponenId = input.getAttribute('data-komponen-id');
+                        const nilaiValue = input.value;
+
+                        // Find corresponding nilai plain text
+                        const nilaiPlain = document.querySelector(`.nilai-plain[data-mahasiswa-id="${mahasiswaId}"][data-komponen-id="${komponenId}"]`);
+                        if (nilaiPlain) {
+                            nilaiPlain.textContent = nilaiValue !== '' ? nilaiValue : '-';
+                        }
+                    });
+
+                    // Update total nilai and grade display
+                    updateNilaiDisplay(mahasiswaId);
+
+                    // Clear changed values from localStorage after successful save
+                    clearChangedValuesFromStorage(mahasiswaId);
+
                     // Show success message
                     if (typeof showToast === 'function') {
                         showToast('Nilai berhasil disimpan', 'success');
                     }
+
+                    // Auto-exit from edit mode after successful save
+                    setTimeout(() => {
+                        exitEditMode();
+                    }, 1000); // Delay 1 detik agar user bisa lihat pesan sukses
                 } else {
                     if (typeof showToast === 'function') {
                         showToast('Gagal menyimpan nilai: ' + data.message, 'error');
@@ -1250,10 +1598,62 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    if (bulkSaveBtn) {
+        if (bulkSaveBtn) {
         bulkSaveBtn.addEventListener('click', function() {
             if (confirmBulkSave && confirmBulkSave.checked) {
-                document.getElementById('bulk-nilai-form').submit();
+                                // Collect all changed values from localStorage across all pages
+                const allChangedValues = collectAllChangedValuesFromStorage();
+
+                if (Object.keys(allChangedValues).length === 0) {
+                    if (typeof showToast === 'function') {
+                        showToast('Tidak ada nilai yang diubah untuk disimpan', 'warning');
+                    } else {
+                        alert('Tidak ada nilai yang diubah untuk disimpan');
+                    }
+                    return;
+                }
+
+                // Proceed directly since checkbox validation is already in place
+                    // Add all changed values to the existing form
+                    const bulkForm = document.getElementById('bulk-nilai-form');
+                    if (bulkForm) {
+                        // Remove existing nilai inputs
+                        const existingNilaiInputs = bulkForm.querySelectorAll('input[name^="nilai["]');
+                        existingNilaiInputs.forEach(input => input.remove());
+
+                        // Remove existing student_class_id inputs
+                        const existingClassInputs = bulkForm.querySelectorAll('input[name^="student_class_id["]');
+                        existingClassInputs.forEach(input => input.remove());
+
+                        // Add all changed values to form
+                        Object.keys(allChangedValues).forEach(mahasiswaId => {
+                            Object.keys(allChangedValues[mahasiswaId]).forEach(komponenId => {
+                                const value = allChangedValues[mahasiswaId][komponenId];
+                                const nilaiInput = document.createElement('input');
+                                nilaiInput.type = 'hidden';
+                                nilaiInput.name = `nilai[${mahasiswaId}][${komponenId}]`;
+                                nilaiInput.value = value;
+                                bulkForm.appendChild(nilaiInput);
+                            });
+
+                            // Add student class ID
+                            let studentClassId = localStorage.getItem(`student_class_id_${mahasiswaId}`);
+                            if (!studentClassId) {
+                                studentClassId = '{{ $tahunAjaranMatkul->id }}';
+                            }
+                            const classInput = document.createElement('input');
+                            classInput.type = 'hidden';
+                            classInput.name = `student_class_id[${mahasiswaId}]`;
+                            classInput.value = studentClassId;
+                            bulkForm.appendChild(classInput);
+                        });
+
+                                                // Clear all edit mode data from localStorage before submitting
+                        clearAllEditModeData();
+
+                        // Submit the form
+                        bulkForm.submit();
+                    }
             }
         });
     }
@@ -1280,6 +1680,12 @@ document.addEventListener('DOMContentLoaded', function() {
             // The page will reload after submission with flash message
         });
     }
+
+            // Restore edit mode state from localStorage
+        restoreEditModeState();
+
+        // Update bulk save button text on page load
+        updateBulkSaveButtonText();
 
     // Make functions globally available
     window.showImportModal = showImportModal;
@@ -1378,6 +1784,19 @@ document.addEventListener('DOMContentLoaded', function() {
 button:disabled {
     cursor: not-allowed;
     opacity: 0.7;
+}
+
+/* Styling untuk kolom aksi */
+.aksi-column button {
+    display: inline-block;
+}
+
+/* Memastikan tombol dalam satu baris */
+.flex.items-center.justify-center.space-x-2 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
 }
 </style>
 @endpush

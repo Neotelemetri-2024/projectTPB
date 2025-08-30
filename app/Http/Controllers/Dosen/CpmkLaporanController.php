@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Dosen;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 
@@ -15,7 +14,7 @@ class CpmkLaporanController extends Controller
     {
         $user = Auth::user();
         $dosen = $user->dosen;
-        
+
         if (!$dosen) {
             return redirect()->back()->with('error', 'Data dosen tidak ditemukan.');
         }
@@ -46,7 +45,7 @@ class CpmkLaporanController extends Controller
     {
         $user = Auth::user();
         $dosen = $user->dosen;
-        
+
         if (!$dosen) {
             return redirect()->back()->with('error', 'Data dosen tidak ditemukan.');
         }
@@ -65,7 +64,7 @@ class CpmkLaporanController extends Controller
 
         // Ambil data CPMK dan nilai
         $cpmkData = $this->getCpmkData($tahunAjaranMatkul);
-        
+
         return view('dosen.cpmk-laporan.show', compact(
             'tahunAjaranMatkul',
             'cpmkData'
@@ -86,7 +85,7 @@ class CpmkLaporanController extends Controller
         ->get();
 
         $data = [];
-        
+
         // Hitung total mahasiswa yang mengambil mata kuliah ini
         $totalMahasiswaMatkul = \App\Models\KelasMahasiswa::whereHas('kelas', function($q) use ($tahunAjaranMatkul) {
             $q->where('tahunAjaranMatkulId', $tahunAjaranMatkul->id);
@@ -104,16 +103,12 @@ class CpmkLaporanController extends Controller
             $mahasiswaIds = \App\Models\KelasMahasiswa::whereHas('kelas', function($q) use ($tahunAjaranMatkul) {
                 $q->where('tahunAjaranMatkulId', $tahunAjaranMatkul->id);
             })->pluck('mahasiswaId')->toArray();
-            
-            \Log::info("CPMK {$cpmk->kodeCpmk}: Mahasiswa IDs", $mahasiswaIds);
-            
+
             // Cek semua nilai untuk CPMK ini (tanpa filter mahasiswa)
             $allNilai = \App\Models\Nilai::where('cpmkId', $cpmk->id)
                 ->where('tahunAjaranMatkulId', $tahunAjaranMatkul->id)
                 ->get();
-            
-            \Log::info("CPMK {$cpmk->kodeCpmk}: All nilai count", ['count' => $allNilai->count()]);
-            
+
             // Ambil nilai untuk mahasiswa yang mengambil mata kuliah ini
             $nilaiList = \App\Models\Nilai::where('cpmkId', $cpmk->id)
                 ->where('tahunAjaranMatkulId', $tahunAjaranMatkul->id)
@@ -121,16 +116,14 @@ class CpmkLaporanController extends Controller
                 ->pluck('nilai')
                 ->filter()
                 ->toArray();
-            
+
             // Hitung jumlah mahasiswa yang memiliki nilai (bukan jumlah nilai)
             $mahasiswaDenganNilai = \App\Models\Nilai::where('cpmkId', $cpmk->id)
                 ->where('tahunAjaranMatkulId', $tahunAjaranMatkul->id)
                 ->whereIn('mahasiswaId', $mahasiswaIds)
                 ->distinct('mahasiswaId')
                 ->count();
-            
-            \Log::info("CPMK {$cpmk->kodeCpmk}: Nilai count", ['nilai_count' => count($nilaiList), 'mahasiswa_count' => $mahasiswaDenganNilai]);
-            
+
             if ($mahasiswaDenganNilai == 0) continue;
 
             // Hitung rata-rata nilai per mahasiswa
@@ -144,15 +137,15 @@ class CpmkLaporanController extends Controller
 
             $distribution = [];
             $histogramData = [];
-            
+
             // Hitung distribusi nilai untuk pie chart berdasarkan rata-rata per mahasiswa
             foreach ($nilaiRanges as $grade => $range) {
                 $count = count(array_filter($nilaiPerMahasiswa, function($nilai) use ($range) {
                     return $nilai >= $range['min'] && $nilai <= $range['max'];
                 }));
-                
+
                 $percentage = count($nilaiPerMahasiswa) > 0 ? round(($count / count($nilaiPerMahasiswa)) * 100, 2) : 0;
-                
+
                 $distribution[$grade] = [
                     'count' => $count,
                     'percentage' => $percentage,
@@ -176,7 +169,7 @@ class CpmkLaporanController extends Controller
                 $count = count(array_filter($nilaiPerMahasiswa, function($nilai) use ($range) {
                     return $nilai >= $range['min'] && $nilai <= $range['max'];
                 }));
-                
+
                 $histogramData[] = [
                     'range' => $range['label'],
                     'count' => $count,
@@ -192,7 +185,7 @@ class CpmkLaporanController extends Controller
                 return $nilai >= 60;
             }));
             $notCompetentCount = count($nilaiPerMahasiswa) - $competentCount;
-            
+
             $competentPercentage = count($nilaiPerMahasiswa) > 0 ? round(($competentCount / count($nilaiPerMahasiswa)) * 100, 2) : 0;
             $notCompetentPercentage = count($nilaiPerMahasiswa) > 0 ? round(($notCompetentCount / count($nilaiPerMahasiswa)) * 100, 2) : 0;
 

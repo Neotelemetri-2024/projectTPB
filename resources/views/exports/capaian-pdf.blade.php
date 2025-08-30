@@ -44,21 +44,56 @@
             vertical-align: top;
             padding-left: 20px;
         }
+        .cpl-section {
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .cpl-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+            padding: 8px 12px;
+            font-weight: bold;
+        }
+        .cpl-title {
+            font-size: 12px;
+            color: #495057;
+            margin: 0;
+        }
+        .cpl-description {
+            font-size: 9px;
+            color: #6c757d;
+            margin: 2px 0 0 0;
+            font-weight: normal;
+        }
+        .cpl-summary {
+            float: right;
+            text-align: right;
+            font-size: 9px;
+        }
+        .cpl-summary .total-label {
+            color: #6c757d;
+            margin-bottom: 2px;
+        }
+        .cpl-summary .total-value {
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
         .data-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
             font-size: 9px;
         }
         .data-table th,
         .data-table td {
-            border: 1px solid #000;
-            padding: 4px 2px;
+            border: 1px solid #ddd;
+            padding: 4px 3px;
             text-align: left;
             vertical-align: top;
         }
         .data-table th {
-            background-color: #f0f0f0;
+            background-color: #f8f9fa;
             font-weight: bold;
             text-align: center;
             font-size: 8px;
@@ -122,6 +157,11 @@
         .page-break {
             page-break-before: always;
         }
+        .clearfix::after {
+            content: "";
+            display: table;
+            clear: both;
+        }
     </style>
 </head>
 <body>
@@ -157,7 +197,7 @@
                         <tr>
                             <td>Program Studi</td>
                             <td>:</td>
-                            <td>{{ $mahasiswa->prodi ?? 'Teknik Pertanian dan Biosistem' }}</td>
+                            <td>{{ $mahasiswa->prodi ?? 'S1 Teknik Pertanian dan Biosistem' }}</td>
                         </tr>
                     </table>
                 </td>
@@ -180,27 +220,42 @@
     </div>
 
     @if(count($cplData) > 0)
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th style="width: 8%;">CPL</th>
-                    <th style="width: 10%;">Kode MK</th>
-                    <th style="width: 18%;">Nama Mata Kuliah</th>
-                    <th style="width: 8%;">Kode CPMK</th>
-                    <th style="width: 25%;">Deskripsi CPMK</th>
-                    <th style="width: 8%;">Nilai</th>
-                    <th style="width: 8%;">Total</th>
-                    <th style="width: 15%;">Status Capaian</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($cplData as $cpl)
+        @foreach($cplData as $cpl)
+        <div class="cpl-section">
+            <!-- CPL Header -->
+            <div class="cpl-header clearfix">
+                <div style="float: left;">
+                    <h3 class="cpl-title">{{ $cpl['kode'] }}</h3>
+                    <p class="cpl-description">{{ $cpl['deskripsi'] }}</p>
+                </div>
+                <div class="cpl-summary">
+                    <div class="total-label">Total Capaian:</div>
+                    <div class="total-value">
+                        <span class="{{ is_numeric($cpl['total_cpl']) && $cpl['total_cpl'] >= 55 ? 'nilai-tercapai' : 'nilai-belum' }}">
+                            {{ $cpl['total_cpl'] }}
+                        </span>
+                    </div>
+                    <div>
+                        <span class="{{ $cpl['status_cpl'] === 'Tercapai' ? 'status-tercapai' : 'status-belum' }}">
+                            {{ $cpl['status_cpl'] }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CPL Table -->
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 12%;">Kode Mata Kuliah</th>
+                        <th style="width: 20%;">Nama Mata Kuliah</th>
+                        <th style="width: 12%;">Kode CPMK</th>
+                        <th style="width: 36%;">Deskripsi CPMK</th>
+                        <th style="width: 20%;">Nilai</th>
+                    </tr>
+                </thead>
+                <tbody>
                     @php
-                        $cplRowspan = collect($cpl['cpmk'])->groupBy(function($item) {
-                            return $item['kode_mk'].'|'.$item['nama_mk'];
-                        })->flatten(1)->count();
-                        $printedCpl = false;
-                        $printedCplTotal = false;
                         $grouped = collect($cpl['cpmk'])->groupBy(function($item) {
                             return $item['kode_mk'].'|'.$item['nama_mk'];
                         });
@@ -213,44 +268,25 @@
                         @endphp
                         @foreach($cpmkList as $idx => $cpmk)
                         <tr>
-                            @if(!$printedCpl)
-                                <td rowspan="{{ $cplRowspan }}" style="text-align: center; vertical-align: middle;">
-                                    <strong>{{ $cpl['kode'] }}</strong><br>
-                                    <small style="font-size: 7px;">{{ $cpl['deskripsi'] }}</small>
-                                </td>
-                                @php $printedCpl = true; @endphp
-                            @endif
                             @if(!$printedMk)
-                                <td rowspan="{{ $rowspan }}" style="text-align: center; vertical-align: middle;">{{ $kode_mk }}</td>
+                                <td rowspan="{{ $rowspan }}" style="text-align: center; vertical-align: middle; font-weight: bold;">{{ $kode_mk }}</td>
                                 <td rowspan="{{ $rowspan }}" style="vertical-align: middle;">{{ $nama_mk }}</td>
                                 @php $printedMk = true; @endphp
                             @endif
-                            <td style="text-align: center;">{{ $cpmk['kode'] }}</td>
+                            <td style="text-align: center; font-weight: bold;">{{ $cpmk['kode'] }}</td>
                             <td style="font-size: 8px;">{{ $cpmk['deskripsi'] }}</td>
                             <td style="text-align: center;">
                                 <span class="{{ is_numeric($cpmk['nilai']) && $cpmk['nilai'] >= 55 ? 'nilai-tercapai' : 'nilai-belum' }}">
                                     {{ $cpmk['nilai'] }}
                                 </span>
                             </td>
-                            @if(!$printedCplTotal)
-                                <td rowspan="{{ $cplRowspan }}" style="text-align: center; vertical-align: middle;">
-                                    <span class="{{ is_numeric($cpl['total_cpl']) && $cpl['total_cpl'] >= 55 ? 'nilai-tercapai' : 'nilai-belum' }}">
-                                        {{ $cpl['total_cpl'] }}
-                                    </span>
-                                </td>
-                                <td rowspan="{{ $cplRowspan }}" style="text-align: center; vertical-align: middle;">
-                                    <span class="{{ $cpl['status_cpl'] === 'Tercapai' ? 'status-tercapai' : 'status-belum' }}">
-                                        {{ $cpl['status_cpl'] }}
-                                    </span>
-                                </td>
-                                @php $printedCplTotal = true; @endphp
-                            @endif
                         </tr>
                         @endforeach
                     @endforeach
-                @endforeach
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
+        @endforeach
     @else
         <div style="text-align: center; margin: 40px 0; color: #666;">
             <p>Tidak ada data CPL yang dipilih.</p>

@@ -33,80 +33,121 @@
                 </form>
             </div>
         </div>
+
         @if(count($cplData) > 0)
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">CPL</th>
-                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Kode Mata Kuliah</th>
-                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama Mata Kuliah</th>
-                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Kode CPMK</th>
-                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Deskripsi CPMK</th>
-                        <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Nilai</th>
-                        <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</th>
-                        <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Status Capaian</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    @foreach($cplData as $cpl)
-                        @php
-                            $cplRowspan = collect($cpl['cpmk'])->groupBy(function($item) {
-                                return $item['kode_mk'].'|'.$item['nama_mk'];
-                            })->flatten(1)->count();
-                            $printedCpl = false;
-                            $printedCplTotal = false;
-                            $grouped = collect($cpl['cpmk'])->groupBy(function($item) {
-                                return $item['kode_mk'].'|'.$item['nama_mk'];
-                            });
-                        @endphp
-                        @foreach($grouped as $mkKey => $cpmkList)
-                            @php
-                                [$kode_mk, $nama_mk] = explode('|', $mkKey);
-                                $rowspan = count($cpmkList);
-                                $printedMk = false;
-                            @endphp
-                            @foreach($cpmkList as $idx => $cpmk)
-                            <tr>
-                                @if(!$printedCpl)
-                                    <td class="px-4 py-2" rowspan="{{ $cplRowspan }}">{{ $cpl['kode'] }}<br><span class="text-base font-medium">{{ $cpl['deskripsi'] }}</span></td>
-                                    @php $printedCpl = true; @endphp
-                                @endif
-                                @if(!$printedMk)
-                                    <td class="px-4 py-2" rowspan="{{ $rowspan }}">{{ $kode_mk }}</td>
-                                    <td class="px-4 py-2" rowspan="{{ $rowspan }}">{{ $nama_mk }}</td>
-                                    @php $printedMk = true; @endphp
-                                @endif
-                                <td class="px-4 py-2">{{ $cpmk['kode'] }}</td>
-                                <td class="px-4 py-2">{{ $cpmk['deskripsi'] }}</td>
-                                <td class="px-4 py-2 text-center">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ is_numeric($cpmk['nilai']) && $cpmk['nilai'] >= 55 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                        {{ $cpmk['nilai'] }}
-                                    </span>
-                                </td>
-                                @if(!$printedCplTotal)
-                                    <td class="px-4 py-2 text-center" rowspan="{{ $cplRowspan }}">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ is_numeric($cpl['total_cpl']) && $cpl['total_cpl'] >= 55 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                            {{ $cpl['total_cpl'] }}
-                                        </span>
-                                    </td>
-                                    <td class="px-4 py-2 text-center" rowspan="{{ $cplRowspan }}">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $cpl['status_cpl'] === 'Tercapai' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                            {{ $cpl['status_cpl'] }}
-                                        </span>
-                                    </td>
-                                    @php $printedCplTotal = true; @endphp
-                                @endif
-                            </tr>
-                            @endforeach
-                        @endforeach
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+            @foreach($cplData as $index => $cpl)
+            <div class="mb-6 border border-gray-200 rounded-lg overflow-hidden">
+                <!-- CPL Header with Toggle Button -->
+                <div class="bg-gray-50 border-b border-gray-200 p-4 cursor-pointer hover:bg-gray-100 transition-colors duration-200"
+                     onclick="toggleCplTable({{ $index }})">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="flex-shrink-0">
+                                <svg id="icon-{{ $index }}" class="w-5 h-5 text-gray-600 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-800">{{ $cpl['kode'] }}</h3>
+                                <p class="text-gray-600 mt-1 text-sm">{{ $cpl['deskripsi'] }}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm text-gray-600 font-medium">Total Capaian:</div>
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ is_numeric($cpl['total_cpl']) && $cpl['total_cpl'] >= 55 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                {{ $cpl['total_cpl'] }}
+                            </span>
+                            <div class="mt-1">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $cpl['status_cpl'] === 'Tercapai' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                    {{ $cpl['status_cpl'] }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Collapsible Table Content -->
+                <div id="table-{{ $index }}" class="hidden bg-white">
+                    <div class="overflow-x-auto">
+                        <table class="w-full table-fixed divide-y divide-gray-200">
+                            <colgroup>
+                                <col class="w-28"> <!-- Kode Mata Kuliah - Reduced width -->
+                                <col class="w-48"> <!-- Nama Mata Kuliah - Reduced width -->
+                                <col class="w-32"> <!-- Kode CPMK - Fixed width -->
+                                <col class="w-auto"> <!-- Deskripsi CPMK - Auto width for more space -->
+                                <col class="w-24"> <!-- Nilai - Fixed width -->
+                            </colgroup>
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Kode Mata Kuliah</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama Mata Kuliah</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Kode CPMK</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Deskripsi CPMK</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Nilai</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @php
+                                    $grouped = collect($cpl['cpmk'])->groupBy(function($item) {
+                                        return $item['kode_mk'].'|'.$item['nama_mk'];
+                                    });
+                                @endphp
+                                @foreach($grouped as $mkKey => $cpmkList)
+                                    @php
+                                        [$kode_mk, $nama_mk] = explode('|', $mkKey);
+                                        $rowspan = count($cpmkList);
+                                        $printedMk = false;
+                                    @endphp
+                                    @foreach($cpmkList as $idx => $cpmk)
+                                    <tr class="hover:bg-gray-50">
+                                        @if(!$printedMk)
+                                            <td class="px-4 py-3 font-medium text-gray-900" rowspan="{{ $rowspan }}">{{ $kode_mk }}</td>
+                                            <td class="px-4 py-3 text-gray-700" rowspan="{{ $rowspan }}">{{ $nama_mk }}</td>
+                                            @php $printedMk = true; @endphp
+                                        @endif
+                                        <td class="px-4 py-3 font-medium text-gray-900">{{ $cpmk['kode'] }}</td>
+                                        <td class="px-4 py-3 text-gray-700">{{ $cpmk['deskripsi'] }}</td>
+                                        <td class="px-4 py-3 text-center">
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium {{ is_numeric($cpmk['nilai']) && $cpmk['nilai'] >= 55 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                                {{ $cpmk['nilai'] }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            @endforeach
         @else
         <div class="p-6 text-center text-gray-500">Tidak ada data CPL yang dipilih.</div>
         @endif
     </div>
 </div>
+
+<script>
+function toggleCplTable(index) {
+    const table = document.getElementById(`table-${index}`);
+    const icon = document.getElementById(`icon-${index}`);
+
+    if (table.classList.contains('hidden')) {
+        // Show table
+        table.classList.remove('hidden');
+        icon.style.transform = 'rotate(180deg)';
+    } else {
+        // Hide table
+        table.classList.add('hidden');
+        icon.style.transform = 'rotate(0deg)';
+    }
+}
+
+// Auto-expand first CPL table on page load
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('table-0')) {
+        toggleCplTable(0);
+    }
+});
+</script>
 @endsection

@@ -125,7 +125,7 @@
                         <tr>
                             <td><strong>Program Studi</strong></td>
                             <td>:</td>
-                            <td>SISTEM INFORMASI</td>
+                            <td>S1 Teknik Pertanian dan Biosistem</td>
                         </tr>
                     </table>
                 </td>

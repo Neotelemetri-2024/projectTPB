@@ -276,12 +276,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const tahunAjaranSelect = document.querySelector('select[name="tahun_ajaran_id"]');
     const urlParams = new URLSearchParams(window.location.search);
     const hasTahunAjaranInUrl = urlParams.has('tahun_ajaran_id');
-    
+
     if (tahunAjaranSelect && tahunAjaranSelect.value && !hasTahunAjaranInUrl) {
         // Preserve any existing search parameter
         const searchInput = document.querySelector('input[name="search"]');
         const jenisSelect = document.querySelector('select[name="jenis"]');
-        
+
         // Auto-submit the form to update URL with the selected tahun ajaran
         tahunAjaranSelect.form.submit();
     }

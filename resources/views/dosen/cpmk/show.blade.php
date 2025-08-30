@@ -371,7 +371,11 @@
                         }), 2) }} %
                     </div>
                     <div class="text-sm text-blue-600">
-                        Total dari {{ $mainCpmkList->count() + $subCpmkList->count() }} CPMK
+                        Total dari {{ $mainCpmkList->filter(function($cpmk) {
+                            return $cpmk->children->count() > 0 ? false : $cpmk->bobot->sum('bobot') > 0;
+                        })->count() + $subCpmkList->filter(function($subCpmk) {
+                            return $subCpmk->bobot->sum('bobot') > 0;
+                        })->count() }} CPMK
                     </div>
                 </div>
             </div>

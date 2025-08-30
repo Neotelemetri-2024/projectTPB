@@ -61,6 +61,10 @@
         <!-- Filter dan Search -->
         <div class="p-6 border-b border-gray-200">
             <form method="GET" action="{{ route('admin.tahun-ajaran-matkul.index') }}">
+                <!-- Preserve current page when filtering -->
+                @if(request('page'))
+                    <input type="hidden" name="page" value="{{ request('page') }}">
+                @endif
                 <div class="flex gap-4 items-end">
                     <div class="flex-shrink-0 w-48">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Filter Tahun Ajaran</label>
@@ -88,7 +92,7 @@
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                             </svg>
-                            Reset
+                            Reset Semua
                         </a>
                     </div>
                 </div>
@@ -200,7 +204,7 @@
                 dari {{ $tahunAjaranMatkuls->total() }} data
             </div>
             <div>
-                {{ $tahunAjaranMatkuls->links() }}
+                {{ $tahunAjaranMatkuls->appends(request()->query())->links() }}
             </div>
         </div>
     </div>
@@ -287,10 +291,10 @@ function closeImportModal() {
 function openDuplicateModal() {
     const modal = document.getElementById('duplicate-modal');
     const modalContent = modal.querySelector('[data-modal-content]');
-    
+
     modal.classList.remove('hidden');
     modal.classList.add('flex');
-    
+
     // Trigger animation
     setTimeout(() => {
         modal.classList.remove('bg-opacity-0');
@@ -303,12 +307,12 @@ function openDuplicateModal() {
 function closeDuplicateModal() {
     const modal = document.getElementById('duplicate-modal');
     const modalContent = modal.querySelector('[data-modal-content]');
-    
+
     modalContent.classList.add('scale-95', 'opacity-0');
     modalContent.classList.remove('scale-100', 'opacity-100');
     modal.classList.remove('bg-opacity-10');
     modal.classList.add('bg-opacity-0');
-    
+
     setTimeout(() => {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
@@ -319,7 +323,7 @@ function closeDuplicateModal() {
 window.onclick = function(event) {
     const importModal = document.getElementById('import-modal');
     const duplicateModal = document.getElementById('duplicate-modal');
-    
+
     if (event.target === importModal) {
         closeImportModal();
     }
@@ -332,17 +336,19 @@ window.onclick = function(event) {
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Auto-submit form if tahun ajaran is auto-selected but not in URL
+    // Only do this if we're on the first page and no filters are applied
     const tahunAjaranSelect = document.querySelector('select[name="tahun_ajaran_id"]');
     const urlParams = new URLSearchParams(window.location.search);
     const hasTahunAjaranInUrl = urlParams.has('tahun_ajaran_id');
-    
-    if (tahunAjaranSelect && tahunAjaranSelect.value && !hasTahunAjaranInUrl) {
-        // Preserve any existing search parameter
-        const searchInput = document.querySelector('input[name="search"]');
-        if (searchInput && searchInput.value) {
-            // Form will automatically include all form fields when submitted
-        }
-        
+    const hasPageParam = urlParams.has('page');
+    const hasSearchParam = urlParams.has('search');
+
+    // Only auto-submit if:
+    // 1. We have a tahun ajaran selected
+    // 2. It's not in the URL
+    // 3. We're on the first page (no page parameter)
+    // 4. No search is active
+    if (tahunAjaranSelect && tahunAjaranSelect.value && !hasTahunAjaranInUrl && !hasPageParam && !hasSearchParam) {
         // Auto-submit the form to update URL with the selected tahun ajaran
         tahunAjaranSelect.form.submit();
     }

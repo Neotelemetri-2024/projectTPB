@@ -2,10 +2,11 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Laporan CPMK - {{ $tahunAjaranMatkul->mataKuliah->namaMatkul }}</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: "DejaVu Sans", Arial, sans-serif;
             font-size: 12px;
             line-height: 1.4;
             color: #333;
@@ -100,7 +101,7 @@
                 <div class="cpmk-header">
                     {{ $data['cpmk']->kodeCpmk }} - {{ $data['cpmk']->deskripsi }}
                 </div>
-                
+
                 <div class="stats">
                     <div class="stat-item">Total: {{ $data['totalMahasiswa'] }} Mahasiswa</div>
                     <div class="stat-item">Dengan Nilai: {{ $data['mahasiswaDenganNilai'] }} Mahasiswa</div>
@@ -117,29 +118,33 @@
                                 <th>Nilai Mutu</th>
                                 <th>Sebutan Mutu</th>
                                 <th>Persentase</th>
+                                <th>Competen (%)</th>
+                                <th>Tidak Competen (%)</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td>Nilai < 60</td>
+                                <td>0 &lt;= Nilai &lt; 60</td>
                                 <td>U</td>
                                 <td>Uncompetence</td>
                                 <td>{{ $data['distribution']['U']['percentage'] }}%</td>
+                                <td rowspan="4">{{ $data['competentPercentage'] }}%</td>
+                                <td rowspan="4">{{ $data['notCompetentPercentage'] }}%</td>
                             </tr>
                             <tr>
-                                <td>60 ≤ Nilai < 75</td>
+                                <td>60 &lt;= Nilai &lt; 75</td>
                                 <td>C</td>
                                 <td>Competence</td>
                                 <td>{{ $data['distribution']['C']['percentage'] }}%</td>
                             </tr>
                             <tr>
-                                <td>75 ≤ Nilai < 90</td>
+                                <td>75 &lt;= Nilai &lt; 90</td>
                                 <td>E</td>
                                 <td>Excellent</td>
                                 <td>{{ $data['distribution']['E']['percentage'] }}%</td>
                             </tr>
                             <tr>
-                                <td>Nilai ≥ 90</td>
+                                <td>90 &lt;= Nilai &lt;= 100</td>
                                 <td>X</td>
                                 <td>Extraordinary</td>
                                 <td>{{ $data['distribution']['X']['percentage'] }}%</td>

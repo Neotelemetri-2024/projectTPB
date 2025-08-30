@@ -78,8 +78,10 @@
                                     <h3 class="text-lg font-semibold text-gray-900">Persentase Pengukuran CPMK</h3>
                                     <p class="text-sm text-gray-600 mt-1">Distribusi persentase berdasarkan grade pencapaian</p>
                                 </div>
-                                <button onclick="maximizeChart('pie-chart-{{ $index }}', 'Persentase Pengukuran CPMK - {{ $data['cpmk']->kodeCpmk }}')" 
-                                        class="text-amber-600 hover:text-amber-700 p-1 rounded">
+                                <button id="maximize-pie-{{ $index }}"
+                                        onclick="maximizeChart('pie-chart-{{ $index }}', 'Persentase Pengukuran CPMK - {{ $data['cpmk']->kodeCpmk }}')"
+                                        class="text-amber-600 hover:text-amber-700 p-1 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                                        disabled>
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
                                     </svg>
@@ -97,11 +99,13 @@
                                     <h3 class="text-lg font-semibold text-gray-900">Histogram Pengukuran CPMK</h3>
                                     <p class="text-sm text-gray-600 mt-1">Distribusi frekuensi nilai dengan pengelompokan grade (U, C, E, X)</p>
                                 </div>
-                                <button onclick="maximizeChart('histogram-{{ $index }}', 'Histogram Pengukuran CPMK - {{ $data['cpmk']->kodeCpmk }}')" 
-                                        class="text-amber-600 hover:text-amber-700 p-1 rounded">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
-                                    </svg>
+                                <button id="maximize-histogram-{{ $index }}"
+                                        onclick="maximizeChart('histogram-{{ $index }}', 'Histogram Pengukuran CPMK - {{ $data['cpmk']->kodeCpmk }}')"
+                                        class="text-amber-600 hover:text-amber-700 p-1 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                                        disabled>
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                                        </svg>
                                 </button>
                             </div>
                             <div class="relative" style="height: 256px;">
@@ -144,20 +148,18 @@
                             </thead>
                             <tbody class="divide-y divide-gray-200">
                                 <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">Nilai < 60</td>
+                                    <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">0 ≤ Nilai < 60</td>
                                     <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">U</td>
                                     <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">Uncompetence</td>
                                     <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">{{ $data['distribution']['U']['percentage'] }}%</td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200"></td>
-                                    <td class="px-4 py-3 text-sm text-gray-900"></td>
+                                    <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200" rowspan="4">{{ $data['competentPercentage'] }}%</td>
+                                    <td class="px-4 py-3 text-sm text-gray-900" rowspan="4">{{ $data['notCompetentPercentage'] }}%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">60 ≤ Nilai < 75</td>
                                     <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">C</td>
                                     <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">Competence</td>
                                     <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">{{ $data['distribution']['C']['percentage'] }}%</td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200" rowspan="3">{{ $data['competentPercentage'] }}%</td>
-                                    <td class="px-4 py-3 text-sm text-gray-900" rowspan="3">{{ $data['notCompetentPercentage'] }}%</td>
                                 </tr>
                                 <tr>
                                     <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">75 ≤ Nilai < 90</td>
@@ -166,7 +168,7 @@
                                     <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">{{ $data['distribution']['E']['percentage'] }}%</td>
                                 </tr>
                                 <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">Nilai ≥ 90</td>
+                                    <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">90 ≤ Nilai ≤ 100</td>
                                     <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">X</td>
                                     <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">Extraordinary</td>
                                     <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">{{ $data['distribution']['X']['percentage'] }}%</td>
@@ -198,7 +200,7 @@
 <div id="chartModal" class="fixed inset-0 z-50 hidden">
     <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
     <div class="relative flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+        <div class="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
             <div class="flex items-center justify-between p-6 border-b border-gray-200">
                 <h3 id="chartModalTitle" class="text-xl font-semibold text-gray-900"></h3>
                 <button onclick="closeChartModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
@@ -208,24 +210,49 @@
                 </button>
             </div>
             <div class="p-6">
-                <div class="relative w-full" style="height: 60vh;">
-                    <canvas id="chartModalCanvas" width="800" height="400"></canvas>
+                <div class="relative w-full h-[70vh] flex items-center justify-center bg-gray-50 rounded-lg">
+                    <canvas id="chartModalCanvas" class="w-full h-full max-w-full max-h-full"></canvas>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<style>
+#chartModal {
+    transition: opacity 0.3s ease-in-out;
+}
+
+#chartModal.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+#chartModal:not(.hidden) {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#chartModalCanvas {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+</style>
+
 <script>
 // Chart data untuk setiap CPMK
 const chartData = @json($cpmkData);
+
+// Global array untuk menyimpan referensi chart
+window.chartInstances = {};
 
 // Inisialisasi chart untuk setiap CPMK
 chartData.forEach((data, index) => {
     // Pie Chart
     const pieCtx = document.getElementById(`pie-chart-${index}`);
     if (pieCtx) {
-        new Chart(pieCtx, {
+        const pieChart = new Chart(pieCtx, {
             type: 'pie',
             data: {
                 labels: ['U', 'C', 'E', 'X'],
@@ -260,12 +287,16 @@ chartData.forEach((data, index) => {
                 }
             }
         });
+
+        // Store chart reference in global array
+        window.chartInstances[`pie-chart-${index}`] = pieChart;
+        console.log(`Pie chart ${index} created with ID: pie-chart-${index}`);
     }
 
     // Histogram
     const histogramCtx = document.getElementById(`histogram-${index}`);
     if (histogramCtx) {
-        new Chart(histogramCtx, {
+        const histogramChart = new Chart(histogramCtx, {
             type: 'line',
             data: {
                 labels: data.histogramData.map(item => item.range),
@@ -391,38 +422,91 @@ chartData.forEach((data, index) => {
                 }
             }
         });
+
+        // Store chart reference in global array
+        window.chartInstances[`histogram-${index}`] = histogramChart;
+        console.log(`Histogram chart ${index} created with ID: histogram-${index}`);
     }
 });
+
+// Wait for all charts to be ready before allowing maximize
+setTimeout(() => {
+    console.log('All charts initialized. Available charts:', window.chartInstances);
+    console.log('Chart instances count:', Object.keys(window.chartInstances).length);
+
+    // Enable maximize buttons for all charts
+    chartData.forEach((data, index) => {
+        const pieButton = document.getElementById(`maximize-pie-${index}`);
+        const histogramButton = document.getElementById(`maximize-histogram-${index}`);
+
+        if (pieButton) {
+            pieButton.disabled = false;
+            pieButton.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+
+        if (histogramButton) {
+            histogramButton.disabled = false;
+            histogramButton.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+    });
+
+    console.log('All maximize buttons enabled');
+}, 1000); // Increased timeout to ensure charts are fully rendered
 
 // Fungsi untuk maximize chart
 function maximizeChart(chartId, title) {
     const modal = document.getElementById('chartModal');
     const modalTitle = document.getElementById('chartModalTitle');
     const modalCanvas = document.getElementById('chartModalCanvas');
-    
+
     // Cek apakah element ada
     if (!modal || !modalTitle || !modalCanvas) {
         console.error('Modal elements not found');
         return;
     }
-    
+
     modalTitle.textContent = title;
     modal.classList.remove('hidden');
-    
+
     // Destroy previous chart if exists
     if (window.modalChart) {
         window.modalChart.destroy();
     }
-    
-    // Find the original chart data
-    const originalChart = Chart.getChart(chartId);
+
+    // Find the original chart data from our global array
+    let originalChart = window.chartInstances[chartId];
+
+    // If not found in global array, try Chart.getChart as fallback
+    if (!originalChart) {
+        originalChart = Chart.getChart(chartId);
+    }
+
+    // If still not found, try to find by canvas element
+    if (!originalChart) {
+        const canvasElement = document.getElementById(chartId);
+        if (canvasElement) {
+            originalChart = Chart.getChart(canvasElement);
+        }
+    }
+
     if (originalChart) {
         console.log('Original chart found:', originalChart);
         console.log('Chart data:', originalChart.config.data);
-        
-        // Wait a bit for modal to be visible
+
+        // Wait a bit for modal to be visible and canvas to be properly sized
         setTimeout(() => {
             try {
+                // Ensure modal is fully visible
+                if (modal.classList.contains('hidden')) {
+                    console.log('Modal still hidden, retrying...');
+                    setTimeout(() => maximizeChart(chartId, title), 100);
+                    return;
+                }
+
+                // Reset canvas size
+                modalCanvas.width = modalCanvas.offsetWidth;
+                modalCanvas.height = modalCanvas.offsetHeight;
+
                 // Create new chart in modal with full configuration
                 window.modalChart = new Chart(modalCanvas, {
                     type: originalChart.config.type,
@@ -443,10 +527,57 @@ function maximizeChart(chartId, title) {
                 console.log('Modal chart created successfully');
             } catch (error) {
                 console.error('Error creating modal chart:', error);
+                // Retry once more if failed
+                setTimeout(() => {
+                    try {
+                        window.modalChart = new Chart(modalCanvas, {
+                            type: originalChart.config.type,
+                            data: originalChart.config.data,
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false
+                            }
+                        });
+                    } catch (retryError) {
+                        console.error('Retry failed:', retryError);
+                    }
+                }, 200);
             }
-        }, 200);
+        }, 300); // Increased timeout to ensure modal is fully visible
     } else {
         console.error('Original chart not found for ID:', chartId);
+        console.log('Available chart IDs:', Object.keys(window.chartInstances));
+
+        // Try to create a simple chart with basic data as fallback
+        try {
+            const fallbackData = {
+                labels: ['Data Not Available'],
+                datasets: [{
+                    data: [100],
+                    backgroundColor: ['#6B7280'],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            };
+
+            window.modalChart = new Chart(modalCanvas, {
+                type: 'pie',
+                data: fallbackData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+            console.log('Fallback chart created');
+        } catch (error) {
+            console.error('Failed to create fallback chart:', error);
+        }
     }
 }
 
@@ -456,11 +587,30 @@ function closeChartModal() {
     if (modal) {
         modal.classList.add('hidden');
     }
-    
+
     if (window.modalChart) {
         window.modalChart.destroy();
         window.modalChart = null;
     }
 }
+
+// Event listener untuk resize window
+window.addEventListener('resize', function() {
+    if (window.modalChart && !document.getElementById('chartModal').classList.contains('hidden')) {
+        // Resize chart when window is resized
+        window.modalChart.resize();
+    }
+});
+
+// Event listener untuk modal visibility change
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden && window.modalChart) {
+        // Pause chart animation when tab is not visible
+        window.modalChart.stop();
+    } else if (!document.hidden && window.modalChart) {
+        // Resume chart animation when tab becomes visible
+        window.modalChart.play();
+    }
+});
 </script>
 @endsection

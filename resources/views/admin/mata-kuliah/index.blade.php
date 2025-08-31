@@ -62,6 +62,7 @@
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kode</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kurikulum</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Mata Kuliah</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKS</th>
@@ -73,6 +74,7 @@
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $loop->iteration + ($mataKuliah->currentPage() - 1) * $mataKuliah->perPage() }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $mk->kodeMatkul }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $mk->kurikulum }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $mk->namaMatkul }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
@@ -99,7 +101,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-8 text-center text-sm text-gray-500">
+                        <td colspan="7" class="px-6 py-8 text-center text-sm text-gray-500">
                             <div class="flex flex-col items-center">
                                 <svg class="w-12 h-12 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -153,7 +155,7 @@
     
     <div class="mb-4 p-3 bg-blue-50 rounded-lg">
         <p class="text-sm text-blue-800">
-            <strong>Kolom wajib:</strong> NAMA_MATA_KULIAH, KODE, SKS, JENIS<br>
+            <strong>Kolom wajib:</strong> NAMA_MATA_KULIAH, KODE, KURIKULUM, SKS, JENIS<br>
             <strong>SKS:</strong> angka positif | <strong>JENIS:</strong> wajib/pilihan
         </p>
     </div>
@@ -167,10 +169,17 @@
     submit-text="Simpan"
 >
     <div class="grid gap-4 mb-4 grid-cols-2">
-        <div class="col-span-2">
+        <div>
             <label for="kodeMatkul" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kode Mata Kuliah</label>
             <input type="text" name="kodeMatkul" id="kodeMatkul" value="{{ old('kodeMatkul') }}" class="bg-gray-50 border {{ $errors->has('kodeMatkul') ? 'border-red-500' : 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="MK001" required>
             @error('kodeMatkul')
+                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+            @enderror
+        </div>
+        <div>
+            <label for="kurikulum" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kurikulum</label>
+            <input type="text" name="kurikulum" id="kurikulum" value="{{ old('kurikulum') }}" class="bg-gray-50 border {{ $errors->has('kurikulum') ? 'border-red-500' : 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="2020" required>
+            @error('kurikulum')
                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
             @enderror
         </div>
@@ -212,9 +221,13 @@
         submit-text="Update"
     >
         <div class="grid gap-4 mb-4 grid-cols-2">
-            <div class="col-span-2">
+            <div>
                 <label for="kodeMatkul_{{ $mk->id }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kode Mata Kuliah</label>
                 <input type="text" name="kodeMatkul" id="kodeMatkul_{{ $mk->id }}" value="{{ $mk->kodeMatkul }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="MK001" required>
+            </div>
+            <div>
+                <label for="kurikulum_{{ $mk->id }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kurikulum</label>
+                <input type="text" name="kurikulum" id="kurikulum_{{ $mk->id }}" value="{{ $mk->kurikulum }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="2020" required>
             </div>
             <div class="col-span-2">
                 <label for="namaMatkul_{{ $mk->id }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nama Mata Kuliah</label>

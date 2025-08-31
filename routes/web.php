@@ -215,6 +215,11 @@ Route::middleware('auth')->group(function () {
     // Pimpinan Dashboard
     Route::middleware('pimpinan')->group(function () {
         Route::get('/pimpinan/dashboard', [DashboardController::class, 'pimpinanDashboard'])->name('pimpinan.dashboard');
+        
+        // Laporan CPMK Pimpinan
+        Route::get('/pimpinan/cpmk-report', [\App\Http\Controllers\Pimpinan\CpmkReportController::class, 'index'])->name('pimpinan.cpmk-report.index');
+        Route::get('/pimpinan/cpmk-report/{tahunAjaranMatkulId}', [\App\Http\Controllers\Pimpinan\CpmkReportController::class, 'show'])->name('pimpinan.cpmk-report.show');
+        Route::get('/pimpinan/cpmk-report/{tahunAjaranMatkulId}/export-pdf', [\App\Http\Controllers\Pimpinan\CpmkReportController::class, 'exportPdf'])->name('pimpinan.cpmk-report.export-pdf');
     });
 });
 

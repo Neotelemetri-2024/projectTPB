@@ -137,7 +137,7 @@ class KHSController extends Controller
                     'no' => $no++,
                     'kode' => $mataKuliah->kodeMatkul ?? '-',
                     'nama' => $mataKuliah->namaMatkul ?? '-',
-                    'sks' => $mataKuliah->sks ?? '-',
+                    'sks' => $km->tahunAjaranMatkul->getSks() ?? '-',
                     'semester' => $km->tahunAjaranMatkul->tahunAjaran->tahun . ' - ' . $km->tahunAjaranMatkul->tahunAjaran->periode,
                     'nilai_akhir' => $nilaiAkhir,
                     'grade' => $grade,
@@ -195,15 +195,16 @@ class KHSController extends Controller
                         case 'D': $bobot = 1.0; break;
                         case 'E': $bobot = 0.0; break;
                     }
-                    $totalBobot += $bobot * $mataKuliah->sks;
-                    $totalSks += $mataKuliah->sks;
+                    $sks = $km->tahunAjaranMatkul->getSks();
+                    $totalBobot += $bobot * $sks;
+                    $totalSks += $sks;
                 }
 
                 $matkulDiambil[] = [
                     'no' => $no++,
                     'kode' => $mataKuliah->kodeMatkul ?? '-',
                     'nama' => $mataKuliah->namaMatkul ?? '-',
-                    'sks' => $mataKuliah->sks ?? '-',
+                    'sks' => $km->tahunAjaranMatkul->getSks() ?? '-',
                     'semester' => $km->tahunAjaranMatkul->tahunAjaran->tahun . ' - ' . $km->tahunAjaranMatkul->tahunAjaran->periode,
                     'nilai_akhir' => $nilaiAkhir,
                     'grade' => $grade,

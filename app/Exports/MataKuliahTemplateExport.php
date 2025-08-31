@@ -35,6 +35,7 @@ class MataKuliahTemplateSheet implements FromCollection, WithHeadings, WithMappi
             $rows[] = [
                 'nama_mata_kuliah' => '',
                 'kode' => '',
+                'kurikulum' => '',
                 'sks' => '',
                 'jenis' => ''
             ];
@@ -47,8 +48,8 @@ class MataKuliahTemplateSheet implements FromCollection, WithHeadings, WithMappi
         return [
             ['FORMAT IMPORT DATA MATA KULIAH'],
             [''],
-            ['NAMA_MATA_KULIAH', 'KODE', 'SKS', 'JENIS'],
-            ['Contoh: Matematika Dasar', 'Contoh: TPB001', 'Contoh: 3', 'Contoh: wajib']
+            ['NAMA_MATA_KULIAH', 'KODE', 'KURIKULUM', 'SKS', 'JENIS'],
+            ['Contoh: Matematika Dasar', 'Contoh: TPB001', 'Contoh: 2020', 'Contoh: 3', 'Contoh: wajib']
         ];
     }
 
@@ -57,6 +58,7 @@ class MataKuliahTemplateSheet implements FromCollection, WithHeadings, WithMappi
         return [
             $row['nama_mata_kuliah'],
             $row['kode'],
+            $row['kurikulum'],
             $row['sks'],
             $row['jenis']
         ];
@@ -70,7 +72,7 @@ class MataKuliahTemplateSheet implements FromCollection, WithHeadings, WithMappi
     public function styles(Worksheet $sheet)
     {
         // Style untuk header utama
-        $sheet->getStyle('A1:D1')->applyFromArray([
+        $sheet->getStyle('A1:E1')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'size' => 14,
@@ -85,10 +87,10 @@ class MataKuliahTemplateSheet implements FromCollection, WithHeadings, WithMappi
         ]);
 
         // Merge cell untuk judul
-        $sheet->mergeCells('A1:D1');
+        $sheet->mergeCells('A1:E1');
 
         // Style untuk header kolom
-        $sheet->getStyle('A3:D3')->applyFromArray([
+        $sheet->getStyle('A3:E3')->applyFromArray([
             'font' => [
                 'bold' => true,
                 'color' => ['rgb' => 'FFFFFF'],
@@ -103,7 +105,7 @@ class MataKuliahTemplateSheet implements FromCollection, WithHeadings, WithMappi
         ]);
 
         // Style untuk contoh data
-        $sheet->getStyle('A4:D4')->applyFromArray([
+        $sheet->getStyle('A4:E4')->applyFromArray([
             'font' => [
                 'italic' => true,
                 'color' => ['rgb' => '7F7F7F'],
@@ -115,7 +117,7 @@ class MataKuliahTemplateSheet implements FromCollection, WithHeadings, WithMappi
         ]);
 
         // Border untuk semua data
-        $sheet->getStyle('A3:D53')->applyFromArray([
+        $sheet->getStyle('A3:E53')->applyFromArray([
             'borders' => [
                 'allBorders' => [
                     'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
@@ -136,29 +138,32 @@ class InstruksiMataKuliahSheet implements FromCollection, WithHeadings, WithTitl
             ['1. Format File:', 'Excel (.xlsx atau .xls)'],
             ['2. Kolom yang Harus Diisi:', ''],
             ['   - NAMA_MATA_KULIAH', 'Nama lengkap mata kuliah'],
-            ['   - KODE', 'Kode mata kuliah (unik)'],
+            ['   - KODE', 'Kode mata kuliah'],
+            ['   - KURIKULUM', 'Kurikulum mata kuliah'],
             ['   - SKS', 'Jumlah SKS (1-6)'],
             ['   - JENIS', 'Jenis mata kuliah (wajib/pilihan)'],
             [''],
             ['3. Aturan Pengisian:', ''],
             ['   - NAMA_MATA_KULIAH', 'Wajib diisi, maksimal 255 karakter'],
-            ['   - KODE', 'Wajib diisi, maksimal 20 karakter, harus unik'],
+            ['   - KODE', 'Wajib diisi, maksimal 20 karakter'],
+            ['   - KURIKULUM', 'Wajib diisi, maksimal 50 karakter'],
             ['   - SKS', 'Wajib diisi, angka positif'],
             ['   - JENIS', 'Wajib diisi, pilih: wajib atau pilihan'],
             [''],
             ['4. Contoh Pengisian:', ''],
             ['   NAMA_MATA_KULIAH', 'Matematika Dasar'],
             ['   KODE', 'TPB001'],
+            ['   KURIKULUM', '2020'],
             ['   SKS', '3'],
             ['   JENIS', 'wajib'],
             [''],
             ['5. Catatan:', ''],
-            ['   - Jika mata kuliah sudah ada (berdasarkan kode), data akan diupdate'],
+            ['   - Jika mata kuliah sudah ada (berdasarkan kode dan kurikulum), data akan diupdate'],
             ['   - Jika mata kuliah belum ada, akan dibuat baru'],
-            ['   - Pastikan kode mata kuliah tidak duplikat'],
+            ['   - Pastikan kombinasi kode mata kuliah dan kurikulum tidak duplikat'],
             [''],
             ['6. Error yang Mungkin Terjadi:', ''],
-            ['   - Kode sudah digunakan', 'Gunakan kode yang berbeda'],
+            ['   - Kode sudah digunakan', 'Gunakan kode yang berbeda atau kurikulum yang berbeda'],
             ['   - SKS tidak valid', 'Gunakan angka positif'],
             ['   - Jenis tidak valid', 'Gunakan: wajib atau pilihan'],
             ['   - Nama kosong', 'Nama mata kuliah wajib diisi'],

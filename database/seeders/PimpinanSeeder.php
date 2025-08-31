@@ -17,50 +17,15 @@ class PimpinanSeeder extends Seeder
         // Create Pimpinan users
         $pimpinanUsers = [
             [
-                'name' => 'Prof. Dr. Ir. Bambang Supriyadi, M.T.',
+                'name' => 'Pimpinan',
                 'email' => 'pimpinan@tpb.ac.id',
-                'password' => Hash::make('password123'),
+                'password' => Hash::make('password'),
                 'role' => 'pimpinan',
                 'email_verified_at' => now(),
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-            [
-                'name' => 'Dr. Ir. Siti Nurhaliza, M.Si.',
-                'email' => 'wakil.pimpinan@tpb.ac.id',
-                'password' => Hash::make('password123'),
-                'role' => 'pimpinan',
-                'email_verified_at' => now(),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'name' => 'Ir. Ahmad Hidayat, M.Eng.',
-                'email' => 'kajur@tpb.ac.id',
-                'password' => Hash::make('password123'),
-                'role' => 'pimpinan',
-                'email_verified_at' => now(),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'name' => 'Dr. Ir. Rina Marlina, M.T.',
-                'email' => 'kaprodi@tpb.ac.id',
-                'password' => Hash::make('password123'),
-                'role' => 'pimpinan',
-                'email_verified_at' => now(),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'name' => 'Ir. Muhammad Fadli, M.Sc.',
-                'email' => 'sekjur@tpb.ac.id',
-                'password' => Hash::make('password123'),
-                'role' => 'pimpinan',
-                'email_verified_at' => now(),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
+           
         ];
 
         foreach ($pimpinanUsers as $userData) {

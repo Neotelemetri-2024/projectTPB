@@ -58,14 +58,16 @@ class MataKuliahController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'kodeMatkul' => 'required|string|max:20|unique:mata_kuliah,kodeMatkul',
+            'kodeMatkul' => 'required|string|max:20',
+            'kurikulum' => 'required|string|max:50',
             'namaMatkul' => 'required|string|max:255',
             'jenis' => 'required|string|max:50',
             'sks' => 'required|integer|min:0',
         ], [
             'kodeMatkul.required' => 'Kode mata kuliah wajib diisi',
             'kodeMatkul.max' => 'Kode mata kuliah maksimal 20 karakter',
-            'kodeMatkul.unique' => 'Kode mata kuliah sudah terdaftar',
+            'kurikulum.required' => 'Kurikulum wajib diisi',
+            'kurikulum.max' => 'Kurikulum maksimal 50 karakter',
             'namaMatkul.required' => 'Nama mata kuliah wajib diisi',
             'namaMatkul.max' => 'Nama mata kuliah maksimal 255 karakter',
             'jenis.required' => 'Jenis mata kuliah wajib diisi',
@@ -74,6 +76,16 @@ class MataKuliahController extends Controller
             'sks.integer' => 'SKS harus berupa angka',
             'sks.min' => 'SKS minimal 0',
         ]);
+
+        $validator->after(function ($validator) use ($request) {
+            $exists = MataKuliah::where('kodeMatkul', $request->kodeMatkul)
+                ->where('kurikulum', $request->kurikulum)
+                ->exists();
+            
+            if ($exists) {
+                $validator->errors()->add('kodeMatkul', 'Kode mata kuliah sudah terdaftar untuk kurikulum ini');
+            }
+        });
 
         if ($validator->fails()) {
             return redirect()->back()
@@ -84,6 +96,7 @@ class MataKuliahController extends Controller
         try {
             MataKuliah::create([
                 'kodeMatkul' => $request->kodeMatkul,
+                'kurikulum' => $request->kurikulum,
                 'namaMatkul' => $request->namaMatkul,
                 'jenis' => $request->jenis,
                 'sks' => $request->sks,
@@ -109,14 +122,16 @@ class MataKuliahController extends Controller
     public function update(Request $request, MataKuliah $mataKuliah)
     {
         $validator = Validator::make($request->all(), [
-            'kodeMatkul' => 'required|string|max:20|unique:mata_kuliah,kodeMatkul,' . $mataKuliah->id,
+            'kodeMatkul' => 'required|string|max:20',
+            'kurikulum' => 'required|string|max:50',
             'namaMatkul' => 'required|string|max:255',
             'jenis' => 'required|string|max:50',
             'sks' => 'required|integer|min:0',
         ], [
             'kodeMatkul.required' => 'Kode mata kuliah wajib diisi',
             'kodeMatkul.max' => 'Kode mata kuliah maksimal 20 karakter',
-            'kodeMatkul.unique' => 'Kode mata kuliah sudah terdaftar',
+            'kurikulum.required' => 'Kurikulum wajib diisi',
+            'kurikulum.max' => 'Kurikulum maksimal 50 karakter',
             'namaMatkul.required' => 'Nama mata kuliah wajib diisi',
             'namaMatkul.max' => 'Nama mata kuliah maksimal 255 karakter',
             'jenis.required' => 'Jenis mata kuliah wajib diisi',
@@ -125,6 +140,17 @@ class MataKuliahController extends Controller
             'sks.integer' => 'SKS harus berupa angka',
             'sks.min' => 'SKS minimal 0',
         ]);
+
+        $validator->after(function ($validator) use ($request, $mataKuliah) {
+            $exists = MataKuliah::where('kodeMatkul', $request->kodeMatkul)
+                ->where('kurikulum', $request->kurikulum)
+                ->where('id', '!=', $mataKuliah->id)
+                ->exists();
+            
+            if ($exists) {
+                $validator->errors()->add('kodeMatkul', 'Kode mata kuliah sudah terdaftar untuk kurikulum ini');
+            }
+        });
 
         if ($validator->fails()) {
             return redirect()->back()
@@ -135,6 +161,7 @@ class MataKuliahController extends Controller
         try {
             $mataKuliah->update([
                 'kodeMatkul' => $request->kodeMatkul,
+                'kurikulum' => $request->kurikulum,
                 'namaMatkul' => $request->namaMatkul,
                 'jenis' => $request->jenis,
                 'sks' => $request->sks,

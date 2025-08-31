@@ -149,6 +149,8 @@ class TahunAjaranMatkulImport implements ToModel, WithHeadingRow, WithValidation
                 'tahunAjaranId' => $tahunAjaranModel->id,
                 'mataKuliahId' => $mataKuliahModel->id,
                 'semester' => $semester,
+            ], [
+                'sks' => $mataKuliahModel->sks
             ]);
 
             // Cari atau buat kelas

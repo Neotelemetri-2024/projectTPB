@@ -109,6 +109,16 @@
                 </a>
              </li>
           @endif
+          @if(auth()->user()->role === 'pimpinan')
+             <li>
+                <a href="{{ route('pimpinan.cpmk-report.index') }}" class="flex items-center p-2 rounded-lg group transition-colors duration-200 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('pimpinan.cpmk-report.*') ? 'bg-amber-100 text-amber-700' : '' }}">
+                   <svg class="w-5 h-5 transition duration-75 text-gray-500 group-hover:text-gray-900 {{ request()->routeIs('pimpinan.cpmk-report.*') ? 'text-amber-700' : '' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                   </svg>
+                   <span class="ml-3">Laporan CPMK</span>
+                </a>
+             </li>
+          @endif
           @if(auth()->user()->role === 'mahasiswa')
           <li>
              <a href="{{ route('mahasiswa.transkrip') }}" class="flex items-center p-2 rounded-lg group transition-colors duration-200 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('mahasiswa.transkrip') ? 'bg-amber-100 text-amber-700' : '' }}">

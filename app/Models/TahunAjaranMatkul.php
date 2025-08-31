@@ -14,6 +14,7 @@ class TahunAjaranMatkul extends Model
     protected $fillable = [
         'tahunAjaranId',
         'mataKuliahId',
+        'sks',
         'semester'
     ];
 
@@ -66,5 +67,14 @@ class TahunAjaranMatkul extends Model
     public function getKelasNames()
     {
         return $this->kelas()->pluck('namaKelas')->sort()->values();
+    }
+
+    /**
+     * Get SKS for this tahun ajaran matkul
+     * Priority: tahun_ajaran_matkul.sks > mata_kuliah.sks
+     */
+    public function getSks()
+    {
+        return $this->sks ?? $this->mataKuliah->sks ?? 0;
     }
 }

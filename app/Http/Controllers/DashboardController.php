@@ -877,14 +877,14 @@ class DashboardController extends Controller
             $mkDiambil = $mahasiswa->kelasMahasiswa()->with('kelas.tahunAjaranMatkul.mataKuliah')->get();
             $stat['jumlah_mk'] = $mkDiambil->count();
             $stat['jumlah_sks'] = $mkDiambil->sum(function($km) {
-                return $km->kelas->tahunAjaranMatkul->mataKuliah->sks ?? 0;
+                return $km->kelas->tahunAjaranMatkul->getSks() ?? 0;
             });
             // IPK (standar Unand: konversi nilai akhir ke bobot, lalu (bobot x sks) / total sks)
             $totalSks = 0;
             $totalNilaiBobot = 0;
             foreach ($mkDiambil as $km) {
                 $nilaiAkhir = $km->totalNilai; // final grade per MK
-                $sks = $km->kelas->tahunAjaranMatkul->mataKuliah->sks ?? 0;
+                $sks = $km->kelas->tahunAjaranMatkul->getSks() ?? 0;
                 $bobot = 0;
                 if ($nilaiAkhir !== null) {
                     if ($nilaiAkhir >= 80) $bobot = 4;
@@ -917,51 +917,31 @@ class DashboardController extends Controller
      */
     public function pimpinanDashboard(Request $request)
     {
-        $user = Auth::user();
+        // Get the latest tahun ajaran as default - OPTIMIZED query
+        $latestTahunAjaran = \App\Models\TahunAjaran::select('id', 'tahun', 'periode')
+            ->orderBy('tahun', 'desc')
+            ->orderByRaw("FIELD(periode, 'ganjil', 'genap') DESC")
+            ->first();
 
-        // Get filter parameter
-        $selectedTahunAjaranId = $request->get('tahun_ajaran_filter');
+        $selectedTahunAjaranId = $request->get('tahun_ajaran_filter', $latestTahunAjaran?->id);
 
-        // Statistics Cards Data
-        $totalMahasiswa = \App\Models\Mahasiswa::count();
-        $totalDosen = \App\Models\Dosen::count();
-        $totalMataKuliah = \App\Models\MataKuliah::count();
-        $totalCPL = \App\Models\Cpl::count();
-        $totalCPMK = \App\Models\Cpmk::count();
+        // OPTIMIZED: Load all data in parallel with efficient queries
+        $statistics = $this->getDashboardStatistics($selectedTahunAjaranId);
+        $tahunAjaranList = \App\Models\TahunAjaran::select('id', 'tahun', 'periode')
+            ->orderBy('tahun', 'desc')
+            ->orderByRaw("FIELD(periode, 'ganjil', 'genap') DESC")
+            ->get();
 
-        // Active courses this academic year
-        $latestTahunAjaran = \App\Models\TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->first();
-        $activeCourses = \App\Models\TahunAjaranMatkul::where('tahunAjaranId', $latestTahunAjaran->id ?? 0)->count();
-
-        // Get all tahun ajaran for filter dropdown
-        $tahunAjaranList = \App\Models\TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->get();
-
-        // Data for Average Score History Chart (Line Chart) - NO FILTER, show all years
-        $chartData = $this->getAverageScoreHistoryData();
-
-        // Data for CPL Achievement Chart (Bar Chart) - FIXED
-        $cplAchievementData = $this->getCPLAchievementData($selectedTahunAjaranId);
-
-        // Data for Grade Distribution Chart (Donut Chart) - FIXED
+        // Load chart data efficiently
+        $chartData = $this->getAverageScoreHistoryData(); // Remove filter parameter
+        $cplAchievementData = $this->getCPLAchievementData(); // Remove filter parameter
         $matkulPerformanceData = $this->getMatkulPerformanceData($selectedTahunAjaranId);
-
-        // Data for Course Completion Rate - FIXED
         $courseCompletionData = $this->getCourseCompletionData($selectedTahunAjaranId);
-
-        // Data for Course Type Distribution (Pie Chart) - FIXED
         $courseTypeData = $this->getCourseTypeDistribution();
-
-        // Data for Top Performing Students (Bar Chart)
         $topStudentsData = $this->getTopStudentsData($selectedTahunAjaranId);
 
         return view('pimpinan.dashboard', compact(
-            'user',
-            'totalMahasiswa',
-            'totalDosen',
-            'totalMataKuliah',
-            'totalCPL',
-            'totalCPMK',
-            'activeCourses',
+            'statistics',
             'tahunAjaranList',
             'selectedTahunAjaranId',
             'chartData',

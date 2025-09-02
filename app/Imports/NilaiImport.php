@@ -26,7 +26,8 @@ class NilaiImport implements ToCollection, WithHeadingRow
         'total_processed' => 0,
         'total_success' => 0,
         'total_errors' => 0,
-        'errors' => []
+        'errors' => [],
+        'processed_nims' => [] // Added for tracking unique NIMs
     ];
 
     public function __construct($tahunAjaranMatkulId, $dosenId, $relatedClasses)
@@ -73,7 +74,6 @@ class NilaiImport implements ToCollection, WithHeadingRow
                 try {
                     // Baris data dimulai dari index 2 (baris ke-3 di Excel)
                     $this->processRowWithHeader($row, $headerRow, $index + 3);
-                    $this->results['total_success']++;
                 } catch (\Exception $e) {
                     $this->results['total_errors']++;
                     $this->results['errors'][] = [
@@ -94,7 +94,7 @@ class NilaiImport implements ToCollection, WithHeadingRow
                 $this->results['message'] = "Import selesai dengan {$this->results['total_errors']} error dari {$this->results['total_processed']} baris data.";
             } else {
                 DB::commit();
-                $this->results['message'] = "Berhasil mengimport {$this->results['total_success']} baris data nilai.";
+                $this->results['message'] = "Berhasil mengimport {$this->results['total_success']} data mahasiswa.";
             }
 
         } catch (\Exception $e) {
@@ -123,12 +123,16 @@ class NilaiImport implements ToCollection, WithHeadingRow
 
         // Validate required fields
         if (empty($data['NIM']) || empty($data['Nama Mahasiswa'])) {
-            // Skip rows that don't have NIM/Nama (like instruction rows)
-            Log::info("Skipping row without NIM/Nama: " . json_encode($data));
             return;
         }
 
-        Log::info("Found NIM: {$data['NIM']}, Nama: {$data['Nama Mahasiswa']}");
+        // Increment total_success untuk NIM unik yang berhasil diproses
+        $nim = trim($data['NIM']);
+        if (!in_array($nim, $this->results['processed_nims'])) {
+            $this->results['processed_nims'][] = $nim;
+            $this->results['total_success']++;
+            Log::info("NIM {$nim} berhasil diproses. Total mahasiswa: {$this->results['total_success']}");
+        }
 
         // Find mahasiswa by NIM
         $mahasiswa = Mahasiswa::where('nim', trim($data['NIM']))->first();

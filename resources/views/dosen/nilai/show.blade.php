@@ -159,7 +159,7 @@
                     </a>
 
                     <!-- Import Excel Button -->
-                    <button type="button" onclick="showImportModal()"
+                    <button type="button" onclick="checkImportValidation()"
                             class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
                         <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
@@ -618,7 +618,7 @@
 </div>
 
 <!-- Detail Nilai Modal -->
-<div id="detail-modal" class="fixed inset-0 overflow-y-auto overflow-x-hidden flex justify-center items-center min-h-screen w-full z-50 hidden" style="background: rgba(0,0,0,0.6);">
+<div id="detail-modal" class="fixed inset-0 overflow-y-auto overflow-x-hidden justify-center items-center min-h-screen w-full z-50 hidden" style="background: rgba(0,0,0,0.6);">
     <div class="relative p-4 w-full max-w-6xl max-h-full transform transition-all duration-300 ease-out modal-content scale-95 opacity-0">
         <div class="relative bg-white rounded-lg shadow-xl">
             <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t">
@@ -694,7 +694,7 @@
                             <tr>
                                 <td class="px-4 py-2 text-sm text-gray-900">{{ $student['nim'] }}</td>
                                 <td class="px-4 py-2 text-sm text-gray-900">{{ $student['nama'] }}</td>
-                                <td class="px-4 py-2 text-sm text-gray-900 text-xs">{{ $student['email'] }}</td>
+                                <td class="px-4 py-2 text-xs text-gray-900">{{ $student['email'] }}</td>
                                 <td class="px-4 py-2 text-sm text-gray-900 font-mono">{{ $student['password'] }}</td>
                             </tr>
                             @endforeach
@@ -763,6 +763,18 @@
     </div>
 </div>
 @endif
+
+<!-- Validation Modal -->
+<x-confirm-modal
+    id="validation-modal"
+    title="Validasi Diperlukan"
+    message=""
+    action="{{ route('dosen.cpmk.show', $tahunAjaranMatkul->id) }}"
+    method="GET"
+    confirmText="Atur CPMK & Bobot"
+    cancelText="Tutup"
+    type="warning"
+/>
 
 <!-- Import Modal -->
 <div id="importModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
@@ -895,7 +907,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Show modal
             modal.classList.remove('hidden');
-            modal.classList.add('flex');
 
             // Add animation classes
             const modalContent = modal.querySelector('.modal-content');
@@ -919,7 +930,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             setTimeout(() => {
                 modal.classList.add('hidden');
-                modal.classList.remove('flex');
             }, 300);
         }
     }
@@ -1063,7 +1073,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             setTimeout(() => {
                 modal.classList.add('hidden');
-                modal.classList.remove('flex');
             }, 300);
         }
     }
@@ -1687,9 +1696,148 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update bulk save button text on page load
         updateBulkSaveButtonText();
 
+    // Validation functions
+    function checkImportValidation() {
+        console.log('checkImportValidation called');
+        const validation = @json($cpmkValidation);
+        console.log('Validation data:', validation);
+        const errors = [];
+
+        if (!validation.hasCpmk) {
+            errors.push('• Belum ada CPMK yang diatur untuk mata kuliah ini');
+        }
+
+        if (validation.hasCpmk && validation.totalBobotCpmk !== 100) {
+            errors.push(`• Total bobot CPMK belum 100% (saat ini: ${validation.totalBobotCpmk}%)`);
+        }
+
+        if (!validation.isBobotValid) {
+            errors.push('• Belum ada bobot komponen penilaian yang diatur');
+        }
+
+        console.log('Errors found:', errors);
+        console.log('Can import:', validation.canImport);
+
+        if (validation.canImport) {
+            // Jika validasi berhasil, buka modal import
+            console.log('Opening import modal');
+            showImportModal();
+        } else {
+            // Jika validasi gagal, tampilkan modal validasi
+            console.log('Opening validation modal');
+            showValidationModal(errors);
+        }
+    }
+
+    // Tampilkan modal validasi OTOMATIS saat halaman dibuka jika tidak valid
+    (function autoShowValidationOnLoad() {
+        const validation = @json($cpmkValidation);
+        if (!validation) return;
+        if (validation.canImport) return; // valid, tidak perlu tampilkan modal
+
+        const errors = [];
+        if (!validation.hasCpmk) {
+            errors.push('• Belum ada CPMK yang diatur untuk mata kuliah ini');
+        }
+        if (validation.hasCpmk && validation.totalBobotCpmk !== 100) {
+            errors.push(`• Total bobot CPMK belum 100% (saat ini: ${validation.totalBobotCpmk}%)`);
+        }
+        if (!validation.isBobotValid) {
+            errors.push('• Belum ada bobot komponen penilaian yang diatur');
+        }
+
+        // Tampilkan modal konfirmasi validasi
+        showValidationModal(errors);
+    })();
+
+    function showValidationModal(errors) {
+        console.log('showValidationModal called with errors:', errors);
+        const modal = document.getElementById('validation-modal');
+        const modalMessage = modal.querySelector('p');
+        const modalForm = modal.querySelector('form');
+        const modalContent = modal.querySelector('[data-modal-content]');
+
+        console.log('Modal elements found:', { modal, modalMessage, modalForm, modalContent });
+
+        if (modal && modalMessage && modalForm) {
+            // Create detailed message with errors and steps
+            const errorList = errors.map(error => `• ${error}`).join('\n');
+            const steps = [
+                '1. Atur CPMK untuk mata kuliah ini',
+                '2. Pastikan total bobot CPMK = 100%',
+                '3. Atur bobot komponen penilaian'
+            ].join('\n');
+
+            modalMessage.innerHTML = `
+                <div class="mb-4">
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                        <div class="flex">
+                            <svg class="h-5 w-5 text-amber-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                            </svg>
+                            <div class="text-sm text-amber-700">
+                                <p class="font-semibold mb-2">Tidak dapat melakukan import nilai karena:</p>
+                                <ul class="space-y-1 text-xs" style="white-space: pre-line;">${errorList}</ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div class="flex">
+                            <svg class="h-5 w-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                            </svg>
+                            <div class="text-sm text-blue-700">
+                                <p class="font-semibold mb-1">Langkah yang harus dilakukan:</p>
+                                <div class="text-xs" style="white-space: pre-line;">${steps}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Set form action to CPMK page
+            modalForm.action = "{{ route('dosen.cpmk.index', $tahunAjaranMatkul->id) }}";
+
+            // Show modal using the component's method (same as data-modal-toggle)
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            // Trigger animation (same as component)
+            setTimeout(() => {
+                modal.classList.remove('bg-opacity-0');
+                modal.classList.add('bg-opacity-10');
+                if (modalContent) {
+                    modalContent.classList.remove('scale-95', 'opacity-0');
+                    modalContent.classList.add('scale-100', 'opacity-100');
+                }
+            }, 10);
+        }
+    }
+
+    function closeValidationModal() {
+        const modal = document.getElementById('validation-modal');
+        const modalContent = modal.querySelector('[data-modal-content]');
+
+        if (modal && modalContent) {
+            // Hide modal with animation (same as component)
+            modalContent.classList.add('scale-95', 'opacity-0');
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modal.classList.remove('bg-opacity-10');
+            modal.classList.add('bg-opacity-0');
+
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+        }
+    }
+
     // Make functions globally available
     window.showImportModal = showImportModal;
     window.hideImportModal = hideImportModal;
+    window.checkImportValidation = checkImportValidation;
+    window.closeValidationModal = closeValidationModal;
     window.hideCreatedStudentsModal = function() {
         const modal = document.getElementById('created-students-modal');
         if (modal) {
@@ -1714,10 +1862,19 @@ document.addEventListener('DOMContentLoaded', function() {
     // Close import modal on escape key
     document.addEventListener('keydown', function(e) {
         const importModal = document.getElementById('import-modal');
-        if (e.key === 'Escape' && importModal && !importModal.classList.contains('hidden')) {
-            hideImportModal();
+        const validationModal = document.getElementById('validation-modal');
+
+        if (e.key === 'Escape') {
+            if (importModal && !importModal.classList.contains('hidden')) {
+                hideImportModal();
+            }
+            if (validationModal && !validationModal.classList.contains('hidden')) {
+                closeValidationModal();
+            }
         }
     });
+
+    // Tidak perlu handle submit manual: komponen confirm-modal sudah menangani redirect via data-modal-confirm-link/action
 });
 </script>
 @endpush

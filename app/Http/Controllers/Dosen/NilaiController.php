@@ -375,6 +375,9 @@ class NilaiController extends Controller
 
 
 
+        // Validasi CPMK dan Bobot untuk Import
+        $cpmkValidation = $this->validateCpmkAndBobot($id, $dosen);
+
         // Build bulk URL for the view
         $bulkUrl = request()->fullUrl();
         $bulkUrl .= (strpos($bulkUrl, '?') !== false ? '&' : '?') . 'bulk=1';
@@ -402,8 +405,58 @@ class NilaiController extends Controller
             'allKomponen',
             'bobotData',
             'nilaiData',
-            'bulkUrl'
+            'bulkUrl',
+            'cpmkValidation'
         ));
+    }
+
+    /**
+     * Validasi CPMK dan Bobot untuk Import Nilai
+     */
+    private function validateCpmkAndBobot($tahunAjaranMatkulId, $dosen)
+    {
+        // Ambil semua TahunAjaranMatkul terkait (mata kuliah + tahun ajaran yang sama, diajar oleh dosen ini)
+        $relatedTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', function($q) use ($tahunAjaranMatkulId) {
+                $q->select('mataKuliahId')
+                    ->from('tahun_ajaran_matkul')
+                    ->where('id', $tahunAjaranMatkulId)
+                    ->limit(1);
+            })
+            ->where('tahunAjaranId', function($q) use ($tahunAjaranMatkulId) {
+                $q->select('tahunAjaranId')
+                    ->from('tahun_ajaran_matkul')
+                    ->where('id', $tahunAjaranMatkulId)
+                    ->limit(1);
+            })
+            ->whereHas('kelas.dosenPengampuKelas', function($query) use ($dosen) {
+                $query->where('dosenId', $dosen->id);
+            })
+            ->pluck('id');
+
+        // Cek apakah ada CPMK yang diatur (dari semua kelas terkait)
+        $cpmkCount = CpmkMatKul::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)->count();
+
+        // Hitung total bobot CPMK: jumlah seluruh bobot CPMK-Komponen dari tabel bobot (bukan dari cpmk_mat_kul)
+        $totalBobotCpmk = Bobot::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
+            ->groupBy('cpmkId')
+            ->selectRaw('cpmkId, SUM(bobot) as total')
+            ->get()
+            ->sum('total');
+
+        // Total bobot komponen (jumlah semua bobot pada tabel bobot untuk kelas terkait)
+        $totalBobotKomponen = Bobot::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
+            ->sum('bobot');
+
+        return [
+            'hasCpmk' => $cpmkCount > 0,
+            'cpmkCount' => $cpmkCount,
+            'totalBobotCpmk' => $totalBobotCpmk,
+            'totalBobotKomponen' => $totalBobotKomponen,
+            // Valid jika secara agregat bobot CPMK terdistribusi 100 untuk keseluruhan (per definisi di halaman bobot)
+            'isCpmkValid' => $cpmkCount > 0 && $totalBobotKomponen == 100,
+            'isBobotValid' => $totalBobotKomponen > 0,
+            'canImport' => $cpmkCount > 0 && $totalBobotKomponen == 100
+        ];
     }
 
     /**

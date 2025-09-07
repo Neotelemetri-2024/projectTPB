@@ -53,10 +53,16 @@
                             </div>
                         </div>
                         <div class="text-right">
-                            <div class="text-sm text-gray-600 font-medium">Total Capaian:</div>
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ is_numeric($cpl['total_cpl']) && $cpl['total_cpl'] >= 55 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                {{ $cpl['total_cpl'] }}
-                            </span>
+                            <div class="text-sm text-gray-600 font-medium w-44">Total Capaian:</div>
+                            @if($cpl['status_cpl'] === 'Tercapai')
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                                    {{ $cpl['total_cpl'] }}
+                                </span>
+                            @else
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                    {{ $cpl['missing_cpmk_count'] ?? 0 }} CPMK belum bernilai
+                                </span>
+                            @endif
                             <div class="mt-1">
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $cpl['status_cpl'] === 'Tercapai' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
                                     {{ $cpl['status_cpl'] }}

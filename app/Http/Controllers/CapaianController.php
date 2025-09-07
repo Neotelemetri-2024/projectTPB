@@ -31,6 +31,8 @@ class CapaianController extends Controller
             $cpmkList = Cpmk::whereIn('id', $cpmkIds)->orderBy('kodeCpmk')->get();
             $cpmkData = [];
             $totalCpmkArr = [];
+            $hasMissingCpmk = false; // tandai bila ada CPMK tanpa nilai
+            $missingCpmkCount = 0;   // hitung berapa CPMK tanpa nilai
             foreach ($cpmkList as $cpmk) {
                 // Ambil semua bobot untuk CPMK ini (dari semua matkul yang diambil mahasiswa)
                 $bobotIds = Bobot::where('cpmkId', $cpmk->id)
@@ -55,6 +57,10 @@ class CapaianController extends Controller
                 }
 
                 $nilaiCpmk = $bobotCpmkTotal > 0 ? $nilaiCpmkTotal / $bobotCpmkTotal : null;
+                if ($nilaiCpmk === null) {
+                    $hasMissingCpmk = true;
+                    $missingCpmkCount++;
+                }
                 // Ambil data matkul terkait CPMK ini (bisa lebih dari satu, ambil semua)
                 $matkuls = $cpmk->cpmkMatKul()->with('mataKuliah')->get();
                 foreach ($matkuls as $matkulRel) {
@@ -77,9 +83,10 @@ class CapaianController extends Controller
                     ];
                 }
             }
-            // Gunakan nilai CPMK tertinggi untuk total CPL, bukan rata-rata
+            // Gunakan nilai CPMK tertinggi untuk total CPL
             $total_cpl = count($totalCpmkArr) > 0 ? max($totalCpmkArr) : '-';
-            $status_cpl = ($total_cpl !== '-' && $total_cpl > 55) ? 'Tercapai' : 'Belum Tercapai';
+            // Status: wajib semua CPMK punya nilai; jika ada yang kosong, status Belum Tercapai
+            $status_cpl = (!$hasMissingCpmk && $total_cpl !== '-' && $total_cpl > 55) ? 'Tercapai' : 'Belum Tercapai';
             $cplData[] = [
                 'id' => $cpl->id,
                 'kode' => $cpl->kodeCpl,
@@ -87,6 +94,7 @@ class CapaianController extends Controller
                 'cpmk' => $cpmkData,
                 'total_cpl' => $total_cpl,
                 'status_cpl' => $status_cpl,
+                'missing_cpmk_count' => $missingCpmkCount,
             ];
         }
         return view('mahasiswa.capaian', [

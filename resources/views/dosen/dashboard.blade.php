@@ -477,6 +477,16 @@ const pieChart = new Chart(document.getElementById('pieChart'), {
                     backgroundColor: 'rgba(0, 0, 0, 0.8)',
                     titleColor: '#fff',
                     bodyColor: '#fff',
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed;
+                            const data = context.chart.data.datasets[0].data;
+                            const total = data.reduce((sum, val) => sum + val, 0);
+                            const percent = total ? ((value / total) * 100).toFixed(1) : 0;
+                            return `${label}: ${value} (${percent}%)`;
+                        }
+                    }
                 }
             }
         }

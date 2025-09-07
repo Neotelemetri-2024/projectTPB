@@ -2,7 +2,7 @@
 <div id="chart-modal" class="fixed inset-0 z-50 hidden">
     <!-- Backdrop with animation -->
     <div class="absolute inset-0 bg-gray-900 bg-opacity-50 backdrop-blur-sm transition-opacity duration-300" onclick="closeChartModal()"></div>
-    
+
     <!-- Modal content with animation -->
     <div class="relative flex items-center justify-center min-h-screen p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[90vh] transform transition-all duration-300 scale-95 opacity-0" id="modal-content">
@@ -15,7 +15,7 @@
                     </svg>
                 </button>
             </div>
-            
+
             <!-- Chart Container -->
             <div class="p-6">
                 <div class="relative h-[70vh]">
@@ -34,41 +34,191 @@ let modalChartInstance = null;
 function maximizeChart(chartId, title) {
     const modal = document.getElementById('chart-modal');
     const modalContent = document.getElementById('modal-content');
-    
+
     if (modal && modalContent) {
         // Set title
         document.getElementById('modal-title').textContent = title;
-        
+
         // Show modal with animation
         modal.classList.remove('hidden');
-        
+
         // Trigger animation after a small delay
         setTimeout(() => {
             modalContent.classList.remove('scale-95', 'opacity-0');
             modalContent.classList.add('scale-100', 'opacity-100');
         }, 10);
-        
+
+        // Store original chart ID for restoration
+        modal.dataset.originalChartId = chartId;
+
         // Hide original chart
         const originalChart = document.getElementById(chartId);
         if (originalChart) {
             originalChart.classList.add('hidden');
         }
-        
+
         // Destroy previous chart instance if exists
         if (modalChartInstance) {
             modalChartInstance.destroy();
         }
-        
+
         // Create new chart in modal
         const modalChartCtx = document.getElementById('modal-chart');
         if (modalChartCtx) {
-            // Get chart data based on chartId
-            let chartData;
-            let chartType;
-            let chartOptions;
-            
-            switch(chartId) {
-                case 'historyChart':
+            // Wait a bit for modal to be visible and canvas to be properly sized
+            setTimeout(() => {
+                // Get chart data based on chartId
+                let chartData;
+                let chartType;
+                let chartOptions;
+
+                switch(chartId) {
+                    case 'barChart':
+                        // Get data from global bar chart
+                        const barChart = window.barChart;
+                        if (barChart) {
+                            chartData = {
+                                labels: barChart.data.labels,
+                                datasets: barChart.data.datasets
+                            };
+                            chartType = 'bar';
+                            chartOptions = {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: { display: false },
+                                    tooltip: {
+                                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                        titleColor: '#fff',
+                                        bodyColor: '#fff',
+                                        borderColor: '#3B82F6',
+                                        borderWidth: 1,
+                                    }
+                                },
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        grid: {
+                                            color: 'rgba(0, 0, 0, 0.1)',
+                                        },
+                                        title: {
+                                            display: true,
+                                            text: 'Jumlah Mahasiswa'
+                                        }
+                                    },
+                                    x: {
+                                        grid: {
+                                            display: false,
+                                        },
+                                        title: {
+                                            display: true,
+                                            text: 'Mata Kuliah'
+                                        }
+                                    }
+                                }
+                            };
+                        }
+                        break;
+                    case 'pieChart':
+                        // Get data from global pie chart
+                        const pieChart = window.pieChart;
+                        if (pieChart) {
+                            chartData = {
+                                labels: pieChart.data.labels,
+                                datasets: pieChart.data.datasets
+                            };
+                            chartType = 'pie';
+                            chartOptions = {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom',
+                                        labels: {
+                                            padding: 20,
+                                            usePointStyle: true,
+                                            font: {
+                                                size: 12
+                                            }
+                                        }
+                                    },
+                                    tooltip: {
+                                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                        titleColor: '#fff',
+                                        bodyColor: '#fff',
+                                        callbacks: {
+                                            label: function(context) {
+                                                const label = context.label || '';
+                                                const value = context.parsed;
+                                                const data = context.chart.data.datasets[0].data;
+                                                const total = data.reduce((sum, val) => sum + val, 0);
+                                                const percent = total ? ((value / total) * 100).toFixed(1) : 0;
+                                                return `${label}: ${value} (${percent}%)`;
+                                            }
+                                        }
+                                    }
+                                }
+                            };
+                        }
+                        break;
+                    case 'lineChart':
+                        // Get data from global line chart
+                        const lineChart = window.lineChart;
+                        if (lineChart) {
+                            chartData = {
+                                labels: lineChart.data.labels,
+                                datasets: lineChart.data.datasets
+                            };
+                            chartType = 'line';
+                            chartOptions = {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        display: true,
+                                        position: 'top',
+                                    },
+                                    tooltip: {
+                                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                        titleColor: '#fff',
+                                        bodyColor: '#fff',
+                                    }
+                                },
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        max: 100,
+                                        grid: {
+                                            color: 'rgba(0, 0, 0, 0.1)',
+                                        },
+                                        title: {
+                                            display: true,
+                                            text: 'Rata-rata Nilai'
+                                        }
+                                    },
+                                    x: {
+                                        grid: {
+                                            color: 'rgba(0, 0, 0, 0.1)',
+                                        },
+                                        title: {
+                                            display: true,
+                                            text: 'Tahun Ajaran'
+                                        }
+                                    }
+                                },
+                                elements: {
+                                    line: {
+                                        tension: 0.4,
+                                    },
+                                    point: {
+                                        radius: 4,
+                                        hoverRadius: 6,
+                                    }
+                                }
+                            };
+                        }
+                        break;
+                    case 'historyChart':
                     chartData = window.chartData;
                     chartType = 'line';
                     chartOptions = {
@@ -104,7 +254,7 @@ function maximizeChart(chartId, title) {
                         }
                     };
                     break;
-                case 'cplChart':
+                    case 'cplChart':
                     chartData = window.cplAchievementData;
                     chartType = 'bar';
                     chartOptions = {
@@ -133,7 +283,7 @@ function maximizeChart(chartId, title) {
                         }
                     };
                     break;
-                case 'gradeChart':
+                    case 'gradeChart':
                     chartData = window.matkulPerformanceData;
                     chartType = 'bar';
                     chartOptions = {
@@ -168,7 +318,7 @@ function maximizeChart(chartId, title) {
                         }
                     };
                     break;
-                case 'courseTypeChart':
+                    case 'courseTypeChart':
                     chartData = window.courseTypeData;
                     chartType = 'pie';
                     chartOptions = {
@@ -188,7 +338,7 @@ function maximizeChart(chartId, title) {
                         }
                     };
                     break;
-                case 'completionChart':
+                    case 'completionChart':
                     chartData = window.courseCompletionData;
                     chartType = 'bar';
                     chartOptions = {
@@ -217,7 +367,7 @@ function maximizeChart(chartId, title) {
                         }
                     };
                     break;
-                case 'topStudentsChart':
+                    case 'topStudentsChart':
                     chartData = window.topStudentsData;
                     chartType = 'bar';
                     chartOptions = {
@@ -247,16 +397,21 @@ function maximizeChart(chartId, title) {
                         }
                     };
                     break;
-            }
-            
-            // Create new chart in modal
-            if (chartData && chartType) {
-                modalChartInstance = new Chart(modalChartCtx.getContext('2d'), {
-                    type: chartType,
-                    data: chartData,
-                    options: chartOptions
-                });
-            }
+                }
+
+                // Create new chart in modal
+                if (chartData && chartType) {
+                    // Reset canvas size
+                    modalChartCtx.width = modalChartCtx.offsetWidth;
+                    modalChartCtx.height = modalChartCtx.offsetHeight;
+
+                    modalChartInstance = new Chart(modalChartCtx.getContext('2d'), {
+                        type: chartType,
+                        data: chartData,
+                        options: chartOptions
+                    });
+                }
+            }, 100); // Small delay to ensure modal is fully visible
         }
     }
 }
@@ -265,16 +420,16 @@ function maximizeChart(chartId, title) {
 function closeChartModal() {
     const modal = document.getElementById('chart-modal');
     const modalContent = document.getElementById('modal-content');
-    
+
     if (modal && modalContent) {
         // Add animation for closing
         modalContent.classList.remove('scale-100', 'opacity-100');
         modalContent.classList.add('scale-95', 'opacity-0');
-        
+
         // Hide modal after animation
         setTimeout(() => {
             modal.classList.add('hidden');
-            
+
             // Show original chart
             const originalChartId = modal.dataset.originalChartId;
             if (originalChartId) {
@@ -283,7 +438,7 @@ function closeChartModal() {
                     originalChart.classList.remove('hidden');
                 }
             }
-            
+
             // Destroy modal chart instance
             if (modalChartInstance) {
                 modalChartInstance.destroy();

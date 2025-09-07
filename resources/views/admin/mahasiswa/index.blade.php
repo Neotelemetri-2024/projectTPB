@@ -16,15 +16,15 @@
                     Tambah Mahasiswa
                 </a>
             </div>
-            
+
             <!-- Search and Filter Section -->
             <form method="GET" action="{{ route('admin.mahasiswa.index') }}" class="mt-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <!-- Search -->
                     <div class="lg:col-span-2">
                         <div class="flex gap-2">
-                            <input type="text" name="search" value="{{ request('search') }}" 
-                                   placeholder="Cari nama, NIM, atau email..." 
+                            <input type="text" name="search" value="{{ request('search') }}"
+                                   placeholder="Cari nama, NIM, atau email..."
                                    class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
                             <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -40,23 +40,23 @@
                             @endif
                         </div>
                     </div>
-                    
+
                     <!-- Filter Tahun Masuk -->
                     <div>
-                        <select name="tahun_masuk" onchange="this.form.submit()" 
+                        <select name="tahun_masuk" onchange="this.form.submit()"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
-                            <option value="">Semua Tahun Masuk</option>
+                            <option value="" {{ (request()->has('tahun_masuk') && request('tahun_masuk') === '') ? 'selected' : '' }}>Semua Tahun Masuk</option>
                             @foreach($tahunMasukList as $tahun)
-                                <option value="{{ $tahun }}" {{ (request('tahun_masuk') ? request('tahun_masuk') : $selectedTahunMasuk) == $tahun ? 'selected' : '' }}>
+                                <option value="{{ $tahun }}" {{ (request()->has('tahun_masuk') ? request('tahun_masuk') : null) == $tahun ? 'selected' : '' }}>
                                     {{ $tahun }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
-                    
+
                     <!-- Filter Status -->
                     <div>
-                        <select name="status" onchange="this.form.submit()" 
+                        <select name="status" onchange="this.form.submit()"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
                             <option value="">Semua Status</option>
                             <option value="aktif" {{ request('status') == 'aktif' ? 'selected' : '' }}>Aktif</option>
@@ -65,7 +65,7 @@
                     </div>
                 </div>
             </form>
-            
+
             <!-- Results Info -->
             @if(request('search') || request('tahun_masuk') || request('status'))
                 <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -84,7 +84,7 @@
                 </div>
             @endif
         </div>
-        
+
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
@@ -115,20 +115,20 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex space-x-2">
-                                <a href="{{ route('admin.mahasiswa.show', $mhs->id) }}" 
+                                <a href="{{ route('admin.mahasiswa.show', $mhs->id) }}"
                                    class="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors" title="Detail">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                     </svg>
                                 </a>
-                                <a href="{{ route('admin.mahasiswa.edit', $mhs->id) }}" 
+                                <a href="{{ route('admin.mahasiswa.edit', $mhs->id) }}"
                                    class="text-yellow-600 hover:text-yellow-900 p-1 rounded hover:bg-yellow-50 transition-colors" title="Edit">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                     </svg>
                                 </a>
-                                <button type="button" data-modal-target="modal-confirm-hapus-{{ $mhs->id }}" data-modal-toggle="modal-confirm-hapus-{{ $mhs->id }}" 
+                                <button type="button" data-modal-target="modal-confirm-hapus-{{ $mhs->id }}" data-modal-toggle="modal-confirm-hapus-{{ $mhs->id }}"
                                         class="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors" title="Hapus">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
@@ -145,7 +145,7 @@
                 </tbody>
             </table>
         </div>
-        
+
         <!-- Pagination -->
         @if($mahasiswa->hasPages())
             <div class="px-6 py-4 border-t border-gray-200">
@@ -164,7 +164,7 @@
 
 <!-- Modal Konfirmasi Hapus -->
 @foreach($mahasiswa as $mhs)
-    <x-confirm-modal 
+    <x-confirm-modal
         :id="'modal-confirm-hapus-' . $mhs->id"
         title="Konfirmasi Hapus Mahasiswa"
         :message="'Apakah Anda yakin ingin menghapus mahasiswa ' . $mhs->nama . ' (' . $mhs->nim . ')?'"
@@ -173,4 +173,4 @@
     />
 @endforeach
 
-@endsection 
+@endsection

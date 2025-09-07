@@ -682,9 +682,21 @@ class DashboardController extends Controller
         $pieChartData = array_values($overallGradeCounts);
 
         // Line chart: progress rata-rata nilai per MK dari waktu ke waktu (per tahun ajaran)
+        // Catatan: grafik ini TIDAK terpengaruh filter tahun ajaran; selalu menampilkan semua tahun
         $lineChartLabels = [];
         $lineChartDatasets = [];
-        foreach ($mataKuliahDiampu as $mk) {
+
+        // Ambil seluruh MK yang pernah diampu dosen di SEMUA tahun ajaran (abaikan filter)
+        $mataKuliahSemuaTahun = \App\Models\TahunAjaranMatkul::whereHas('kelas.dosenPengampuKelas', function($q) use ($dosen) {
+            $q->where('dosenId', $dosen->id);
+        })
+        ->with(['mataKuliah'])
+        ->get()
+        ->unique('mataKuliahId');
+
+        // Kumpulkan semua label unik terlebih dahulu
+        $allLabels = [];
+        foreach ($mataKuliahSemuaTahun as $mk) {
             $nilaiPerTahun = \App\Models\TahunAjaranMatkul::where('mataKuliahId', $mk->mataKuliahId)
                 ->with(['tahunAjaran', 'kelas.kelasMahasiswa'])
                 ->get()
@@ -698,16 +710,60 @@ class DashboardController extends Controller
                     $avg = $allNilai->count() > 0 ? round($allNilai->avg(),2) : null;
                     return ['label' => $label, 'avg' => $avg];
                 });
+
             foreach ($nilaiPerTahun as $row) {
-                if (!in_array($row['label'], $lineChartLabels)) {
-                    $lineChartLabels[] = $row['label'];
+                if (!in_array($row['label'], $allLabels)) {
+                    $allLabels[] = $row['label'];
                 }
             }
+        }
+
+        // Sort labels chronologically
+        usort($allLabels, function($a, $b) {
+            $yearA = (int)explode(' - ', $a)[0];
+            $yearB = (int)explode(' - ', $b)[0];
+            $periodeA = explode(' - ', $a)[1];
+            $periodeB = explode(' - ', $b)[1];
+
+            if ($yearA != $yearB) {
+                return $yearA <=> $yearB;
+            }
+
+            $periodeOrder = ['ganjil' => 1, 'genap' => 2];
+            return ($periodeOrder[strtolower($periodeA)] ?? 3) <=> ($periodeOrder[strtolower($periodeB)] ?? 3);
+        });
+
+        $lineChartLabels = $allLabels;
+
+        // Bentuk datasets dengan data yang sudah align terhadap label
+        foreach ($mataKuliahSemuaTahun as $mk) {
+            $nilaiPerTahun = \App\Models\TahunAjaranMatkul::where('mataKuliahId', $mk->mataKuliahId)
+                ->with(['tahunAjaran', 'kelas.kelasMahasiswa'])
+                ->get()
+                ->groupBy('tahunAjaranId')
+                ->mapWithKeys(function($group) {
+                    $tahunAjaran = $group->first()->tahunAjaran;
+                    $label = $tahunAjaran->tahun . ' - ' . ucfirst($tahunAjaran->periode);
+                    $allNilai = $group->flatMap->kelas->flatMap->kelasMahasiswa->map(function($km) {
+                        return $km->totalNilai;
+                    })->filter();
+                    $avg = $allNilai->count() > 0 ? round($allNilai->avg(),2) : null;
+                    return [$label => $avg];
+                });
+
+            // Create data array aligned with labels
+            $data = [];
+            foreach ($lineChartLabels as $label) {
+                $data[] = $nilaiPerTahun[$label] ?? null;
+            }
+
             $lineChartDatasets[] = [
                 'label' => $mk->mataKuliah->namaMatkul,
-                'data' => $nilaiPerTahun->map(function($item) {
-                    return $item['avg'];
-                })->toArray(),
+                'data' => $data,
+                'borderColor' => $this->getChartColors(count($lineChartDatasets)),
+                'backgroundColor' => $this->getChartColors(count($lineChartDatasets), true),
+                'tension' => 0.4,
+                'fill' => false
             ];
         }
 

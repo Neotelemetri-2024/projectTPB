@@ -25,13 +25,13 @@ class PimpinanSeeder extends Seeder
                 'created_at' => now(),
                 'updated_at' => now(),
             ],
-           
+
         ];
 
         foreach ($pimpinanUsers as $userData) {
             // Check if user already exists
             $existingUser = User::where('email', $userData['email'])->first();
-            
+
             if (!$existingUser) {
                 User::create($userData);
                 $this->command->info("Pimpinan user created: {$userData['name']} ({$userData['email']})");
@@ -41,6 +41,6 @@ class PimpinanSeeder extends Seeder
         }
 
         $this->command->info('Pimpinan users seeding completed!');
-        $this->command->info('Default password for all pimpinan accounts: password123');
+        $this->command->info('Default password for all pimpinan accounts: password');
     }
-} 
+}

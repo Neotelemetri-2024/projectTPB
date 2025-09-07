@@ -91,19 +91,6 @@
             </div>
             @endfor
         </div>
-
-        <!-- Quick Actions Skeleton -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <div class="h-6 bg-gray-200 rounded w-32 mb-4"></div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                @for($i = 0; $i < 4; $i++)
-                <div class="flex items-center p-4 bg-gray-50 rounded-lg">
-                    <div class="w-6 h-6 bg-gray-200 rounded mr-3"></div>
-                    <div class="h-4 bg-gray-200 rounded w-24"></div>
-                </div>
-                @endfor
-            </div>
-        </div>
     </div>
 
     <!-- Actual Dashboard Content -->
@@ -223,7 +210,7 @@
                     <div class="flex items-center space-x-2">
                         <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
                         <span class="text-sm text-gray-600">Per Tahun Ajaran</span>
-                        <button onclick="maximizeChart('historyChart', 'Tren Historis Top 5 Mata Kuliah')" 
+                        <button onclick="maximizeChart('historyChart', 'Tren Historis Top 5 Mata Kuliah')"
                                 class="p-1 text-gray-400 hover:text-gray-600 transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
@@ -246,7 +233,7 @@
                     <div class="flex items-center space-x-2">
                         <div class="w-3 h-3 bg-green-500 rounded-full"></div>
                         <span class="text-sm text-gray-600">Rata-rata (%)</span>
-                        <button onclick="maximizeChart('cplChart', 'Capaian Pembelajaran Lulusan')" 
+                        <button onclick="maximizeChart('cplChart', 'Capaian Pembelajaran Lulusan')"
                                 class="p-1 text-gray-400 hover:text-gray-600 transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
@@ -269,7 +256,7 @@
                         <h3 class="text-lg font-semibold text-gray-900">Distribusi Grade</h3>
                         <p class="text-sm text-gray-600">Sebaran nilai per mata kuliah (Top 5)</p>
                     </div>
-                    <button onclick="maximizeChart('gradeChart', 'Distribusi Grade')" 
+                    <button onclick="maximizeChart('gradeChart', 'Distribusi Grade')"
                             class="p-1 text-gray-400 hover:text-gray-600 transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
@@ -288,7 +275,7 @@
                         <h3 class="text-lg font-semibold text-gray-900">Jenis Mata Kuliah</h3>
                         <p class="text-sm text-gray-600">Distribusi wajib vs pilihan (Master Data)</p>
                     </div>
-                    <button onclick="maximizeChart('courseTypeChart', 'Jenis Mata Kuliah')" 
+                    <button onclick="maximizeChart('courseTypeChart', 'Jenis Mata Kuliah')"
                             class="p-1 text-gray-400 hover:text-gray-600 transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
@@ -307,7 +294,7 @@
                         <h3 class="text-lg font-semibold text-gray-900">Tingkat Kelulusan</h3>
                         <p class="text-sm text-gray-600">Per mata kuliah</p>
                     </div>
-                    <button onclick="maximizeChart('completionChart', 'Tingkat Kelulusan')" 
+                    <button onclick="maximizeChart('completionChart', 'Tingkat Kelulusan')"
                             class="p-1 text-gray-400 hover:text-gray-600 transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
@@ -326,7 +313,7 @@
                         <h3 class="text-lg font-semibold text-gray-900">Top 10 Mahasiswa</h3>
                         <p class="text-sm text-gray-600">Berdasarkan rata-rata nilai</p>
                     </div>
-                    <button onclick="maximizeChart('topStudentsChart', 'Top 10 Mahasiswa')" 
+                    <button onclick="maximizeChart('topStudentsChart', 'Top 10 Mahasiswa')"
                             class="p-1 text-gray-400 hover:text-gray-600 transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
@@ -336,40 +323,6 @@
                 <div class="relative h-64">
                     <canvas id="topStudentsChart"></canvas>
                 </div>
-            </div>
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Aksi Cepat</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <a href="{{ route('admin.mahasiswa.index') }}" class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors">
-                    <svg class="h-6 w-6 text-blue-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"></path>
-                    </svg>
-                    <span class="text-blue-700 font-medium">Lihat Mahasiswa</span>
-                </a>
-
-                <a href="{{ route('admin.mata-kuliah.index') }}" class="flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
-                    <svg class="h-6 w-6 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
-                    </svg>
-                    <span class="text-green-700 font-medium">Lihat Mata Kuliah</span>
-                </a>
-
-                <a href="{{ route('admin.tahun-ajaran.index') }}" class="flex items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors">
-                    <svg class="h-6 w-6 text-purple-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                    </svg>
-                    <span class="text-purple-700 font-medium">Lihat Tahun Ajaran</span>
-                </a>
-
-                <a href="{{ route('pimpinan.cpmk-report.index') }}" class="flex items-center p-4 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors">
-                    <svg class="h-6 w-6 text-amber-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                    </svg>
-                    <span class="text-amber-700 font-medium">Lihat Laporan CPMK</span>
-                </a>
             </div>
         </div>
     </div>
@@ -613,7 +566,7 @@ function initializeCharts() {
                 }
             });
         }
-        
+
     } catch (error) {
         console.error('Error initializing charts:', error);
     }
@@ -633,4 +586,4 @@ function filterDashboard() {
     window.location.href = url.toString();
 }
 </script>
-@endsection 
+@endsection

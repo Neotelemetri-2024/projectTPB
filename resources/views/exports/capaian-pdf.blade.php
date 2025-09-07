@@ -231,9 +231,11 @@
                 <div class="cpl-summary">
                     <div class="total-label">Total Capaian:</div>
                     <div class="total-value">
-                        <span class="{{ is_numeric($cpl['total_cpl']) && $cpl['total_cpl'] >= 55 ? 'nilai-tercapai' : 'nilai-belum' }}">
-                            {{ $cpl['total_cpl'] }}
-                        </span>
+                        @if($cpl['status_cpl'] === 'Tercapai')
+                            <span class="nilai-tercapai">{{ $cpl['total_cpl'] }}</span>
+                        @else
+                            <span class="nilai-belum">{{ $cpl['missing_cpmk_count'] ?? 0 }} CPMK belum bernilai</span>
+                        @endif
                     </div>
                     <div>
                         <span class="{{ $cpl['status_cpl'] === 'Tercapai' ? 'status-tercapai' : 'status-belum' }}">

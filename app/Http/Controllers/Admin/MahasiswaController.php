@@ -14,7 +14,7 @@ class MahasiswaController extends Controller
     public function index(Request $request)
     {
         $query = Mahasiswa::with('user');
-        
+
         // Search functionality
         if ($request->filled('search')) {
             $search = $request->search;
@@ -26,18 +26,16 @@ class MahasiswaController extends Controller
                   });
             });
         }
-        
-        // Get the latest tahun masuk for default filter
-        $latestTahunMasuk = Mahasiswa::max('tahunMasuk');
-        
-        // Set default filter to latest tahun masuk if no filter is selected
-        $selectedTahunMasuk = $request->filled('tahun_masuk') ? $request->tahun_masuk : $latestTahunMasuk;
-        
-        // Apply tahun masuk filter
-        if ($selectedTahunMasuk) {
+
+        // Default filter: Semua Tahun Masuk (tidak menerapkan filter jika tidak dipilih)
+        // Jika parameter tahun_masuk ada di request namun kosong => berarti pilih "Semua Tahun Masuk"
+        $selectedTahunMasuk = $request->has('tahun_masuk') ? $request->tahun_masuk : null;
+
+        // Terapkan filter hanya jika nilai tidak kosong/null
+        if ($selectedTahunMasuk !== null && $selectedTahunMasuk !== '') {
             $query->where('tahunMasuk', $selectedTahunMasuk);
         }
-        
+
         // Filter by status aktif
         if ($request->filled('status')) {
             if ($request->status === 'aktif') {
@@ -50,13 +48,13 @@ class MahasiswaController extends Controller
                 });
             }
         }
-        
+
         // Get unique tahun masuk for filter dropdown
         $tahunMasukList = Mahasiswa::distinct()->pluck('tahunMasuk')->sort()->values();
-        
+
         // Pagination
         $mahasiswa = $query->orderBy('nama')->paginate(10)->withQueryString();
-        
+
         return view('admin.mahasiswa.index', compact('mahasiswa', 'tahunMasukList', 'selectedTahunMasuk'));
     }
 
@@ -189,9 +187,9 @@ class MahasiswaController extends Controller
         try {
             // Delete user account
             $mahasiswa->user->delete();
-            
+
             // Mahasiswa record will be deleted automatically due to foreign key cascade
-            
+
             return redirect()->route('admin.mahasiswa.index')
                 ->with('success', 'Data mahasiswa berhasil dihapus!');
         } catch (\Exception $e) {

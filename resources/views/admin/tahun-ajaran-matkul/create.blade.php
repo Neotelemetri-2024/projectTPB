@@ -48,7 +48,7 @@
                             Mata Kuliah <span class="text-red-500">*</span>
                         </label>
                         <select name="mataKuliahId" id="mataKuliahId"
-                                class="bg-gray-50 border {{ $errors->has('mataKuliahId') ? 'border-red-500' : 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5"
+                                class="hidden bg-gray-50 border {{ $errors->has('mataKuliahId') ? 'border-red-500' : 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5"
                                 required>
                             <option value="">Pilih Mata Kuliah</option>
                             @foreach($mataKuliahs as $mataKuliah)
@@ -57,6 +57,18 @@
                                 </option>
                             @endforeach
                         </select>
+                        <div id="custom-mk-select" class="relative">
+                            <button type="button" id="custom-mk-button" class="bg-gray-50 border {{ $errors->has('mataKuliahId') ? 'border-red-500' : 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full text-left p-2.5 flex items-center justify-between">
+                                <span id="custom-mk-label" class="truncate">Pilih Mata Kuliah</span>
+                                <svg class="w-4 h-4 text-gray-500 ml-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                            </button>
+                            <div id="custom-mk-panel" class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg hidden">
+                                <div class="p-2 border-b border-gray-100">
+                                    <input id="custom-mk-search" type="text" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-amber-500 focus:border-amber-500 p-2" placeholder="Cari mata kuliah...">
+                                </div>
+                                <ul id="custom-mk-options" class="max-h-56 overflow-auto py-1"></ul>
+                            </div>
+                        </div>
                         @error('mataKuliahId')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -90,7 +102,7 @@
                                class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block p-2.5"
                                placeholder="Contoh: A, B, C, atau 1, 2, 3"
                                required>
-                        <button type="button" 
+                        <button type="button"
                                 id="add-kelas-input"
                                 class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2.5 rounded-lg text-sm">
                             +
@@ -105,7 +117,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         Dosen Pengampu <span class="text-red-500">*</span>
                     </label>
-                    
+
                     <!-- Dosen Option -->
                     <div class="mb-4">
                         <div class="flex items-center space-x-4">
@@ -173,6 +185,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const dosenDifferentSection = document.getElementById('dosen-different-section');
     const kelasDosenContainer = document.getElementById('kelas-dosen-container');
     const dosens = @json($dosens);
+    const mataKuliahSelect = document.getElementById('mataKuliahId');
 
     // Add kelas input functionality
     addKelasBtn.addEventListener('click', function() {
@@ -184,14 +197,14 @@ document.addEventListener('DOMContentLoaded', function() {
                    class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block p-2.5"
                    placeholder="Contoh: A, B, C, atau 1, 2, 3"
                    required>
-            <button type="button" 
+            <button type="button"
                     class="remove-kelas-input bg-red-600 hover:bg-red-700 text-white px-3 py-2.5 rounded-lg text-sm">
                 ×
             </button>
         `;
-        
+
         additionalInputsContainer.appendChild(newInput);
-        
+
         // Add remove functionality
         newInput.querySelector('.remove-kelas-input').addEventListener('click', function() {
             newInput.remove();
@@ -217,6 +230,92 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Custom searchable dropdown for Mata Kuliah (tanpa field baru di form)
+    (function initCustomMataKuliahSelect() {
+        const button = document.getElementById('custom-mk-button');
+        const label = document.getElementById('custom-mk-label');
+        const panel = document.getElementById('custom-mk-panel');
+        const search = document.getElementById('custom-mk-search');
+        const list = document.getElementById('custom-mk-options');
+
+        if (!button || !panel || !search || !list || !mataKuliahSelect) return;
+
+        const closePanel = () => {
+            panel.classList.add('hidden');
+        };
+
+        const openPanel = () => {
+            panel.classList.remove('hidden');
+            // focus search on open
+            setTimeout(() => search.focus(), 0);
+        };
+
+        const setSelected = (value, text) => {
+            mataKuliahSelect.value = value;
+            label.textContent = text || 'Pilih Mata Kuliah';
+        };
+
+        const buildOptions = () => {
+            list.innerHTML = '';
+            const currentQuery = search.value.trim().toLowerCase();
+            const options = Array.from(mataKuliahSelect.options).slice(1); // skip placeholder
+
+            const fragment = document.createDocumentFragment();
+            const filtered = options.filter(opt => opt.text.toLowerCase().includes(currentQuery));
+
+            if (filtered.length === 0) {
+                const empty = document.createElement('li');
+                empty.className = 'px-3 py-2 text-sm text-gray-500';
+                empty.textContent = 'Tidak ada hasil';
+                fragment.appendChild(empty);
+            } else {
+                filtered.forEach(opt => {
+                    const li = document.createElement('li');
+                    li.className = 'px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer';
+                    li.textContent = opt.text;
+                    li.dataset.value = opt.value;
+                    li.addEventListener('click', () => {
+                        setSelected(opt.value, opt.text);
+                        closePanel();
+                    });
+                    fragment.appendChild(li);
+                });
+            }
+
+            list.appendChild(fragment);
+        };
+
+        // Initialize label with current selected or placeholder
+        const selectedOption = mataKuliahSelect.options[mataKuliahSelect.selectedIndex];
+        label.textContent = selectedOption && selectedOption.value !== '' ? selectedOption.text : 'Pilih Mata Kuliah';
+
+        // Events
+        button.addEventListener('click', () => {
+            if (panel.classList.contains('hidden')) {
+                openPanel();
+                buildOptions();
+            } else {
+                closePanel();
+            }
+        });
+
+        search.addEventListener('input', () => buildOptions());
+
+        // Close when clicking outside
+        document.addEventListener('click', (e) => {
+            const wrapper = document.getElementById('custom-mk-select');
+            if (!wrapper.contains(e.target)) {
+                closePanel();
+            }
+        });
+
+        // Sync label when value changed programmatically
+        mataKuliahSelect.addEventListener('change', () => {
+            const sel = mataKuliahSelect.options[mataKuliahSelect.selectedIndex];
+            label.textContent = sel && sel.value !== '' ? sel.text : 'Pilih Mata Kuliah';
+        });
+    })();
 
     // Update dosen per kelas when kelas inputs change
     function updateDosenPerKelas() {
@@ -287,7 +386,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const selectedKelas = Array.from(kelasInputs)
                 .map(input => input.value.trim())
                 .filter(value => value !== '');
-            
+
             let hasDosen = false;
             selectedKelas.forEach(kelasName => {
                 const dosenCheckboxes = document.querySelectorAll(`input[name="dosenPerKelas[${kelasName}][]"]:checked`);

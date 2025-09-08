@@ -91,7 +91,7 @@
     <div class="header">
         <h1>LAPORAN PENGUKURAN CPMK</h1>
         <p>{{ $tahunAjaranMatkul->mataKuliah->namaMatkul }}</p>
-        <p>{{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }} • {{ $tahunAjaranMatkul->tahunAjaran->tahun }} - {{ ucfirst($tahunAjaranMatkul->tahunAjaran->periode) }}</p>
+        <p>{{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }}-{{ $tahunAjaranMatkul->mataKuliah->kurikulum }} • {{ $tahunAjaranMatkul->tahunAjaran->tahun }} - {{ ucfirst($tahunAjaranMatkul->tahunAjaran->periode) }}</p>
         <p>Dicetak pada: {{ now()->format('d/m/Y H:i') }}</p>
     </div>
 

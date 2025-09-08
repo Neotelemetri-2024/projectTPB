@@ -297,7 +297,7 @@
                 @if($mk['totalMahasiswa'] > 0)
                         <div class="border rounded-lg p-4 hover:shadow-md transition-shadow">
                         <div class="flex justify-between items-center mb-3">
-                                <h4 class="font-medium text-sm text-gray-900">{{ $mk['kodeMatkul'] }}</h4>
+                                <h4 class="font-medium text-sm text-gray-900">{{ $mk['kodeMatkul'] }}-{{ $mk['kurikulum'] }}</h4>
                                 <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">{{ $mk['totalMahasiswa'] }} mahasiswa</span>
                             </div>
                             <p class="text-xs text-gray-600 mb-3">{{ $mk['mataKuliah'] }}</p>
@@ -356,7 +356,7 @@
                                 <td class="px-4 py-3">
                                     <div>
                                         <div class="text-sm font-medium text-gray-900">{{ $kelas->tahunAjaranMatkul->mataKuliah->namaMatkul ?? '-' }}</div>
-                                        <div class="text-sm text-gray-500">{{ $kelas->tahunAjaranMatkul->mataKuliah->kodeMatkul ?? '-' }}</div>
+                                        <div class="text-sm text-gray-500">{{ $kelas->tahunAjaranMatkul->mataKuliah->kodeMatkul ?? '-' }}{{ $kelas->tahunAjaranMatkul->mataKuliah->kurikulum ? '-' . $kelas->tahunAjaranMatkul->mataKuliah->kurikulum : '' }}</div>
                                     </div>
                                 </td>
                                 <td class="px-4 py-3 text-sm text-gray-900">{{ $kelas->namaKelas }}</td>

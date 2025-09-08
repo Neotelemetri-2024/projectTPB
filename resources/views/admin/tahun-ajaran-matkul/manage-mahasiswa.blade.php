@@ -10,7 +10,7 @@
                 <div>
                     <h2 class="text-lg font-semibold text-gray-900">Kelola Mahasiswa</h2>
                     <p class="text-sm text-gray-600 mt-1">
-                        {{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }} - {{ $tahunAjaranMatkul->mataKuliah->namaMatkul }}
+                        {{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }}-{{ $tahunAjaranMatkul->mataKuliah->kurikulum }} - {{ $tahunAjaranMatkul->mataKuliah->namaMatkul }}
                         <span class="mx-2">•</span>
                         Kelas {{ $tahunAjaranMatkul->kelas->pluck('namaKelas')->implode(', ') }}
                         <span class="mx-2">•</span>

@@ -32,7 +32,7 @@
                         <div class="flex items-start justify-between mb-4">
                             <div class="flex-1">
                                 <h3 class="text-lg font-semibold text-gray-900 mb-1">
-                                    {{ $matkul->mataKuliah->kodeMatkul }}
+                                    {{ $matkul->mataKuliah->kodeMatkul }}-{{ $matkul->mataKuliah->kurikulum }}
                                 </h3>
                                 <p class="text-sm text-gray-600 mb-2">
                                     {{ $matkul->mataKuliah->namaMatkul }}

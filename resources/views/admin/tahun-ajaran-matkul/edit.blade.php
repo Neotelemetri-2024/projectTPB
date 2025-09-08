@@ -54,7 +54,7 @@
                             <option value="">Pilih Mata Kuliah</option>
                             @foreach($mataKuliahs as $mataKuliah)
                                 <option value="{{ $mataKuliah->id }}" {{ old('mataKuliahId', $tahunAjaranMatkul->mataKuliahId) == $mataKuliah->id ? 'selected' : '' }}>
-                                    {{ $mataKuliah->namaMatkul }} ({{ $mataKuliah->kodeMatkul }})
+                                    {{ $mataKuliah->namaMatkul }} ({{ $mataKuliah->kodeMatkul }}-{{ $mataKuliah->kurikulum }})
                                 </option>
                             @endforeach
                         </select>

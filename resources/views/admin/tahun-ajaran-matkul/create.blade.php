@@ -51,11 +51,11 @@
                                 class="hidden bg-gray-50 border {{ $errors->has('mataKuliahId') ? 'border-red-500' : 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5"
                                 required>
                             <option value="">Pilih Mata Kuliah</option>
-                            @foreach($mataKuliahs as $mataKuliah)
-                                <option value="{{ $mataKuliah->id }}" {{ old('mataKuliahId') == $mataKuliah->id ? 'selected' : '' }}>
-                                    {{ $mataKuliah->namaMatkul }} ({{ $mataKuliah->kodeMatkul }})
-                                </option>
-                            @endforeach
+                                @foreach($mataKuliahs as $mataKuliah)
+                                    <option value="{{ $mataKuliah->id }}" {{ old('mataKuliahId') == $mataKuliah->id ? 'selected' : '' }}>
+                                        {{ $mataKuliah->namaMatkul }} ({{ $mataKuliah->kodeMatkul }}-{{ $mataKuliah->kurikulum }})
+                                    </option>
+                                @endforeach
                         </select>
                         <div id="custom-mk-select" class="relative">
                             <button type="button" id="custom-mk-button" class="bg-gray-50 border {{ $errors->has('mataKuliahId') ? 'border-red-500' : 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full text-left p-2.5 flex items-center justify-between">
@@ -94,6 +94,7 @@
                     </div>
                 </div>
 
+                <!-- Kelas Section -->
                 <div>
                     <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nama Kelas <span class="text-red-500">*</span></label>
                     <div class="flex gap-2">
@@ -135,19 +136,23 @@
                     <!-- Dosen Same for All Classes -->
                     <div id="dosen-same-section" class="dosen-section">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Pilih Dosen untuk Semua Kelas</label>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        
+                        <!-- Search input -->
+                        <div class="mb-3">
+                            <input id="dosen-search-same" type="text" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 p-2.5" placeholder="Cari dosen...">
+                        </div>
+                        
+                        <!-- Dosen checkboxes -->
+                        <div id="dosen-checkboxes-same" class="max-h-48 overflow-auto space-y-2 border border-gray-200 rounded-lg p-3 bg-white">
                             @foreach($dosens as $dosen)
-                                <div class="flex items-center">
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
                                     <input type="checkbox"
                                            name="dosenIds[]"
                                            value="{{ $dosen->id }}"
-                                           id="dosen_{{ $dosen->id }}"
-                                           class="dosen-checkbox rounded border-gray-300 text-amber-600 shadow-sm focus:border-amber-300 focus:ring focus:ring-amber-200 focus:ring-opacity-50 {{ $errors->has('dosenIds') ? 'border-red-500' : '' }}"
+                                           class="dosen-checkbox rounded border-gray-300 text-amber-600 shadow-sm focus:border-amber-300 focus:ring focus:ring-amber-200 focus:ring-opacity-50"
                                            {{ in_array($dosen->id, old('dosenIds', [])) ? 'checked' : '' }}>
-                                    <label for="dosen_{{ $dosen->id }}" class="ml-2 text-sm text-gray-700">
-                                        {{ $dosen->nama }}
-                                    </label>
-                                </div>
+                                    <span class="ml-2 text-sm text-gray-700">{{ $dosen->nama }}</span>
+                                </label>
                             @endforeach
                         </div>
                     </div>
@@ -317,6 +322,46 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     })();
 
+    // Initialize search functionality for dosen same for all classes
+    (function initDosenSearchSame() {
+        const searchInput = document.getElementById('dosen-search-same');
+        const checkboxesContainer = document.getElementById('dosen-checkboxes-same');
+
+        if (!searchInput || !checkboxesContainer) return;
+
+        // Store original checkboxes HTML
+        const originalCheckboxes = checkboxesContainer.innerHTML;
+
+        // Search functionality
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.trim().toLowerCase();
+            
+            if (searchTerm === '') {
+                // Show all checkboxes
+                checkboxesContainer.innerHTML = originalCheckboxes;
+            } else {
+                // Filter checkboxes based on search term
+                const filteredCheckboxes = dosens
+                    .filter(dosen => dosen.nama.toLowerCase().includes(searchTerm))
+                    .map(dosen => `
+                        <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                            <input type="checkbox"
+                                   name="dosenIds[]"
+                                   value="${dosen.id}"
+                                   class="dosen-checkbox rounded border-gray-300 text-amber-600 shadow-sm focus:border-amber-300 focus:ring focus:ring-amber-200 focus:ring-opacity-50">
+                            <span class="ml-2 text-sm text-gray-700">${dosen.nama}</span>
+                        </label>
+                    `).join('');
+                
+                if (filteredCheckboxes === '') {
+                    checkboxesContainer.innerHTML = '<div class="text-center text-gray-500 py-4">Tidak ada dosen yang ditemukan</div>';
+                } else {
+                    checkboxesContainer.innerHTML = filteredCheckboxes;
+                }
+            }
+        });
+    })();
+
     // Update dosen per kelas when kelas inputs change
     function updateDosenPerKelas() {
         if (document.getElementById('dosen-different').checked) {
@@ -330,25 +375,75 @@ document.addEventListener('DOMContentLoaded', function() {
             selectedKelas.forEach(kelasName => {
                 if (kelasName) {
                     const kelasSection = document.createElement('div');
-                    kelasSection.className = 'mb-4 p-3 border border-gray-200 rounded-lg';
+                    kelasSection.className = 'mb-4 p-4 border border-gray-200 rounded-lg bg-gray-50';
                     kelasSection.innerHTML = `
-                        <h4 class="text-sm font-medium text-gray-900 mb-2">Dosen untuk Kelas ${kelasName}</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <h4 class="text-sm font-medium text-gray-900 mb-3">Dosen untuk Kelas ${kelasName}</h4>
+                        
+                        <!-- Search input -->
+                        <div class="mb-3">
+                            <input id="dosen-search-${kelasName}" type="text" class="w-full bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 p-2.5" placeholder="Cari dosen...">
+                        </div>
+                        
+                        <!-- Dosen checkboxes -->
+                        <div id="dosen-checkboxes-${kelasName}" class="max-h-48 overflow-auto space-y-2 border border-gray-200 rounded-lg p-3 bg-white">
                             ${dosens.map(dosen => `
-                                <label class="flex items-center">
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
                                     <input type="checkbox"
                                            name="dosenPerKelas[${kelasName}][]"
                                            value="${dosen.id}"
-                                           class="rounded border-gray-300 text-amber-600 shadow-sm focus:border-amber-300 focus:ring focus:ring-amber-200 focus:ring-opacity-50">
+                                           class="dosen-checkbox rounded border-gray-300 text-amber-600 shadow-sm focus:border-amber-300 focus:ring focus:ring-amber-200 focus:ring-opacity-50">
                                     <span class="ml-2 text-sm text-gray-700">${dosen.nama}</span>
                                 </label>
                             `).join('')}
                         </div>
                     `;
                     kelasDosenContainer.appendChild(kelasSection);
+                    
+                    // Initialize search functionality for this class
+                    initDosenSearchForKelas(kelasName);
                 }
             });
         }
+    }
+
+    // Initialize search functionality for specific kelas
+    function initDosenSearchForKelas(kelasName) {
+        const searchInput = document.getElementById(`dosen-search-${kelasName}`);
+        const checkboxesContainer = document.getElementById(`dosen-checkboxes-${kelasName}`);
+
+        if (!searchInput || !checkboxesContainer) return;
+
+        // Store original checkboxes HTML
+        const originalCheckboxes = checkboxesContainer.innerHTML;
+
+        // Search functionality
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.trim().toLowerCase();
+            
+            if (searchTerm === '') {
+                // Show all checkboxes
+                checkboxesContainer.innerHTML = originalCheckboxes;
+            } else {
+                // Filter checkboxes based on search term
+                const filteredCheckboxes = dosens
+                    .filter(dosen => dosen.nama.toLowerCase().includes(searchTerm))
+                    .map(dosen => `
+                        <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                            <input type="checkbox"
+                                   name="dosenPerKelas[${kelasName}][]"
+                                   value="${dosen.id}"
+                                   class="dosen-checkbox rounded border-gray-300 text-amber-600 shadow-sm focus:border-amber-300 focus:ring focus:ring-amber-200 focus:ring-opacity-50">
+                            <span class="ml-2 text-sm text-gray-700">${dosen.nama}</span>
+                        </label>
+                    `).join('');
+                
+                if (filteredCheckboxes === '') {
+                    checkboxesContainer.innerHTML = '<div class="text-center text-gray-500 py-4">Tidak ada dosen yang ditemukan</div>';
+                } else {
+                    checkboxesContainer.innerHTML = filteredCheckboxes;
+                }
+            }
+        });
     }
 
     // Add change event to first kelas input

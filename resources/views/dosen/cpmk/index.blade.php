@@ -140,7 +140,7 @@
                                     <!-- Kode Column -->
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="text-sm font-mono font-medium text-gray-900">
-                                            {{ $mataKuliah->mataKuliah->kodeMatkul ?? '-' }}
+                                            {{ $mataKuliah->mataKuliah->kodeMatkul ?? '-' }}{{ $mataKuliah->mataKuliah->kurikulum ? '-' . $mataKuliah->mataKuliah->kurikulum : '' }}
                                         </div>
                                     </td>
 

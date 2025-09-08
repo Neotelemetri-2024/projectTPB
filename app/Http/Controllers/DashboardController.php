@@ -664,6 +664,7 @@ class DashboardController extends Controller
             $gradeDistributionPerMK[] = [
                 'mataKuliah' => $mk->mataKuliah->namaMatkul,
                 'kodeMatkul' => $mk->mataKuliah->kodeMatkul,
+                'kurikulum' => $mk->mataKuliah->kurikulum,
                 'gradeCounts' => $gradeCounts,
                 'totalMahasiswa' => array_sum($gradeCounts)
             ];

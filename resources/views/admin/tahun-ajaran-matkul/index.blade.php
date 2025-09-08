@@ -124,7 +124,7 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div>
                                     <div class="text-sm font-medium text-gray-900">{{ $item->mataKuliah->namaMatkul }}</div>
-                                    <div class="text-sm text-gray-500">{{ $item->mataKuliah->kodeMatkul }}</div>
+                                    <div class="text-sm text-gray-500">{{ $item->mataKuliah->kodeMatkul }}-{{ $item->mataKuliah->kurikulum }}</div>
                                 </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Laporan CPMK - {{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }}</title>
+    <title>Laporan CPMK - {{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }}-{{ $tahunAjaranMatkul->mataKuliah->kurikulum }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -172,7 +172,7 @@
 <body>
     <div class="header">
         <h1>LAPORAN CAPAIAN PEMBELAJARAN MATA KULIAH (CPMK)</h1>
-        <p>{{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }} - {{ $tahunAjaranMatkul->mataKuliah->namaMatkul }}</p>
+        <p>{{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }}-{{ $tahunAjaranMatkul->mataKuliah->kurikulum }} - {{ $tahunAjaranMatkul->mataKuliah->namaMatkul }}</p>
         <p>Tahun Ajaran: {{ $tahunAjaranMatkul->tahunAjaran->tahun }} - {{ ucfirst($tahunAjaranMatkul->tahunAjaran->periode) }}</p>
         <p>Kurikulum: {{ $tahunAjaranMatkul->mataKuliah->kurikulum }} | SKS: {{ $tahunAjaranMatkul->getSks() }}</p>
     </div>

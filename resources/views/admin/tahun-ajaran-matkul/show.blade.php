@@ -61,7 +61,7 @@
                             </div>
                             <div class="flex">
                                 <span class="w-24 text-sm font-medium text-gray-600">Kode:</span>
-                                <span class="text-sm text-gray-900">{{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }}</span>
+                                <span class="text-sm text-gray-900">{{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }}-{{ $tahunAjaranMatkul->mataKuliah->kurikulum }}</span>
                             </div>
                             <div class="flex">
                                 <span class="w-24 text-sm font-medium text-gray-600">Semester:</span>

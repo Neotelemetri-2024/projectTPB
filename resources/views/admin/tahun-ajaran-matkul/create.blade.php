@@ -329,35 +329,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!searchInput || !checkboxesContainer) return;
 
-        // Store original checkboxes HTML
-        const originalCheckboxes = checkboxesContainer.innerHTML;
-
-        // Search functionality
+        // Search functionality - hide/show instead of replacing HTML
         searchInput.addEventListener('input', function() {
             const searchTerm = this.value.trim().toLowerCase();
+            const labels = checkboxesContainer.querySelectorAll('label');
             
             if (searchTerm === '') {
-                // Show all checkboxes
-                checkboxesContainer.innerHTML = originalCheckboxes;
+                // Show all labels
+                labels.forEach(label => {
+                    label.style.display = 'flex';
+                });
             } else {
-                // Filter checkboxes based on search term
-                const filteredCheckboxes = dosens
-                    .filter(dosen => dosen.nama.toLowerCase().includes(searchTerm))
-                    .map(dosen => `
-                        <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
-                            <input type="checkbox"
-                                   name="dosenIds[]"
-                                   value="${dosen.id}"
-                                   class="dosen-checkbox rounded border-gray-300 text-amber-600 shadow-sm focus:border-amber-300 focus:ring focus:ring-amber-200 focus:ring-opacity-50">
-                            <span class="ml-2 text-sm text-gray-700">${dosen.nama}</span>
-                        </label>
-                    `).join('');
-                
-                if (filteredCheckboxes === '') {
-                    checkboxesContainer.innerHTML = '<div class="text-center text-gray-500 py-4">Tidak ada dosen yang ditemukan</div>';
-                } else {
-                    checkboxesContainer.innerHTML = filteredCheckboxes;
-                }
+                // Filter labels based on search term
+                labels.forEach(label => {
+                    const dosenName = label.querySelector('span').textContent.toLowerCase();
+                    if (dosenName.includes(searchTerm)) {
+                        label.style.display = 'flex';
+                    } else {
+                        label.style.display = 'none';
+                    }
+                });
             }
         });
     })();
@@ -413,35 +404,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!searchInput || !checkboxesContainer) return;
 
-        // Store original checkboxes HTML
-        const originalCheckboxes = checkboxesContainer.innerHTML;
-
-        // Search functionality
+        // Search functionality - hide/show instead of replacing HTML
         searchInput.addEventListener('input', function() {
             const searchTerm = this.value.trim().toLowerCase();
+            const labels = checkboxesContainer.querySelectorAll('label');
             
             if (searchTerm === '') {
-                // Show all checkboxes
-                checkboxesContainer.innerHTML = originalCheckboxes;
+                // Show all labels
+                labels.forEach(label => {
+                    label.style.display = 'flex';
+                });
             } else {
-                // Filter checkboxes based on search term
-                const filteredCheckboxes = dosens
-                    .filter(dosen => dosen.nama.toLowerCase().includes(searchTerm))
-                    .map(dosen => `
-                        <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
-                            <input type="checkbox"
-                                   name="dosenPerKelas[${kelasName}][]"
-                                   value="${dosen.id}"
-                                   class="dosen-checkbox rounded border-gray-300 text-amber-600 shadow-sm focus:border-amber-300 focus:ring focus:ring-amber-200 focus:ring-opacity-50">
-                            <span class="ml-2 text-sm text-gray-700">${dosen.nama}</span>
-                        </label>
-                    `).join('');
-                
-                if (filteredCheckboxes === '') {
-                    checkboxesContainer.innerHTML = '<div class="text-center text-gray-500 py-4">Tidak ada dosen yang ditemukan</div>';
-                } else {
-                    checkboxesContainer.innerHTML = filteredCheckboxes;
-                }
+                // Filter labels based on search term
+                labels.forEach(label => {
+                    const dosenName = label.querySelector('span').textContent.toLowerCase();
+                    if (dosenName.includes(searchTerm)) {
+                        label.style.display = 'flex';
+                    } else {
+                        label.style.display = 'none';
+                    }
+                });
             }
         });
     }

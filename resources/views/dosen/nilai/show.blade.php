@@ -618,7 +618,7 @@
 </div>
 
 <!-- Detail Nilai Modal -->
-<div id="detail-modal" class="fixed inset-0 overflow-y-auto overflow-x-hidden justify-center items-center min-h-screen w-full z-50 hidden" style="background: rgba(0,0,0,0.6);">
+<div id="detail-modal" class="fixed inset-0 overflow-y-auto overflow-x-hidden justify-center items-center min-h-screen w-full z-50 hidden" style="background: rgba(0,0,0,0.6); display: none;">
     <div class="relative p-4 w-full max-w-6xl max-h-full transform transition-all duration-300 ease-out modal-content scale-95 opacity-0">
         <div class="relative bg-white rounded-lg shadow-xl">
             <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t">
@@ -907,6 +907,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Show modal
             modal.classList.remove('hidden');
+            modal.style.display = 'flex';
 
             // Add animation classes
             const modalContent = modal.querySelector('.modal-content');
@@ -930,6 +931,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             setTimeout(() => {
                 modal.classList.add('hidden');
+                modal.style.display = 'none';
             }, 300);
         }
     }
@@ -1954,6 +1956,19 @@ button:disabled {
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+}
+
+/* Fix untuk modal detail agar benar-benar center */
+#detail-modal {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+#detail-modal .modal-content {
+    margin: auto;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 </style>
 @endpush

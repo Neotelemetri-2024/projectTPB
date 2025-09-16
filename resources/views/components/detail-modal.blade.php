@@ -24,14 +24,14 @@
 document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('{{ $id }}');
     const modalContent = modal.querySelector('[data-modal-content]');
-    
+
     // Show modal with animation
     document.addEventListener('click', function(e) {
         if (e.target.matches('[data-modal-toggle="{{ $id }}"]') || e.target.closest('[data-modal-toggle="{{ $id }}"]')) {
             e.preventDefault();
             modal.classList.remove('hidden');
             modal.classList.add('flex');
-            
+
             // Trigger animation
             setTimeout(() => {
                 modal.classList.remove('bg-opacity-0');
@@ -41,32 +41,32 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 10);
         }
     });
-    
+
     // Hide modal with animation
     function hideModal() {
         modalContent.classList.add('scale-95', 'opacity-0');
         modalContent.classList.remove('scale-100', 'opacity-100');
         modal.classList.remove('bg-opacity-10');
         modal.classList.add('bg-opacity-0');
-        
+
         setTimeout(() => {
             modal.classList.add('hidden');
             modal.classList.remove('flex');
         }, 300);
     }
-    
+
     // Hide on background click
     modal.addEventListener('click', function(e) {
         if (e.target === modal) {
             hideModal();
         }
     });
-    
+
     // Hide on close button click
     modal.querySelectorAll('[data-modal-hide="{{ $id }}"]').forEach(btn => {
         btn.addEventListener('click', hideModal);
     });
-    
+
     // Hide on escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
@@ -74,4 +74,4 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
-</script> 
+</script>

@@ -88,6 +88,15 @@
                             <button type="button" id="select-all-btn" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
                                 Pilih Semua
                             </button>
+                            @if($kelas->kelasMahasiswa->count() > 0)
+                                <a href="{{ route('admin.kelas.show', $kelas->id) }}"
+                                   class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                    Hapus Bulk Mahasiswa
+                                </a>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -112,8 +121,8 @@
                                         @foreach($availableMahasiswas as $mahasiswa)
                                             <tr class="hover:bg-gray-50">
                                                 <td class="px-6 py-4 whitespace-nowrap">
-                                                    <input type="checkbox" 
-                                                           name="mahasiswa_ids[]" 
+                                                    <input type="checkbox"
+                                                           name="mahasiswa_ids[]"
                                                            value="{{ $mahasiswa->id }}"
                                                            class="mahasiswa-checkbox rounded border-gray-300 text-amber-600 shadow-sm focus:border-amber-300 focus:ring focus:ring-amber-200 focus:ring-opacity-50">
                                                 </td>
@@ -137,7 +146,7 @@
                                         </span>
                                     @endif
                                 </div>
-                                <button type="submit" 
+                                <button type="submit"
                                         id="add-selected-btn"
                                         class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                         disabled>
@@ -184,7 +193,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateSelectAllState() {
         const totalCheckboxes = mahasiswaCheckboxes.length;
         const checkedCheckboxes = document.querySelectorAll('.mahasiswa-checkbox:checked').length;
-        
+
         if (checkedCheckboxes === 0) {
             selectAllCheckbox.indeterminate = false;
             selectAllCheckbox.checked = false;
@@ -223,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
         selectAllCheckbox.indeterminate = false;
         updateSelectedCount();
         updateSelectAllState();
-        
+
         // Update button text
         this.textContent = allChecked ? 'Pilih Semua' : 'Hapus Semua';
     });
@@ -234,4 +243,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-@endsection 
+@endsection

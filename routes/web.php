@@ -157,6 +157,7 @@ Route::middleware('auth')->group(function () {
         Route::post('admin/kelas/{id}/add-dosen', [KelasController::class, 'addDosen'])->name('admin.kelas.add-dosen');
         Route::delete('admin/kelas/{id}/remove-dosen/{dosenId}', [KelasController::class, 'removeDosen'])->name('admin.kelas.remove-dosen');
         Route::post('admin/kelas/{id}/bulk-add-mahasiswa', [KelasController::class, 'bulkAddMahasiswa'])->name('admin.kelas.bulk-add-mahasiswa');
+        Route::delete('admin/kelas/{id}/bulk-remove-mahasiswa', [KelasController::class, 'bulkRemoveMahasiswa'])->name('admin.kelas.bulk-remove-mahasiswa');
     });
 
     // Dosen Dashboard

@@ -61,8 +61,8 @@ class KelasController extends Controller
             ->pluck('tahunMasuk');
 
         return view('admin.kelas.manage-mahasiswa', compact(
-            'kelas', 
-            'availableMahasiswas', 
+            'kelas',
+            'availableMahasiswas',
             'tahunMasukOptions'
         ));
     }
@@ -182,5 +182,28 @@ class KelasController extends Controller
         }
 
         return back()->with('success', "$addedCount mahasiswa berhasil ditambahkan ke kelas.");
+    }
+
+    public function bulkRemoveMahasiswa(Request $request, $id)
+    {
+        $request->validate([
+            'mahasiswa_ids' => 'required|array|min:1',
+            'mahasiswa_ids.*' => 'exists:mahasiswa,id'
+        ]);
+
+        $kelas = Kelas::findOrFail($id);
+
+        $removedCount = 0;
+        foreach ($request->mahasiswa_ids as $mahasiswaId) {
+            $deleted = KelasMahasiswa::where('mahasiswaId', $mahasiswaId)
+                ->where('kelasId', $kelas->id)
+                ->delete();
+
+            if ($deleted) {
+                $removedCount++;
+            }
+        }
+
+        return back()->with('success', "$removedCount mahasiswa berhasil dihapus dari kelas.");
     }
 }

@@ -200,17 +200,17 @@
 
         <!-- Main Charts Section -->
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
-            <!-- History Chart - Top 5 Courses -->
+            <!-- History Chart - Semester Ganjil -->
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="flex items-center justify-between mb-4">
                     <div>
                         <h3 class="text-lg font-semibold text-gray-900">Tren Historis Top 5 Mata Kuliah</h3>
-                        <p class="text-sm text-gray-600">Berdasarkan jumlah mahasiswa terbanyak</p>
+                        <p class="text-sm text-gray-600">Semester Ganjil - Berdasarkan jumlah mahasiswa terbanyak</p>
                     </div>
                     <div class="flex items-center space-x-2">
                         <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
                         <span class="text-sm text-gray-600">Per Tahun Ajaran</span>
-                        <button onclick="maximizeChart('historyChart', 'Tren Historis Top 5 Mata Kuliah')"
+                        <button onclick="maximizeChart('historyChartGanjil', 'Tren Historis Top 5 Mata Kuliah - Semester Ganjil')"
                                 class="p-1 text-gray-400 hover:text-gray-600 transition-colors">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
@@ -218,12 +218,37 @@
                         </button>
                     </div>
                 </div>
-                <div class="relative h-80">
-                    <canvas id="historyChart"></canvas>
+                <div class="relative h-80 w-full px-0 mx-0">
+                    <canvas id="historyChartGanjil" class="w-full h-full"></canvas>
                 </div>
             </div>
 
-            <!-- CPL Achievement Chart -->
+            <!-- History Chart - Semester Genap -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Tren Historis Top 5 Mata Kuliah</h3>
+                        <p class="text-sm text-gray-600">Semester Genap - Berdasarkan jumlah mahasiswa terbanyak</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span class="text-sm text-gray-600">Per Tahun Ajaran</span>
+                        <button onclick="maximizeChart('historyChartGenap', 'Tren Historis Top 5 Mata Kuliah - Semester Genap')"
+                                class="p-1 text-gray-400 hover:text-gray-600 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="relative h-80 w-full px-0 mx-0">
+                    <canvas id="historyChartGenap" class="w-full h-full"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- CPL Achievement Chart - Full Width -->
+        <div class="mb-8">
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="flex items-center justify-between mb-4">
                     <div>
@@ -347,32 +372,167 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Chart data from backend
 const chartData = @json($chartData);
+const chartDataGanjil = @json($chartDataGanjil ?? []);
+const chartDataGenap = @json($chartDataGenap ?? []);
 const cplAchievementData = @json($cplAchievementData);
 const matkulPerformanceData = @json($matkulPerformanceData);
 const courseCompletionData = @json($courseCompletionData);
 const courseTypeData = @json($courseTypeData);
 const topStudentsData = @json($topStudentsData);
 
+// Debug: Log data untuk troubleshooting
+console.log('Chart Data Ganjil:', chartDataGanjil);
+console.log('Chart Data Genap:', chartDataGenap);
+console.log('Chart Data All:', chartData);
+
+// Fallback data sementara jika backend belum menyediakan data terpisah
+// TODO: Hapus ini setelah backend menyediakan data terpisah
+let fallbackGanjilData = null;
+let fallbackGenapData = null;
+
+if (chartDataGanjil.length === 0 && chartDataGenap.length === 0 && chartData && chartData.labels) {
+    // Buat data terpisah dari chartData yang ada
+    const allLabels = chartData.labels || [];
+    const allDatasets = chartData.datasets || [];
+
+    // Filter untuk semester ganjil (asumsi label mengandung "Ganjil")
+    const ganjilLabels = allLabels.filter(label => label.toLowerCase().includes('ganjil'));
+    const genapLabels = allLabels.filter(label => label.toLowerCase().includes('genap'));
+
+    if (ganjilLabels.length > 0) {
+        fallbackGanjilData = {
+            labels: ganjilLabels,
+            datasets: allDatasets.map(dataset => ({
+                ...dataset,
+                data: dataset.data.slice(0, ganjilLabels.length)
+            }))
+        };
+    }
+
+    if (genapLabels.length > 0) {
+        fallbackGenapData = {
+            labels: genapLabels,
+            datasets: allDatasets.map(dataset => ({
+                ...dataset,
+                data: dataset.data.slice(ganjilLabels.length, ganjilLabels.length + genapLabels.length)
+            }))
+        };
+    }
+
+    console.log('Fallback Ganjil Data:', fallbackGanjilData);
+    console.log('Fallback Genap Data:', fallbackGenapData);
+}
+
 // Make chart data globally accessible for maximize function
 window.chartData = chartData;
+window.chartDataGanjil = chartDataGanjil;
+window.chartDataGenap = chartDataGenap;
+window.fallbackGanjilData = fallbackGanjilData;
+window.fallbackGenapData = fallbackGenapData;
 window.cplAchievementData = cplAchievementData;
 window.matkulPerformanceData = matkulPerformanceData;
 window.courseCompletionData = courseCompletionData;
 window.courseTypeData = courseTypeData;
 window.topStudentsData = topStudentsData;
 
+// Global variables untuk history chart instances
+let historyChartGanjilInstance = null;
+let historyChartGenapInstance = null;
+
 // Initialize all charts
 function initializeCharts() {
     try {
-        // Initialize History Chart (Line Chart)
-        const historyCtx = document.getElementById('historyChart');
-        if (historyCtx) {
-            new Chart(historyCtx.getContext('2d'), {
+        // Initialize History Chart Ganjil (Line Chart)
+        const historyGanjilCtx = document.getElementById('historyChartGanjil');
+        if (historyGanjilCtx) {
+            // Gunakan data semester ganjil, fallback ke data yang sudah difilter
+            let ganjilData;
+            if (chartDataGanjil.length > 0) {
+                ganjilData = chartDataGanjil;
+            } else if (fallbackGanjilData) {
+                ganjilData = fallbackGanjilData;
+            } else {
+                ganjilData = {
+                    labels: ['Belum ada data semester ganjil'],
+                    datasets: [{
+                        label: 'Data tidak tersedia',
+                        data: [0],
+                        borderColor: 'rgb(156, 163, 175)',
+                        backgroundColor: 'rgba(156, 163, 175, 0.1)',
+                        tension: 0.1,
+                        pointRadius: 0,
+                        borderWidth: 2
+                    }]
+                };
+            }
+
+            historyChartGanjilInstance = new Chart(historyGanjilCtx.getContext('2d'), {
                 type: 'line',
-                data: chartData,
+                data: ganjilData,
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    aspectRatio: 2,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Rata-rata Nilai'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Tahun Ajaran'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize History Chart Genap (Line Chart)
+        const historyGenapCtx = document.getElementById('historyChartGenap');
+        if (historyGenapCtx) {
+            // Gunakan data semester genap, fallback ke data yang sudah difilter
+            let genapData;
+            if (chartDataGenap.length > 0) {
+                genapData = chartDataGenap;
+            } else if (fallbackGenapData) {
+                genapData = fallbackGenapData;
+            } else {
+                genapData = {
+                    labels: ['Belum ada data semester genap'],
+                    datasets: [{
+                        label: 'Data tidak tersedia',
+                        data: [0],
+                        borderColor: 'rgb(156, 163, 175)',
+                        backgroundColor: 'rgba(156, 163, 175, 0.1)',
+                        tension: 0.1,
+                        pointRadius: 0,
+                        borderWidth: 2
+                    }]
+                };
+            }
+
+            historyChartGenapInstance = new Chart(historyGenapCtx.getContext('2d'), {
+                type: 'line',
+                data: genapData,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    aspectRatio: 2,
                     scales: {
                         y: {
                             beginAtZero: true,
@@ -586,4 +746,34 @@ function filterDashboard() {
     window.location.href = url.toString();
 }
 </script>
+
+@push('styles')
+<style>
+/* Fix untuk chart agar memenuhi lebar penuh */
+canvas {
+    width: 100% !important;
+    height: auto !important;
+}
+
+/* Pastikan container chart tidak ada padding yang mengganggu */
+.relative.h-80 {
+    padding: 0;
+    margin: 0;
+}
+
+/* Pastikan chart responsive */
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 320px;
+}
+
+/* Pastikan chart memenuhi lebar card */
+.bg-white.rounded-lg.shadow.p-6 canvas {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+</style>
+@endpush
+
 @endsection

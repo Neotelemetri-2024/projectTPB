@@ -254,6 +254,116 @@ function maximizeChart(chartId, title) {
                         }
                     };
                     break;
+                    case 'historyChartGanjil':
+                    // Gunakan data ganjil spesifik atau buat data kosong jika tidak ada
+                    if (window.chartDataGanjil && window.chartDataGanjil.length > 0) {
+                        chartData = window.chartDataGanjil;
+                    } else if (window.fallbackGanjilData) {
+                        chartData = window.fallbackGanjilData;
+                    } else {
+                        // Data kosong dengan pesan
+                        chartData = {
+                            labels: ['Belum ada data semester ganjil'],
+                            datasets: [{
+                                label: 'Data tidak tersedia',
+                                data: [0],
+                                borderColor: 'rgb(156, 163, 175)',
+                                backgroundColor: 'rgba(156, 163, 175, 0.1)',
+                                tension: 0.1,
+                                pointRadius: 0,
+                                borderWidth: 2
+                            }]
+                        };
+                    }
+                    chartType = 'line';
+                    chartOptions = {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                title: {
+                                    display: true,
+                                    text: 'Rata-rata Nilai'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Tahun Ajaran'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    usePointStyle: true,
+                                    padding: 15,
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            }
+                        }
+                    };
+                    break;
+                    case 'historyChartGenap':
+                    // Gunakan data genap spesifik atau buat data kosong jika tidak ada
+                    if (window.chartDataGenap && window.chartDataGenap.length > 0) {
+                        chartData = window.chartDataGenap;
+                    } else if (window.fallbackGenapData) {
+                        chartData = window.fallbackGenapData;
+                    } else {
+                        // Data kosong dengan pesan
+                        chartData = {
+                            labels: ['Belum ada data semester genap'],
+                            datasets: [{
+                                label: 'Data tidak tersedia',
+                                data: [0],
+                                borderColor: 'rgb(156, 163, 175)',
+                                backgroundColor: 'rgba(156, 163, 175, 0.1)',
+                                tension: 0.1,
+                                pointRadius: 0,
+                                borderWidth: 2
+                            }]
+                        };
+                    }
+                    chartType = 'line';
+                    chartOptions = {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                title: {
+                                    display: true,
+                                    text: 'Rata-rata Nilai'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Tahun Ajaran'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    usePointStyle: true,
+                                    padding: 15,
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            }
+                        }
+                    };
+                    break;
                     case 'cplChart':
                     chartData = window.cplAchievementData;
                     chartType = 'bar';

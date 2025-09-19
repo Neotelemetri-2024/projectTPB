@@ -126,6 +126,17 @@ class NilaiImport implements ToCollection, WithHeadingRow
             return;
         }
 
+        // Validate class field
+        if (empty($data['Kelas'])) {
+            throw new \Exception("Kolom Kelas harus diisi untuk NIM {$data['NIM']}");
+        }
+
+        // Validate that the class exists
+        $kelasExists = $this->validateClassExists($data['Kelas']);
+        if (!$kelasExists) {
+            throw new \Exception("Kelas '{$data['Kelas']}' tidak ditemukan untuk mata kuliah ini. Kelas yang tersedia: " . $this->getAvailableClasses());
+        }
+
         // Increment total_success untuk NIM unik yang berhasil diproses
         $nim = trim($data['NIM']);
         if (!in_array($nim, $this->results['processed_nims'])) {
@@ -170,8 +181,8 @@ class NilaiImport implements ToCollection, WithHeadingRow
             Log::info("Created new mahasiswa: {$data['NIM']} - {$data['Nama Mahasiswa']}");
         }
 
-        // Find student's class
-        $studentClass = $this->findStudentClass($mahasiswa->id);
+        // Find student's class using Excel data
+        $studentClass = $this->findStudentClass($mahasiswa->id, $data['Kelas']);
         if (!$studentClass) {
             throw new \Exception("Mahasiswa {$mahasiswa->nama} tidak terdaftar di kelas manapun untuk mata kuliah ini");
         }
@@ -238,41 +249,85 @@ class NilaiImport implements ToCollection, WithHeadingRow
         $this->calculateAndStoreTotal($mahasiswa->id, $studentClass->id);
     }
 
-    protected function findStudentClass($mahasiswaId)
+    protected function findStudentClass($mahasiswaId, $kelasFromExcel = null)
     {
+        // First, check if student is already in any class
         foreach ($this->relatedClasses as $class) {
             $studentInClass = $class->kelas->flatMap(function($kelas) use ($mahasiswaId) {
                 return $kelas->kelasMahasiswa->where('mahasiswaId', $mahasiswaId);
             })->first();
 
             if ($studentInClass) {
+                Log::info("Mahasiswa ID {$mahasiswaId} sudah terdaftar di kelas yang ada");
                 return $class;
             }
         }
 
-        // If student not found in any class, auto-create in the first available class
-        Log::info("Mahasiswa ID {$mahasiswaId} tidak terdaftar di kelas manapun, akan dibuatkan otomatis");
+        // If student not found in any class, find the correct class based on Excel data
+        Log::info("Mahasiswa ID {$mahasiswaId} tidak terdaftar di kelas manapun, akan dibuatkan di kelas: {$kelasFromExcel}");
 
-        $firstClass = $this->relatedClasses->first();
-        if (!$firstClass) {
+        // Find the correct class based on Excel data
+        $targetClass = null;
+        $targetKelas = null;
+
+        if ($kelasFromExcel) {
+            foreach ($this->relatedClasses as $class) {
+                foreach ($class->kelas as $kelas) {
+                    if (strtoupper(trim($kelas->namaKelas)) === strtoupper(trim($kelasFromExcel))) {
+                        $targetClass = $class;
+                        $targetKelas = $kelas;
+                        break 2;
+                    }
+                }
+            }
+        }
+
+        // If class not found by name, use the first available class
+        if (!$targetClass) {
+            Log::warning("Kelas '{$kelasFromExcel}' tidak ditemukan, menggunakan kelas pertama yang tersedia");
+            $targetClass = $this->relatedClasses->first();
+            if (!$targetClass) {
+                throw new \Exception("Tidak ada kelas yang tersedia untuk mata kuliah ini");
+            }
+            $targetKelas = $targetClass->kelas->first();
+        }
+
+        if (!$targetKelas) {
             throw new \Exception("Tidak ada kelas yang tersedia untuk mata kuliah ini");
         }
 
-        // Get the first available kelas
-        $firstKelas = $firstClass->kelas->first();
-        if (!$firstKelas) {
-            throw new \Exception("Tidak ada kelas yang tersedia untuk mata kuliah ini");
-        }
-
-                        // Create KelasMahasiswa - menggunakan kelasId yang benar
+        // Create KelasMahasiswa - menggunakan kelasId yang benar
         $kelasMahasiswa = KelasMahasiswa::create([
             'mahasiswaId' => $mahasiswaId,
-            'kelasId' => $firstKelas->id,
+            'kelasId' => $targetKelas->id,
         ]);
 
-        Log::info("Created KelasMahasiswa: Mahasiswa ID {$mahasiswaId} - Kelas ID {$firstKelas->id}");
+        Log::info("Created KelasMahasiswa: Mahasiswa ID {$mahasiswaId} - Kelas ID {$targetKelas->id} (Kelas: {$targetKelas->namaKelas})");
 
-        return $firstClass;
+        return $targetClass;
+    }
+
+    protected function validateClassExists($kelasName)
+    {
+        foreach ($this->relatedClasses as $class) {
+            foreach ($class->kelas as $kelas) {
+                if (strtoupper(trim($kelas->namaKelas)) === strtoupper(trim($kelasName))) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    protected function getAvailableClasses()
+    {
+        $availableClasses = [];
+        foreach ($this->relatedClasses as $class) {
+            foreach ($class->kelas as $kelas) {
+                $availableClasses[] = $kelas->namaKelas;
+            }
+        }
+        return implode(', ', array_unique($availableClasses));
     }
 
     protected function getKomponenColumnsFromData($data)

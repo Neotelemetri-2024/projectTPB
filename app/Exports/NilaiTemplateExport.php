@@ -26,22 +26,22 @@ class NilaiTemplateExport implements WithMultipleSheets
     public function __construct($tahunAjaranMatkulId)
     {
         $this->tahunAjaranMatkulId = $tahunAjaranMatkulId;
-        
+
         // Load data mata kuliah dan tahun ajaran
         $this->tahunAjaranMatkul = TahunAjaranMatkul::with(['mataKuliah', 'tahunAjaran'])
             ->findOrFail($tahunAjaranMatkulId);
-        
+
         // Load komponen yang sudah ada bobot di mata kuliah ini (tidak semua komponen)
         $this->komponen = \App\Models\Komponen::whereHas('bobot', function($query) use ($tahunAjaranMatkulId) {
             $query->where('tahunAjaranMatkulId', $tahunAjaranMatkulId);
         })->orderBy('nama')->get();
-        
+
         // Load semua mahasiswa dari semua kelas di mata kuliah dan tahun ajaran yang sama
         $allTahunAjaranMatkul = \App\Models\TahunAjaranMatkul::where('mataKuliahId', $this->tahunAjaranMatkul->mataKuliahId)
             ->where('tahunAjaranId', $this->tahunAjaranMatkul->tahunAjaranId)
             ->with('kelas.kelasMahasiswa.mahasiswa')
             ->get();
-        
+
         $this->mahasiswa = collect();
         foreach ($allTahunAjaranMatkul as $tam) {
             foreach ($tam->kelas as $kelas) {
@@ -105,6 +105,9 @@ class NilaiTemplateSheet implements FromCollection, WithHeadings, WithMapping, W
             $headings[] = $komponen->nama;
         }
 
+        // Get available classes for this mata kuliah
+        $availableClasses = $this->getAvailableClasses();
+
         // Tambahkan header informasi mata kuliah di baris pertama
         $infoHeader = [
             'TEMPLATE INPUT NILAI',
@@ -114,6 +117,7 @@ class NilaiTemplateSheet implements FromCollection, WithHeadings, WithMapping, W
             'Kode: ' . $this->tahunAjaranMatkul->mataKuliah->kodeMatkul,
             'Tahun Ajaran: ' . $this->tahunAjaranMatkul->tahunAjaran->tahun . ' - ' . $this->tahunAjaranMatkul->tahunAjaran->periode,
             'SKS: ' . $this->tahunAjaranMatkul->mataKuliah->sks,
+            'Kelas Tersedia: ' . $availableClasses,
         ];
 
         return [
@@ -142,6 +146,26 @@ class NilaiTemplateSheet implements FromCollection, WithHeadings, WithMapping, W
     public function title(): string
     {
         return 'Template Nilai';
+    }
+
+    protected function getAvailableClasses()
+    {
+        // Get all classes for this mata kuliah
+        $classes = collect();
+
+        // Get all related TahunAjaranMatkul for this mata kuliah
+        $relatedClasses = \App\Models\TahunAjaranMatkul::where('mataKuliahId', $this->tahunAjaranMatkul->mataKuliahId)
+            ->where('tahunAjaranId', $this->tahunAjaranMatkul->tahunAjaranId)
+            ->with('kelas')
+            ->get();
+
+        foreach ($relatedClasses as $tahunAjaranMatkul) {
+            foreach ($tahunAjaranMatkul->kelas as $kelas) {
+                $classes->push($kelas->namaKelas);
+            }
+        }
+
+        return $classes->unique()->implode(', ');
     }
 
     public function styles(Worksheet $sheet)
@@ -189,6 +213,9 @@ class InstruksiSheet implements FromCollection, WithHeadings, WithTitle, ShouldA
             ['Contoh pengisian:'],
             ['NIM: 1410250635, Nama: FIFI SUSANTI, Kelas: A, UAS: 85, UTS: 80, TUGAS: 90'],
             ['NIM: 1410250642, Nama: RIZKY RAMADHANI, Kelas: B, UAS: 78, UTS: 85, TUGAS: 88'],
+            [''],
+            ['PENTING: Pastikan kolom Kelas diisi dengan benar sesuai kelas yang tersedia'],
+            ['Kelas yang tersedia akan ditampilkan di baris pertama template'],
         ]);
     }
 

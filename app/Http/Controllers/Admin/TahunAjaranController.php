@@ -13,7 +13,7 @@ class TahunAjaranController extends Controller
     {
         $this->middleware('admin');
     }
-    
+
     public function index()
     {
         $tahunAjaran = TahunAjaran::orderBy('tahun', 'desc')->paginate(10);
@@ -23,13 +23,11 @@ class TahunAjaranController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'tahun' => 'required|integer|min:2000|max:' . (date('Y') + 5),
+            'tahun' => 'required|string|regex:/^\d{4}\/\d{4}$/',
             'periode' => 'required|string|max:50',
         ], [
             'tahun.required' => 'Tahun ajaran wajib diisi',
-            'tahun.integer' => 'Tahun ajaran harus berupa angka',
-            'tahun.min' => 'Tahun ajaran minimal 2000',
-            'tahun.max' => 'Tahun ajaran maksimal ' . (date('Y') + 5),
+            'tahun.regex' => 'Format tahun ajaran harus berupa "2024/2025"',
             'periode.required' => 'Periode wajib diisi',
             'periode.max' => 'Periode maksimal 50 karakter',
         ]);
@@ -43,9 +41,9 @@ class TahunAjaranController extends Controller
         try {
             // Check if tahun ajaran already exists
             $existing = TahunAjaran::where('tahun', $request->tahun)
-                                  ->where('periode', $request->periode)
-                                  ->first();
-            
+                ->where('periode', $request->periode)
+                ->first();
+
             if ($existing) {
                 return redirect()->back()
                     ->with('error', 'Tahun ajaran dengan periode tersebut sudah ada')
@@ -77,13 +75,11 @@ class TahunAjaranController extends Controller
     public function update(Request $request, TahunAjaran $tahunAjaran)
     {
         $validator = Validator::make($request->all(), [
-            'tahun' => 'required|integer|min:2000|max:' . (date('Y') + 5),
+            'tahun' => 'required|string|regex:/^\d{4}\/\d{4}$/',
             'periode' => 'required|string|max:50',
         ], [
             'tahun.required' => 'Tahun ajaran wajib diisi',
-            'tahun.integer' => 'Tahun ajaran harus berupa angka',
-            'tahun.min' => 'Tahun ajaran minimal 2000',
-            'tahun.max' => 'Tahun ajaran maksimal ' . (date('Y') + 5),
+            'tahun.regex' => 'Format tahun ajaran harus berupa "2024/2025"',
             'periode.required' => 'Periode wajib diisi',
             'periode.max' => 'Periode maksimal 50 karakter',
         ]);
@@ -97,10 +93,10 @@ class TahunAjaranController extends Controller
         try {
             // Check if tahun ajaran already exists (excluding current record)
             $existing = TahunAjaran::where('tahun', $request->tahun)
-                                  ->where('periode', $request->periode)
-                                  ->where('id', '!=', $tahunAjaran->id)
-                                  ->first();
-            
+                ->where('periode', $request->periode)
+                ->where('id', '!=', $tahunAjaran->id)
+                ->first();
+
             if ($existing) {
                 return redirect()->back()
                     ->with('error', 'Tahun ajaran dengan periode tersebut sudah ada')
@@ -125,7 +121,7 @@ class TahunAjaranController extends Controller
     {
         try {
             $tahunAjaran->delete();
-            
+
             return redirect()->route('admin.tahun-ajaran.index')
                 ->with('success', 'Tahun ajaran berhasil dihapus');
         } catch (\Exception $e) {
@@ -133,4 +129,4 @@ class TahunAjaranController extends Controller
                 ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
-} 
+}

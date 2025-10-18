@@ -1,74 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        @vite(['resources/css/app.css','resources/js/app.js'])
-        <title>Portal TPB</title>
-        <link href="/assets/images/unand.png" rel="shortcut icon" type="image/vnd.microsoft.icon">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
-        <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.css' rel='stylesheet'>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
 
-        <!-- Di bagian head layout -->
-        <meta name="csrf-token" content="{{ csrf_token() }}">
-        @push('styles')
-        <style>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    @vite(['resources/css/app.css','resources/js/app.js'])
+    <title>Portal TPB</title>
+    <link href="/images/logo-unand.png" rel="shortcut icon" type="image/png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.css' rel='stylesheet'>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+
+    <!-- Di bagian head layout -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    @push('styles')
+    <style>
         .fc-event {
             cursor: pointer;
         }
+
         .fc-toolbar-title {
             font-size: 1.2em !important;
         }
+
         .fc-header-toolbar {
             margin-bottom: 1em !important;
             font-size: 0.8em !important;
         }
+
         .btn-primary {
             background-color: #d97706;
             border-color: #d97706;
         }
+
         .btn-primary:hover {
             background-color: #b45309;
             border-color: #b45309;
         }
+
         .btn-primary:focus {
             box-shadow: 0 0 0 0.2rem rgba(217, 119, 6, 0.25);
         }
+
         .text-brand {
             color: #d97706;
         }
+
         .border-brand {
             border-color: #d97706;
         }
+
         .focus-brand:focus {
             border-color: #d97706;
             box-shadow: 0 0 0 0.2rem rgba(217, 119, 6, 0.25);
         }
     </style>
-        </style>
-        @endpush
-        @yield('styles')
-    </head>
-    <body class="bg-gray-50">
-        <!-- Navbar -->
-        @include('partials.navbar')
+    </style>
+    @endpush
+    @yield('styles')
+</head>
 
-            <!-- Sidebar -->
-        <!-- Enhanced Sidebar -->
-        @include('partials.sidebar')
-        <div class="p-4 sm:ml-64 pt-20">
-            @yield('content')
-        </div>
-      
-        <div class="pt-20">
+<body class="bg-gray-50">
+    <!-- Navbar -->
+    @include('partials.navbar')
+
+    <!-- Sidebar -->
+    <!-- Enhanced Sidebar -->
+    @include('partials.sidebar')
+    <div class="p-4 sm:ml-64 pt-20">
+        @yield('content')
+    </div>
+
+    <div class="pt-20">
         @include('partials.footer')
-        </div>
-        
-  
-        <script>
+    </div>
+
+
+    <script>
         document.addEventListener('DOMContentLoaded', function() {
             const sidebar = document.getElementById('sidebar');
             const toggleSidebarMobile = document.getElementById('toggleSidebarMobile');
@@ -76,7 +86,7 @@
             const pageContent = document.querySelector('.p-4.sm\\:ml-64');
             const dropdownButtons = document.querySelectorAll('[data-collapse-toggle]');
             const footer = document.querySelector('footer'); // Tambahkan ini
-            
+
             function closeAllDropdowns() {
                 document.querySelectorAll('[data-collapse-toggle]').forEach(button => {
                     const targetId = button.getAttribute('data-collapse-toggle');
@@ -121,10 +131,10 @@
                     sidebar.classList.remove('w-16');
                     sidebar.classList.add('w-64');
                     if (footer) {
-            footer.classList.remove('sm:ml-16');
-            footer.classList.add('sm:ml-64');
-            footer.style.width = 'calc(100% - 16rem)';
-        }
+                        footer.classList.remove('sm:ml-16');
+                        footer.classList.add('sm:ml-64');
+                        footer.style.width = 'calc(100% - 16rem)';
+                    }
 
                     // Show text with fade effect
                     document.querySelectorAll('#sidebar span').forEach(el => {
@@ -154,10 +164,10 @@
                     // Close all dropdowns
                     closeAllDropdowns();
                     if (footer) {
-            footer.classList.remove('sm:ml-64');
-            footer.classList.add('sm:ml-16');
-            footer.style.width = 'calc(100% - 4rem)';
-        }
+                        footer.classList.remove('sm:ml-64');
+                        footer.classList.add('sm:ml-16');
+                        footer.style.width = 'calc(100% - 4rem)';
+                    }
 
                     // Adjust main content
                     pageContent.classList.remove('sm:ml-64');
@@ -194,28 +204,27 @@
                 }
             });
         });
+
         function logout() {
-    // Panggil fungsi cleanup notifikasi
-    cleanupNotifications().then(() => {
-        // Lanjutkan dengan proses logout normal (misalnya redirect ke halaman logout)
-        window.location.href = '/logout';
-    }).catch(error => {
-        console.error("Error during cleanup:", error);
-        // Tetap lanjutkan logout meskipun ada error
-        window.location.href = '/logout';
-    });
-}
+            // Panggil fungsi cleanup notifikasi
+            cleanupNotifications().then(() => {
+                // Lanjutkan dengan proses logout normal (misalnya redirect ke halaman logout)
+                window.location.href = '/logout';
+            }).catch(error => {
+                console.error("Error during cleanup:", error);
+                // Tetap lanjutkan logout meskipun ada error
+                window.location.href = '/logout';
+            });
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <!-- Toastify CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <!-- Toastify JS -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
 
-        </script>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        
-        <!-- Toastify CSS -->
-        <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-        <!-- Toastify JS -->
-        <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-        
-        <script>
+    <script>
         // Toastify notification function
         function showNotification(message, type = 'success') {
             // Custom icon SVG
@@ -250,28 +259,29 @@
                     minWidth: "220px",
                     maxWidth: "400px",
                 },
-                onClick: function(){}
+                onClick: function() {}
             }).showToast();
         }
 
         // Check for session messages and show notifications
         @if(session('success'))
-            showNotification("{{ session('success') }}", 'success');
+        showNotification("{{ session('success') }}", 'success');
         @endif
 
         @if(session('error'))
-            showNotification("{{ session('error') }}", 'error');
+        showNotification("{{ session('error') }}", 'error');
         @endif
 
         // Show validation errors
-        @if($errors->any())
-            @foreach($errors->all() as $error)
-                showNotification("{{ $error }}", 'error');
-            @endforeach
+        @if($errors-> any())
+        @foreach($errors-> all() as $error)
+        showNotification("{{ $error }}", 'error');
+        @endforeach
         @endif
-        </script>
-        
-        @stack('scripts')
-        @yield('scripts')
-    </body>
+    </script>
+
+    @stack('scripts')
+    @yield('scripts')
+</body>
+
 </html>

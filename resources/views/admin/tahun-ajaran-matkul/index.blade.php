@@ -29,7 +29,7 @@
                         Duplicate Tahun Sebelumnya
                     </button>
                     <a href="{{ route('admin.tahun-ajaran-matkul.create') }}"
-                       class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg flex items-center text-sm">
+                        class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg flex items-center text-sm">
                         <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                         </svg>
@@ -41,21 +41,21 @@
 
         <!-- Error Import -->
         @if(session('import_errors'))
-            <div class="p-6 border-b border-red-200 bg-red-50">
-                <div class="flex items-center">
-                    <svg class="w-5 h-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                    </svg>
-                    <h3 class="text-sm font-medium text-red-800">Error Import:</h3>
-                </div>
-                <div class="mt-2 text-sm text-red-700">
-                    <ul class="list-disc list-inside space-y-1">
-                        @foreach(session('import_errors') as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
+        <div class="p-6 border-b border-red-200 bg-red-50">
+            <div class="flex items-center">
+                <svg class="w-5 h-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                </svg>
+                <h3 class="text-sm font-medium text-red-800">Error Import:</h3>
             </div>
+            <div class="mt-2 text-sm text-red-700">
+                <ul class="list-disc list-inside space-y-1">
+                    @foreach(session('import_errors') as $error)
+                    <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
         @endif
 
         <!-- Filter dan Search -->
@@ -63,7 +63,7 @@
             <form method="GET" action="{{ route('admin.tahun-ajaran-matkul.index') }}">
                 <!-- Preserve current page when filtering -->
                 @if(request('page'))
-                    <input type="hidden" name="page" value="{{ request('page') }}">
+                <input type="hidden" name="page" value="{{ request('page') }}">
                 @endif
                 <div class="flex gap-4 items-end">
                     <div class="flex-shrink-0 w-48">
@@ -71,9 +71,9 @@
                         <select name="tahun_ajaran_id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5" onchange="this.form.submit()">
                             <option value="">Semua Tahun Ajaran</option>
                             @foreach($tahunAjarans as $tahunAjaran)
-                                <option value="{{ $tahunAjaran->id }}" {{ $selectedTahunAjaranId == $tahunAjaran->id ? 'selected' : '' }}>
-                                    {{ $tahunAjaran->tahun }}-{{ $tahunAjaran->periode }}
-                                </option>
+                            <option value="{{ $tahunAjaran->id }}" {{ $selectedTahunAjaranId == $tahunAjaran->id ? 'selected' : '' }}>
+                                {{ $tahunAjaran->tahun }} - {{ $tahunAjaran->periode }}
+                            </option>
                             @endforeach
                         </select>
                     </div>
@@ -116,82 +116,82 @@
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse($tahunAjaranMatkuls as $index => $item)
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $tahunAjaranMatkuls->firstItem() + $index }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {{ $item->tahunAjaran->tahun }}-{{ $item->tahunAjaran->periode }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div>
-                                    <div class="text-sm font-medium text-gray-900">{{ $item->mataKuliah->namaMatkul }}</div>
-                                    <div class="text-sm text-gray-500">{{ $item->mataKuliah->kodeMatkul }}-{{ $item->mataKuliah->kurikulum }}</div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                Semester {{ $item->semester ?? 1 }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                <div class="flex flex-wrap gap-1">
-                                    @foreach($item->kelas as $kelas)
-                                        <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-700">
-                                            {{ $kelas->namaKelas }}
-                                        </span>
-                                    @endforeach
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                <div class="max-w-xs">
-                                    @php
-                                        $allDosen = $item->kelas->flatMap->dosenPengampuKelas->map(function($dosenPengampuKelas) {
-                                            return $dosenPengampuKelas->dosen;
-                                        })->unique('id');
-                                    @endphp
-                                    @foreach($allDosen->take(3) as $dosen)
-                                        <div class="text-sm">{{ $dosen->nama }}</div>
-                                    @endforeach
-                                    @if($allDosen->count() > 3)
-                                        <div class="text-xs text-gray-500">+{{ $allDosen->count() - 3 }} dosen lainnya</div>
-                                    @endif
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $tahunAjaranMatkuls->firstItem() + $index }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {{ $item->tahunAjaran->tahun }}-{{ $item->tahunAjaran->periode }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div>
+                                <div class="text-sm font-medium text-gray-900">{{ $item->mataKuliah->namaMatkul }}</div>
+                                <div class="text-sm text-gray-500">{{ $item->mataKuliah->kodeMatkul }}-{{ $item->mataKuliah->kurikulum }}</div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            Semester {{ $item->semester ?? 1 }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <div class="flex flex-wrap gap-1">
+                                @foreach($item->kelas as $kelas)
+                                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                                    {{ $kelas->namaKelas }}
+                                </span>
+                                @endforeach
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <div class="max-w-xs">
                                 @php
-                                    $totalMahasiswa = $item->kelas->flatMap->kelasMahasiswa->pluck('mahasiswaId')->unique()->count();
+                                $allDosen = $item->kelas->flatMap->dosenPengampuKelas->map(function($dosenPengampuKelas) {
+                                return $dosenPengampuKelas->dosen;
+                                })->unique('id');
                                 @endphp
-                                {{ $totalMahasiswa }} mahasiswa
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <div class="flex space-x-2">
-                                    <a href="{{ route('admin.tahun-ajaran-matkul.show', $item->id) }}"
-                                       class="text-blue-600 hover:text-blue-900" title="Detail">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                        </svg>
-                                    </a>
-                                    <a href="{{ route('admin.tahun-ajaran-matkul.edit', $item->id) }}"
-                                       class="text-amber-600 hover:text-amber-900" title="Edit">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                        </svg>
-                                    </a>
-                                    <button type="button"
-                                            data-modal-target="modal-confirm-hapus-{{ $item->id }}"
-                                            data-modal-toggle="modal-confirm-hapus-{{ $item->id }}"
-                                            class="text-red-600 hover:text-red-900" title="Hapus">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
+                                @foreach($allDosen->take(3) as $dosen)
+                                <div class="text-sm">{{ $dosen->nama }}</div>
+                                @endforeach
+                                @if($allDosen->count() > 3)
+                                <div class="text-xs text-gray-500">+{{ $allDosen->count() - 3 }} dosen lainnya</div>
+                                @endif
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            @php
+                            $totalMahasiswa = $item->kelas->flatMap->kelasMahasiswa->pluck('mahasiswaId')->unique()->count();
+                            @endphp
+                            {{ $totalMahasiswa }} mahasiswa
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div class="flex space-x-2">
+                                <a href="{{ route('admin.tahun-ajaran-matkul.show', $item->id) }}"
+                                    class="text-blue-600 hover:text-blue-900" title="Detail">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                </a>
+                                <a href="{{ route('admin.tahun-ajaran-matkul.edit', $item->id) }}"
+                                    class="text-amber-600 hover:text-amber-900" title="Edit">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                    </svg>
+                                </a>
+                                <button type="button"
+                                    data-modal-target="modal-confirm-hapus-{{ $item->id }}"
+                                    data-modal-toggle="modal-confirm-hapus-{{ $item->id }}"
+                                    class="text-red-600 hover:text-red-900" title="Hapus">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
                     @empty
-                        <tr>
-                            <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">
-                                Tidak ada data tahun ajaran mata kuliah
-                            </td>
-                        </tr>
+                    <tr>
+                        <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">
+                            Tidak ada data tahun ajaran mata kuliah
+                        </td>
+                    </tr>
                     @endforelse
                 </tbody>
             </table>
@@ -212,13 +212,12 @@
 
 <!-- Modal Konfirmasi Hapus -->
 @foreach($tahunAjaranMatkuls as $item)
-    <x-confirm-modal
-        :id="'modal-confirm-hapus-' . $item->id"
-        title="Konfirmasi Hapus"
-        :message="'Apakah Anda yakin ingin menghapus mata kuliah ' . $item->mataKuliah->namaMatkul . ' dari tahun ajaran ' . $item->tahunAjaran->tahun . '-' . $item->tahunAjaran->periode . '?'"
-        :action="route('admin.tahun-ajaran-matkul.destroy', $item->id)"
-        method="DELETE"
-    />
+<x-confirm-modal
+    :id="'modal-confirm-hapus-' . $item->id"
+    title="Konfirmasi Hapus"
+    :message="'Apakah Anda yakin ingin menghapus mata kuliah ' . $item->mataKuliah->namaMatkul . ' dari tahun ajaran ' . $item->tahunAjaran->tahun . '-' . $item->tahunAjaran->periode . '?'"
+    :action="route('admin.tahun-ajaran-matkul.destroy', $item->id)"
+    method="DELETE" />
 @endforeach
 
 <!-- Modal Import Excel -->
@@ -264,7 +263,7 @@
         <select name="source_tahun_ajaran_id" required class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5">
             <option value="">Pilih Tahun Ajaran Sumber</option>
             @foreach($tahunAjarans as $tahunAjaran)
-                <option value="{{ $tahunAjaran->id }}">{{ $tahunAjaran->tahun }}-{{ $tahunAjaran->periode }}</option>
+            <option value="{{ $tahunAjaran->id }}">{{ $tahunAjaran->tahun }}-{{ $tahunAjaran->periode }}</option>
             @endforeach
         </select>
     </div>
@@ -273,88 +272,86 @@
         <select name="target_tahun_ajaran_id" required class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5">
             <option value="">Pilih Tahun Ajaran Target</option>
             @foreach($tahunAjarans as $tahunAjaran)
-                <option value="{{ $tahunAjaran->id }}">{{ $tahunAjaran->tahun }}-{{ $tahunAjaran->periode }}</option>
+            <option value="{{ $tahunAjaran->id }}">{{ $tahunAjaran->tahun }}-{{ $tahunAjaran->periode }}</option>
             @endforeach
         </select>
     </div>
 </x-duplicate-modal>
 
 <script>
-function openImportModal() {
-    document.getElementById('import-modal').classList.remove('hidden');
-}
-
-function closeImportModal() {
-    document.getElementById('import-modal').classList.add('hidden');
-}
-
-function openDuplicateModal() {
-    const modal = document.getElementById('duplicate-modal');
-    const modalContent = modal.querySelector('[data-modal-content]');
-
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-
-    // Trigger animation
-    setTimeout(() => {
-        modal.classList.remove('bg-opacity-0');
-        modal.classList.add('bg-opacity-10');
-        modalContent.classList.remove('scale-95', 'opacity-0');
-        modalContent.classList.add('scale-100', 'opacity-100');
-    }, 10);
-}
-
-function closeDuplicateModal() {
-    const modal = document.getElementById('duplicate-modal');
-    const modalContent = modal.querySelector('[data-modal-content]');
-
-    modalContent.classList.add('scale-95', 'opacity-0');
-    modalContent.classList.remove('scale-100', 'opacity-100');
-    modal.classList.remove('bg-opacity-10');
-    modal.classList.add('bg-opacity-0');
-
-    setTimeout(() => {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    }, 300);
-}
-
-// Close modal when clicking outside
-window.onclick = function(event) {
-    const importModal = document.getElementById('import-modal');
-    const duplicateModal = document.getElementById('duplicate-modal');
-
-    if (event.target === importModal) {
-        closeImportModal();
+    function openImportModal() {
+        document.getElementById('import-modal').classList.remove('hidden');
     }
-    if (event.target === duplicateModal) {
-        closeDuplicateModal();
+
+    function closeImportModal() {
+        document.getElementById('import-modal').classList.add('hidden');
     }
-}
+
+    function openDuplicateModal() {
+        const modal = document.getElementById('duplicate-modal');
+        const modalContent = modal.querySelector('[data-modal-content]');
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        // Trigger animation
+        setTimeout(() => {
+            modal.classList.remove('bg-opacity-0');
+            modal.classList.add('bg-opacity-10');
+            modalContent.classList.remove('scale-95', 'opacity-0');
+            modalContent.classList.add('scale-100', 'opacity-100');
+        }, 10);
+    }
+
+    function closeDuplicateModal() {
+        const modal = document.getElementById('duplicate-modal');
+        const modalContent = modal.querySelector('[data-modal-content]');
+
+        modalContent.classList.add('scale-95', 'opacity-0');
+        modalContent.classList.remove('scale-100', 'opacity-100');
+        modal.classList.remove('bg-opacity-10');
+        modal.classList.add('bg-opacity-0');
+
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }, 300);
+    }
+
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const importModal = document.getElementById('import-modal');
+        const duplicateModal = document.getElementById('duplicate-modal');
+
+        if (event.target === importModal) {
+            closeImportModal();
+        }
+        if (event.target === duplicateModal) {
+            closeDuplicateModal();
+        }
+    }
 </script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Auto-submit form if tahun ajaran is auto-selected but not in URL
-    // Only do this if we're on the first page and no filters are applied
-    const tahunAjaranSelect = document.querySelector('select[name="tahun_ajaran_id"]');
-    const urlParams = new URLSearchParams(window.location.search);
-    const hasTahunAjaranInUrl = urlParams.has('tahun_ajaran_id');
-    const hasPageParam = urlParams.has('page');
-    const hasSearchParam = urlParams.has('search');
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-submit form if tahun ajaran is auto-selected but not in URL
+        // Only do this if we're on the first page and no filters are applied
+        const tahunAjaranSelect = document.querySelector('select[name="tahun_ajaran_id"]');
+        const urlParams = new URLSearchParams(window.location.search);
+        const hasTahunAjaranInUrl = urlParams.has('tahun_ajaran_id');
+        const hasPageParam = urlParams.has('page');
+        const hasSearchParam = urlParams.has('search');
 
-    // Only auto-submit if:
-    // 1. We have a tahun ajaran selected
-    // 2. It's not in the URL
-    // 3. We're on the first page (no page parameter)
-    // 4. No search is active
-    if (tahunAjaranSelect && tahunAjaranSelect.value && !hasTahunAjaranInUrl && !hasPageParam && !hasSearchParam) {
-        // Auto-submit the form to update URL with the selected tahun ajaran
-        tahunAjaranSelect.form.submit();
-    }
-});
+        // Only auto-submit if:
+        // 1. We have a tahun ajaran selected
+        // 2. It's not in the URL
+        // 3. We're on the first page (no page parameter)
+        // 4. No search is active
+        if (tahunAjaranSelect && tahunAjaranSelect.value && !hasTahunAjaranInUrl && !hasPageParam && !hasSearchParam) {
+            // Auto-submit the form to update URL with the selected tahun ajaran
+            tahunAjaranSelect.form.submit();
+        }
+    });
 </script>
 
 @endsection
-
-

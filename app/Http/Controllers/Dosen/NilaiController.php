@@ -57,7 +57,7 @@ class NilaiController extends Controller
             'tahunAjaran',
             'kelas.dosenPengampuKelas.dosen', // Load all dosen pengampu through kelas
             'kelas.kelasMahasiswa.mahasiswa'
-        ])->whereHas('kelas.dosenPengampuKelas', function($query) use ($dosen) {
+        ])->whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
             $query->where('dosenId', $dosen->id);
         });
 
@@ -67,7 +67,7 @@ class NilaiController extends Controller
         }
 
         if ($jenis) {
-            $query->whereHas('mataKuliah', function($query) use ($jenis) {
+            $query->whereHas('mataKuliah', function ($query) use ($jenis) {
                 $query->where('jenis', $jenis);
             });
         }
@@ -78,9 +78,9 @@ class NilaiController extends Controller
             ->get();
 
         // Group by mata kuliah and tahun ajaran to combine different classes
-        $mataKuliahDiampu = $allMataKuliah->groupBy(function($item) {
+        $mataKuliahDiampu = $allMataKuliah->groupBy(function ($item) {
             return $item->mataKuliahId . '_' . $item->tahunAjaranId;
-        })->map(function($group) {
+        })->map(function ($group) {
             // Get the first item as representative
             $representative = $group->first();
 
@@ -89,8 +89,8 @@ class NilaiController extends Controller
             $allDosenPengampu = collect();
             $allKelas = collect();
 
-            foreach($group as $item) {
-                foreach($item->kelas as $kelas) {
+            foreach ($group as $item) {
+                foreach ($item->kelas as $kelas) {
                     $allKelasMahasiswa = $allKelasMahasiswa->merge($kelas->kelasMahasiswa);
                     $allKelas->push($kelas->namaKelas);
                     $allDosenPengampu = $allDosenPengampu->merge($kelas->dosenPengampuKelas);
@@ -103,7 +103,7 @@ class NilaiController extends Controller
 
             // Get unique dosen pengampu with their names
             $uniqueDosenPengampu = $allDosenPengampu->unique('dosenId');
-            $dosenNames = $uniqueDosenPengampu->map(function($dosenPengampuKelas) {
+            $dosenNames = $uniqueDosenPengampu->map(function ($dosenPengampuKelas) {
                 return $dosenPengampuKelas->dosen->nama ?? 'Unknown';
             })->unique()->values();
             $representative->dosenPengampuNames = $dosenNames;
@@ -144,13 +144,13 @@ class NilaiController extends Controller
         $tahunAjaranMatkul = TahunAjaranMatkul::with([
             'mataKuliah',
             'tahunAjaran',
-            'kelas.dosenPengampuKelas' => function($query) use ($dosen) {
+            'kelas.dosenPengampuKelas' => function ($query) use ($dosen) {
                 $query->where('dosenId', $dosen->id);
             }
         ])->findOrFail($id);
 
         // Verify access - check if dosen has access to any kelas in this tahunAjaranMatkul
-        $hasAccess = $tahunAjaranMatkul->kelas->some(function($kelas) use ($dosen) {
+        $hasAccess = $tahunAjaranMatkul->kelas->some(function ($kelas) use ($dosen) {
             return $kelas->dosenPengampuKelas->contains('dosenId', $dosen->id);
         });
 
@@ -163,22 +163,22 @@ class NilaiController extends Controller
             'kelas.kelasMahasiswa.mahasiswa',
             'kelas.dosenPengampuKelas'
         ])
-        ->where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
-        ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
-        ->get()
-        ->filter(function($tam) use ($dosen) {
-            // Filter to only include classes where this dosen teaches
-            return $tam->kelas->some(function($kelas) use ($dosen) {
-                return $kelas->dosenPengampuKelas->contains('dosenId', $dosen->id);
+            ->where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
+            ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
+            ->get()
+            ->filter(function ($tam) use ($dosen) {
+                // Filter to only include classes where this dosen teaches
+                return $tam->kelas->some(function ($kelas) use ($dosen) {
+                    return $kelas->dosenPengampuKelas->contains('dosenId', $dosen->id);
+                });
             });
-        });
 
         // Get all CPMK for this mata kuliah
         $cpmkList = CpmkMatKul::with(['cpmk.cpl'])
             ->whereIn('tahunAjaranMatkulId', $mataKuliahClasses->pluck('id'))
             ->get()
             ->unique('cpmkId')
-            ->map(function($cpmkMatKul) {
+            ->map(function ($cpmkMatKul) {
                 return $cpmkMatKul->cpmk;
             });
 
@@ -221,7 +221,7 @@ class NilaiController extends Controller
         $search = $request->get('search', ''); // Search parameter
 
         // Apply sorting to all mahasiswa collection
-        $allMahasiswaCollection = $allMahasiswaCollection->sortBy(function($mahasiswa) use ($sortBy) {
+        $allMahasiswaCollection = $allMahasiswaCollection->sortBy(function ($mahasiswa) use ($sortBy) {
             switch ($sortBy) {
                 case 'nim':
                     return $mahasiswa->nim;
@@ -241,7 +241,7 @@ class NilaiController extends Controller
 
         // Apply search filter if search term is provided
         if (!empty($search)) {
-            $allMahasiswaCollection = $allMahasiswaCollection->filter(function($mahasiswa) use ($search) {
+            $allMahasiswaCollection = $allMahasiswaCollection->filter(function ($mahasiswa) use ($search) {
                 $searchTerm = strtolower($search);
                 return (
                     stripos($mahasiswa->nim, $searchTerm) !== false ||
@@ -262,8 +262,8 @@ class NilaiController extends Controller
                 $kelasNama = 'Tidak Ada Kelas';
 
                 // Find the class this student belongs to
-                foreach($mataKuliahClasses as $tam) {
-                    foreach($tam->kelas as $kelas) {
+                foreach ($mataKuliahClasses as $tam) {
+                    foreach ($tam->kelas as $kelas) {
                         $studentInClass = $kelas->kelasMahasiswa->where('mahasiswaId', $mhs->id)->first();
                         if ($studentInClass) {
                             $kelasNama = $kelas->namaKelas;
@@ -338,10 +338,10 @@ class NilaiController extends Controller
 
         // Get all components for this mata kuliah through bobot table (dari semua kelas yang terkait)
         $relatedTahunAjaranMatkulIds = $mataKuliahClasses->pluck('id');
-        $allKomponen = Komponen::whereHas('bobot', function($query) use ($relatedTahunAjaranMatkulIds) {
-                $query->whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds);
-            })
-            ->with(['bobot' => function($query) use ($relatedTahunAjaranMatkulIds) {
+        $allKomponen = Komponen::whereHas('bobot', function ($query) use ($relatedTahunAjaranMatkulIds) {
+            $query->whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds);
+        })
+            ->with(['bobot' => function ($query) use ($relatedTahunAjaranMatkulIds) {
                 $query->whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds);
             }])
             ->orderBy('nama')
@@ -356,7 +356,7 @@ class NilaiController extends Controller
 
         // Get final grades from kelasMahasiswa table for displayed students (hanya dari satu kelas)
         $nilaiMahasiswa = KelasMahasiswa::whereIn('mahasiswaId', $mahasiswa->pluck('id'))
-            ->where('kelasId', function($query) use ($id) {
+            ->where('kelasId', function ($query) use ($id) {
                 $query->select('id')
                     ->from('kelas')
                     ->where('tahunAjaranMatkulId', $id)
@@ -416,19 +416,19 @@ class NilaiController extends Controller
     private function validateCpmkAndBobot($tahunAjaranMatkulId, $dosen)
     {
         // Ambil semua TahunAjaranMatkul terkait (mata kuliah + tahun ajaran yang sama, diajar oleh dosen ini)
-        $relatedTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', function($q) use ($tahunAjaranMatkulId) {
-                $q->select('mataKuliahId')
-                    ->from('tahun_ajaran_matkul')
-                    ->where('id', $tahunAjaranMatkulId)
-                    ->limit(1);
-            })
-            ->where('tahunAjaranId', function($q) use ($tahunAjaranMatkulId) {
+        $relatedTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', function ($q) use ($tahunAjaranMatkulId) {
+            $q->select('mataKuliahId')
+                ->from('tahun_ajaran_matkul')
+                ->where('id', $tahunAjaranMatkulId)
+                ->limit(1);
+        })
+            ->where('tahunAjaranId', function ($q) use ($tahunAjaranMatkulId) {
                 $q->select('tahunAjaranId')
                     ->from('tahun_ajaran_matkul')
                     ->where('id', $tahunAjaranMatkulId)
                     ->limit(1);
             })
-            ->whereHas('kelas.dosenPengampuKelas', function($query) use ($dosen) {
+            ->whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
                 $query->where('dosenId', $dosen->id);
             })
             ->pluck('id');
@@ -453,9 +453,10 @@ class NilaiController extends Controller
             'totalBobotCpmk' => $totalBobotCpmk,
             'totalBobotKomponen' => $totalBobotKomponen,
             // Valid jika secara agregat bobot CPMK terdistribusi 100 untuk keseluruhan (per definisi di halaman bobot)
-            'isCpmkValid' => $cpmkCount > 0 && $totalBobotKomponen == 100,
+            // Gunakan abs() untuk mengatasi masalah precision floating point
+            'isCpmkValid' => $cpmkCount > 0 && abs($totalBobotKomponen - 100) < 0.01,
             'isBobotValid' => $totalBobotKomponen > 0,
-            'canImport' => $cpmkCount > 0 && $totalBobotKomponen == 100
+            'canImport' => $cpmkCount > 0 && abs($totalBobotKomponen - 100) < 0.01
         ];
     }
 
@@ -493,7 +494,7 @@ class NilaiController extends Controller
             // Get all related classes for this mata kuliah and dosen
             $relatedClasses = TahunAjaranMatkul::where('mataKuliahId', $matkulClass->mataKuliahId)
                 ->where('tahunAjaranId', $matkulClass->tahunAjaranId)
-                ->whereHas('kelas.dosenPengampuKelas', function($query) use ($dosen) {
+                ->whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
                     $query->where('dosenId', $dosen->id);
                 })
                 ->get();
@@ -514,7 +515,7 @@ class NilaiController extends Controller
 
                 // Get dosen pengampu ID for current dosen in this specific class
                 $dosenPengampuKelas = \App\Models\DosenPengampuKelas::where('dosenId', $dosen->id)
-                    ->whereHas('kelas', function($query) use ($studentClass) {
+                    ->whereHas('kelas', function ($query) use ($studentClass) {
                         $query->where('tahunAjaranMatkulId', $studentClass->id);
                     })
                     ->first();
@@ -600,7 +601,7 @@ class NilaiController extends Controller
             // Get all related classes for this mata kuliah and dosen
             $relatedClasses = TahunAjaranMatkul::where('mataKuliahId', $matkulClass->mataKuliahId)
                 ->where('tahunAjaranId', $matkulClass->tahunAjaranId)
-                ->whereHas('kelas.dosenPengampuKelas', function($query) use ($dosen) {
+                ->whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
                     $query->where('dosenId', $dosen->id);
                 })
                 ->get();
@@ -622,7 +623,7 @@ class NilaiController extends Controller
 
                 // Get dosen pengampu ID for current dosen in this specific class
                 $dosenPengampuKelas = \App\Models\DosenPengampuKelas::where('dosenId', $dosen->id)
-                    ->whereHas('kelas', function($query) use ($studentClass) {
+                    ->whereHas('kelas', function ($query) use ($studentClass) {
                         $query->where('tahunAjaranMatkulId', $studentClass->id);
                     })
                     ->first();
@@ -746,7 +747,6 @@ class NilaiController extends Controller
                     // This preserves existing grades if they exist
                 }
             }
-
         } catch (\Exception $e) {
             Log::error('Error calculating total score: ' . $e->getMessage());
         }
@@ -806,7 +806,7 @@ class NilaiController extends Controller
         })->with(['mataKuliah', 'tahunAjaran'])->findOrFail($id);
 
         $fileName = 'Template_Nilai_' . str_replace(' ', '_', $tahunAjaranMatkul->mataKuliah->namaMatkul) . '_' .
-                   $tahunAjaranMatkul->tahunAjaran->tahun . '_' . $tahunAjaranMatkul->tahunAjaran->periode . '.xlsx';
+            $tahunAjaranMatkul->tahunAjaran->tahun . '_' . $tahunAjaranMatkul->tahunAjaran->periode . '.xlsx';
 
         return Excel::download(new NilaiTemplateExport($id), $fileName);
     }
@@ -840,7 +840,7 @@ class NilaiController extends Controller
             // Get all related classes for this mata kuliah and dosen
             $relatedClasses = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
                 ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
-                ->whereHas('kelas.dosenPengampuKelas', function($query) use ($dosen) {
+                ->whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
                     $query->where('dosenId', $dosen->id);
                 })
                 ->get();
@@ -862,7 +862,6 @@ class NilaiController extends Controller
                 return redirect()->route('dosen.nilai.show', $id)
                     ->with('error', $results['message']);
             }
-
         } catch (\Exception $e) {
             return redirect()->route('dosen.nilai.show', $id)
                 ->with('error', 'Terjadi kesalahan saat import: ' . $e->getMessage());
@@ -893,7 +892,7 @@ class NilaiController extends Controller
             // Get all related classes for this mata kuliah and dosen
             $relatedClasses = TahunAjaranMatkul::where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
                 ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
-                ->whereHas('kelas.dosenPengampuKelas', function($query) use ($dosen) {
+                ->whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
                     $query->where('dosenId', $dosen->id);
                 })
                 ->pluck('id');
@@ -920,7 +919,6 @@ class NilaiController extends Controller
             }
 
             return redirect()->back()->with('success', "Berhasil menghapus {$deletedCount} nilai.");
-
         } catch (\Exception $e) {
             if ($request->ajax()) {
                 return response()->json(['success' => false, 'message' => 'Terjadi kesalahan saat menghapus nilai: ' . $e->getMessage()], 500);
@@ -948,7 +946,7 @@ class NilaiController extends Controller
 
         try {
             // Verify access
-            $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('kelas.dosenPengampuKelas', function($query) use ($dosen) {
+            $tahunAjaranMatkul = TahunAjaranMatkul::whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
                 $query->where('dosenId', $dosen->id);
             })->findOrFail($id);
 
@@ -960,10 +958,10 @@ class NilaiController extends Controller
                 ->where('tahunAjaranMatkulId', $id)
                 ->get()
                 ->unique('cpmkId')
-                ->map(function($cpmkMatKul) {
+                ->map(function ($cpmkMatKul) {
                     return $cpmkMatKul->cpmk;
                 })
-                ->filter(function($cpmk) {
+                ->filter(function ($cpmk) {
                     // Only show CPMK that don't have children (leaf nodes)
                     return !$cpmk->hasChildren();
                 });
@@ -1064,7 +1062,6 @@ class NilaiController extends Controller
                 'success' => true,
                 'html' => $html
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

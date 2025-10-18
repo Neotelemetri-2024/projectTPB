@@ -17,7 +17,7 @@ class TahunAjaran extends Model
     ];
 
     protected $casts = [
-        'tahun' => 'integer'
+        // Tahun sekarang berupa string dengan format "2024/2025"
     ];
 
     public function tahunAjaranMatkul()

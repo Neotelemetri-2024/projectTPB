@@ -1,27 +1,29 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Verifikasi Email - Portal TPB</title>
-    
+
     <!-- Favicon -->
-    <link href="/assets/images/unand.png" rel="shortcut icon" type="image/vnd.microsoft.icon">
-    
+    <link href="/images/logo-unand.png" rel="shortcut icon" type="image/png">
+
     <!-- Vite CSS & JS -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    
+
     <!-- Boxicons -->
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
+
 <body class="bg-gradient-to-br from-amber-50 to-yellow-100 min-h-screen">
     <div class="flex flex-col items-center justify-center px-6 py-8 mx-auto min-h-screen">
         <!-- Logo & Brand -->
         <div class="flex items-center mb-8 text-3xl font-bold text-amber-700">
             <span>Portal TPB</span>
         </div>
-        
+
         <!-- Verify Email Card -->
         <div class="w-full bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 md:mt-0 sm:max-w-md xl:p-0">
             <div class="p-8 space-y-6">
@@ -40,18 +42,18 @@
 
                 <!-- Session Status -->
                 @if (session('status'))
-                    <div class="p-4 text-sm text-green-800 rounded-xl bg-green-50 border border-green-200" role="alert">
-                        <div class="flex items-center">
-                            <i class="bx bx-check-circle mr-2 text-green-600"></i>
-                            {{ session('status') }}
-                        </div>
+                <div class="p-4 text-sm text-green-800 rounded-xl bg-green-50 border border-green-200" role="alert">
+                    <div class="flex items-center">
+                        <i class="bx bx-check-circle mr-2 text-green-600"></i>
+                        {{ session('status') }}
                     </div>
+                </div>
                 @endif
 
                 <!-- Verify Email Form -->
                 <form class="space-y-6" method="POST" action="{{ route('verification.send') }}">
                     @csrf
-                    
+
                     <!-- Submit Button -->
                     <button type="submit" class="w-full text-white bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 focus:ring-4 focus:ring-amber-300 font-semibold rounded-xl text-sm px-5 py-3 text-center transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]">
                         <i class="bx bx-refresh mr-2"></i>
@@ -78,4 +80,5 @@
         </div>
     </div>
 </body>
+
 </html>

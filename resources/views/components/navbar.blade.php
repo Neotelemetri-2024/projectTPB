@@ -11,7 +11,11 @@
       <li class="nav-item navbar-dropdown dropdown-user dropdown">
         <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
           <div class="avatar avatar-online">
-            <img src="{{ asset('assets/img/avatars/1.png') }}" alt class="w-px-40 h-auto rounded-circle" />
+            <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+              <svg class="w-6 h-6 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+              </svg>
+            </div>
           </div>
         </a>
         <ul class="dropdown-menu dropdown-menu-end">
@@ -20,7 +24,11 @@
               <div class="d-flex">
                 <div class="flex-shrink-0 me-3">
                   <div class="avatar avatar-online">
-                    <img src="{{ asset('assets/img/avatars/1.png') }}" alt class="w-px-40 h-auto rounded-circle" />
+                    <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                      <svg class="w-6 h-6 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                      </svg>
+                    </div>
                   </div>
                 </div>
                 <div class="flex-grow-1">
@@ -30,7 +38,9 @@
               </div>
             </a>
           </li>
-          <li><div class="dropdown-divider"></div></li>
+          <li>
+            <div class="dropdown-divider"></div>
+          </li>
           <li>
             <a class="dropdown-item" href="{{ route('profile.edit') }}">
               <i class="bx bx-user me-2"></i>

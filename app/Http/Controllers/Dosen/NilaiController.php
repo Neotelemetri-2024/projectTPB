@@ -698,28 +698,13 @@ class NilaiController extends Controller
                 $totalNilaiKeseluruhan = 0;
                 $totalBobotKeseluruhan = 0;
 
-                // Calculate nilai per CPMK
-                foreach ($nilaiPerCpmk as $cpmkId => $nilaiCpmk) {
-                    $nilaiCpmkTotal = 0;
-                    $bobotCpmkTotal = 0;
-
-                    foreach ($nilaiCpmk as $nilai) {
-                        if ($nilai->bobot && $nilai->bobot->bobot > 0) {
-                            $nilaiCpmkTotal += ($nilai->nilai * $nilai->bobot->bobot);
-                            $bobotCpmkTotal += $nilai->bobot->bobot;
-                        }
-                    }
-
-                    // Jika bobot CPMK > 0, hitung rata-rata terbobot
-                    if ($bobotCpmkTotal > 0) {
-                        $nilaiRataRataCpmk = $nilaiCpmkTotal / $bobotCpmkTotal;
-                        $totalNilaiKeseluruhan += $nilaiRataRataCpmk;
-                        $totalBobotKeseluruhan += 1; // Setiap CPMK dihitung sebagai 1 unit
+                // Calculate total nilai langsung dari semua nilai yang sudah dikalikan bobot
+                $totalNilai = 0;
+                foreach ($allNilai as $nilai) {
+                    if ($nilai->bobot && $nilai->bobot->bobot > 0) {
+                        $totalNilai += ($nilai->nilai * $nilai->bobot->bobot / 100);
                     }
                 }
-
-                // Hitung nilai akhir (rata-rata dari semua CPMK)
-                $totalNilai = $totalBobotKeseluruhan > 0 ? $totalNilaiKeseluruhan / $totalBobotKeseluruhan : 0;
 
                 // Determine grade based on total score
                 $grade = $this->calculateGrade($totalNilai);
@@ -805,8 +790,13 @@ class NilaiController extends Controller
             $query->where('dosenId', $dosen->id);
         })->with(['mataKuliah', 'tahunAjaran'])->findOrFail($id);
 
-        $fileName = 'Template_Nilai_' . str_replace(' ', '_', $tahunAjaranMatkul->mataKuliah->namaMatkul) . '_' .
-            $tahunAjaranMatkul->tahunAjaran->tahun . '_' . $tahunAjaranMatkul->tahunAjaran->periode . '.xlsx';
+        // Clean filename dari karakter yang tidak diperbolehkan
+        $cleanNamaMatkul = preg_replace('/[\/\\\\:*?"<>|]/', '_', $tahunAjaranMatkul->mataKuliah->namaMatkul);
+        $cleanTahun = preg_replace('/[\/\\\\:*?"<>|]/', '_', $tahunAjaranMatkul->tahunAjaran->tahun);
+        $cleanPeriode = preg_replace('/[\/\\\\:*?"<>|]/', '_', $tahunAjaranMatkul->tahunAjaran->periode);
+
+        $fileName = 'Template_Nilai_' . str_replace(' ', '_', $cleanNamaMatkul) . '_' .
+            $cleanTahun . '_' . $cleanPeriode . '.xlsx';
 
         return Excel::download(new NilaiTemplateExport($id), $fileName);
     }
@@ -1031,18 +1021,13 @@ class NilaiController extends Controller
                 }
             }
 
-            // Calculate total nilai akhir menggunakan nilai rata-rata CPMK
-            $totalNilaiKeseluruhan = 0;
-            $totalBobotKeseluruhan = 0;
-
-            foreach ($nilaiPerCpmk as $cpmkNilai) {
-                if ($cpmkNilai['nilai_rata_rata'] !== null) {
-                    $totalNilaiKeseluruhan += $cpmkNilai['nilai_rata_rata'];
-                    $totalBobotKeseluruhan += 1;
+            // Calculate total nilai akhir langsung dari semua nilai yang sudah dikalikan bobot
+            $totalNilaiAkhir = 0;
+            foreach ($nilaiData as $nilai) {
+                if ($nilai->bobot && $nilai->bobot->bobot > 0) {
+                    $totalNilaiAkhir += ($nilai->nilai * $nilai->bobot->bobot / 100);
                 }
             }
-
-            $totalNilaiAkhir = $totalBobotKeseluruhan > 0 ? $totalNilaiKeseluruhan / $totalBobotKeseluruhan : 0;
 
             // Hitung grade
             $grade = $this->calculateGrade($totalNilaiAkhir);

@@ -21,21 +21,21 @@
 
     <!-- Flash Messages -->
     @if(session('success'))
-        <div class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center">
-            <svg class="w-5 h-5 mr-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-            </svg>
-            <span class="font-medium">{{ session('success') }}</span>
-        </div>
+    <div class="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center">
+        <svg class="w-5 h-5 mr-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+        </svg>
+        <span class="font-medium">{{ session('success') }}</span>
+    </div>
     @endif
 
     @if(session('error'))
-        <div class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center">
-            <svg class="w-5 h-5 mr-3 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-            </svg>
-            <span class="font-medium">{{ session('error') }}</span>
-        </div>
+    <div class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center">
+        <svg class="w-5 h-5 mr-3 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+        </svg>
+        <span class="font-medium">{{ session('error') }}</span>
+    </div>
     @endif
 
     <!-- Header -->
@@ -48,7 +48,7 @@
                 </div>
                 <div class="flex items-center gap-3">
                     <a href="{{ route('dosen.nilai.index') }}"
-                       class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center">
+                        class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                         </svg>
@@ -116,24 +116,24 @@
                 </div>
                 <div>
                     @php
-                        // Get all related class IDs for this mata kuliah that are taught by this dosen
-                        $relatedTahunAjaranMatkulIds = $mataKuliahClasses->pluck('id');
-                        $lastNilaiUpdate = \App\Models\Nilai::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)->max('updated_at');
+                    // Get all related class IDs for this mata kuliah that are taught by this dosen
+                    $relatedTahunAjaranMatkulIds = $mataKuliahClasses->pluck('id');
+                    $lastNilaiUpdate = \App\Models\Nilai::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)->max('updated_at');
                     @endphp
                     <div class="flex items-center gap-2">
                         <p class="text-sm font-medium text-gray-600">Last Modified</p>
                         @if($lastNilaiUpdate)
-                            <span class="text-xs text-gray-500">
-                                ({{ \Carbon\Carbon::parse($lastNilaiUpdate)->diffForHumans() }})
-                            </span>
+                        <span class="text-xs text-gray-500">
+                            ({{ \Carbon\Carbon::parse($lastNilaiUpdate)->diffForHumans() }})
+                        </span>
                         @endif
                     </div>
                     @if($lastNilaiUpdate)
-                        <p class="text-sm font-bold text-gray-900" title="{{ \Carbon\Carbon::parse($lastNilaiUpdate)->format('d/m/Y H:i:s') }}">
-                            {{ \Carbon\Carbon::parse($lastNilaiUpdate)->format('d/m/Y H:i') }}
-                        </p>
+                    <p class="text-sm font-bold text-gray-900" title="{{ \Carbon\Carbon::parse($lastNilaiUpdate)->format('d/m/Y H:i:s') }}">
+                        {{ \Carbon\Carbon::parse($lastNilaiUpdate)->format('d/m/Y H:i') }}
+                    </p>
                     @else
-                        <p class="text-sm font-bold text-gray-400">Belum ada nilai</p>
+                    <p class="text-sm font-bold text-gray-400">Belum ada nilai</p>
                     @endif
                 </div>
             </div>
@@ -151,7 +151,7 @@
                 <div class="flex items-center space-x-4">
                     <!-- Export Template Button -->
                     <a href="{{ route('dosen.nilai.export-template', $tahunAjaranMatkul->id) }}"
-                       class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
+                        class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
                         <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
@@ -160,7 +160,7 @@
 
                     <!-- Import Excel Button -->
                     <button type="button" onclick="checkImportValidation()"
-                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
                         <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
                         </svg>
@@ -193,25 +193,25 @@
             <form method="GET" action="{{ request()->url() }}" class="flex items-center gap-4">
                 <!-- Preserve existing parameters -->
                 @if(request('tab'))
-                    <input type="hidden" name="tab" value="{{ request('tab') }}">
+                <input type="hidden" name="tab" value="{{ request('tab') }}">
                 @endif
                 @if(request('sort'))
-                    <input type="hidden" name="sort" value="{{ request('sort') }}">
+                <input type="hidden" name="sort" value="{{ request('sort') }}">
                 @endif
                 @if(request('direction'))
-                    <input type="hidden" name="direction" value="{{ request('direction') }}">
+                <input type="hidden" name="direction" value="{{ request('direction') }}">
                 @endif
                 @if(request('bulk'))
-                    <input type="hidden" name="bulk" value="{{ request('bulk') }}">
+                <input type="hidden" name="bulk" value="{{ request('bulk') }}">
                 @endif
 
                 <div class="flex-1 max-w-md">
                     <div class="relative">
                         <input type="text"
-                               name="search"
-                               value="{{ request('search', '') }}"
-                               placeholder="Cari berdasarkan NIM atau nama mahasiswa..."
-                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            name="search"
+                            value="{{ request('search', '') }}"
+                            placeholder="Cari berdasarkan NIM atau nama mahasiswa..."
+                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -221,7 +221,7 @@
                 </div>
 
                 <button type="submit"
-                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 flex items-center">
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
@@ -230,68 +230,68 @@
 
                 <!-- Reset All Filters Button -->
                 @if(request('sort') || request('direction') || (request('tab') && request('tab') !== 'all') || request('search'))
-                    <a href="{{ request()->url() }}"
-                       class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition-colors duration-200 flex items-center">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                        </svg>
-                        Reset
-                    </a>
+                <a href="{{ request()->url() }}"
+                    class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition-colors duration-200 flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Reset
+                </a>
                 @endif
             </form>
 
             @if(request('search'))
-                <div class="mt-3 text-sm text-gray-600">
-                    Menampilkan hasil pencarian untuk: <span class="font-semibold">"{{ request('search') }}"</span>
-                    @if($mahasiswa->count() > 0)
-                        ({{ $allMahasiswaCollection->count() }} mahasiswa ditemukan)
-                    @endif
-                </div>
+            <div class="mt-3 text-sm text-gray-600">
+                Menampilkan hasil pencarian untuk: <span class="font-semibold">"{{ request('search') }}"</span>
+                @if($mahasiswa->count() > 0)
+                ({{ $allMahasiswaCollection->count() }} mahasiswa ditemukan)
+                @endif
+            </div>
             @endif
         </div>
 
         <div class="p-6">
             @if($mahasiswa->isEmpty())
-                <div class="text-center py-12">
-                    <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"></path>
-                    </svg>
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">Belum Ada Mahasiswa</h3>
-                    <p class="text-gray-500">Belum ada mahasiswa yang terdaftar di mata kuliah ini.</p>
-                </div>
+            <div class="text-center py-12">
+                <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"></path>
+                </svg>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Belum Ada Mahasiswa</h3>
+                <p class="text-gray-500">Belum ada mahasiswa yang terdaftar di mata kuliah ini.</p>
+            </div>
             @else
-                <!-- Tab Navigation -->
-                <div class="mb-6">
-                    <div class="border-b border-gray-200">
-                        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-                            <button type="button"
-                                    class="tab-button {{ (!request('tab') || request('tab') === 'all') ? 'active border-amber-500 text-amber-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm"
-                                    data-tab="all">
-                                Semua Mahasiswa
-                                <span class="ml-2 {{ (!request('tab') || request('tab') === 'all') ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-600' }} py-0.5 px-2 rounded-full text-xs font-medium">
-                                    {{ $allMahasiswaCollection->count() }}
-                                </span>
-                            </button>
-                            @if(!empty($mahasiswaByKelas))
-                                @foreach($mahasiswaByKelas as $kelasNama => $mahasiswaInKelas)
-                                    @php
-                                        $kelasSlug = 'kelas-' . Str::slug($kelasNama);
-                                        $isActive = request('tab') === $kelasSlug;
-                                    @endphp
-                                    <button type="button"
-                                            class="tab-button {{ $isActive ? 'active border-amber-500 text-amber-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm"
-                                            data-tab="{{ $kelasSlug }}">
-                                        Kelas {{ $kelasNama }}
-                                        <span class="ml-2 {{ $isActive ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-600' }} py-0.5 px-2 rounded-full text-xs font-medium">{{ count($mahasiswaInKelas) }}</span>
-                                    </button>
-                                @endforeach
-                            @endif
-                        </nav>
-                    </div>
+            <!-- Tab Navigation -->
+            <div class="mb-6">
+                <div class="border-b border-gray-200">
+                    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                        <button type="button"
+                            class="tab-button {{ (!request('tab') || request('tab') === 'all') ? 'active border-amber-500 text-amber-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm"
+                            data-tab="all">
+                            Semua Mahasiswa
+                            <span class="ml-2 {{ (!request('tab') || request('tab') === 'all') ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-600' }} py-0.5 px-2 rounded-full text-xs font-medium">
+                                {{ $allMahasiswaCollection->count() }}
+                            </span>
+                        </button>
+                        @if(!empty($mahasiswaByKelas))
+                        @foreach($mahasiswaByKelas as $kelasNama => $mahasiswaInKelas)
+                        @php
+                        $kelasSlug = 'kelas-' . Str::slug($kelasNama);
+                        $isActive = request('tab') === $kelasSlug;
+                        @endphp
+                        <button type="button"
+                            class="tab-button {{ $isActive ? 'active border-amber-500 text-amber-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm"
+                            data-tab="{{ $kelasSlug }}">
+                            Kelas {{ $kelasNama }}
+                            <span class="ml-2 {{ $isActive ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-600' }} py-0.5 px-2 rounded-full text-xs font-medium">{{ count($mahasiswaInKelas) }}</span>
+                        </button>
+                        @endforeach
+                        @endif
+                    </nav>
                 </div>
+            </div>
 
-                <form id="bulk-nilai-form" method="POST" action="{{ route('dosen.nilai.bulk-store', $tahunAjaranMatkul->id) }}">
-                    @csrf
+            <form id="bulk-nilai-form" method="POST" action="{{ route('dosen.nilai.bulk-store', $tahunAjaranMatkul->id) }}">
+                @csrf
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200" id="nilai-table">
                         <thead class="bg-gray-50">
@@ -300,13 +300,13 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mahasiswa</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kelas</th>
                                 @foreach($allKomponen as $komponen)
-                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-24">
-                                        {{ $komponen->nama }}
-                                        @php
-                                            $bobotKomponen = $totalBobotKomponen[$komponen->id] ?? 0;
-                                        @endphp
-                                        <div class="text-xs text-gray-400 mt-1">{{ number_format($bobotKomponen, 1) }}%</div>
-                                    </th>
+                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-24">
+                                    {{ $komponen->nama }}
+                                    @php
+                                    $bobotKomponen = $totalBobotKomponen[$komponen->id] ?? 0;
+                                    @endphp
+                                    <div class="text-xs text-gray-400 mt-1">{{ number_format($bobotKomponen, 1) }}%</div>
+                                </th>
                                 @endforeach
                                 <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Total Nilai</th>
                                 <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider grade-column">Grade</th>
@@ -315,210 +315,191 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach($mahasiswa as $mhs)
-                                                                                                            @php
-                                            $kelasNama = 'Tidak Ada Kelas';
-                                            $studentClassId = null;
+                            @php
+                            $kelasNama = 'Tidak Ada Kelas';
+                            $studentClassId = null;
 
-                                            // Cari kelas mahasiswa
-                                            foreach($mataKuliahClasses as $tam) {
-                                                foreach($tam->kelas as $kelas) {
-                                                    $studentInClass = $kelas->kelasMahasiswa->where('mahasiswaId', $mhs->id)->first();
-                                                    if ($studentInClass) {
-                                                        $kelasNama = $kelas->namaKelas;
-                                                        $studentClassId = $tam->id;
-                                                        break 2;
-                                                    }
-                                                }
-                                            }
+                            // Cari kelas mahasiswa
+                            foreach($mataKuliahClasses as $tam) {
+                            foreach($tam->kelas as $kelas) {
+                            $studentInClass = $kelas->kelasMahasiswa->where('mahasiswaId', $mhs->id)->first();
+                            if ($studentInClass) {
+                            $kelasNama = $kelas->namaKelas;
+                            $studentClassId = $tam->id;
+                            break 2;
+                            }
+                            }
+                            }
 
-                                            // Fallback: Jika tidak ada kelas, gunakan tahunAjaranMatkul->id
-                                            if (!$studentClassId) {
-                                                $studentClassId = $tahunAjaranMatkul->id;
-                                                $kelasNama = 'Default';
-                                            }
+                            // Fallback: Jika tidak ada kelas, gunakan tahunAjaranMatkul->id
+                            if (!$studentClassId) {
+                            $studentClassId = $tahunAjaranMatkul->id;
+                            $kelasNama = 'Default';
+                            }
 
-                                            // Debug: Log studentClassId
-                                            \Log::info("Mahasiswa {$mhs->id} ({$mhs->nama}): studentClassId = {$studentClassId}, kelasNama = {$kelasNama}");
-                                        @endphp
-                                <tr data-mahasiswa-id="{{ $mhs->id }}">
-                                    <td class="px-6 py-4 whitespace-nowrap">{{ $mhs->nim }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">{{ $mhs->nama }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                            Kelas {{ $kelasNama }}
-                                        </span>
-                                    </td>
-                                    @foreach($allKomponen as $komponen)
-                                        <td class="px-4 py-4 whitespace-nowrap text-center">
-                                            @php
-                                                $existingNilai = $nilaiData->where('mahasiswaId', $mhs->id)
-                                                    ->filter(function($nilai) use ($komponen) {
-                                                        return $nilai->bobot && $nilai->bobot->komponenId == $komponen->id;
-                                                    })
-                                                    ->first();
-                                                $nilaiValue = $existingNilai ? $existingNilai->nilai : '';
-                                            @endphp
-                                            <span class="nilai-plain" data-mahasiswa-id="{{ $mhs->id }}" data-komponen-id="{{ $komponen->id }}">{{ $nilaiValue !== '' ? $nilaiValue : '-' }}</span>
-                                            <input type="number"
-                                                   name="nilai[{{ $mhs->id }}][{{ $komponen->id }}]"
-                                                   value="{{ $nilaiValue }}"
-                                                   min="0"
-                                                   max="100"
-                                                   step="0.01"
-                                                   class="w-20 px-2 py-1 text-sm text-center border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 nilai-input hidden"
-                                                   data-mahasiswa-id="{{ $mhs->id }}"
-                                                   data-komponen-id="{{ $komponen->id }}"
-                                                   data-original-value="{{ $nilaiValue }}"
-                                                   placeholder="0">
-                                        </td>
-                                    @endforeach
-                                    <!-- Kolom Total Nilai -->
-                                    <td class="px-4 py-4 whitespace-nowrap text-center">
-                                        @php
-                                            // Ambil grade dan total nilai yang sudah dihitung dari kelas_mahasiswa
-                                            $kelasMahasiswa = $mhs->kelasMahasiswa->where('tahunAjaranMatkulId', $tahunAjaranMatkul->id)->first();
-                                            $totalNilai = $kelasMahasiswa ? $kelasMahasiswa->totalNilai : null;
-                                            $grade = $kelasMahasiswa ? $kelasMahasiswa->grade : null;
+                            // Debug: Log studentClassId
+                            \Log::info("Mahasiswa {$mhs->id} ({$mhs->nama}): studentClassId = {$studentClassId}, kelasNama = {$kelasNama}");
+                            @endphp
+                            <tr data-mahasiswa-id="{{ $mhs->id }}">
+                                <td class="px-6 py-4 whitespace-nowrap">{{ $mhs->nim }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">{{ $mhs->nama }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        Kelas {{ $kelasNama }}
+                                    </span>
+                                </td>
+                                @foreach($allKomponen as $komponen)
+                                <td class="px-4 py-4 whitespace-nowrap text-center">
+                                    @php
+                                    $existingNilai = $nilaiData->where('mahasiswaId', $mhs->id)
+                                    ->filter(function($nilai) use ($komponen) {
+                                    return $nilai->bobot && $nilai->bobot->komponenId == $komponen->id;
+                                    })
+                                    ->first();
+                                    $nilaiValue = $existingNilai ? $existingNilai->nilai : '';
+                                    @endphp
+                                    <span class="nilai-plain" data-mahasiswa-id="{{ $mhs->id }}" data-komponen-id="{{ $komponen->id }}">{{ $nilaiValue !== '' ? $nilaiValue : '-' }}</span>
+                                    <input type="number"
+                                        name="nilai[{{ $mhs->id }}][{{ $komponen->id }}]"
+                                        value="{{ $nilaiValue }}"
+                                        min="0"
+                                        max="100"
+                                        step="0.01"
+                                        class="w-20 px-2 py-1 text-sm text-center border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 nilai-input hidden"
+                                        data-mahasiswa-id="{{ $mhs->id }}"
+                                        data-komponen-id="{{ $komponen->id }}"
+                                        data-original-value="{{ $nilaiValue }}"
+                                        placeholder="0">
+                                </td>
+                                @endforeach
+                                <!-- Kolom Total Nilai -->
+                                <td class="px-4 py-4 whitespace-nowrap text-center">
+                                    @php
+                                    // Ambil grade dan total nilai yang sudah dihitung dari kelas_mahasiswa
+                                    $kelasMahasiswa = $mhs->kelasMahasiswa->where('tahunAjaranMatkulId', $tahunAjaranMatkul->id)->first();
+                                    $totalNilai = $kelasMahasiswa ? $kelasMahasiswa->totalNilai : null;
+                                    $grade = $kelasMahasiswa ? $kelasMahasiswa->grade : null;
 
-                                            // Jika belum ada nilai yang tersimpan, hitung dari bobot dan nilai yang ada
-                                            if ($totalNilai === null || $grade === null) {
-                                                // Group nilai by CPMK
-                                                $allNilaiMahasiswa = $nilaiData->where('mahasiswaId', $mhs->id);
-                                                $nilaiPerCpmk = $allNilaiMahasiswa->groupBy('cpmkId');
-                                                $totalNilaiKeseluruhan = 0;
-                                                $totalBobotKeseluruhan = 0;
+                                    // Jika belum ada nilai yang tersimpan, hitung dari bobot dan nilai yang ada
+                                    if ($totalNilai === null || $grade === null) {
+                                    // Hitung total nilai langsung dari semua nilai yang sudah dikalikan bobot
+                                    $allNilaiMahasiswa = $nilaiData->where('mahasiswaId', $mhs->id);
+                                    $totalNilai = 0;
 
-                                                // Calculate nilai per CPMK
-                                                foreach ($nilaiPerCpmk as $cpmkId => $nilaiCpmk) {
-                                                    $nilaiCpmkTotal = 0;
-                                                    $bobotCpmkTotal = 0;
+                                    foreach ($allNilaiMahasiswa as $nilai) {
+                                    if ($nilai->bobot && $nilai->bobot->bobot > 0) {
+                                    $totalNilai += ($nilai->nilai * $nilai->bobot->bobot / 100);
+                                    }
+                                    }
 
-                                                    foreach ($nilaiCpmk as $nilai) {
-                                                        if ($nilai->bobot && $nilai->bobot->bobot > 0) {
-                                                            $nilaiCpmkTotal += ($nilai->nilai * $nilai->bobot->bobot);
-                                                            $bobotCpmkTotal += $nilai->bobot->bobot;
-                                                        }
-                                                    }
-
-                                                    // Jika bobot CPMK > 0, hitung rata-rata terbobot
-                                                    if ($bobotCpmkTotal > 0) {
-                                                        $nilaiRataRataCpmk = $nilaiCpmkTotal / $bobotCpmkTotal;
-                                                        $totalNilaiKeseluruhan += $nilaiRataRataCpmk;
-                                                        $totalBobotKeseluruhan += 1; // Setiap CPMK dihitung sebagai 1 unit
-                                                    }
-                                                }
-
-                                                // Hitung nilai akhir (rata-rata dari semua CPMK)
-                                                $totalNilai = $totalBobotKeseluruhan > 0 ? $totalNilaiKeseluruhan / $totalBobotKeseluruhan : 0;
-
-                                                // Hitung grade berdasarkan total nilai terbobot
-                                                if ($totalNilai >= 80) $grade = 'A';
-                                                elseif ($totalNilai >= 75) $grade = 'A-';
-                                                elseif ($totalNilai >= 70) $grade = 'B+';
-                                                elseif ($totalNilai >= 65) $grade = 'B';
-                                                elseif ($totalNilai >= 60) $grade = 'B-';
-                                                elseif ($totalNilai >= 55) $grade = 'C+';
-                                                elseif ($totalNilai >= 50) $grade = 'C';
-                                                elseif ($totalNilai >= 45) $grade = 'D';
-                                                else $grade = 'E';
-                                            }
-                                        @endphp
-                                        <span class="text-sm font-bold text-black">
-                                            {{ $totalNilai !== null ? number_format($totalNilai, 2) : '-' }}
-                                        </span>
-                                    </td>
-                                    <!-- Kolom Grade -->
-                                    <td class="px-4 py-4 whitespace-nowrap text-center grade-column">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    // Hitung grade berdasarkan total nilai terbobot
+                                    if ($totalNilai >= 80) $grade = 'A';
+                                    elseif ($totalNilai >= 75) $grade = 'A-';
+                                    elseif ($totalNilai >= 70) $grade = 'B+';
+                                    elseif ($totalNilai >= 65) $grade = 'B';
+                                    elseif ($totalNilai >= 60) $grade = 'B-';
+                                    elseif ($totalNilai >= 55) $grade = 'C+';
+                                    elseif ($totalNilai >= 50) $grade = 'C';
+                                    elseif ($totalNilai >= 45) $grade = 'D';
+                                    else $grade = 'E';
+                                    }
+                                    @endphp
+                                    <span class="text-sm font-bold text-black">
+                                        {{ $totalNilai !== null ? number_format($totalNilai, 2) : '-' }}
+                                    </span>
+                                </td>
+                                <!-- Kolom Grade -->
+                                <td class="px-4 py-4 whitespace-nowrap text-center grade-column">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                             {{ $grade == 'A' || $grade == 'A-' ? 'bg-green-100 text-green-800' :
                                                ($grade == 'B+' || $grade == 'B' || $grade == 'B-' ? 'bg-blue-100 text-blue-800' :
                                                ($grade == 'C+' || $grade == 'C' ? 'bg-yellow-100 text-yellow-800' :
                                                ($grade == 'D' ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800'))) }}">
-                                            {{ $grade ?: '-' }}
-                                        </span>
-                                    </td>
-                                                                        <!-- Kolom Aksi -->
-                                    <td class="px-4 py-4 whitespace-nowrap text-center">
-                                        <div class="flex items-center justify-center space-x-2">
-                                            <!-- Tombol Detail (selalu terlihat) -->
+                                        {{ $grade ?: '-' }}
+                                    </span>
+                                </td>
+                                <!-- Kolom Aksi -->
+                                <td class="px-4 py-4 whitespace-nowrap text-center">
+                                    <div class="flex items-center justify-center space-x-2">
+                                        <!-- Tombol Detail (selalu terlihat) -->
+                                        <button type="button"
+                                            class="btn-detail-nilai px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded transition-colors duration-200"
+                                            data-mahasiswa-id="{{ $mhs->id }}"
+                                            data-mahasiswa-nama="{{ $mhs->nama }}"
+                                            data-nim="{{ $mhs->nim }}">
+                                            <svg class="w-3 h-3 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                            </svg>
+                                            Detail
+                                        </button>
+
+                                        <!-- Tombol Simpan (hanya muncul saat mode edit) -->
+                                        <div class="aksi-column hidden">
                                             <button type="button"
-                                                    class="btn-detail-nilai px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded transition-colors duration-200"
-                                                    data-mahasiswa-id="{{ $mhs->id }}"
-                                                    data-mahasiswa-nama="{{ $mhs->nama }}"
-                                                    data-nim="{{ $mhs->nim }}">
+                                                id="save-btn-{{ $mhs->id }}"
+                                                class="btn-simpan-nilai px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                                data-mahasiswa-id="{{ $mhs->id }}"
+                                                disabled>
                                                 <svg class="w-3 h-3 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                                 </svg>
-                                                Detail
+                                                Simpan
                                             </button>
-
-                                            <!-- Tombol Simpan (hanya muncul saat mode edit) -->
-                                            <div class="aksi-column hidden">
-                                                <button type="button"
-                                                        id="save-btn-{{ $mhs->id }}"
-                                                        class="btn-simpan-nilai px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                                                        data-mahasiswa-id="{{ $mhs->id }}"
-                                                        disabled>
-                                                    <svg class="w-3 h-3 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                                    </svg>
-                                                    Simpan
-                                                </button>
-                                            </div>
                                         </div>
+                                    </div>
 
-                                        <!-- Input hidden untuk student class ID -->
-                                        <input type="hidden" name="student_class_id[{{ $mhs->id }}]" value="{{ $studentClassId }}">
-                                    </td>
-                                </tr>
+                                    <!-- Input hidden untuk student class ID -->
+                                    <input type="hidden" name="student_class_id[{{ $mhs->id }}]" value="{{ $studentClassId }}">
+                                </td>
+                            </tr>
                             @endforeach
                         </tbody>
                     </table>
                 </div>
-                </form>
+            </form>
 
-                <!-- Bulk Save Controls (Hidden by default) - Di atas pagination -->
-                <div id="bulk-actions" class="mt-6 p-4 bg-gray-50 rounded-lg btn-simpan-semua hidden">
-                    <div class="flex justify-end">
-                        <div class="text-right space-y-3">
-                            <!-- First row: Checkbox -->
-                            <div>
-                                <label class="flex items-center justify-end">
-                                    <span class="mr-2 text-sm text-gray-700">Saya yakin untuk menyimpan semua nilai sekaligus</span>
-                                    <input type="checkbox" id="confirm-bulk-save" class="rounded border-gray-300 text-amber-600 focus:ring-amber-500">
-                                </label>
-                            </div>
-                            <!-- Second row: Save button -->
-                            <div>
-                                <button type="button"
-                                        id="bulk-save-btn"
-                                        class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                                        disabled>
-                                    <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                    </svg>
-                                    Simpan Semua Nilai
-                                </button>
-                            </div>
+            <!-- Bulk Save Controls (Hidden by default) - Di atas pagination -->
+            <div id="bulk-actions" class="mt-6 p-4 bg-gray-50 rounded-lg btn-simpan-semua hidden">
+                <div class="flex justify-end">
+                    <div class="text-right space-y-3">
+                        <!-- First row: Checkbox -->
+                        <div>
+                            <label class="flex items-center justify-end">
+                                <span class="mr-2 text-sm text-gray-700">Saya yakin untuk menyimpan semua nilai sekaligus</span>
+                                <input type="checkbox" id="confirm-bulk-save" class="rounded border-gray-300 text-amber-600 focus:ring-amber-500">
+                            </label>
+                        </div>
+                        <!-- Second row: Save button -->
+                        <div>
+                            <button type="button"
+                                id="bulk-save-btn"
+                                class="px-6 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                disabled>
+                                <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                Simpan Semua Nilai
+                            </button>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Pagination -->
-                @if($mahasiswaPaginated && $mahasiswaPaginated->hasPages())
-                    <div class="px-6 py-4 border-t border-gray-200">
-                        <div class="flex items-center justify-between">
-                            <div class="text-sm text-gray-700">
-                                Menampilkan {{ $mahasiswaPaginated->firstItem() }} - {{ $mahasiswaPaginated->lastItem() }}
-                                dari {{ $mahasiswaPaginated->total() }} mahasiswa
-                            </div>
-                            <div>
-                                {{ $mahasiswaPaginated->links() }}
-                            </div>
-                        </div>
+            <!-- Pagination -->
+            @if($mahasiswaPaginated && $mahasiswaPaginated->hasPages())
+            <div class="px-6 py-4 border-t border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div class="text-sm text-gray-700">
+                        Menampilkan {{ $mahasiswaPaginated->firstItem() }} - {{ $mahasiswaPaginated->lastItem() }}
+                        dari {{ $mahasiswaPaginated->total() }} mahasiswa
                     </div>
-                @endif
+                    <div>
+                        {{ $mahasiswaPaginated->links() }}
+                    </div>
+                </div>
+            </div>
+            @endif
             @endif
         </div>
     </div>
@@ -532,8 +513,7 @@
     type="warning"
     action="#"
     confirmText="Tinggalkan Halaman"
-    cancelText="Tetap di Halaman"
-/>
+    cancelText="Tetap di Halaman" />
 
 <!-- Modal Import Excel -->
 <div id="import-modal" tabindex="-1" aria-hidden="true" class="overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center min-h-screen w-full hidden transition-opacity duration-300 ease-out" style="background: rgba(0,0,0,0.6);">
@@ -548,7 +528,7 @@
                 </h3>
                 <button type="button" onclick="hideImportModal()" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center transition-colors duration-200">
                     <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
                     </svg>
                     <span class="sr-only">Close modal</span>
                 </button>
@@ -561,11 +541,11 @@
                         Pilih File Excel
                     </label>
                     <input type="file"
-                           id="excel_file"
-                           name="excel_file"
-                           accept=".xlsx,.xls"
-                           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                           required>
+                        id="excel_file"
+                        name="excel_file"
+                        accept=".xlsx,.xls"
+                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        required>
                 </div>
 
                 <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
@@ -625,7 +605,7 @@
                 <h3 class="text-lg font-semibold text-gray-900" id="detail-modal-title">Detail Nilai Mahasiswa</h3>
                 <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center transition-colors duration-200" data-modal-hide="detail-modal">
                     <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
                     </svg>
                     <span class="sr-only">Close modal</span>
                 </button>
@@ -668,7 +648,7 @@
                 </h3>
                 <button type="button" onclick="hideCreatedStudentsModal()" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center transition-colors duration-200">
                     <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
                     </svg>
                     <span class="sr-only">Close modal</span>
                 </button>
@@ -730,7 +710,7 @@
                 </h3>
                 <button type="button" onclick="hideImportErrorsModal()" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center transition-colors duration-200">
                     <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
                     </svg>
                     <span class="sr-only">Close modal</span>
                 </button>
@@ -740,12 +720,12 @@
                 <div class="bg-red-50 border border-red-200 rounded-lg p-4 max-h-64 overflow-y-auto">
                     <ul class="text-sm text-red-700 space-y-1">
                         @foreach(session('import_errors') as $error)
-                            <li class="flex items-start">
-                                <svg class="w-4 h-4 mr-2 mt-0.5 flex-shrink-0 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                                </svg>
-                                {{ $error }}
-                            </li>
+                        <li class="flex items-start">
+                            <svg class="w-4 h-4 mr-2 mt-0.5 flex-shrink-0 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                            </svg>
+                            {{ $error }}
+                        </li>
                         @endforeach
                     </ul>
                 </div>
@@ -773,8 +753,7 @@
     method="GET"
     confirmText="Atur CPMK & Bobot"
     cancelText="Tutup"
-    type="warning"
-/>
+    type="warning" />
 
 <!-- Import Modal -->
 <div id="importModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
@@ -798,24 +777,24 @@
                             Pilih File Excel
                         </label>
                         <input type="file" name="excel_file" id="excel_file" accept=".xlsx,.xls"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
                         <p class="text-xs text-gray-500 mt-1">Format yang didukung: .xlsx, .xls (Maksimal 10MB)</p>
                     </div>
 
                     <div class="mb-4">
                         <a href="{{ route('dosen.nilai.export-template', $tahunAjaranMatkul->id) }}"
-                           class="text-blue-600 hover:text-blue-800 text-sm underline">
+                            class="text-blue-600 hover:text-blue-800 text-sm underline">
                             Download Template Excel
                         </a>
                     </div>
 
                     <div class="flex justify-end space-x-3">
                         <button type="button" onclick="closeImportModal()"
-                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">
+                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">
                             Batal
                         </button>
                         <button type="submit" id="importSubmitBtn"
-                                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                             Import
                         </button>
                     </div>
@@ -835,31 +814,31 @@
 </div>
 
 <script>
-function openImportModal() {
-    document.getElementById('importModal').classList.remove('hidden');
-    resetImportModal();
-}
+    function openImportModal() {
+        document.getElementById('importModal').classList.remove('hidden');
+        resetImportModal();
+    }
 
-function closeImportModal() {
-    document.getElementById('importModal').classList.add('hidden');
-    resetImportModal();
-}
+    function closeImportModal() {
+        document.getElementById('importModal').classList.add('hidden');
+        resetImportModal();
+    }
 
-function resetImportModal() {
-    document.getElementById('importForm').classList.remove('hidden');
-    document.getElementById('importLoading').classList.add('hidden');
-    document.getElementById('excelImportForm').reset();
-}
+    function resetImportModal() {
+        document.getElementById('importForm').classList.remove('hidden');
+        document.getElementById('importLoading').classList.add('hidden');
+        document.getElementById('excelImportForm').reset();
+    }
 
-// Handle form submission - direct submit without AJAX
-document.getElementById('excelImportForm').addEventListener('submit', function(e) {
-    // Get submit button
-    const submitBtn = this.querySelector('button[type="submit"]');
-    const originalBtnText = submitBtn.innerHTML;
+    // Handle form submission - direct submit without AJAX
+    document.getElementById('excelImportForm').addEventListener('submit', function(e) {
+        // Get submit button
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn.innerHTML;
 
-    // Show loading state on button
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = `
+        // Show loading state on button
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `
         <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -867,764 +846,768 @@ document.getElementById('excelImportForm').addEventListener('submit', function(e
         Memproses Import...
     `;
 
-    // Show loading state
-    document.getElementById('importForm').classList.add('hidden');
-    document.getElementById('importLoading').classList.remove('hidden');
+        // Show loading state
+        document.getElementById('importForm').classList.add('hidden');
+        document.getElementById('importLoading').classList.remove('hidden');
 
-    // Let form submit normally - no preventDefault
-    // The page will reload after submission with flash message
-});
+        // Let form submit normally - no preventDefault
+        // The page will reload after submission with flash message
+    });
 
-// Functions removed - now using direct form submit with flash messages
+    // Functions removed - now using direct form submit with flash messages
 </script>
 
 @endsection
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Flowbite modals
-    if (typeof Flowbite !== 'undefined') {
-        // Force re-initialization of all modals
-        const modals = document.querySelectorAll('[data-modal-toggle]');
-        modals.forEach(modal => {
-            if (modal.id) {
-                console.log('Initializing modal:', modal.id);
-            }
-        });
-    }
-
-    // Detail modal functionality
-    function showDetailModal(mahasiswaId, nim, nama) {
-        const modal = document.getElementById('detail-modal');
-        const modalTitle = document.getElementById('detail-modal-title');
-
-        if (modal && modalTitle) {
-            modalTitle.textContent = `Detail Nilai Mahasiswa`;
-
-            // Load detail data
-            loadDetailData(mahasiswaId);
-
-            // Show modal
-            modal.classList.remove('hidden');
-            modal.style.display = 'flex';
-
-            // Add animation classes
-            const modalContent = modal.querySelector('.modal-content');
-            if (modalContent) {
-                modalContent.classList.add('scale-100', 'opacity-100');
-                modalContent.classList.remove('scale-95', 'opacity-0');
-            }
-        } else {
-            console.error('Modal elements not found');
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Flowbite modals
+        if (typeof Flowbite !== 'undefined') {
+            // Force re-initialization of all modals
+            const modals = document.querySelectorAll('[data-modal-toggle]');
+            modals.forEach(modal => {
+                if (modal.id) {
+                    console.log('Initializing modal:', modal.id);
+                }
+            });
         }
-    }
 
-    function hideDetailModal() {
-        const modal = document.getElementById('detail-modal');
-        if (modal) {
-            const modalContent = modal.querySelector('.modal-content');
-            if (modalContent) {
-                modalContent.classList.remove('scale-100', 'opacity-100');
-                modalContent.classList.add('scale-95', 'opacity-0');
+        // Detail modal functionality
+        function showDetailModal(mahasiswaId, nim, nama) {
+            const modal = document.getElementById('detail-modal');
+            const modalTitle = document.getElementById('detail-modal-title');
+
+            if (modal && modalTitle) {
+                modalTitle.textContent = `Detail Nilai Mahasiswa`;
+
+                // Load detail data
+                loadDetailData(mahasiswaId);
+
+                // Show modal
+                modal.classList.remove('hidden');
+                modal.style.display = 'flex';
+
+                // Add animation classes
+                const modalContent = modal.querySelector('.modal-content');
+                if (modalContent) {
+                    modalContent.classList.add('scale-100', 'opacity-100');
+                    modalContent.classList.remove('scale-95', 'opacity-0');
+                }
+            } else {
+                console.error('Modal elements not found');
             }
-
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                modal.style.display = 'none';
-            }, 300);
         }
-    }
 
-    function loadDetailData(mahasiswaId) {
-        // Gunakan URL yang aman untuk HTTPS
-        const baseUrl = window.location.protocol + '//' + window.location.host;
-        const url = `${baseUrl}/dosen/nilai/{{ $tahunAjaranMatkul->id }}/detail?mahasiswa_id=${mahasiswaId}`;
+        function hideDetailModal() {
+            const modal = document.getElementById('detail-modal');
+            if (modal) {
+                const modalContent = modal.querySelector('.modal-content');
+                if (modalContent) {
+                    modalContent.classList.remove('scale-100', 'opacity-100');
+                    modalContent.classList.add('scale-95', 'opacity-0');
+                }
 
-        console.log('Loading detail for mahasiswa:', mahasiswaId, 'URL:', url);
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    modal.style.display = 'none';
+                }, 300);
+            }
+        }
 
-        // Show loading state
-        const contentDiv = document.getElementById('detail-content-placeholder');
-        if (contentDiv) {
-            contentDiv.innerHTML = `
+        function loadDetailData(mahasiswaId) {
+            // Gunakan URL yang aman untuk HTTPS
+            const baseUrl = window.location.protocol + '//' + window.location.host;
+            const url = `${baseUrl}/dosen/nilai/{{ $tahunAjaranMatkul->id }}/detail?mahasiswa_id=${mahasiswaId}`;
+
+            console.log('Loading detail for mahasiswa:', mahasiswaId, 'URL:', url);
+
+            // Show loading state
+            const contentDiv = document.getElementById('detail-content-placeholder');
+            if (contentDiv) {
+                contentDiv.innerHTML = `
                 <div class="flex justify-center py-8">
                     <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
             `;
+            }
+
+            fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        contentDiv.innerHTML = data.html;
+                    } else {
+                        contentDiv.innerHTML = '<p class="text-red-600">Gagal memuat detail nilai: ' + (data.message || 'Unknown error') + '</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading detail:', error);
+                    contentDiv.innerHTML = '<p class="text-red-600">Terjadi kesalahan saat memuat data: ' + error.message + '</p>';
+                });
         }
 
-        fetch(url, {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+        // Close modal when clicking outside
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('detail-modal');
+            if (e.target === modal) {
+                hideDetailModal();
             }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                contentDiv.innerHTML = data.html;
-            } else {
-                contentDiv.innerHTML = '<p class="text-red-600">Gagal memuat detail nilai: ' + (data.message || 'Unknown error') + '</p>';
-            }
-        })
-        .catch(error => {
-            console.error('Error loading detail:', error);
-            contentDiv.innerHTML = '<p class="text-red-600">Terjadi kesalahan saat memuat data: ' + error.message + '</p>';
         });
-    }
 
-    // Close modal when clicking outside
-    document.addEventListener('click', function(e) {
-        const modal = document.getElementById('detail-modal');
-        if (e.target === modal) {
-            hideDetailModal();
-        }
-    });
-
-    // Close modal on escape key
-    document.addEventListener('keydown', function(e) {
-        const modal = document.getElementById('detail-modal');
-        if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
-            hideDetailModal();
-        }
-    });
-
-    // Close modal on close button click
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('[data-modal-hide="detail-modal"]')) {
-            hideDetailModal();
-        }
-    });
-
-    // Make functions globally available
-    window.showDetailModal = showDetailModal;
-    window.hideDetailModal = hideDetailModal;
-
-    // Add event listener for detail buttons
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('.btn-detail-nilai')) {
-            e.preventDefault();
-            const button = e.target.closest('.btn-detail-nilai');
-            const mahasiswaId = button.getAttribute('data-mahasiswa-id');
-            const mahasiswaNama = button.getAttribute('data-mahasiswa-nama');
-            const nim = button.getAttribute('data-nim');
-
-            console.log('Detail button clicked:', { mahasiswaId, mahasiswaNama, nim });
-
-            // Show detail modal
-            showDetailModal(mahasiswaId, nim, mahasiswaNama);
-        }
-    });
-
-    // Tab functionality
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('.tab-button')) {
-            e.preventDefault();
-            const button = e.target.closest('.tab-button');
-            const tabName = button.getAttribute('data-tab');
-
-            console.log('Tab clicked:', tabName);
-
-            // Update URL with tab parameter
-            const url = new URL(window.location);
-            if (tabName === 'all') {
-                url.searchParams.delete('tab');
-            } else {
-                url.searchParams.set('tab', tabName);
+        // Close modal on escape key
+        document.addEventListener('keydown', function(e) {
+            const modal = document.getElementById('detail-modal');
+            if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+                hideDetailModal();
             }
+        });
 
-            // Navigate to new URL
-            window.location.href = url.toString();
+        // Close modal on close button click
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('[data-modal-hide="detail-modal"]')) {
+                hideDetailModal();
+            }
+        });
+
+        // Make functions globally available
+        window.showDetailModal = showDetailModal;
+        window.hideDetailModal = hideDetailModal;
+
+        // Add event listener for detail buttons
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.btn-detail-nilai')) {
+                e.preventDefault();
+                const button = e.target.closest('.btn-detail-nilai');
+                const mahasiswaId = button.getAttribute('data-mahasiswa-id');
+                const mahasiswaNama = button.getAttribute('data-mahasiswa-nama');
+                const nim = button.getAttribute('data-nim');
+
+                console.log('Detail button clicked:', {
+                    mahasiswaId,
+                    mahasiswaNama,
+                    nim
+                });
+
+                // Show detail modal
+                showDetailModal(mahasiswaId, nim, mahasiswaNama);
+            }
+        });
+
+        // Tab functionality
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.tab-button')) {
+                e.preventDefault();
+                const button = e.target.closest('.tab-button');
+                const tabName = button.getAttribute('data-tab');
+
+                console.log('Tab clicked:', tabName);
+
+                // Update URL with tab parameter
+                const url = new URL(window.location);
+                if (tabName === 'all') {
+                    url.searchParams.delete('tab');
+                } else {
+                    url.searchParams.set('tab', tabName);
+                }
+
+                // Navigate to new URL
+                window.location.href = url.toString();
+            }
+        });
+
+        // Import Modal Functions
+        function showImportModal() {
+            const modal = document.getElementById('import-modal');
+            const modalContent = modal.querySelector('[data-modal-content]');
+
+            if (modal && modalContent) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+
+                // Trigger animation
+                setTimeout(() => {
+                    modal.classList.remove('bg-opacity-0');
+                    modal.classList.add('bg-opacity-10');
+                    modalContent.classList.remove('scale-95', 'opacity-0');
+                    modalContent.classList.add('scale-100', 'opacity-100');
+                }, 10);
+            }
         }
-    });
 
-    // Import Modal Functions
-    function showImportModal() {
-        const modal = document.getElementById('import-modal');
-        const modalContent = modal.querySelector('[data-modal-content]');
+        function hideImportModal() {
+            const modal = document.getElementById('import-modal');
+            const modalContent = modal.querySelector('[data-modal-content]');
 
-        if (modal && modalContent) {
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
+            if (modal && modalContent) {
+                modalContent.classList.add('scale-95', 'opacity-0');
+                modalContent.classList.remove('scale-100', 'opacity-100');
+                modal.classList.remove('bg-opacity-10');
+                modal.classList.add('bg-opacity-0');
 
-            // Trigger animation
-            setTimeout(() => {
-                modal.classList.remove('bg-opacity-0');
-                modal.classList.add('bg-opacity-10');
-                modalContent.classList.remove('scale-95', 'opacity-0');
-                modalContent.classList.add('scale-100', 'opacity-100');
-            }, 10);
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                }, 300);
+            }
         }
-    }
 
-    function hideImportModal() {
-        const modal = document.getElementById('import-modal');
-        const modalContent = modal.querySelector('[data-modal-content]');
+        // Toggle Edit Nilai Functionality
+        const toggleEditBtn = document.getElementById('toggle-edit-nilai');
+        const resetBtn = document.getElementById('reset-nilai');
+        const nilaiInputs = document.querySelectorAll('.nilai-input');
+        const nilaiPlains = document.querySelectorAll('.nilai-plain');
+        const aksiColumns = document.querySelectorAll('.aksi-column');
+        const gradeColumns = document.querySelectorAll('.grade-column');
+        const bulkActions = document.getElementById('bulk-actions');
+        const bulkSaveBtn = document.getElementById('bulk-save-btn');
+        const confirmBulkSave = document.getElementById('confirm-bulk-save');
 
-        if (modal && modalContent) {
-            modalContent.classList.add('scale-95', 'opacity-0');
-            modalContent.classList.remove('scale-100', 'opacity-100');
-            modal.classList.remove('bg-opacity-10');
-            modal.classList.add('bg-opacity-0');
-
-            setTimeout(() => {
-                modal.classList.add('hidden');
-            }, 300);
-        }
-    }
-
-    // Toggle Edit Nilai Functionality
-    const toggleEditBtn = document.getElementById('toggle-edit-nilai');
-    const resetBtn = document.getElementById('reset-nilai');
-    const nilaiInputs = document.querySelectorAll('.nilai-input');
-    const nilaiPlains = document.querySelectorAll('.nilai-plain');
-    const aksiColumns = document.querySelectorAll('.aksi-column');
-    const gradeColumns = document.querySelectorAll('.grade-column');
-    const bulkActions = document.getElementById('bulk-actions');
-    const bulkSaveBtn = document.getElementById('bulk-save-btn');
-    const confirmBulkSave = document.getElementById('confirm-bulk-save');
-
-    // Function to enter edit mode
-    function enterEditMode() {
-        if (toggleEditBtn) {
-            // Switch to edit mode
-            toggleEditBtn.innerHTML = `
+        // Function to enter edit mode
+        function enterEditMode() {
+            if (toggleEditBtn) {
+                // Switch to edit mode
+                toggleEditBtn.innerHTML = `
                 <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
                 Nonaktifkan Input Nilai
             `;
-            toggleEditBtn.classList.remove('bg-amber-600', 'hover:bg-amber-700');
-            toggleEditBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+                toggleEditBtn.classList.remove('bg-amber-600', 'hover:bg-amber-700');
+                toggleEditBtn.classList.add('bg-red-600', 'hover:bg-red-700');
 
-            // Show input fields and hide plain text
-            nilaiInputs.forEach(input => input.classList.remove('hidden'));
-            nilaiPlains.forEach(plain => plain.classList.add('hidden'));
-            // Show aksi columns
-            aksiColumns.forEach(col => col.classList.remove('hidden'));
-            gradeColumns.forEach(col => col.classList.add('hidden'));
+                // Show input fields and hide plain text
+                nilaiInputs.forEach(input => input.classList.remove('hidden'));
+                nilaiPlains.forEach(plain => plain.classList.add('hidden'));
+                // Show aksi columns
+                aksiColumns.forEach(col => col.classList.remove('hidden'));
+                gradeColumns.forEach(col => col.classList.add('hidden'));
 
-            // Show bulk actions
-            if (bulkActions) {
-                bulkActions.classList.remove('hidden');
-            }
-
-            // Show reset button
-            if (resetBtn) {
-                resetBtn.classList.remove('hidden');
-            }
-
-            // Save edit mode state to localStorage
-            localStorage.setItem('nilaiEditMode', 'true');
-
-            // Update bulk save button text
-            updateBulkSaveButtonText();
-        }
-    }
-
-    // Function to restore edit mode state from localStorage
-    function restoreEditModeState() {
-        const isEditMode = localStorage.getItem('nilaiEditMode') === 'true';
-        if (isEditMode) {
-            enterEditMode();
-            // Also restore changed values
-            restoreChangedValues();
-            // Update bulk save button text
-            updateBulkSaveButtonText();
-        }
-    }
-
-    // Function to save changed values to localStorage
-    function saveChangedValuesToStorage(mahasiswaId, komponenId, value) {
-        const key = `nilai_changes_${mahasiswaId}_${komponenId}`;
-        localStorage.setItem(key, value);
-    }
-
-    // Function to remove changed value from localStorage
-    function removeChangedValueFromStorage(mahasiswaId, komponenId) {
-        const key = `nilai_changes_${mahasiswaId}_${komponenId}`;
-        localStorage.removeItem(key);
-    }
-
-    // Function to restore changed values from localStorage
-    function restoreChangedValues() {
-        // Get all nilai inputs
-        const allNilaiInputs = document.querySelectorAll('.nilai-input');
-
-        allNilaiInputs.forEach(input => {
-            const mahasiswaId = input.getAttribute('data-mahasiswa-id');
-            const komponenId = input.getAttribute('data-komponen-id');
-            const key = `nilai_changes_${mahasiswaId}_${komponenId}`;
-            const savedValue = localStorage.getItem(key);
-
-            if (savedValue !== null) {
-                input.value = savedValue;
-                // Trigger change event to update save button state
-                input.dispatchEvent(new Event('input'));
-            }
-        });
-
-        // Update bulk save button text after restoring values
-        updateBulkSaveButtonText();
-    }
-
-    // Function to clear changed values from localStorage for a specific mahasiswa
-    function clearChangedValuesFromStorage(mahasiswaId) {
-        // Get all keys for this mahasiswa
-        const keys = Object.keys(localStorage);
-        keys.forEach(key => {
-            if (key.startsWith(`nilai_changes_${mahasiswaId}_`)) {
-                localStorage.removeItem(key);
-            }
-        });
-
-        // Also clear student class ID for this mahasiswa
-        localStorage.removeItem(`student_class_id_${mahasiswaId}`);
-    }
-
-    // Function to clear all edit mode data from localStorage
-    function clearAllEditModeData() {
-        const keys = Object.keys(localStorage);
-        keys.forEach(key => {
-            if (key.startsWith('nilai_changes_') ||
-                key.startsWith('student_class_id_') ||
-                key === 'nilaiEditMode') {
-                localStorage.removeItem(key);
-            }
-        });
-    }
-
-    // Function to collect all changed values from localStorage across all pages
-    function collectAllChangedValuesFromStorage() {
-        const allChangedValues = {};
-        const keys = Object.keys(localStorage);
-
-        keys.forEach(key => {
-            if (key.startsWith('nilai_changes_')) {
-                // Extract mahasiswaId and komponenId from key
-                const parts = key.replace('nilai_changes_', '').split('_');
-                if (parts.length === 2) {
-                    const mahasiswaId = parts[0];
-                    const komponenId = parts[1];
-                    const value = localStorage.getItem(key);
-
-                    if (!allChangedValues[mahasiswaId]) {
-                        allChangedValues[mahasiswaId] = {};
-                    }
-                    allChangedValues[mahasiswaId][komponenId] = value;
+                // Show bulk actions
+                if (bulkActions) {
+                    bulkActions.classList.remove('hidden');
                 }
-            }
-        });
 
-        console.log('All changed values from localStorage:', allChangedValues);
-        return allChangedValues;
-    }
+                // Show reset button
+                if (resetBtn) {
+                    resetBtn.classList.remove('hidden');
+                }
+
+                // Save edit mode state to localStorage
+                localStorage.setItem('nilaiEditMode', 'true');
+
+                // Update bulk save button text
+                updateBulkSaveButtonText();
+            }
+        }
+
+        // Function to restore edit mode state from localStorage
+        function restoreEditModeState() {
+            const isEditMode = localStorage.getItem('nilaiEditMode') === 'true';
+            if (isEditMode) {
+                enterEditMode();
+                // Also restore changed values
+                restoreChangedValues();
+                // Update bulk save button text
+                updateBulkSaveButtonText();
+            }
+        }
+
+        // Function to save changed values to localStorage
+        function saveChangedValuesToStorage(mahasiswaId, komponenId, value) {
+            const key = `nilai_changes_${mahasiswaId}_${komponenId}`;
+            localStorage.setItem(key, value);
+        }
+
+        // Function to remove changed value from localStorage
+        function removeChangedValueFromStorage(mahasiswaId, komponenId) {
+            const key = `nilai_changes_${mahasiswaId}_${komponenId}`;
+            localStorage.removeItem(key);
+        }
+
+        // Function to restore changed values from localStorage
+        function restoreChangedValues() {
+            // Get all nilai inputs
+            const allNilaiInputs = document.querySelectorAll('.nilai-input');
+
+            allNilaiInputs.forEach(input => {
+                const mahasiswaId = input.getAttribute('data-mahasiswa-id');
+                const komponenId = input.getAttribute('data-komponen-id');
+                const key = `nilai_changes_${mahasiswaId}_${komponenId}`;
+                const savedValue = localStorage.getItem(key);
+
+                if (savedValue !== null) {
+                    input.value = savedValue;
+                    // Trigger change event to update save button state
+                    input.dispatchEvent(new Event('input'));
+                }
+            });
+
+            // Update bulk save button text after restoring values
+            updateBulkSaveButtonText();
+        }
+
+        // Function to clear changed values from localStorage for a specific mahasiswa
+        function clearChangedValuesFromStorage(mahasiswaId) {
+            // Get all keys for this mahasiswa
+            const keys = Object.keys(localStorage);
+            keys.forEach(key => {
+                if (key.startsWith(`nilai_changes_${mahasiswaId}_`)) {
+                    localStorage.removeItem(key);
+                }
+            });
+
+            // Also clear student class ID for this mahasiswa
+            localStorage.removeItem(`student_class_id_${mahasiswaId}`);
+        }
+
+        // Function to clear all edit mode data from localStorage
+        function clearAllEditModeData() {
+            const keys = Object.keys(localStorage);
+            keys.forEach(key => {
+                if (key.startsWith('nilai_changes_') ||
+                    key.startsWith('student_class_id_') ||
+                    key === 'nilaiEditMode') {
+                    localStorage.removeItem(key);
+                }
+            });
+        }
+
+        // Function to collect all changed values from localStorage across all pages
+        function collectAllChangedValuesFromStorage() {
+            const allChangedValues = {};
+            const keys = Object.keys(localStorage);
+
+            keys.forEach(key => {
+                if (key.startsWith('nilai_changes_')) {
+                    // Extract mahasiswaId and komponenId from key
+                    const parts = key.replace('nilai_changes_', '').split('_');
+                    if (parts.length === 2) {
+                        const mahasiswaId = parts[0];
+                        const komponenId = parts[1];
+                        const value = localStorage.getItem(key);
+
+                        if (!allChangedValues[mahasiswaId]) {
+                            allChangedValues[mahasiswaId] = {};
+                        }
+                        allChangedValues[mahasiswaId][komponenId] = value;
+                    }
+                }
+            });
+
+            console.log('All changed values from localStorage:', allChangedValues);
+            return allChangedValues;
+        }
 
         // Function to update bulk save button text with count
-    function updateBulkSaveButtonText() {
-        const allChangedValues = collectAllChangedValuesFromStorage();
-        const totalChanges = Object.keys(allChangedValues).length;
+        function updateBulkSaveButtonText() {
+            const allChangedValues = collectAllChangedValuesFromStorage();
+            const totalChanges = Object.keys(allChangedValues).length;
 
-        if (bulkSaveBtn) {
-            if (totalChanges > 0) {
-                bulkSaveBtn.innerHTML = `
+            if (bulkSaveBtn) {
+                if (totalChanges > 0) {
+                    bulkSaveBtn.innerHTML = `
                     <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
                     Simpan Semua Nilai (${totalChanges} perubahan)
                 `;
-            } else {
-                bulkSaveBtn.innerHTML = `
+                } else {
+                    bulkSaveBtn.innerHTML = `
                     <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
                     Simpan Semua Nilai
                 `;
-            }
-        }
-    }
-
-    // Function to update nilai display (total nilai and grade)
-    function updateNilaiDisplay(mahasiswaId) {
-        // Get all nilai inputs for this mahasiswa
-        const nilaiInputs = document.querySelectorAll(`input[data-mahasiswa-id="${mahasiswaId}"]`);
-        let totalNilai = 0;
-        let validNilaiCount = 0;
-
-        // Calculate total nilai
-        nilaiInputs.forEach(input => {
-            const nilai = parseFloat(input.value);
-            if (!isNaN(nilai) && nilai >= 0) {
-                totalNilai += nilai;
-                validNilaiCount++;
-            }
-        });
-
-        // Calculate average if there are valid nilai
-        const averageNilai = validNilaiCount > 0 ? totalNilai / validNilaiCount : 0;
-
-        // Update total nilai display
-        const totalNilaiCell = document.querySelector(`tr[data-mahasiswa-id="${mahasiswaId}"] td:nth-child(7)`); // Adjust index based on your table structure
-        if (totalNilaiCell) {
-            const totalNilaiSpan = totalNilaiCell.querySelector('span');
-            if (totalNilaiSpan) {
-                totalNilaiSpan.textContent = averageNilai > 0 ? averageNilai.toFixed(2) : '-';
-            }
-        }
-
-        // Calculate and update grade
-        let grade = '-';
-        if (averageNilai > 0) {
-            if (averageNilai >= 80) grade = 'A';
-            else if (averageNilai >= 75) grade = 'A-';
-            else if (averageNilai >= 70) grade = 'B+';
-            else if (averageNilai >= 65) grade = 'B';
-            else if (averageNilai >= 60) grade = 'B-';
-            else if (averageNilai >= 55) grade = 'C+';
-            else if (averageNilai >= 50) grade = 'C';
-            else if (averageNilai >= 45) grade = 'D';
-            else grade = 'E';
-        }
-
-        // Update grade display
-        const gradeCell = document.querySelector(`tr[data-mahasiswa-id="${mahasiswaId}"] td:nth-child(8)`); // Adjust index based on your table structure
-        if (gradeCell) {
-            const gradeSpan = gradeCell.querySelector('span');
-            if (gradeSpan) {
-                // Update grade text
-                gradeSpan.textContent = grade;
-
-                // Update grade color classes
-                gradeSpan.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium';
-                if (grade === 'A' || grade === 'A-') {
-                    gradeSpan.classList.add('bg-green-100', 'text-green-800');
-                } else if (grade === 'B+' || grade === 'B' || grade === 'B-') {
-                    gradeSpan.classList.add('bg-blue-100', 'text-blue-800');
-                } else if (grade === 'C+' || grade === 'C') {
-                    gradeSpan.classList.add('bg-yellow-100', 'text-yellow-800');
-                } else if (grade === 'D') {
-                    gradeSpan.classList.add('bg-orange-100', 'text-orange-800');
-                } else if (grade !== '-') {
-                    gradeSpan.classList.add('bg-red-100', 'text-red-800');
                 }
             }
         }
-    }
+
+        // Function to update nilai display (total nilai and grade)
+        function updateNilaiDisplay(mahasiswaId) {
+            // Get all nilai inputs for this mahasiswa
+            const nilaiInputs = document.querySelectorAll(`input[data-mahasiswa-id="${mahasiswaId}"]`);
+            let totalNilai = 0;
+            let validNilaiCount = 0;
+
+            // Calculate total nilai
+            nilaiInputs.forEach(input => {
+                const nilai = parseFloat(input.value);
+                if (!isNaN(nilai) && nilai >= 0) {
+                    totalNilai += nilai;
+                    validNilaiCount++;
+                }
+            });
+
+            // Calculate average if there are valid nilai
+            const averageNilai = validNilaiCount > 0 ? totalNilai / validNilaiCount : 0;
+
+            // Update total nilai display
+            const totalNilaiCell = document.querySelector(`tr[data-mahasiswa-id="${mahasiswaId}"] td:nth-child(7)`); // Adjust index based on your table structure
+            if (totalNilaiCell) {
+                const totalNilaiSpan = totalNilaiCell.querySelector('span');
+                if (totalNilaiSpan) {
+                    totalNilaiSpan.textContent = averageNilai > 0 ? averageNilai.toFixed(2) : '-';
+                }
+            }
+
+            // Calculate and update grade
+            let grade = '-';
+            if (averageNilai > 0) {
+                if (averageNilai >= 80) grade = 'A';
+                else if (averageNilai >= 75) grade = 'A-';
+                else if (averageNilai >= 70) grade = 'B+';
+                else if (averageNilai >= 65) grade = 'B';
+                else if (averageNilai >= 60) grade = 'B-';
+                else if (averageNilai >= 55) grade = 'C+';
+                else if (averageNilai >= 50) grade = 'C';
+                else if (averageNilai >= 45) grade = 'D';
+                else grade = 'E';
+            }
+
+            // Update grade display
+            const gradeCell = document.querySelector(`tr[data-mahasiswa-id="${mahasiswaId}"] td:nth-child(8)`); // Adjust index based on your table structure
+            if (gradeCell) {
+                const gradeSpan = gradeCell.querySelector('span');
+                if (gradeSpan) {
+                    // Update grade text
+                    gradeSpan.textContent = grade;
+
+                    // Update grade color classes
+                    gradeSpan.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium';
+                    if (grade === 'A' || grade === 'A-') {
+                        gradeSpan.classList.add('bg-green-100', 'text-green-800');
+                    } else if (grade === 'B+' || grade === 'B' || grade === 'B-') {
+                        gradeSpan.classList.add('bg-blue-100', 'text-blue-800');
+                    } else if (grade === 'C+' || grade === 'C') {
+                        gradeSpan.classList.add('bg-yellow-100', 'text-yellow-800');
+                    } else if (grade === 'D') {
+                        gradeSpan.classList.add('bg-orange-100', 'text-orange-800');
+                    } else if (grade !== '-') {
+                        gradeSpan.classList.add('bg-red-100', 'text-red-800');
+                    }
+                }
+            }
+        }
 
         // Function to exit edit mode
-    function exitEditMode() {
-        if (toggleEditBtn) {
-            // Switch back to view mode
-            toggleEditBtn.innerHTML = `
+        function exitEditMode() {
+            if (toggleEditBtn) {
+                // Switch back to view mode
+                toggleEditBtn.innerHTML = `
                 <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 11l6 6M3 17v2a2 2 0 002 2h2m14-6v6a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h6"></path>
                 </svg>
                 Aktifkan Input Nilai
             `;
-            toggleEditBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
-            toggleEditBtn.classList.add('bg-amber-600', 'hover:bg-amber-700');
+                toggleEditBtn.classList.remove('bg-red-600', 'hover:bg-red-700');
+                toggleEditBtn.classList.add('bg-amber-600', 'hover:bg-amber-700');
 
-            // Hide input fields and show plain text
-            nilaiInputs.forEach(input => input.classList.add('hidden'));
-            nilaiPlains.forEach(plain => plain.classList.remove('hidden'));
-            aksiColumns.forEach(col => col.classList.add('hidden'));
-            gradeColumns.forEach(col => col.classList.remove('hidden'));
+                // Hide input fields and show plain text
+                nilaiInputs.forEach(input => input.classList.add('hidden'));
+                nilaiPlains.forEach(plain => plain.classList.remove('hidden'));
+                aksiColumns.forEach(col => col.classList.add('hidden'));
+                gradeColumns.forEach(col => col.classList.remove('hidden'));
 
-            // Hide bulk actions
-            if (bulkActions) {
-                bulkActions.classList.add('hidden');
-            }
-
-            // Hide reset button
-            if (resetBtn) {
-                resetBtn.classList.add('hidden');
-            }
-
-            // Reset bulk save checkbox
-            if (confirmBulkSave) {
-                confirmBulkSave.checked = false;
-            }
-
-            // Disable bulk save button
-            if (bulkSaveBtn) {
-                bulkSaveBtn.disabled = true;
-                bulkSaveBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
-                bulkSaveBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
-            }
-
-            // Save edit mode state to localStorage
-            localStorage.setItem('nilaiEditMode', 'false');
-        }
-    }
-
-    if (toggleEditBtn) {
-        toggleEditBtn.addEventListener('click', function() {
-            const isEditMode = this.textContent.includes('Aktifkan');
-
-            if (isEditMode) {
-                // Switch to edit mode
-                enterEditMode();
-            } else {
-                // Switch back to view mode using the function
-                exitEditMode();
-            }
-        });
-    }
-
-    // Individual nilai input change tracking
-    nilaiInputs.forEach(input => {
-        input.addEventListener('input', function() {
-            const mahasiswaId = this.getAttribute('data-mahasiswa-id');
-            const komponenId = this.getAttribute('data-komponen-id');
-            const originalValue = this.getAttribute('data-original-value');
-            const currentValue = this.value;
-            const saveBtn = document.getElementById(`save-btn-${mahasiswaId}`);
-
-            // Check if value has changed
-            const hasChanged = currentValue !== originalValue;
-
-            if (saveBtn) {
-                saveBtn.disabled = !hasChanged;
-                if (hasChanged) {
-                    saveBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
-                    saveBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
-                } else {
-                    saveBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
-                    saveBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                }
-            }
-
-                        // Save changed values to localStorage for pagination persistence
-            if (hasChanged) {
-                saveChangedValuesToStorage(mahasiswaId, komponenId, currentValue);
-
-                // Also save student class ID for this mahasiswa
-                const studentClassElement = document.querySelector(`input[name="student_class_id[${mahasiswaId}]"]`);
-                if (studentClassElement) {
-                    localStorage.setItem(`student_class_id_${mahasiswaId}`, studentClassElement.value);
-                }
-            } else {
-                removeChangedValueFromStorage(mahasiswaId, komponenId);
-            }
-
-            // Update bulk save button text if bulk actions are visible
-            if (bulkActions && !bulkActions.classList.contains('hidden')) {
-                updateBulkSaveButtonText();
-            }
-        });
-    });
-
-    // Individual save button functionality
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('.btn-simpan-nilai')) {
-            e.preventDefault();
-            const button = e.target.closest('.btn-simpan-nilai');
-            const mahasiswaId = button.getAttribute('data-mahasiswa-id');
-
-            // Validate mahasiswaId
-            if (!mahasiswaId || mahasiswaId === 'null' || mahasiswaId === 'undefined') {
-                console.error('Invalid mahasiswaId:', mahasiswaId);
-                if (typeof showToast === 'function') {
-                    showToast('Error: ID mahasiswa tidak valid', 'error');
-                } else {
-                    alert('Error: ID mahasiswa tidak valid');
-                }
-                return;
-            }
-
-            console.log('Processing save for mahasiswa ID:', mahasiswaId);
-
-            // Get all nilai inputs for this mahasiswa
-            const nilaiInputs = document.querySelectorAll(`input[data-mahasiswa-id="${mahasiswaId}"]`);
-            const nilaiData = {};
-
-            console.log(`Found ${nilaiInputs.length} nilai inputs for mahasiswa ${mahasiswaId}`);
-
-            nilaiInputs.forEach((input, index) => {
-                const komponenId = input.getAttribute('data-komponen-id');
-                const nilai = input.value;
-                console.log(`Input ${index}: komponenId=${komponenId}, nilai=${nilai}`);
-
-                if (nilai !== '' && nilai !== null && nilai !== undefined) {
-                    nilaiData[komponenId] = parseFloat(nilai);
-                }
-            });
-
-            console.log('Final nilaiData:', nilaiData);
-
-            // Send AJAX request to save nilai
-            const formData = new FormData();
-            // Get CSRF token with null check
-            const csrfElement = document.querySelector('meta[name="csrf-token"]');
-            if (!csrfElement) {
-                console.error('CSRF token not found');
-                if (typeof showToast === 'function') {
-                    showToast('Error: Token keamanan tidak ditemukan', 'error');
-                }
-                return;
-            }
-            formData.append('_token', csrfElement.getAttribute('content'));
-
-            // Add nilai data in the expected format
-            console.log(`Nilai data for mahasiswa ${mahasiswaId}:`, nilaiData);
-
-            // Check if there are any valid nilai to save
-            if (Object.keys(nilaiData).length === 0) {
-                console.warn('No valid nilai data to save');
-                if (typeof showToast === 'function') {
-                    showToast('Tidak ada nilai yang valid untuk disimpan', 'warning');
-                } else {
-                    alert('Tidak ada nilai yang valid untuk disimpan');
-                }
-                return;
-            }
-
-            Object.keys(nilaiData).forEach(komponenId => {
-                formData.append(`nilai[${mahasiswaId}][${komponenId}]`, nilaiData[komponenId]);
-            });
-
-            // Add student class ID with null check
-            const studentClassElement = document.querySelector(`input[name="student_class_id[${mahasiswaId}]"]`);
-            console.log(`Looking for student_class_id[${mahasiswaId}] element:`, studentClassElement);
-
-            if (studentClassElement) {
-                const studentClassId = studentClassElement.value;
-                console.log(`Found student class ID for mahasiswa ${mahasiswaId}:`, studentClassId);
-
-                // Check if studentClassId is empty or null
-                if (!studentClassId || studentClassId.trim() === '') {
-                    console.error(`Student class ID is empty for mahasiswa ${mahasiswaId}`);
-                    if (typeof showToast === 'function') {
-                        showToast('Error: Data mahasiswa tidak lengkap - Student class ID kosong', 'error');
-                    } else {
-                        alert('Error: Data mahasiswa tidak lengkap - Student class ID kosong');
-                    }
-                    return;
+                // Hide bulk actions
+                if (bulkActions) {
+                    bulkActions.classList.add('hidden');
                 }
 
-                formData.append(`student_class_id[${mahasiswaId}]`, studentClassId);
-            } else {
-                console.error(`Student class ID element not found for mahasiswa ${mahasiswaId}`);
-                console.error('Available student_class_id elements:', document.querySelectorAll('input[name^="student_class_id"]'));
-                console.error('All hidden inputs:', document.querySelectorAll('input[type="hidden"]'));
-
-                // Debug: Check if there are any elements with similar names
-                const similarElements = document.querySelectorAll(`input[name*="${mahasiswaId}"]`);
-                console.error('Elements with similar names:', similarElements);
-
-                if (typeof showToast === 'function') {
-                    showToast('Error: Data mahasiswa tidak lengkap - Student class ID tidak ditemukan', 'error');
-                } else {
-                    alert('Error: Data mahasiswa tidak lengkap - Student class ID tidak ditemukan');
+                // Hide reset button
+                if (resetBtn) {
+                    resetBtn.classList.add('hidden');
                 }
-                return;
-            }
 
-            // Debug: Log formData contents
-            console.log('FormData contents:');
-            for (let [key, value] of formData.entries()) {
-                console.log(`${key}: ${value}`);
-            }
-
-            fetch(`/dosen/nilai/{{ $tahunAjaranMatkul->id }}/individual-store`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': csrfElement.getAttribute('content')
-                },
-                body: formData
-            })
-            .then(response => response.json())
-                        .then(data => {
-                if (data.success) {
-                    // Update original values and disable save button
-                    nilaiInputs.forEach(input => {
-                        input.setAttribute('data-original-value', input.value);
-                    });
-                    button.disabled = true;
-                    button.classList.add('bg-gray-400', 'cursor-not-allowed');
-                    button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-
-                    // Update nilai plain text display to show new values
-                    nilaiInputs.forEach(input => {
-                        const mahasiswaId = input.getAttribute('data-mahasiswa-id');
-                        const komponenId = input.getAttribute('data-komponen-id');
-                        const nilaiValue = input.value;
-
-                        // Find corresponding nilai plain text
-                        const nilaiPlain = document.querySelector(`.nilai-plain[data-mahasiswa-id="${mahasiswaId}"][data-komponen-id="${komponenId}"]`);
-                        if (nilaiPlain) {
-                            nilaiPlain.textContent = nilaiValue !== '' ? nilaiValue : '-';
-                        }
-                    });
-
-                    // Update total nilai and grade display
-                    updateNilaiDisplay(mahasiswaId);
-
-                    // Clear changed values from localStorage after successful save
-                    clearChangedValuesFromStorage(mahasiswaId);
-
-                    // Show success message
-                    if (typeof showToast === 'function') {
-                        showToast('Nilai berhasil disimpan', 'success');
-                    }
-
-                    // Auto-exit from edit mode after successful save
-                    setTimeout(() => {
-                        exitEditMode();
-                    }, 1000); // Delay 1 detik agar user bisa lihat pesan sukses
-                } else {
-                    if (typeof showToast === 'function') {
-                        showToast('Gagal menyimpan nilai: ' + data.message, 'error');
-                    }
+                // Reset bulk save checkbox
+                if (confirmBulkSave) {
+                    confirmBulkSave.checked = false;
                 }
-            })
-            .catch(error => {
-                console.error('Error saving nilai:', error);
-                if (typeof showToast === 'function') {
-                    showToast('Terjadi kesalahan saat menyimpan nilai', 'error');
-                }
-            });
-        }
-    });
 
-    // Bulk save functionality
-    if (confirmBulkSave) {
-        confirmBulkSave.addEventListener('change', function() {
-            if (bulkSaveBtn) {
-                bulkSaveBtn.disabled = !this.checked;
-                if (this.checked) {
-                    bulkSaveBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
-                    bulkSaveBtn.classList.add('bg-green-600', 'hover:bg-green-700');
-                } else {
+                // Disable bulk save button
+                if (bulkSaveBtn) {
+                    bulkSaveBtn.disabled = true;
                     bulkSaveBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
                     bulkSaveBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
                 }
+
+                // Save edit mode state to localStorage
+                localStorage.setItem('nilaiEditMode', 'false');
             }
-        });
-    }
+        }
 
-        if (bulkSaveBtn) {
-        bulkSaveBtn.addEventListener('click', function() {
-            if (confirmBulkSave && confirmBulkSave.checked) {
-                                // Collect all changed values from localStorage across all pages
-                const allChangedValues = collectAllChangedValuesFromStorage();
+        if (toggleEditBtn) {
+            toggleEditBtn.addEventListener('click', function() {
+                const isEditMode = this.textContent.includes('Aktifkan');
 
-                if (Object.keys(allChangedValues).length === 0) {
-                    if (typeof showToast === 'function') {
-                        showToast('Tidak ada nilai yang diubah untuk disimpan', 'warning');
+                if (isEditMode) {
+                    // Switch to edit mode
+                    enterEditMode();
+                } else {
+                    // Switch back to view mode using the function
+                    exitEditMode();
+                }
+            });
+        }
+
+        // Individual nilai input change tracking
+        nilaiInputs.forEach(input => {
+            input.addEventListener('input', function() {
+                const mahasiswaId = this.getAttribute('data-mahasiswa-id');
+                const komponenId = this.getAttribute('data-komponen-id');
+                const originalValue = this.getAttribute('data-original-value');
+                const currentValue = this.value;
+                const saveBtn = document.getElementById(`save-btn-${mahasiswaId}`);
+
+                // Check if value has changed
+                const hasChanged = currentValue !== originalValue;
+
+                if (saveBtn) {
+                    saveBtn.disabled = !hasChanged;
+                    if (hasChanged) {
+                        saveBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                        saveBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
                     } else {
-                        alert('Tidak ada nilai yang diubah untuk disimpan');
+                        saveBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                        saveBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                    }
+                }
+
+                // Save changed values to localStorage for pagination persistence
+                if (hasChanged) {
+                    saveChangedValuesToStorage(mahasiswaId, komponenId, currentValue);
+
+                    // Also save student class ID for this mahasiswa
+                    const studentClassElement = document.querySelector(`input[name="student_class_id[${mahasiswaId}]"]`);
+                    if (studentClassElement) {
+                        localStorage.setItem(`student_class_id_${mahasiswaId}`, studentClassElement.value);
+                    }
+                } else {
+                    removeChangedValueFromStorage(mahasiswaId, komponenId);
+                }
+
+                // Update bulk save button text if bulk actions are visible
+                if (bulkActions && !bulkActions.classList.contains('hidden')) {
+                    updateBulkSaveButtonText();
+                }
+            });
+        });
+
+        // Individual save button functionality
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.btn-simpan-nilai')) {
+                e.preventDefault();
+                const button = e.target.closest('.btn-simpan-nilai');
+                const mahasiswaId = button.getAttribute('data-mahasiswa-id');
+
+                // Validate mahasiswaId
+                if (!mahasiswaId || mahasiswaId === 'null' || mahasiswaId === 'undefined') {
+                    console.error('Invalid mahasiswaId:', mahasiswaId);
+                    if (typeof showToast === 'function') {
+                        showToast('Error: ID mahasiswa tidak valid', 'error');
+                    } else {
+                        alert('Error: ID mahasiswa tidak valid');
                     }
                     return;
                 }
 
-                // Proceed directly since checkbox validation is already in place
+                console.log('Processing save for mahasiswa ID:', mahasiswaId);
+
+                // Get all nilai inputs for this mahasiswa
+                const nilaiInputs = document.querySelectorAll(`input[data-mahasiswa-id="${mahasiswaId}"]`);
+                const nilaiData = {};
+
+                console.log(`Found ${nilaiInputs.length} nilai inputs for mahasiswa ${mahasiswaId}`);
+
+                nilaiInputs.forEach((input, index) => {
+                    const komponenId = input.getAttribute('data-komponen-id');
+                    const nilai = input.value;
+                    console.log(`Input ${index}: komponenId=${komponenId}, nilai=${nilai}`);
+
+                    if (nilai !== '' && nilai !== null && nilai !== undefined) {
+                        nilaiData[komponenId] = parseFloat(nilai);
+                    }
+                });
+
+                console.log('Final nilaiData:', nilaiData);
+
+                // Send AJAX request to save nilai
+                const formData = new FormData();
+                // Get CSRF token with null check
+                const csrfElement = document.querySelector('meta[name="csrf-token"]');
+                if (!csrfElement) {
+                    console.error('CSRF token not found');
+                    if (typeof showToast === 'function') {
+                        showToast('Error: Token keamanan tidak ditemukan', 'error');
+                    }
+                    return;
+                }
+                formData.append('_token', csrfElement.getAttribute('content'));
+
+                // Add nilai data in the expected format
+                console.log(`Nilai data for mahasiswa ${mahasiswaId}:`, nilaiData);
+
+                // Check if there are any valid nilai to save
+                if (Object.keys(nilaiData).length === 0) {
+                    console.warn('No valid nilai data to save');
+                    if (typeof showToast === 'function') {
+                        showToast('Tidak ada nilai yang valid untuk disimpan', 'warning');
+                    } else {
+                        alert('Tidak ada nilai yang valid untuk disimpan');
+                    }
+                    return;
+                }
+
+                Object.keys(nilaiData).forEach(komponenId => {
+                    formData.append(`nilai[${mahasiswaId}][${komponenId}]`, nilaiData[komponenId]);
+                });
+
+                // Add student class ID with null check
+                const studentClassElement = document.querySelector(`input[name="student_class_id[${mahasiswaId}]"]`);
+                console.log(`Looking for student_class_id[${mahasiswaId}] element:`, studentClassElement);
+
+                if (studentClassElement) {
+                    const studentClassId = studentClassElement.value;
+                    console.log(`Found student class ID for mahasiswa ${mahasiswaId}:`, studentClassId);
+
+                    // Check if studentClassId is empty or null
+                    if (!studentClassId || studentClassId.trim() === '') {
+                        console.error(`Student class ID is empty for mahasiswa ${mahasiswaId}`);
+                        if (typeof showToast === 'function') {
+                            showToast('Error: Data mahasiswa tidak lengkap - Student class ID kosong', 'error');
+                        } else {
+                            alert('Error: Data mahasiswa tidak lengkap - Student class ID kosong');
+                        }
+                        return;
+                    }
+
+                    formData.append(`student_class_id[${mahasiswaId}]`, studentClassId);
+                } else {
+                    console.error(`Student class ID element not found for mahasiswa ${mahasiswaId}`);
+                    console.error('Available student_class_id elements:', document.querySelectorAll('input[name^="student_class_id"]'));
+                    console.error('All hidden inputs:', document.querySelectorAll('input[type="hidden"]'));
+
+                    // Debug: Check if there are any elements with similar names
+                    const similarElements = document.querySelectorAll(`input[name*="${mahasiswaId}"]`);
+                    console.error('Elements with similar names:', similarElements);
+
+                    if (typeof showToast === 'function') {
+                        showToast('Error: Data mahasiswa tidak lengkap - Student class ID tidak ditemukan', 'error');
+                    } else {
+                        alert('Error: Data mahasiswa tidak lengkap - Student class ID tidak ditemukan');
+                    }
+                    return;
+                }
+
+                // Debug: Log formData contents
+                console.log('FormData contents:');
+                for (let [key, value] of formData.entries()) {
+                    console.log(`${key}: ${value}`);
+                }
+
+                fetch(`/dosen/nilai/{{ $tahunAjaranMatkul->id }}/individual-store`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfElement.getAttribute('content')
+                        },
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Update original values and disable save button
+                            nilaiInputs.forEach(input => {
+                                input.setAttribute('data-original-value', input.value);
+                            });
+                            button.disabled = true;
+                            button.classList.add('bg-gray-400', 'cursor-not-allowed');
+                            button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+
+                            // Update nilai plain text display to show new values
+                            nilaiInputs.forEach(input => {
+                                const mahasiswaId = input.getAttribute('data-mahasiswa-id');
+                                const komponenId = input.getAttribute('data-komponen-id');
+                                const nilaiValue = input.value;
+
+                                // Find corresponding nilai plain text
+                                const nilaiPlain = document.querySelector(`.nilai-plain[data-mahasiswa-id="${mahasiswaId}"][data-komponen-id="${komponenId}"]`);
+                                if (nilaiPlain) {
+                                    nilaiPlain.textContent = nilaiValue !== '' ? nilaiValue : '-';
+                                }
+                            });
+
+                            // Update total nilai and grade display
+                            updateNilaiDisplay(mahasiswaId);
+
+                            // Clear changed values from localStorage after successful save
+                            clearChangedValuesFromStorage(mahasiswaId);
+
+                            // Show success message
+                            if (typeof showToast === 'function') {
+                                showToast('Nilai berhasil disimpan', 'success');
+                            }
+
+                            // Auto-exit from edit mode after successful save
+                            setTimeout(() => {
+                                exitEditMode();
+                            }, 1000); // Delay 1 detik agar user bisa lihat pesan sukses
+                        } else {
+                            if (typeof showToast === 'function') {
+                                showToast('Gagal menyimpan nilai: ' + data.message, 'error');
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error saving nilai:', error);
+                        if (typeof showToast === 'function') {
+                            showToast('Terjadi kesalahan saat menyimpan nilai', 'error');
+                        }
+                    });
+            }
+        });
+
+        // Bulk save functionality
+        if (confirmBulkSave) {
+            confirmBulkSave.addEventListener('change', function() {
+                if (bulkSaveBtn) {
+                    bulkSaveBtn.disabled = !this.checked;
+                    if (this.checked) {
+                        bulkSaveBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+                        bulkSaveBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                    } else {
+                        bulkSaveBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+                        bulkSaveBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                    }
+                }
+            });
+        }
+
+        if (bulkSaveBtn) {
+            bulkSaveBtn.addEventListener('click', function() {
+                if (confirmBulkSave && confirmBulkSave.checked) {
+                    // Collect all changed values from localStorage across all pages
+                    const allChangedValues = collectAllChangedValuesFromStorage();
+
+                    if (Object.keys(allChangedValues).length === 0) {
+                        if (typeof showToast === 'function') {
+                            showToast('Tidak ada nilai yang diubah untuk disimpan', 'warning');
+                        } else {
+                            alert('Tidak ada nilai yang diubah untuk disimpan');
+                        }
+                        return;
+                    }
+
+                    // Proceed directly since checkbox validation is already in place
                     // Add all changed values to the existing form
                     const bulkForm = document.getElementById('bulk-nilai-form');
                     if (bulkForm) {
@@ -1659,27 +1642,27 @@ document.addEventListener('DOMContentLoaded', function() {
                             bulkForm.appendChild(classInput);
                         });
 
-                                                // Clear all edit mode data from localStorage before submitting
+                        // Clear all edit mode data from localStorage before submitting
                         clearAllEditModeData();
 
                         // Submit the form
                         bulkForm.submit();
                     }
-            }
-        });
-    }
+                }
+            });
+        }
 
-    // Handle import form submission for new modal
-    const newImportForm = document.querySelector('#import-modal form');
-    if (newImportForm) {
-        newImportForm.addEventListener('submit', function(e) {
-            // Get submit button
-            const submitBtn = this.querySelector('#import-submit-btn');
-            const originalBtnText = submitBtn.innerHTML;
+        // Handle import form submission for new modal
+        const newImportForm = document.querySelector('#import-modal form');
+        if (newImportForm) {
+            newImportForm.addEventListener('submit', function(e) {
+                // Get submit button
+                const submitBtn = this.querySelector('#import-submit-btn');
+                const originalBtnText = submitBtn.innerHTML;
 
-            // Show loading state on button
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = `
+                // Show loading state on button
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `
                 <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -1687,90 +1670,95 @@ document.addEventListener('DOMContentLoaded', function() {
                 Memproses Import...
             `;
 
-            // Let form submit normally - no preventDefault
-            // The page will reload after submission with flash message
-        });
-    }
+                // Let form submit normally - no preventDefault
+                // The page will reload after submission with flash message
+            });
+        }
 
-            // Restore edit mode state from localStorage
+        // Restore edit mode state from localStorage
         restoreEditModeState();
 
         // Update bulk save button text on page load
         updateBulkSaveButtonText();
 
-    // Validation functions
-    function checkImportValidation() {
-        console.log('checkImportValidation called');
-        const validation = @json($cpmkValidation);
-        console.log('Validation data:', validation);
-        const errors = [];
+        // Validation functions
+        function checkImportValidation() {
+            console.log('checkImportValidation called');
+            const validation = @json($cpmkValidation);
+            console.log('Validation data:', validation);
+            const errors = [];
 
-        if (!validation.hasCpmk) {
-            errors.push('• Belum ada CPMK yang diatur untuk mata kuliah ini');
+            if (!validation.hasCpmk) {
+                errors.push('• Belum ada CPMK yang diatur untuk mata kuliah ini');
+            }
+
+            if (validation.hasCpmk && validation.totalBobotCpmk !== 100) {
+                errors.push(`• Total bobot CPMK belum 100% (saat ini: ${validation.totalBobotCpmk}%)`);
+            }
+
+            if (!validation.isBobotValid) {
+                errors.push('• Belum ada bobot komponen penilaian yang diatur');
+            }
+
+            console.log('Errors found:', errors);
+            console.log('Can import:', validation.canImport);
+
+            if (validation.canImport) {
+                // Jika validasi berhasil, buka modal import
+                console.log('Opening import modal');
+                showImportModal();
+            } else {
+                // Jika validasi gagal, tampilkan modal validasi
+                console.log('Opening validation modal');
+                showValidationModal(errors);
+            }
         }
 
-        if (validation.hasCpmk && validation.totalBobotCpmk !== 100) {
-            errors.push(`• Total bobot CPMK belum 100% (saat ini: ${validation.totalBobotCpmk}%)`);
-        }
+        // Tampilkan modal validasi OTOMATIS saat halaman dibuka jika tidak valid
+        (function autoShowValidationOnLoad() {
+            const validation = @json($cpmkValidation);
+            if (!validation) return;
+            if (validation.canImport) return; // valid, tidak perlu tampilkan modal
 
-        if (!validation.isBobotValid) {
-            errors.push('• Belum ada bobot komponen penilaian yang diatur');
-        }
+            const errors = [];
+            if (!validation.hasCpmk) {
+                errors.push('• Belum ada CPMK yang diatur untuk mata kuliah ini');
+            }
+            if (validation.hasCpmk && validation.totalBobotCpmk !== 100) {
+                errors.push(`• Total bobot CPMK belum 100% (saat ini: ${validation.totalBobotCpmk}%)`);
+            }
+            if (!validation.isBobotValid) {
+                errors.push('• Belum ada bobot komponen penilaian yang diatur');
+            }
 
-        console.log('Errors found:', errors);
-        console.log('Can import:', validation.canImport);
-
-        if (validation.canImport) {
-            // Jika validasi berhasil, buka modal import
-            console.log('Opening import modal');
-            showImportModal();
-        } else {
-            // Jika validasi gagal, tampilkan modal validasi
-            console.log('Opening validation modal');
+            // Tampilkan modal konfirmasi validasi
             showValidationModal(errors);
-        }
-    }
+        })();
 
-    // Tampilkan modal validasi OTOMATIS saat halaman dibuka jika tidak valid
-    (function autoShowValidationOnLoad() {
-        const validation = @json($cpmkValidation);
-        if (!validation) return;
-        if (validation.canImport) return; // valid, tidak perlu tampilkan modal
+        function showValidationModal(errors) {
+            console.log('showValidationModal called with errors:', errors);
+            const modal = document.getElementById('validation-modal');
+            const modalMessage = modal.querySelector('p');
+            const modalForm = modal.querySelector('form');
+            const modalContent = modal.querySelector('[data-modal-content]');
 
-        const errors = [];
-        if (!validation.hasCpmk) {
-            errors.push('• Belum ada CPMK yang diatur untuk mata kuliah ini');
-        }
-        if (validation.hasCpmk && validation.totalBobotCpmk !== 100) {
-            errors.push(`• Total bobot CPMK belum 100% (saat ini: ${validation.totalBobotCpmk}%)`);
-        }
-        if (!validation.isBobotValid) {
-            errors.push('• Belum ada bobot komponen penilaian yang diatur');
-        }
+            console.log('Modal elements found:', {
+                modal,
+                modalMessage,
+                modalForm,
+                modalContent
+            });
 
-        // Tampilkan modal konfirmasi validasi
-        showValidationModal(errors);
-    })();
+            if (modal && modalMessage && modalForm) {
+                // Create detailed message with errors and steps
+                const errorList = errors.map(error => `• ${error}`).join('\n');
+                const steps = [
+                    '1. Atur CPMK untuk mata kuliah ini',
+                    '2. Pastikan total bobot CPMK = 100%',
+                    '3. Atur bobot komponen penilaian'
+                ].join('\n');
 
-    function showValidationModal(errors) {
-        console.log('showValidationModal called with errors:', errors);
-        const modal = document.getElementById('validation-modal');
-        const modalMessage = modal.querySelector('p');
-        const modalForm = modal.querySelector('form');
-        const modalContent = modal.querySelector('[data-modal-content]');
-
-        console.log('Modal elements found:', { modal, modalMessage, modalForm, modalContent });
-
-        if (modal && modalMessage && modalForm) {
-            // Create detailed message with errors and steps
-            const errorList = errors.map(error => `• ${error}`).join('\n');
-            const steps = [
-                '1. Atur CPMK untuk mata kuliah ini',
-                '2. Pastikan total bobot CPMK = 100%',
-                '3. Atur bobot komponen penilaian'
-            ].join('\n');
-
-            modalMessage.innerHTML = `
+                modalMessage.innerHTML = `
                 <div class="mb-4">
                     <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
                         <div class="flex">
@@ -1798,177 +1786,178 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             `;
 
-            // Set form action to CPMK page
-            modalForm.action = "{{ route('dosen.cpmk.index', $tahunAjaranMatkul->id) }}";
+                // Set form action to CPMK page
+                modalForm.action = "{{ route('dosen.cpmk.index', $tahunAjaranMatkul->id) }}";
 
-            // Show modal using the component's method (same as data-modal-toggle)
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
+                // Show modal using the component's method (same as data-modal-toggle)
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
 
-            // Trigger animation (same as component)
-            setTimeout(() => {
-                modal.classList.remove('bg-opacity-0');
-                modal.classList.add('bg-opacity-10');
-                if (modalContent) {
-                    modalContent.classList.remove('scale-95', 'opacity-0');
-                    modalContent.classList.add('scale-100', 'opacity-100');
-                }
-            }, 10);
+                // Trigger animation (same as component)
+                setTimeout(() => {
+                    modal.classList.remove('bg-opacity-0');
+                    modal.classList.add('bg-opacity-10');
+                    if (modalContent) {
+                        modalContent.classList.remove('scale-95', 'opacity-0');
+                        modalContent.classList.add('scale-100', 'opacity-100');
+                    }
+                }, 10);
+            }
         }
-    }
 
-    function closeValidationModal() {
-        const modal = document.getElementById('validation-modal');
-        const modalContent = modal.querySelector('[data-modal-content]');
+        function closeValidationModal() {
+            const modal = document.getElementById('validation-modal');
+            const modalContent = modal.querySelector('[data-modal-content]');
 
-        if (modal && modalContent) {
-            // Hide modal with animation (same as component)
-            modalContent.classList.add('scale-95', 'opacity-0');
-            modalContent.classList.remove('scale-100', 'opacity-100');
-            modal.classList.remove('bg-opacity-10');
-            modal.classList.add('bg-opacity-0');
+            if (modal && modalContent) {
+                // Hide modal with animation (same as component)
+                modalContent.classList.add('scale-95', 'opacity-0');
+                modalContent.classList.remove('scale-100', 'opacity-100');
+                modal.classList.remove('bg-opacity-10');
+                modal.classList.add('bg-opacity-0');
 
-            setTimeout(() => {
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }, 300);
+            }
+        }
+
+        // Make functions globally available
+        window.showImportModal = showImportModal;
+        window.hideImportModal = hideImportModal;
+        window.checkImportValidation = checkImportValidation;
+        window.closeValidationModal = closeValidationModal;
+        window.hideCreatedStudentsModal = function() {
+            const modal = document.getElementById('created-students-modal');
+            if (modal) {
                 modal.classList.add('hidden');
-                modal.classList.remove('flex');
-            }, 300);
-        }
-    }
+            }
+        };
+        window.hideImportErrorsModal = function() {
+            const modal = document.getElementById('import-errors-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        };
 
-    // Make functions globally available
-    window.showImportModal = showImportModal;
-    window.hideImportModal = hideImportModal;
-    window.checkImportValidation = checkImportValidation;
-    window.closeValidationModal = closeValidationModal;
-    window.hideCreatedStudentsModal = function() {
-        const modal = document.getElementById('created-students-modal');
-        if (modal) {
-            modal.classList.add('hidden');
-        }
-    };
-    window.hideImportErrorsModal = function() {
-        const modal = document.getElementById('import-errors-modal');
-        if (modal) {
-            modal.classList.add('hidden');
-        }
-    };
-
-    // Close import modal when clicking outside
-    document.addEventListener('click', function(e) {
-        const importModal = document.getElementById('import-modal');
-        if (e.target === importModal) {
-            hideImportModal();
-        }
-    });
-
-    // Close import modal on escape key
-    document.addEventListener('keydown', function(e) {
-        const importModal = document.getElementById('import-modal');
-        const validationModal = document.getElementById('validation-modal');
-
-        if (e.key === 'Escape') {
-            if (importModal && !importModal.classList.contains('hidden')) {
+        // Close import modal when clicking outside
+        document.addEventListener('click', function(e) {
+            const importModal = document.getElementById('import-modal');
+            if (e.target === importModal) {
                 hideImportModal();
             }
-            if (validationModal && !validationModal.classList.contains('hidden')) {
-                closeValidationModal();
-            }
-        }
-    });
+        });
 
-    // Tidak perlu handle submit manual: komponen confirm-modal sudah menangani redirect via data-modal-confirm-link/action
-});
+        // Close import modal on escape key
+        document.addEventListener('keydown', function(e) {
+            const importModal = document.getElementById('import-modal');
+            const validationModal = document.getElementById('validation-modal');
+
+            if (e.key === 'Escape') {
+                if (importModal && !importModal.classList.contains('hidden')) {
+                    hideImportModal();
+                }
+                if (validationModal && !validationModal.classList.contains('hidden')) {
+                    closeValidationModal();
+                }
+            }
+        });
+
+        // Tidak perlu handle submit manual: komponen confirm-modal sudah menangani redirect via data-modal-confirm-link/action
+    });
 </script>
 @endpush
 
 @push('styles')
 <style>
-.tooltip {
-    position: relative;
-}
-
-.tooltip:hover::after {
-    content: attr(title);
-    position: absolute;
-    bottom: 125%;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #374151;
-    color: white;
-    padding: 0.5rem;
-    border-radius: 0.375rem;
-    font-size: 0.75rem;
-    white-space: nowrap;
-    z-index: 50;
-    opacity: 1;
-}
-
-.tooltip:hover::before {
-    content: '';
-    position: absolute;
-    bottom: 115%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 5px solid transparent;
-    border-top-color: #374151;
-    z-index: 50;
-}
-
-/* Fix untuk tombol simpan disabled */
-.btn-simpan-nilai:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background-color: #9ca3af !important;
-}
-
-.btn-simpan-nilai:disabled:hover {
-    background-color: #9ca3af !important;
-}
-
-/* Animasi loading untuk tombol import */
-.animate-spin {
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    from {
-        transform: rotate(0deg);
+    .tooltip {
+        position: relative;
     }
-    to {
-        transform: rotate(360deg);
+
+    .tooltip:hover::after {
+        content: attr(title);
+        position: absolute;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #374151;
+        color: white;
+        padding: 0.5rem;
+        border-radius: 0.375rem;
+        font-size: 0.75rem;
+        white-space: nowrap;
+        z-index: 50;
+        opacity: 1;
     }
-}
 
-/* Disable tombol saat loading */
-button:disabled {
-    cursor: not-allowed;
-    opacity: 0.7;
-}
+    .tooltip:hover::before {
+        content: '';
+        position: absolute;
+        bottom: 115%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 5px solid transparent;
+        border-top-color: #374151;
+        z-index: 50;
+    }
 
-/* Styling untuk kolom aksi */
-.aksi-column button {
-    display: inline-block;
-}
+    /* Fix untuk tombol simpan disabled */
+    .btn-simpan-nilai:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background-color: #9ca3af !important;
+    }
 
-/* Memastikan tombol dalam satu baris */
-.flex.items-center.justify-center.space-x-2 {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-}
+    .btn-simpan-nilai:disabled:hover {
+        background-color: #9ca3af !important;
+    }
 
-/* Fix untuk modal detail agar benar-benar center */
-#detail-modal {
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-}
+    /* Animasi loading untuk tombol import */
+    .animate-spin {
+        animation: spin 1s linear infinite;
+    }
 
-#detail-modal .modal-content {
-    margin: auto;
-    max-height: 90vh;
-    overflow-y: auto;
-}
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Disable tombol saat loading */
+    button:disabled {
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+
+    /* Styling untuk kolom aksi */
+    .aksi-column button {
+        display: inline-block;
+    }
+
+    /* Memastikan tombol dalam satu baris */
+    .flex.items-center.justify-center.space-x-2 {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    /* Fix untuk modal detail agar benar-benar center */
+    #detail-modal {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #detail-modal .modal-content {
+        margin: auto;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
 </style>
 @endpush

@@ -261,26 +261,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     // Lock if either this specific combination has nilai OR the entire komponen is locked
                     if (hasNilai || isKomponenLocked) {
-                        td.innerHTML = '<div class="relative inline-block"><input type="number" step="0.1" min="0" max="100" value="' + existingValue + '" class="w-20 px-2 py-1 border border-gray-300 rounded text-sm text-center bg-gray-100" disabled data-cpmk-id="' + cpmkData.id + '" data-komponen-id="' + komponen.id + '"><div class="absolute -top-1 -right-1"><svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z" clip-rule="evenodd"></path></svg></div></div><div class="text-xs text-red-600 mt-1">Terkunci</div>';
+                        td.innerHTML = '<div class="relative inline-block"><input type="number" step="0.01" min="0" max="100.01" value="' + existingValue.toFixed(2) + '" class="w-20 px-2 py-1 border border-gray-300 rounded text-sm text-center bg-gray-100" disabled data-cpmk-id="' + cpmkData.id + '" data-komponen-id="' + komponen.id + '"><div class="absolute -top-1 -right-1"><svg class="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 616 0z" clip-rule="evenodd"></path></svg></div></div><div class="text-xs text-red-600 mt-1">Terkunci</div>';
                     } else {
                         const input = document.createElement('input');
                         input.type = 'number';
-                        input.step = '0.1';
+                        input.step = '0.01';
                         input.min = '0';
-                        input.max = '100';
+                        input.max = '100.01';
                         input.name = inputName;
                         // Use existing value if available, otherwise use current input value
                         if (existingValue > 0) {
-                            input.value = existingValue;
+                            input.value = existingValue.toFixed(2);
                         } else if (currentInputValues[inputName] !== undefined) {
-                            input.value = currentInputValues[inputName];
+                            input.value = parseFloat(currentInputValues[inputName]).toFixed(2);
                         } else {
                             input.value = '';
                         }
                         input.setAttribute('data-original', existingValue);
                         input.setAttribute('data-cpmk-id', cpmkData.id);
                         input.setAttribute('data-komponen-id', komponen.id);
-                        input.placeholder = '0.0';
+                        input.placeholder = '0.00';
                         input.className = 'w-20 px-2 py-3 text-center bobot-input focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
 
                         // Add event listeners
@@ -346,7 +346,7 @@ document.addEventListener('DOMContentLoaded', function() {
         tableBody.querySelectorAll('input[type="number"]').forEach(input => {
             const komponenId = input.getAttribute('data-komponen-id');
             if (komponenId && komponenTotals.hasOwnProperty(komponenId)) {
-                const value = parseFloat(input.value) || 0;
+                const value = parseFloat(input.value.replace(',', '.')) || 0;
                 komponenTotals[komponenId] += value;
                 totalKeseluruhan += value;
             }
@@ -370,11 +370,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (tdTotal) {
                 tdTotal.textContent = totalKeseluruhan.toFixed(2);
                 tdTotal.classList.remove('text-green-700', 'text-yellow-500', 'text-red-600');
-                if (totalKeseluruhan < 100) {
+                if (totalKeseluruhan < 99.99) {
                     tdTotal.classList.add('text-yellow-500');
-                } else if (totalKeseluruhan == 100) {
+                } else if (totalKeseluruhan >= 99.99 && totalKeseluruhan <= 100.01) {
                     tdTotal.classList.add('text-green-700');
-                } else if (totalKeseluruhan > 100) {
+                } else if (totalKeseluruhan > 100.01) {
                     tdTotal.classList.add('text-red-600');
                 }
             }
@@ -402,7 +402,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 const inputs = document.querySelectorAll(`input[data-cpmk-id="${childCpmk.id}"][data-komponen-id="${komponen.id}"]`);
                                 inputs.forEach(input => {
                                     if (input.value !== '') {
-                                        subCpmkTotal += parseFloat(input.value) || 0;
+                                        subCpmkTotal += parseFloat(input.value.replace(',', '.')) || 0;
                                     }
                                 });
                             });
@@ -423,7 +423,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             const inputs = document.querySelectorAll(`input[data-cpmk-id="${cpmkData.id}"][data-komponen-id="${komponen.id}"]`);
                             inputs.forEach(input => {
                                 if (input.value !== '') {
-                                    parentCpmkTotal += parseFloat(input.value) || 0;
+                                    parentCpmkTotal += parseFloat(input.value.replace(',', '.')) || 0;
                                 }
                             });
                         });
@@ -444,7 +444,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Hapus icon warning lama jika ada
             const oldWarn = parent.querySelector('.bobot-warning-icon');
             if (oldWarn) oldWarn.remove();
-            if (totalKeseluruhan > 100) {
+            if (totalKeseluruhan > 100.01) {
                 // Tambahkan icon warning
                 const warn = document.createElement('span');
                 warn.className = 'bobot-warning-icon absolute top-1 right-1';
@@ -456,9 +456,9 @@ document.addEventListener('DOMContentLoaded', function() {
         let allValid = true;
         let adaIsi = false;
 
-        // Validasi per komponen (maksimal 100% per komponen)
+        // Validasi per komponen (maksimal 100% per komponen dengan toleransi)
         selectedKomponen.forEach(komponen => {
-            if (komponenTotals[komponen.id] > 100) {
+            if (komponenTotals[komponen.id] > 100.01) {
                 allValid = false;
             }
             if (komponenTotals[komponen.id] > 0) {
@@ -469,12 +469,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // Cek juga jika ada input bobot > 0
         if (!adaIsi) {
             tableBody.querySelectorAll('input[type="number"]').forEach(input => {
-                if (parseFloat(input.value) > 0) adaIsi = true;
+                if (parseFloat(input.value.replace(',', '.')) > 0) adaIsi = true;
             });
         }
 
-        // Validasi total keseluruhan tidak boleh lebih dari 100
-        if (totalKeseluruhan > 100) {
+        // Validasi total keseluruhan tidak boleh lebih dari 100 (dengan toleransi)
+        if (totalKeseluruhan > 100.01) {
             allValid = false;
         }
 
@@ -512,44 +512,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 return false;
             }
 
-            // Validasi per komponen
-            const komponenTotals = {};
-            selectedKomponen.forEach(komponen => {
-                komponenTotals[komponen.id] = 0;
-            });
-
+            // Validasi total keseluruhan saja (tidak per komponen)
+            let totalKeseluruhan = 0;
+            
             document.querySelectorAll('input[type="number"]').forEach(input => {
                 if (input.name && input.name.startsWith('bobot[')) {
-                    const match = input.name.match(/bobot\[(\d+)_([\w-]+)\]/);
-                    if (match) {
-                        const komponenId = match[2];
-                        const value = parseFloat(input.value) || 0;
-                        if (komponenTotals.hasOwnProperty(komponenId)) {
-                            komponenTotals[komponenId] += value;
-                        }
-                    }
+                    // Konversi koma menjadi titik untuk parsing yang benar
+                    let valueStr = input.value.replace(',', '.');
+                    const value = parseFloat(valueStr) || 0;
+                    totalKeseluruhan += value;
                 }
             });
 
             let allValid = true;
             let errorMessage = '';
 
-            Object.keys(komponenTotals).forEach(komponenId => {
-                if (komponenTotals[komponenId] > 100) {
-                    allValid = false;
-                    const komponenData = komponenListData.find(k => k.id.toString() === komponenId);
-                    const komponenNama = komponenData ? komponenData.nama : 'Komponen ' + komponenId;
-                    errorMessage += `• Total bobot untuk komponen "${komponenNama}" melebihi 100% (${komponenTotals[komponenId].toFixed(2)}%)\n`;
-                }
-            });
-
-            // Validasi total keseluruhan
-            let totalKeseluruhan = 0;
-            Object.values(komponenTotals).forEach(total => {
-                totalKeseluruhan += total;
-            });
-
-            if (totalKeseluruhan > 100) {
+            // Gunakan toleransi untuk floating point precision
+            if (totalKeseluruhan > 100.01) {
                 allValid = false;
                 errorMessage += `• Total bobot keseluruhan melebihi 100% (${totalKeseluruhan.toFixed(2)}%)\n`;
             }

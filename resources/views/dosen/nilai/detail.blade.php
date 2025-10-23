@@ -31,81 +31,81 @@
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CPMK</th>
                     @foreach($allKomponen as $komponen)
-                        @if(($totalBobotKomponen[$komponen->id] ?? 0) > 0)
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ $komponen->nama }}
-                            </th>
-                        @endif
+                    @if(($totalBobotKomponen[$komponen->id] ?? 0) > 0)
+                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        {{ $komponen->nama }}
+                    </th>
+                    @endif
                     @endforeach
                     <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Total CPMK</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
                 @foreach($nilaiPerCpmk as $index => $cpmkNilai)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div>
-                                <div class="text-sm font-medium text-gray-900">{{ $cpmkNilai['cpmk']->nama }}</div>
-                                <div class="text-sm text-gray-500">{{ Str::limit($cpmkNilai['cpmk']->deskripsi, 50) }}</div>
-                            </div>
-                        </td>
-                        @foreach($allKomponen as $komponen)
-                            @if(($totalBobotKomponen[$komponen->id] ?? 0) > 0)
-                                @php
-                                    $detailKomponen = collect($cpmkNilai['detail_komponen'])->firstWhere('komponen.id', $komponen->id);
-                                    $nilaiKomponen = $detailKomponen['nilai'] ?? null;
-                                    $bobotKomponen = $detailKomponen['bobot'] ?? 0;
-                                    $kontribusi = ($nilaiKomponen !== null && $bobotKomponen > 0) ? ($nilaiKomponen * $bobotKomponen / 100) : 0;
-                                @endphp
-                                <td class="px-6 py-4 whitespace-nowrap text-center">
-                                    @if($nilaiKomponen !== null)
-                                        <div class="text-xs text-gray-500">{{ number_format($bobotKomponen, 1) }}%</div>
-                                        <div class="text-sm font-medium text-blue-600">{{ number_format($kontribusi, 1) }}</div>
-                                    @else
-                                        <div class="text-xs text-gray-400">{{ number_format($bobotKomponen, 1) }}%</div>
-                                        <div class="text-sm text-gray-400">-</div>
-                                    @endif
-                                </td>
-                            @endif
-                        @endforeach
-                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                            @if($cpmkNilai['nilai'] !== null)
-                                <div class="text-xs text-gray-500">{{ number_format($cpmkNilai['bobot_total'], 1) }}%</div>
-                                <div class="text-lg font-bold text-green-600">{{ number_format($cpmkNilai['nilai'], 1) }}</div>
-                            @else
-                                <div class="text-xs text-gray-400">{{ number_format($cpmkNilai['bobot_total'], 1) }}%</div>
-                                <div class="text-sm text-gray-400">Belum ada nilai</div>
-                            @endif
-                        </td>
-                    </tr>
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div>
+                            <div class="text-sm font-medium text-gray-900">{{ $cpmkNilai['cpmk']->nama }}</div>
+                            <div class="text-sm text-gray-500">{{ Str::limit($cpmkNilai['cpmk']->deskripsi, 50) }}</div>
+                        </div>
+                    </td>
+                    @foreach($allKomponen as $komponen)
+                    @if(($totalBobotKomponen[$komponen->id] ?? 0) > 0)
+                    @php
+                    $detailKomponen = collect($cpmkNilai['detail_komponen'])->firstWhere('komponen.id', $komponen->id);
+                    $nilaiKomponen = $detailKomponen['nilai'] ?? null;
+                    $bobotKomponen = $detailKomponen['bobot'] ?? 0;
+                    $kontribusi = ($nilaiKomponen !== null && $bobotKomponen > 0) ? ($nilaiKomponen * $bobotKomponen / 100) : 0;
+                    @endphp
+                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                        @if($nilaiKomponen !== null)
+                        <div class="text-xs text-gray-500">{{ number_format($bobotKomponen, 2) }}%</div>
+                        <div class="text-sm font-medium text-blue-600">{{ number_format($kontribusi, 2) }}</div>
+                        @else
+                        <div class="text-xs text-gray-400">{{ number_format($bobotKomponen, 2) }}%</div>
+                        <div class="text-sm text-gray-400">-</div>
+                        @endif
+                    </td>
+                    @endif
+                    @endforeach
+                    <td class="px-6 py-4 whitespace-nowrap text-center">
+                        @if($cpmkNilai['nilai'] !== null)
+                        <div class="text-xs text-gray-500">{{ number_format($cpmkNilai['bobot_total'], 2) }}%</div>
+                        <div class="text-lg font-bold text-green-600">{{ number_format($cpmkNilai['nilai'], 2) }}</div>
+                        @else
+                        <div class="text-xs text-gray-400">{{ number_format($cpmkNilai['bobot_total'], 2) }}%</div>
+                        <div class="text-sm text-gray-400">Belum ada nilai</div>
+                        @endif
+                    </td>
+                </tr>
                 @endforeach
             </tbody>
             <tfoot class="bg-gray-50">
                 <tr>
                     <td class="px-6 py-3 whitespace-nowrap text-sm font-medium text-gray-900">Total</td>
                     @foreach($allKomponen as $komponen)
-                        @if(($totalBobotKomponen[$komponen->id] ?? 0) > 0)
-                            @php
-                                $totalKontribusiKomponen = 0;
-                                $cpmkCount = 0;
+                    @if(($totalBobotKomponen[$komponen->id] ?? 0) > 0)
+                    @php
+                    $totalKontribusiKomponen = 0;
+                    $cpmkCount = 0;
 
-                                foreach($nilaiPerCpmk as $cpmkNilai) {
-                                    $detailKomponen = collect($cpmkNilai['detail_komponen'])->firstWhere('komponen.id', $komponen->id);
-                                    if($detailKomponen && $detailKomponen['nilai'] !== null) {
-                                        $totalKontribusiKomponen += ($detailKomponen['nilai'] * $detailKomponen['bobot'] / 100);
-                                        $cpmkCount++;
-                                    }
-                                }
-                            @endphp
-                            <td class="px-6 py-3 whitespace-nowrap text-center">
-                                <div class="text-xs text-gray-500">{{ number_format($totalBobotKomponen[$komponen->id] ?? 0, 1) }}%</div>
-                                <div class="text-sm font-semibold text-blue-600">{{ number_format($totalKontribusiKomponen, 1) }}</div>
-                            </td>
-                        @endif
+                    foreach($nilaiPerCpmk as $cpmkNilai) {
+                    $detailKomponen = collect($cpmkNilai['detail_komponen'])->firstWhere('komponen.id', $komponen->id);
+                    if($detailKomponen && $detailKomponen['nilai'] !== null) {
+                    $totalKontribusiKomponen += ($detailKomponen['nilai'] * $detailKomponen['bobot'] / 100);
+                    $cpmkCount++;
+                    }
+                    }
+                    @endphp
+                    <td class="px-6 py-3 whitespace-nowrap text-center">
+                        <div class="text-xs text-gray-500">{{ number_format($totalBobotKomponen[$komponen->id] ?? 0, 2) }}%</div>
+                        <div class="text-sm font-semibold text-blue-600">{{ number_format($totalKontribusiKomponen, 2) }}</div>
+                    </td>
+                    @endif
                     @endforeach
                     <td class="px-6 py-3 whitespace-nowrap text-center">
                         <div class="text-xs text-gray-500">100%</div>
-                        <div class="text-lg font-bold text-blue-600">{{ number_format($totalNilaiAkhir, 1) }}</div>
+                        <div class="text-lg font-bold text-blue-600">{{ number_format($totalNilaiAkhir, 2) }}</div>
                     </td>
                 </tr>
             </tfoot>

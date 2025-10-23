@@ -305,7 +305,7 @@
                                     @php
                                     $bobotKomponen = $totalBobotKomponen[$komponen->id] ?? 0;
                                     @endphp
-                                    <div class="text-xs text-gray-400 mt-1">{{ number_format($bobotKomponen, 1) }}%</div>
+                                    <div class="text-xs text-gray-400 mt-1">{{ number_format($bobotKomponen, 2) }}%</div>
                                 </th>
                                 @endforeach
                                 <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Total Nilai</th>
@@ -717,17 +717,35 @@
             </div>
 
             <div class="p-4 md:p-5">
+                <div class="mb-4 p-3 bg-red-50 rounded-lg">
+                    <p class="text-sm text-red-800 font-medium">
+                        <svg class="w-4 h-4 mr-2 inline-block" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                        Import gagal! Perbaiki error berikut sebelum mencoba lagi:
+                    </p>
+                </div>
+
                 <div class="bg-red-50 border border-red-200 rounded-lg p-4 max-h-64 overflow-y-auto">
-                    <ul class="text-sm text-red-700 space-y-1">
+                    <ul class="text-sm text-red-700 space-y-2">
                         @foreach(session('import_errors') as $error)
-                        <li class="flex items-start">
+                        <li class="flex items-start p-2 bg-red-50 rounded border-l-4 border-red-400">
                             <svg class="w-4 h-4 mr-2 mt-0.5 flex-shrink-0 text-red-500" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
                             </svg>
-                            {{ $error }}
+                            <span class="font-medium">{{ $error['error'] }}</span>
                         </li>
                         @endforeach
                     </ul>
+                </div>
+
+                <div class="mt-4 p-3 bg-blue-50 rounded-lg">
+                    <p class="text-sm text-blue-800">
+                        <svg class="w-4 h-4 mr-2 inline-block" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                        </svg>
+                        <strong>Tips:</strong> Pastikan format Excel sesuai dengan template yang disediakan. Periksa nama kelas yang tersedia di sistem.
+                    </p>
                 </div>
             </div>
 
@@ -786,6 +804,19 @@
                             class="text-blue-600 hover:text-blue-800 text-sm underline">
                             Download Template Excel
                         </a>
+                    </div>
+
+                    <div class="mb-4 p-3 bg-blue-50 rounded-lg">
+                        <h4 class="text-sm font-medium text-blue-900 mb-2">Kelas yang Tersedia:</h4>
+                        <div class="text-sm text-blue-800">
+                            @php
+                            $availableClasses = [];
+                            foreach($tahunAjaranMatkul->kelas as $kelas) {
+                            $availableClasses[] = $kelas->namaKelas;
+                            }
+                            @endphp
+                            {{ implode(', ', $availableClasses) }}
+                        </div>
                     </div>
 
                     <div class="flex justify-end space-x-3">

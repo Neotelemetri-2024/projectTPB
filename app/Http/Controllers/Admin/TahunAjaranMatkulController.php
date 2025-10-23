@@ -50,9 +50,9 @@ class TahunAjaranMatkulController extends Controller
         // Search by mata kuliah
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->whereHas('mataKuliah', function($q) use ($search) {
+            $query->whereHas('mataKuliah', function ($q) use ($search) {
                 $q->where('namaMatkul', 'like', "%{$search}%")
-                  ->orWhere('kodeMatkul', 'like', "%{$search}%");
+                    ->orWhere('kodeMatkul', 'like', "%{$search}%");
             });
         }
 
@@ -86,11 +86,16 @@ class TahunAjaranMatkulController extends Controller
             'semester' => 'nullable|integer|min:1|max:8',
             'kelasNames' => 'required|array|min:1',
             'kelasNames.*' => 'required|string|max:10',
-            'dosenOption' => 'required|in:same,different'
+            'dosenOption' => 'required|in:same,different',
+            'dosenIds' => 'required_if:dosenOption,same|array|min:1',
+            'dosenIds.*' => 'exists:dosen,id',
+            'dosenPerKelas' => 'required_if:dosenOption,different|array',
+            'dosenPerKelas.*' => 'required|array|min:1',
+            'dosenPerKelas.*.*' => 'exists:dosen,id'
         ]);
 
         // Filter out empty kelas names
-        $kelasNames = array_filter($request->kelasNames, function($name) {
+        $kelasNames = array_filter($request->kelasNames, function ($name) {
             return !empty(trim($name));
         });
 
@@ -176,9 +181,9 @@ class TahunAjaranMatkulController extends Controller
         // Search mahasiswa berdasarkan nama atau NIM
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->whereHas('mahasiswa', function($q) use ($search) {
+            $query->whereHas('mahasiswa', function ($q) use ($search) {
                 $q->where('nama', 'like', "%{$search}%")
-                  ->orWhere('nim', 'like', "%{$search}%");
+                    ->orWhere('nim', 'like', "%{$search}%");
             });
         }
 
@@ -254,42 +259,57 @@ class TahunAjaranMatkulController extends Controller
             // Get existing kelas IDs for proper deletion
             $existingKelasIds = $tahunAjaranMatkul->kelas->pluck('id');
 
+            // Store existing mahasiswa data before deletion
+            $existingMahasiswaData = [];
+            foreach ($tahunAjaranMatkul->kelas as $kelas) {
+                $existingMahasiswaData[$kelas->namaKelas] = $kelas->kelasMahasiswa->pluck('mahasiswaId')->toArray();
+            }
+
             // Delete related records in correct order
             // 1. Delete nilai records (if any)
             $tahunAjaranMatkul->nilai()->delete();
 
-            // 2. Delete kelas_mahasiswa records
-            KelasMahasiswa::whereIn('kelasId', $existingKelasIds)->delete();
-
-            // 3. Delete dosen_pengampu_kelas records
+            // 2. Delete dosen_pengampu_kelas records
             DosenPengampuKelas::whereIn('kelasId', $existingKelasIds)->delete();
+
+            // 3. Delete kelas_mahasiswa records
+            KelasMahasiswa::whereIn('kelasId', $existingKelasIds)->delete();
 
             // 4. Delete existing kelas records
             $tahunAjaranMatkul->kelas()->delete();
 
-            // Create new kelas and dosen pengampu
-            $existingKelasIds = $tahunAjaranMatkul->kelas->pluck('id')->toArray();
-
+            // Create new kelas and restore mahasiswa data
             foreach ($request->kelasNames as $index => $kelasName) {
                 $kelas = Kelas::create([
                     'namaKelas' => $kelasName,
                     'tahunAjaranMatkulId' => $tahunAjaranMatkul->id
                 ]);
 
-                // Create dosen pengampu for this kelas
-                if ($request->dosenType === 'same') {
-                    // Same dosen for all kelas
-                    foreach ($request->dosenIds as $dosenId) {
-                        DosenPengampuKelas::create([
-                            'dosenId' => $dosenId,
+                // Restore mahasiswa data if kelas name matches
+                if (isset($existingMahasiswaData[$kelasName])) {
+                    foreach ($existingMahasiswaData[$kelasName] as $mahasiswaId) {
+                        KelasMahasiswa::create([
+                            'mahasiswaId' => $mahasiswaId,
                             'kelasId' => $kelas->id
                         ]);
                     }
+                }
+
+                // Create dosen pengampu for this kelas
+                if ($request->dosenType === 'same') {
+                    // Same dosen for all kelas
+                    if ($request->has('dosenIds')) {
+                        foreach ($request->dosenIds as $dosenId) {
+                            DosenPengampuKelas::create([
+                                'dosenId' => $dosenId,
+                                'kelasId' => $kelas->id
+                            ]);
+                        }
+                    }
                 } else {
-                    // Different dosen per kelas - use existing kelas ID if available
-                    $existingKelasId = $existingKelasIds[$index] ?? null;
-                    if ($existingKelasId && isset($request->dosenPerKelas[$existingKelasId])) {
-                        foreach ($request->dosenPerKelas[$existingKelasId] as $dosenId) {
+                    // Different dosen per kelas - use kelas name as key
+                    if ($request->has("dosenPerKelas.{$kelasName}")) {
+                        foreach ($request->input("dosenPerKelas.{$kelasName}") as $dosenId) {
                             DosenPengampuKelas::create([
                                 'dosenId' => $dosenId,
                                 'kelasId' => $kelas->id
@@ -437,9 +457,9 @@ class TahunAjaranMatkulController extends Controller
         // Search by nama atau NIM
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('nama', 'like', "%{$search}%")
-                  ->orWhere('nim', 'like', "%{$search}%");
+                    ->orWhere('nim', 'like', "%{$search}%");
             });
         }
 
@@ -501,7 +521,7 @@ class TahunAjaranMatkulController extends Controller
         $tahunAjaranMatkul = TahunAjaranMatkul::findOrFail($id);
 
         // Filter out empty kelas names
-        $kelasNames = array_filter($request->kelasNames, function($name) {
+        $kelasNames = array_filter($request->kelasNames, function ($name) {
             return !empty(trim($name));
         });
 
@@ -619,7 +639,6 @@ class TahunAjaranMatkulController extends Controller
 
             return redirect()->route('admin.tahun-ajaran-matkul.index')
                 ->with('success', $message);
-
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Gagal import data: ' . $e->getMessage())
@@ -686,7 +705,6 @@ class TahunAjaranMatkulController extends Controller
 
             return redirect()->route('admin.tahun-ajaran-matkul.index')
                 ->with('success', "Berhasil menduplikasi {$duplicatedCount} mata kuliah dari tahun ajaran sebelumnya!");
-
         } catch (\Exception $e) {
             DB::rollback();
             return redirect()->back()

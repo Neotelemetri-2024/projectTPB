@@ -69,11 +69,11 @@ class NilaiImport implements ToCollection, WithHeadingRow
             Log::info('Data rows to process:', ['count' => $dataRows->count()]);
 
             foreach ($dataRows as $index => $row) {
-                $this->results['total_processed']++;
-
                 try {
                     // Baris data dimulai dari index 2 (baris ke-3 di Excel)
                     $this->processRowWithHeader($row, $headerRow, $index + 3);
+                    // Only increment total_processed if row was actually processed (not skipped)
+                    $this->results['total_processed']++;
                 } catch (\Exception $e) {
                     $this->results['total_errors']++;
                     $this->results['errors'][] = [
@@ -91,12 +91,18 @@ class NilaiImport implements ToCollection, WithHeadingRow
             if ($this->results['total_errors'] > 0) {
                 DB::rollBack();
                 $this->results['success'] = false;
-                $this->results['message'] = "Import selesai dengan {$this->results['total_errors']} error dari {$this->results['total_processed']} baris data.";
+
+                // Create detailed error message
+                $errorDetails = "Import gagal dengan {$this->results['total_errors']} error dari {$this->results['total_processed']} baris data:\n\n";
+                foreach ($this->results['errors'] as $error) {
+                    $errorDetails .= "• Baris {$error['row']}: {$error['error']}\n";
+                }
+
+                $this->results['message'] = $errorDetails;
             } else {
                 DB::commit();
                 $this->results['message'] = "Berhasil mengimport {$this->results['total_success']} data mahasiswa.";
             }
-
         } catch (\Exception $e) {
             DB::rollBack();
             $this->results['success'] = false;
@@ -113,6 +119,9 @@ class NilaiImport implements ToCollection, WithHeadingRow
             'header_row' => $headerRow->toArray()
         ]);
 
+        // Debug: Log available headers
+        Log::info("Available headers:", array_keys($headerRow->toArray()));
+
         // Convert row to associative array using header
         $data = [];
         foreach ($headerRow as $index => $header) {
@@ -121,24 +130,75 @@ class NilaiImport implements ToCollection, WithHeadingRow
 
         Log::info("Processed data:", $data);
 
-        // Validate required fields
-        if (empty($data['NIM']) || empty($data['Nama Mahasiswa'])) {
+        // Validate required fields - check for empty or whitespace-only values
+        // Try different possible header names
+        $nim = '';
+        $namaMahasiswa = '';
+
+        // Try different possible NIM header names
+        if (isset($data['NIM'])) {
+            $nim = trim($data['NIM']);
+        } elseif (isset($data['nim'])) {
+            $nim = trim($data['nim']);
+        } elseif (isset($data['Nim'])) {
+            $nim = trim($data['Nim']);
+        }
+
+        // Try different possible Nama Mahasiswa header names
+        if (isset($data['Nama Mahasiswa'])) {
+            $namaMahasiswa = trim($data['Nama Mahasiswa']);
+        } elseif (isset($data['Nama'])) {
+            $namaMahasiswa = trim($data['Nama']);
+        } elseif (isset($data['nama'])) {
+            $namaMahasiswa = trim($data['nama']);
+        } elseif (isset($data['Nama Mahasiswa'])) {
+            $namaMahasiswa = trim($data['Nama Mahasiswa']);
+        }
+
+        // Debug: Log the actual values being checked
+        Log::info("Validation check for row {$rowNumber}:", [
+            'nim_raw' => $data['NIM'] ?? 'NOT_SET',
+            'nim_trimmed' => $nim,
+            'nama_raw' => $data['Nama Mahasiswa'] ?? 'NOT_SET',
+            'nama_trimmed' => $namaMahasiswa,
+            'nim_empty' => empty($nim),
+            'nama_empty' => empty($namaMahasiswa)
+        ]);
+
+        // Check if this is an empty row (both NIM and Nama are empty)
+        if (empty($nim) && empty($namaMahasiswa)) {
+            Log::info("Skipping empty row {$rowNumber}");
+            return; // Skip empty rows without throwing error
+        }
+
+        // If only one field is empty, then it's a real error
+        if (empty($nim) || empty($namaMahasiswa)) {
+            if (empty($nim)) {
+                throw new \Exception("Baris {$rowNumber}: Kolom 'NIM' harus diisi");
+            } elseif (empty($namaMahasiswa)) {
+                throw new \Exception("Baris {$rowNumber}: Kolom 'Nama Mahasiswa' harus diisi");
+            }
             return;
+        }
+
+        // Validate NIM format (should be numeric and have reasonable length)
+        if (!is_numeric($nim) || strlen($nim) < 8 || strlen($nim) > 15) {
+            throw new \Exception("Baris {$rowNumber}: Format NIM '{$nim}' tidak valid. NIM harus berupa angka dengan panjang 8-15 digit");
         }
 
         // Validate class field
         if (empty($data['Kelas'])) {
-            throw new \Exception("Kolom Kelas harus diisi untuk NIM {$data['NIM']}");
+            throw new \Exception("Baris {$rowNumber}: Kolom 'Kelas' harus diisi untuk NIM '{$nim}'");
         }
 
         // Validate that the class exists
         $kelasExists = $this->validateClassExists($data['Kelas']);
         if (!$kelasExists) {
-            throw new \Exception("Kelas '{$data['Kelas']}' tidak ditemukan untuk mata kuliah ini. Kelas yang tersedia: " . $this->getAvailableClasses());
+            $availableClasses = $this->getAvailableClasses();
+            throw new \Exception("Baris {$rowNumber}: Kelas '{$data['Kelas']}' tidak tersedia untuk mata kuliah ini. Kelas yang tersedia: {$availableClasses}");
         }
 
         // Increment total_success untuk NIM unik yang berhasil diproses
-        $nim = trim($data['NIM']);
         if (!in_array($nim, $this->results['processed_nims'])) {
             $this->results['processed_nims'][] = $nim;
             $this->results['total_success']++;
@@ -146,29 +206,29 @@ class NilaiImport implements ToCollection, WithHeadingRow
         }
 
         // Find mahasiswa by NIM
-        $mahasiswa = Mahasiswa::where('nim', trim($data['NIM']))->first();
+        $mahasiswa = Mahasiswa::where('nim', $nim)->first();
         if (!$mahasiswa) {
             // Create new mahasiswa if NIM not found (like in job version)
-            $tahunMasukFromNim = substr($data['NIM'], 0, 2);
-        $tahunMasuk = 2000 + intval($tahunMasukFromNim);
+            $tahunMasukFromNim = substr($nim, 0, 2);
+            $tahunMasuk = 2000 + intval($tahunMasukFromNim);
 
-            $namaAwal = strtolower(explode(' ', trim($data['Nama Mahasiswa']))[0]);
-            $email = strtolower($data['NIM'] . '_' . $namaAwal . '@student.unand.ac.id');
+            $namaAwal = strtolower(explode(' ', trim($namaMahasiswa))[0]);
+            $email = strtolower($nim . '_' . $namaAwal . '@student.unand.ac.id');
 
             // Buat user dengan hashing yang lebih cepat untuk menghindari timeout
-        $user = User::create([
-                'name' => $data['Nama Mahasiswa'],
-            'email' => $email,
-                'password' => Hash::make($data['NIM'], ['rounds' => 4]), // Reduce bcrypt rounds for faster hashing
+            $user = User::create([
+                'name' => $namaMahasiswa,
+                'email' => $email,
+                'password' => Hash::make($nim, ['rounds' => 4]), // Reduce bcrypt rounds for faster hashing
                 'role' => 'mahasiswa',
-        ]);
+            ]);
 
-        // Buat mahasiswa
-        $mahasiswa = Mahasiswa::create([
-            'userId' => $user->id,
-                'nim' => $data['NIM'],
-                'nama' => $data['Nama Mahasiswa'],
-            'tahunMasuk' => $tahunMasuk,
+            // Buat mahasiswa
+            $mahasiswa = Mahasiswa::create([
+                'userId' => $user->id,
+                'nim' => $nim,
+                'nama' => $namaMahasiswa,
+                'tahunMasuk' => $tahunMasuk,
                 'jenisKelamin' => 'L', // Default
                 'tempatLahir' => 'Unknown',
                 'tanggalLahir' => now(),
@@ -178,7 +238,7 @@ class NilaiImport implements ToCollection, WithHeadingRow
                 'status' => 'Aktif',
             ]);
 
-            Log::info("Created new mahasiswa: {$data['NIM']} - {$data['Nama Mahasiswa']}");
+            Log::info("Created new mahasiswa: {$nim} - {$namaMahasiswa}");
         }
 
         // Find student's class using Excel data
@@ -189,7 +249,7 @@ class NilaiImport implements ToCollection, WithHeadingRow
 
         // Get dosen pengampu for this class
         $dosenPengampuKelas = DosenPengampuKelas::where('dosenId', $this->dosenId)
-            ->whereHas('kelas', function($query) use ($studentClass) {
+            ->whereHas('kelas', function ($query) use ($studentClass) {
                 $query->where('tahunAjaranMatkulId', $studentClass->id);
             })
             ->first();
@@ -204,8 +264,17 @@ class NilaiImport implements ToCollection, WithHeadingRow
         foreach ($komponenColumns as $komponenId => $nilai) {
             if ($nilai !== null && $nilai !== '') {
                 // Validate nilai range
-                if (!is_numeric($nilai) || $nilai < 0 || $nilai > 100) {
-                    throw new \Exception("Nilai untuk komponen harus antara 0-100, ditemukan: {$nilai}");
+                if (!is_numeric($nilai)) {
+                    $komponen = \App\Models\Komponen::find($komponenId);
+                    $komponenNama = $komponen ? $komponen->nama : 'Komponen ID ' . $komponenId;
+                    throw new \Exception("Baris {$rowNumber}: Nilai untuk komponen '{$komponenNama}' harus berupa angka, ditemukan: '{$nilai}'");
+                }
+
+                $nilaiFloat = floatval($nilai);
+                if ($nilaiFloat < 0 || $nilaiFloat > 100) {
+                    $komponen = \App\Models\Komponen::find($komponenId);
+                    $komponenNama = $komponen ? $komponen->nama : 'Komponen ID ' . $komponenId;
+                    throw new \Exception("Baris {$rowNumber}: Nilai untuk komponen '{$komponenNama}' harus antara 0-100, ditemukan: {$nilaiFloat}");
                 }
 
                 // Get all bobot for this komponen in this student's specific class
@@ -253,7 +322,7 @@ class NilaiImport implements ToCollection, WithHeadingRow
     {
         // First, check if student is already in any class
         foreach ($this->relatedClasses as $class) {
-            $studentInClass = $class->kelas->flatMap(function($kelas) use ($mahasiswaId) {
+            $studentInClass = $class->kelas->flatMap(function ($kelas) use ($mahasiswaId) {
                 return $kelas->kelasMahasiswa->where('mahasiswaId', $mahasiswaId);
             })->first();
 
@@ -403,7 +472,7 @@ class NilaiImport implements ToCollection, WithHeadingRow
 
                 // Find the specific KelasMahasiswa record for this student in this class
                 $kelasMahasiswa = \App\Models\KelasMahasiswa::where('mahasiswaId', $mahasiswaId)
-                    ->whereHas('kelas', function($query) use ($matkulId) {
+                    ->whereHas('kelas', function ($query) use ($matkulId) {
                         $query->where('tahunAjaranMatkulId', $matkulId);
                     })
                     ->first();
@@ -415,7 +484,6 @@ class NilaiImport implements ToCollection, WithHeadingRow
                     ]);
                 }
             }
-
         } catch (\Exception $e) {
             Log::error('Error calculating total score: ' . $e->getMessage());
         }

@@ -849,8 +849,10 @@ class NilaiController extends Controller
                 return redirect()->route('dosen.nilai.show', $id)
                     ->with('success', $results['message']);
             } else {
+                // For detailed error messages, we'll use a different approach
                 return redirect()->route('dosen.nilai.show', $id)
-                    ->with('error', $results['message']);
+                    ->with('error', $results['message'])
+                    ->with('import_errors', $results['errors'] ?? []);
             }
         } catch (\Exception $e) {
             return redirect()->route('dosen.nilai.show', $id)

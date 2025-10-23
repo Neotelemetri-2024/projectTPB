@@ -96,63 +96,73 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                    <div>
-                        <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nama Kelas <span class="text-red-500">*</span></label>
-                        <div id="kelas-rows" class="space-y-2">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 items-center kelas-row" data-row-index="0">
-                                <div class="flex gap-2">
-                                    <input type="text"
-                                        name="kelasNames[]"
-                                        class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block p-2.5"
-                                        placeholder="Contoh: A, B, C, atau 1, 2, 3"
-                                        required>
-                                    <button type="button"
-                                        id="add-kelas-input"
-                                        class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2.5 rounded-lg text-sm">+
-                                    </button>
-                                </div>
-                                <div class="dosen-per-row hidden"></div>
-                                <div class="hidden hidden-inputs-per-row"></div>
+                <div>
+                    <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nama Kelas <span class="text-red-500">*</span></label>
+                    <div id="kelas-container" class="space-y-3">
+                        <div class="kelas-item border border-gray-200 rounded-lg p-4">
+                            <div class="flex gap-2 items-center">
+                                <input type="text"
+                                    name="kelasNames[]"
+                                    class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block p-2.5"
+                                    placeholder="Nama kelas (A, B, C, dll)"
+                                    required>
+                                <button type="button"
+                                    id="add-kelas-input"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2.5 rounded-lg text-sm">+
+                                </button>
+                            </div>
+                            <div class="dosen-per-kelas-section mt-3 hidden">
+                                <!-- Dosen per kelas akan ditampilkan di sini -->
                             </div>
                         </div>
-                        <p class="mt-1 text-xs text-gray-500">Masukkan nama kelas (huruf atau angka). Klik + untuk menambah kelas lain.</p>
                     </div>
+                    <p class="mt-2 text-xs text-gray-500">Masukkan nama kelas (huruf atau angka). Klik + untuk menambah kelas lain.</p>
+                </div>
 
-                    <!-- Dosen Pengampu Section -->
-                    <div id="dosen-column" class="hidden">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Dosen Pengampu <span class="text-red-500">*</span>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Dosen Pengampu <span class="text-red-500">*</span>
+                    </label>
+
+                    <!-- Opsi Dosen Pengampu -->
+                    <div class="mb-4">
+                        <label class="flex items-center mb-2">
+                            <input type="radio"
+                                name="dosenOption"
+                                value="same"
+                                id="dosen-same"
+                                class="mr-2 text-amber-600"
+                                checked>
+                            <span class="text-sm text-gray-700">Dosen pengampu sama untuk semua kelas</span>
                         </label>
-
-                        <!-- Dosen Option -->
-                        <div class="mb-4">
-                            <div class="flex items-center space-x-4">
-                                <label class="flex items-center">
-                                    <input type="radio" name="dosenOption" value="same" id="dosen-same" class="dosen-option rounded border-gray-300 text-amber-600 focus:ring-amber-500" checked>
-                                    <span class="ml-2 text-sm text-gray-700">Dosen sama untuk semua kelas</span>
-                                </label>
-                                <label class="flex items-center">
-                                    <input type="radio" name="dosenOption" value="different" id="dosen-different" class="dosen-option rounded border-gray-300 text-amber-600 focus:ring-amber-500">
-                                    <span class="ml-2 text-sm text-gray-700">Dosen berbeda per kelas</span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <!-- Dosen Same for All Classes -->
-                        <div id="dosen-same-section" class="dosen-section">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Pilih Dosen untuk Semua Kelas</label>
-                            <div id="dosen-same-multiselect"></div>
-                            <div id="dosen-same-hidden"></div>
-                        </div>
-
-                        <!-- Dosen Different per Class -->
-                        <div id="dosen-different-section" class="dosen-section hidden">
-                            <div id="kelas-dosen-container">
-                                <!-- Will be populated by JavaScript -->
-                            </div>
-                        </div>
+                        <label class="flex items-center">
+                            <input type="radio"
+                                name="dosenOption"
+                                value="different"
+                                id="dosen-different"
+                                class="mr-2 text-amber-600">
+                            <span class="text-sm text-gray-700">Dosen pengampu berbeda per kelas</span>
+                        </label>
                     </div>
+
+                    <!-- Dosen untuk semua kelas (default) -->
+                    <div id="dosen-same-section">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Pilih Dosen untuk Semua Kelas</label>
+                        <div id="dosen-same-multiselect"></div>
+                        <div id="dosen-same-hidden"></div>
+                    </div>
+
+                    <!-- Dosen per kelas (hidden by default) -->
+                    <div id="dosen-different-section" class="hidden">
+                        <p class="text-sm text-gray-600 mb-4">Pilih dosen untuk setiap kelas di atas.</p>
+                    </div>
+
+                    @error('dosenIds')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                    @error('dosenPerKelas')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <div class="flex justify-end space-x-3">
@@ -173,57 +183,130 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const addKelasBtn = document.getElementById('add-kelas-input');
-        const kelasRows = document.getElementById('kelas-rows');
-        const dosenColumn = document.getElementById('dosen-column');
-        const dosenOptionRadios = document.querySelectorAll('.dosen-option');
-        const dosenSections = document.querySelectorAll('.dosen-section');
-        const dosenSameSection = document.getElementById('dosen-same-section');
-        const dosenDifferentSection = document.getElementById('dosen-different-section');
-        const kelasDosenContainer = document.getElementById('kelas-dosen-container');
         const dosens = @json($dosens);
         const mataKuliahSelect = document.getElementById('mataKuliahId');
 
         // Add kelas input functionality
         addKelasBtn.addEventListener('click', function() {
-            const row = document.createElement('div');
-            row.className = 'grid grid-cols-1 md:grid-cols-2 gap-2 items-center kelas-row';
-            row.innerHTML = `
-            <div class="flex gap-2">
-                <input type="text" name="kelasNames[]" class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block p-2.5" placeholder="Contoh: A, B, C, atau 1, 2, 3" required>
-                <button type="button" class="remove-kelas-input bg-red-600 hover:bg-red-700 text-white px-3 py-2.5 rounded-lg text-sm">×</button>
-            </div>
-            <div class="dosen-per-row hidden"></div>
-            <div class="hidden hidden-inputs-per-row"></div>
-        `;
-            kelasRows.appendChild(row);
+            const kelasContainer = document.getElementById('kelas-container');
+            const newKelasItem = document.createElement('div');
+            newKelasItem.className = 'kelas-item border border-gray-200 rounded-lg p-4';
+            newKelasItem.innerHTML = `
+                <div class="flex gap-2 items-center">
+                    <input type="text"
+                           name="kelasNames[]"
+                           class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block p-2.5"
+                           placeholder="Nama kelas (A, B, C, dll)"
+                           required>
+                    <button type="button" 
+                            class="remove-kelas-input bg-red-600 hover:bg-red-700 text-white px-3 py-2.5 rounded-lg text-sm">
+                        ×
+                    </button>
+                </div>
+                <div class="dosen-per-kelas-section mt-3 hidden">
+                    <!-- Dosen per kelas akan ditampilkan di sini -->
+                </div>
+            `;
 
-            const input = row.querySelector('input[name="kelasNames[]"]');
-            const removeBtn = row.querySelector('.remove-kelas-input');
-            input.addEventListener('input', () => {
-                handlePerRowDosen(row);
-                toggleDosenColumnVisibility();
+            kelasContainer.appendChild(newKelasItem);
+
+            // Add event listener for input change
+            const input = newKelasItem.querySelector('input[name="kelasNames[]"]');
+            input.addEventListener('input', function() {
+                updateDosenPerKelas();
             });
-            removeBtn.addEventListener('click', () => {
-                row.remove();
-                toggleDosenColumnVisibility();
+
+            // Add remove functionality
+            newKelasItem.querySelector('.remove-kelas-input').addEventListener('click', function() {
+                newKelasItem.remove();
+                updateDosenPerKelas();
             });
-            handlePerRowDosen(row);
-            toggleDosenColumnVisibility();
         });
 
         // Dosen option change handler
+        const dosenOptionRadios = document.querySelectorAll('input[name="dosenOption"]');
+        const dosenSameSection = document.getElementById('dosen-same-section');
+        const dosenDifferentSection = document.getElementById('dosen-different-section');
+
         dosenOptionRadios.forEach(radio => {
             radio.addEventListener('change', function() {
-                dosenSections.forEach(section => {
-                    section.classList.add('hidden');
-                });
-
                 if (this.value === 'same') {
                     dosenSameSection.classList.remove('hidden');
+                    dosenDifferentSection.classList.add('hidden');
                 } else {
+                    dosenSameSection.classList.add('hidden');
                     dosenDifferentSection.classList.remove('hidden');
                     updateDosenPerKelas();
                 }
+            });
+        });
+
+        // Function to update dosen per kelas
+        function updateDosenPerKelas() {
+            const dosenOptionDifferent = document.getElementById('dosen-different').checked;
+            if (!dosenOptionDifferent) return;
+
+            // Handle all kelas items
+            const kelasItems = document.querySelectorAll('.kelas-item');
+            kelasItems.forEach(kelasItem => {
+                const kelasInput = kelasItem.querySelector('input[name="kelasNames[]"]');
+                if (!kelasInput) return;
+
+                const kelasValue = kelasInput.value.trim();
+                const dosenSection = kelasItem.querySelector('.dosen-per-kelas-section');
+
+                // Clear existing content
+                if (dosenSection) {
+                    dosenSection.innerHTML = '';
+                }
+
+                if (kelasValue !== '') {
+                    // Show dosen section
+                    dosenSection.classList.remove('hidden');
+
+                    // Create dosen section content
+                    dosenSection.innerHTML = `
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Pilih Dosen untuk Kelas ${kelasValue}</label>
+                        <div id="dosen-per-kelas-${kelasValue}-multiselect"></div>
+                        <div id="dosen-per-kelas-${kelasValue}-hidden"></div>
+                    `;
+
+                    // Initialize multi-select for this kelas
+                    const mount = dosenSection.querySelector(`#dosen-per-kelas-${kelasValue}-multiselect`);
+                    const hidden = dosenSection.querySelector(`#dosen-per-kelas-${kelasValue}-hidden`);
+
+                    if (mount && hidden) {
+                        createSearchableMultiSelect({
+                            mountEl: mount,
+                            placeholder: 'Pilih dosen...',
+                            options: dosens.map(d => ({
+                                value: String(d.id),
+                                label: d.nama
+                            })),
+                            initialSelected: [],
+                            onChange: (values) => {
+                                hidden.innerHTML = '';
+                                values.forEach(v => {
+                                    const input = document.createElement('input');
+                                    input.type = 'hidden';
+                                    input.name = `dosenPerKelas[${kelasValue}][]`;
+                                    input.value = v;
+                                    hidden.appendChild(input);
+                                });
+                            }
+                        });
+                    }
+                } else {
+                    // Hide dosen section if kelas value is empty
+                    dosenSection.classList.add('hidden');
+                }
+            });
+        }
+
+        // Add event listeners to existing kelas inputs
+        document.querySelectorAll('input[name="kelasNames[]"]').forEach(input => {
+            input.addEventListener('input', function() {
+                updateDosenPerKelas();
             });
         });
 
@@ -312,118 +395,6 @@
                 label.textContent = sel && sel.value !== '' ? sel.text : 'Pilih Mata Kuliah';
             });
         })();
-
-        // Per-row dosen handling: render dropdown di kanan baris input
-        function handlePerRowDosen(row) {
-            const dosenOptionDifferent = document.getElementById('dosen-different').checked;
-            const kelasValue = row.querySelector('input[name="kelasNames[]"]').value.trim();
-            const wrapper = row.querySelector('.dosen-per-row');
-            const hiddenBox = row.querySelector('.hidden-inputs-per-row');
-            wrapper.innerHTML = '';
-            hiddenBox.innerHTML = '';
-            if (!dosenOptionDifferent || kelasValue === '') {
-                wrapper.classList.add('hidden');
-                return;
-            }
-            wrapper.classList.remove('hidden');
-            const label = document.createElement('label');
-            label.className = 'block text-xs font-medium text-gray-500 mb-1';
-            label.textContent = 'Pilih Dosen';
-            const mount = document.createElement('div');
-            wrapper.appendChild(label);
-            wrapper.appendChild(mount);
-            createSearchableMultiSelect({
-                mountEl: mount,
-                placeholder: 'Pilih dosen...',
-                options: dosens.map(d => ({
-                    value: String(d.id),
-                    label: d.nama
-                })),
-                initialSelected: [],
-                onChange: (values) => {
-                    hiddenBox.innerHTML = '';
-                    values.forEach(v => {
-                        const input = document.createElement('input');
-                        input.type = 'hidden';
-                        input.name = `dosenPerKelas[${kelasValue}][]`;
-                        input.value = v;
-                        hiddenBox.appendChild(input);
-                    });
-                }
-            });
-        }
-
-        // Add change event to first kelas input
-        const firstRowInput = document.querySelector('#kelas-rows .kelas-row input[name="kelasNames[]"]');
-        if (firstRowInput) {
-            firstRowInput.addEventListener('input', function() {
-                handlePerRowDosen(firstRowInput.closest('.kelas-row'));
-                toggleDosenColumnVisibility();
-            });
-            handlePerRowDosen(firstRowInput.closest('.kelas-row'));
-        }
-
-        function toggleDosenColumnVisibility() {
-            const kelasInputs = document.querySelectorAll('input[name="kelasNames[]"]');
-            const hasAnyKelas = Array.from(kelasInputs).some(inp => inp.value.trim() !== '');
-            if (hasAnyKelas) {
-                dosenColumn.classList.remove('hidden');
-            } else {
-                dosenColumn.classList.add('hidden');
-            }
-        }
-
-        // Initial state on load
-        toggleDosenColumnVisibility();
-
-        // Form validation
-        const form = document.querySelector('form');
-        form.addEventListener('submit', function(e) {
-            const kelasInputs = document.querySelectorAll('input[name="kelasNames[]"]');
-            const selectedKelas = Array.from(kelasInputs)
-                .map(input => input.value.trim())
-                .filter(value => value !== '');
-
-            if (selectedKelas.length === 0) {
-                e.preventDefault();
-                alert('Pilih minimal satu kelas');
-                return;
-            }
-
-            const dosenOption = document.querySelector('input[name="dosenOption"]:checked');
-            if (!dosenOption) {
-                e.preventDefault();
-                alert('Pilih opsi dosen pengampu');
-                return;
-            }
-
-            if (dosenOption.value === 'same') {
-                const selectedDosen = document.querySelectorAll('input[name="dosenIds[]"]');
-                if (selectedDosen.length === 0) {
-                    e.preventDefault();
-                    alert('Pilih minimal satu dosen pengampu');
-                    return;
-                }
-            } else {
-                const selectedKelas = Array.from(kelasInputs)
-                    .map(input => input.value.trim())
-                    .filter(value => value !== '');
-
-                let hasDosen = false;
-                selectedKelas.forEach(kelasName => {
-                    const dosenInputs = document.querySelectorAll(`input[name="dosenPerKelas[${kelasName}][]"]`);
-                    if (dosenInputs.length > 0) {
-                        hasDosen = true;
-                    }
-                });
-
-                if (!hasDosen) {
-                    e.preventDefault();
-                    alert('Pilih minimal satu dosen pengampu untuk setiap kelas');
-                    return;
-                }
-            }
-        });
 
         // =========================
         // Multi-select component JS
@@ -573,7 +544,7 @@
             const hidden = document.getElementById('dosen-same-hidden');
             if (!mount || !hidden) return;
 
-            const initial = (@json(old('dosenIds', [])) || []).map(String);
+            const initial = [];
             createSearchableMultiSelect({
                 mountEl: mount,
                 placeholder: 'Pilih dosen...',

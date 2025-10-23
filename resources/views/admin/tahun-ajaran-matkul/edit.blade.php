@@ -85,30 +85,38 @@
 
                 <div>
                     <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nama Kelas <span class="text-red-500">*</span></label>
-                    <div class="space-y-2">
+                    <div id="kelas-container" class="space-y-3">
                         @foreach($tahunAjaranMatkul->kelas as $index => $kelas)
-                        <div class="flex gap-2">
-                            <input type="text"
-                                name="kelasNames[]"
-                                class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block p-2.5"
-                                value="{{ old('kelasNames.' . $index, $kelas->namaKelas) }}"
-                                required>
-                            @if($index > 0)
-                            <button type="button"
-                                class="remove-kelas-input bg-red-600 hover:bg-red-700 text-white px-3 py-2.5 rounded-lg text-sm">
-                                ×
-                            </button>
-                            @endif
+                        <div class="kelas-item border border-gray-200 rounded-lg p-4">
+                            <div class="flex gap-2 items-center">
+                                <input type="text"
+                                    name="kelasNames[]"
+                                    class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block p-2.5"
+                                    value="{{ old('kelasNames.' . $index, $kelas->namaKelas) }}"
+                                    placeholder="Nama kelas (A, B, C, dll)"
+                                    required>
+                                @if($index > 0)
+                                <button type="button"
+                                    class="remove-kelas-input bg-red-600 hover:bg-red-700 text-white px-3 py-2.5 rounded-lg text-sm">
+                                    ×
+                                </button>
+                                @endif
+                            </div>
+                            <div class="dosen-per-kelas-section mt-3 hidden">
+                                <!-- Dosen per kelas akan ditampilkan di sini -->
+                            </div>
                         </div>
                         @endforeach
                     </div>
                     <button type="button"
                         id="add-kelas-input"
-                        class="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm">
-                        + Tambah Kelas
+                        class="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
+                        Tambah Kelas
                     </button>
-                    <div id="additional-kelas-inputs" class="mt-2 space-y-2"></div>
-                    <p class="mt-1 text-xs text-gray-500">Masukkan nama kelas (huruf atau angka). Klik + untuk menambah kelas lain.</p>
+                    <p class="mt-2 text-xs text-gray-500">Masukkan nama kelas (huruf atau angka). Klik + untuk menambah kelas lain.</p>
                 </div>
 
                 <div>
@@ -139,44 +147,15 @@
                     </div>
 
                     <!-- Dosen untuk semua kelas (default) -->
-                    <div id="dosen-same-section" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        @foreach($dosens as $dosen)
-                        <div class="flex items-center">
-                            <input type="checkbox"
-                                name="dosenIds[]"
-                                value="{{ $dosen->id }}"
-                                id="dosen_{{ $dosen->id }}"
-                                class="rounded border-gray-300 text-amber-600 shadow-sm focus:border-amber-300 focus:ring focus:ring-amber-200 focus:ring-opacity-50 {{ $errors->has('dosenIds') ? 'border-red-500' : '' }}"
-                                {{ in_array($dosen->id, old('dosenIds', $tahunAjaranMatkul->kelas->flatMap->dosenPengampuKelas->pluck('dosenId')->unique()->toArray())) ? 'checked' : '' }}>
-                            <label for="dosen_{{ $dosen->id }}" class="ml-2 text-sm text-gray-700">
-                                {{ $dosen->nama }}
-                            </label>
-                        </div>
-                        @endforeach
+                    <div id="dosen-same-section">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Pilih Dosen untuk Semua Kelas</label>
+                        <div id="dosen-same-multiselect"></div>
+                        <div id="dosen-same-hidden"></div>
                     </div>
 
                     <!-- Dosen per kelas (hidden by default) -->
-                    <div id="dosen-different-section" class="hidden space-y-4">
-                        @foreach($tahunAjaranMatkul->kelas as $index => $kelas)
-                        <div class="border border-gray-200 rounded-lg p-4">
-                            <h4 class="font-medium text-gray-900 mb-2">Kelas {{ $kelas->namaKelas }}</h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                @foreach($dosens as $dosen)
-                                <div class="flex items-center">
-                                    <input type="checkbox"
-                                        name="dosenPerKelas[{{ $kelas->id }}][]"
-                                        value="{{ $dosen->id }}"
-                                        id="dosen_{{ $kelas->id }}_{{ $dosen->id }}"
-                                        class="rounded border-gray-300 text-amber-600 shadow-sm focus:border-amber-300 focus:ring focus:ring-amber-200 focus:ring-opacity-50"
-                                        {{ in_array($dosen->id, old('dosenPerKelas.' . $kelas->id, $kelas->dosenPengampuKelas->pluck('dosenId')->toArray())) ? 'checked' : '' }}>
-                                    <label for="dosen_{{ $kelas->id }}_{{ $dosen->id }}" class="ml-2 text-sm text-gray-700">
-                                        {{ $dosen->nama }}
-                                    </label>
-                                </div>
-                                @endforeach
-                            </div>
-                        </div>
-                        @endforeach
+                    <div id="dosen-different-section" class="hidden">
+                        <p class="text-sm text-gray-600 mb-4">Pilih dosen untuk setiap kelas di atas.</p>
                     </div>
 
                     @error('dosenIds')
@@ -211,36 +190,58 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const addKelasBtn = document.getElementById('add-kelas-input');
-        const additionalInputsContainer = document.getElementById('additional-kelas-inputs');
+        const dosens = @json($dosens);
+        const tahunAjaranMatkul = @json($tahunAjaranMatkul);
 
         // Add kelas input functionality
         addKelasBtn.addEventListener('click', function() {
-            const newInput = document.createElement('div');
-            newInput.className = 'flex gap-2';
-            newInput.innerHTML = `
-            <input type="text"
-                   name="kelasNames[]"
-                   class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block p-2.5"
-                   placeholder="Contoh: A, B, C, atau 1, 2, 3"
-                   required>
-            <button type="button" 
-                    class="remove-kelas-input bg-red-600 hover:bg-red-700 text-white px-3 py-2.5 rounded-lg text-sm">
-                ×
-            </button>
-        `;
+            const kelasContainer = document.getElementById('kelas-container');
+            const newKelasItem = document.createElement('div');
+            newKelasItem.className = 'kelas-item border border-gray-200 rounded-lg p-4';
+            newKelasItem.innerHTML = `
+                <div class="flex gap-2 items-center">
+                    <input type="text"
+                           name="kelasNames[]"
+                           class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block p-2.5"
+                           placeholder="Nama kelas (A, B, C, dll)"
+                           required>
+                    <button type="button" 
+                            class="remove-kelas-input bg-red-600 hover:bg-red-700 text-white px-3 py-2.5 rounded-lg text-sm">
+                        ×
+                    </button>
+                </div>
+                <div class="dosen-per-kelas-section mt-3 hidden">
+                    <!-- Dosen per kelas akan ditampilkan di sini -->
+                </div>
+            `;
 
-            additionalInputsContainer.appendChild(newInput);
+            kelasContainer.appendChild(newKelasItem);
+
+            // Add event listener for input change
+            const input = newKelasItem.querySelector('input[name="kelasNames[]"]');
+            input.addEventListener('input', function() {
+                updateDosenPerKelasForNewKelas();
+            });
 
             // Add remove functionality
-            newInput.querySelector('.remove-kelas-input').addEventListener('click', function() {
-                newInput.remove();
+            newKelasItem.querySelector('.remove-kelas-input').addEventListener('click', function() {
+                newKelasItem.remove();
+                updateDosenPerKelasForNewKelas();
             });
         });
 
         // Add remove functionality to existing remove buttons
         document.querySelectorAll('.remove-kelas-input').forEach(button => {
             button.addEventListener('click', function() {
-                this.closest('.flex').remove();
+                this.closest('.kelas-item').remove();
+                updateDosenPerKelasForNewKelas();
+            });
+        });
+
+        // Add event listeners to existing kelas inputs
+        document.querySelectorAll('input[name="kelasNames[]"]').forEach(input => {
+            input.addEventListener('input', function() {
+                updateDosenPerKelasForNewKelas();
             });
         });
 
@@ -261,11 +262,288 @@
         }
 
         // Add event listeners
-        dosenSameRadio.addEventListener('change', toggleDosenSections);
-        dosenDifferentRadio.addEventListener('change', toggleDosenSections);
+        dosenSameRadio.addEventListener('change', function() {
+            toggleDosenSections();
+            updateDosenPerKelasForNewKelas();
+        });
+        dosenDifferentRadio.addEventListener('change', function() {
+            toggleDosenSections();
+            updateDosenPerKelasForNewKelas();
+        });
 
         // Initialize on page load
         toggleDosenSections();
+        updateDosenPerKelasForNewKelas();
+
+        // Function to update dosen per kelas for all kelas (existing and new)
+        function updateDosenPerKelasForNewKelas() {
+            const dosenOptionDifferent = document.getElementById('dosen_different').checked;
+            if (!dosenOptionDifferent) return;
+
+            // Handle all kelas items
+            const kelasItems = document.querySelectorAll('.kelas-item');
+            kelasItems.forEach(kelasItem => {
+                const kelasInput = kelasItem.querySelector('input[name="kelasNames[]"]');
+                if (!kelasInput) return;
+
+                const kelasValue = kelasInput.value.trim();
+                const dosenSection = kelasItem.querySelector('.dosen-per-kelas-section');
+
+                // Clear existing content
+                if (dosenSection) {
+                    dosenSection.innerHTML = '';
+                }
+
+                if (kelasValue !== '') {
+                    // Show dosen section
+                    dosenSection.classList.remove('hidden');
+
+                    // Create dosen section content
+                    dosenSection.innerHTML = `
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Pilih Dosen untuk Kelas ${kelasValue}</label>
+                        <div id="dosen-per-kelas-${kelasValue}-multiselect"></div>
+                        <div id="dosen-per-kelas-${kelasValue}-hidden"></div>
+                    `;
+
+                    // Initialize multi-select for this kelas
+                    const mount = dosenSection.querySelector(`#dosen-per-kelas-${kelasValue}-multiselect`);
+                    const hidden = dosenSection.querySelector(`#dosen-per-kelas-${kelasValue}-hidden`);
+
+                    if (mount && hidden) {
+                        createSearchableMultiSelect({
+                            mountEl: mount,
+                            placeholder: 'Pilih dosen...',
+                            options: dosens.map(d => ({
+                                value: String(d.id),
+                                label: d.nama
+                            })),
+                            initialSelected: [],
+                            onChange: (values) => {
+                                hidden.innerHTML = '';
+                                values.forEach(v => {
+                                    const input = document.createElement('input');
+                                    input.type = 'hidden';
+                                    input.name = `dosenPerKelas[${kelasValue}][]`;
+                                    input.value = v;
+                                    hidden.appendChild(input);
+                                });
+                            }
+                        });
+                    }
+                } else {
+                    // Hide dosen section if kelas value is empty
+                    dosenSection.classList.add('hidden');
+                }
+            });
+        }
+
+        // =========================
+        // Multi-select component JS
+        // =========================
+        function createSearchableMultiSelect({
+            mountEl,
+            placeholder,
+            options,
+            initialSelected = [],
+            onChange
+        }) {
+            const state = {
+                isOpen: false,
+                selected: new Set(initialSelected.map(String)),
+                query: ''
+            };
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'relative';
+
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full text-left p-2.5 flex items-center justify-between';
+
+            const label = document.createElement('span');
+            label.className = 'truncate';
+            label.textContent = placeholder;
+
+            const chevron = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            chevron.setAttribute('class', 'w-4 h-4 text-gray-500 ml-2 flex-shrink-0');
+            chevron.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+            chevron.setAttribute('fill', 'none');
+            chevron.setAttribute('viewBox', '0 0 24 24');
+            chevron.setAttribute('stroke', 'currentColor');
+            chevron.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />';
+
+            button.appendChild(label);
+            button.appendChild(chevron);
+
+            const panel = document.createElement('div');
+            panel.className = 'absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg hidden';
+
+            const searchWrap = document.createElement('div');
+            searchWrap.className = 'p-2 border-b border-gray-100';
+            const search = document.createElement('input');
+            search.type = 'text';
+            search.placeholder = 'Cari...';
+            search.className = 'w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-amber-500 focus:border-amber-500 p-2';
+            searchWrap.appendChild(search);
+
+            const list = document.createElement('ul');
+            list.className = 'max-h-56 overflow-auto py-1';
+
+            panel.appendChild(searchWrap);
+            panel.appendChild(list);
+
+            wrapper.appendChild(button);
+            wrapper.appendChild(panel);
+            mountEl.appendChild(wrapper);
+
+            const renderLabel = () => {
+                if (state.selected.size === 0) {
+                    label.textContent = placeholder;
+                    return;
+                }
+                const selectedLabels = options
+                    .filter(o => state.selected.has(String(o.value)))
+                    .map(o => o.label);
+                label.textContent = selectedLabels.length === 1 ?
+                    selectedLabels[0] :
+                    `${selectedLabels.length} dipilih`;
+            };
+
+            const buildOptions = () => {
+                list.innerHTML = '';
+                const q = state.query.toLowerCase();
+                const filtered = options.filter(o => o.label.toLowerCase().includes(q));
+                if (filtered.length === 0) {
+                    const li = document.createElement('li');
+                    li.className = 'px-3 py-2 text-sm text-gray-500';
+                    li.textContent = 'Tidak ada hasil';
+                    list.appendChild(li);
+                    return;
+                }
+                filtered.forEach(o => {
+                    const li = document.createElement('li');
+                    li.className = 'px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer flex items-center';
+                    const checkbox = document.createElement('span');
+                    checkbox.className = 'inline-block w-4 h-4 mr-2 rounded border border-gray-300 ' + (state.selected.has(String(o.value)) ? 'bg-amber-500 border-amber-500' : 'bg-white');
+                    const text = document.createElement('span');
+                    text.textContent = o.label;
+                    li.appendChild(checkbox);
+                    li.appendChild(text);
+                    li.addEventListener('click', () => {
+                        const key = String(o.value);
+                        if (state.selected.has(key)) {
+                            state.selected.delete(key);
+                        } else {
+                            state.selected.add(key);
+                        }
+                        renderLabel();
+                        buildOptions();
+                        if (typeof onChange === 'function') {
+                            onChange(Array.from(state.selected));
+                        }
+                    });
+                    list.appendChild(li);
+                });
+            };
+
+            const open = () => {
+                panel.classList.remove('hidden');
+                setTimeout(() => search.focus(), 0);
+            };
+            const close = () => panel.classList.add('hidden');
+
+            button.addEventListener('click', () => {
+                if (panel.classList.contains('hidden')) {
+                    open();
+                    buildOptions();
+                } else {
+                    close();
+                }
+            });
+
+            search.addEventListener('input', () => {
+                state.query = search.value;
+                buildOptions();
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!wrapper.contains(e.target)) close();
+            });
+
+            // Initial render
+            renderLabel();
+            if (typeof onChange === 'function') onChange(Array.from(state.selected));
+
+            return {
+                getSelected: () => Array.from(state.selected)
+            };
+        }
+
+        // Init multi-select for Dosen (Same for all classes)
+        (function initDosenSameMultiSelect() {
+            const mount = document.getElementById('dosen-same-multiselect');
+            const hidden = document.getElementById('dosen-same-hidden');
+            if (!mount || !hidden) return;
+
+            // Get existing dosen IDs from all classes
+            const existingDosenIds = tahunAjaranMatkul.kelas
+                .flatMap(kelas => kelas.dosen_pengampu_kelas)
+                .map(dosen => String(dosen.dosen_id))
+                .filter((value, index, self) => self.indexOf(value) === index);
+
+            const initial = existingDosenIds;
+            createSearchableMultiSelect({
+                mountEl: mount,
+                placeholder: 'Pilih dosen...',
+                options: dosens.map(d => ({
+                    value: String(d.id),
+                    label: d.nama
+                })),
+                initialSelected: initial,
+                onChange: (values) => {
+                    hidden.innerHTML = '';
+                    values.forEach(v => {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'dosenIds[]';
+                        input.value = v;
+                        hidden.appendChild(input);
+                    });
+                }
+            });
+        })();
+
+        // Init multi-select for Dosen per Kelas
+        (function initDosenPerKelasMultiSelect() {
+            tahunAjaranMatkul.kelas.forEach(kelas => {
+                const mount = document.getElementById(`dosen-per-kelas-${kelas.nama_kelas}-multiselect`);
+                const hidden = document.getElementById(`dosen-per-kelas-${kelas.nama_kelas}-hidden`);
+                if (!mount || !hidden) return;
+
+                const existingDosenIds = kelas.dosen_pengampu_kelas.map(dosen => String(dosen.dosen_id));
+                const initial = existingDosenIds;
+
+                createSearchableMultiSelect({
+                    mountEl: mount,
+                    placeholder: 'Pilih dosen...',
+                    options: dosens.map(d => ({
+                        value: String(d.id),
+                        label: d.nama
+                    })),
+                    initialSelected: initial,
+                    onChange: (values) => {
+                        hidden.innerHTML = '';
+                        values.forEach(v => {
+                            const input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.name = `dosenPerKelas[${kelas.nama_kelas}][]`;
+                            input.value = v;
+                            hidden.appendChild(input);
+                        });
+                    }
+                });
+            });
+        })();
     });
 </script>
 

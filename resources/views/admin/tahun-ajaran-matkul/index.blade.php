@@ -61,10 +61,7 @@
         <!-- Filter dan Search -->
         <div class="p-6 border-b border-gray-200">
             <form method="GET" action="{{ route('admin.tahun-ajaran-matkul.index') }}">
-                <!-- Preserve current page when filtering -->
-                @if(request('page'))
-                <input type="hidden" name="page" value="{{ request('page') }}">
-                @endif
+                <!-- Reset page to 1 when filtering -->
                 <div class="flex gap-4 items-end">
                     <div class="flex-shrink-0 w-48">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Filter Tahun Ajaran</label>

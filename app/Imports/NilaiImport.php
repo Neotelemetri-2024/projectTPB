@@ -27,7 +27,8 @@ class NilaiImport implements ToCollection, WithHeadingRow
         'total_success' => 0,
         'total_errors' => 0,
         'errors' => [],
-        'processed_nims' => [] // Added for tracking unique NIMs
+        'processed_nims' => [], // Added for tracking unique NIMs
+        'class_changes' => [] // Track class changes
     ];
 
     public function __construct($tahunAjaranMatkulId, $dosenId, $relatedClasses)
@@ -101,7 +102,17 @@ class NilaiImport implements ToCollection, WithHeadingRow
                 $this->results['message'] = $errorDetails;
             } else {
                 DB::commit();
-                $this->results['message'] = "Berhasil mengimport {$this->results['total_success']} data mahasiswa.";
+                $message = "Berhasil mengimport {$this->results['total_success']} data mahasiswa.";
+
+                // Add class change information if any
+                if (!empty($this->results['class_changes'])) {
+                    $message .= "\n\nPerubahan Kelas:\n";
+                    foreach ($this->results['class_changes'] as $change) {
+                        $message .= "• {$change['nim']} - {$change['nama']}: {$change['from_class']} → {$change['to_class']}\n";
+                    }
+                }
+
+                $this->results['message'] = $message;
             }
         } catch (\Exception $e) {
             DB::rollBack();
@@ -320,22 +331,7 @@ class NilaiImport implements ToCollection, WithHeadingRow
 
     protected function findStudentClass($mahasiswaId, $kelasFromExcel = null)
     {
-        // First, check if student is already in any class
-        foreach ($this->relatedClasses as $class) {
-            $studentInClass = $class->kelas->flatMap(function ($kelas) use ($mahasiswaId) {
-                return $kelas->kelasMahasiswa->where('mahasiswaId', $mahasiswaId);
-            })->first();
-
-            if ($studentInClass) {
-                Log::info("Mahasiswa ID {$mahasiswaId} sudah terdaftar di kelas yang ada");
-                return $class;
-            }
-        }
-
-        // If student not found in any class, find the correct class based on Excel data
-        Log::info("Mahasiswa ID {$mahasiswaId} tidak terdaftar di kelas manapun, akan dibuatkan di kelas: {$kelasFromExcel}");
-
-        // Find the correct class based on Excel data
+        // Find the target class based on Excel data
         $targetClass = null;
         $targetKelas = null;
 
@@ -365,7 +361,65 @@ class NilaiImport implements ToCollection, WithHeadingRow
             throw new \Exception("Tidak ada kelas yang tersedia untuk mata kuliah ini");
         }
 
-        // Create KelasMahasiswa - menggunakan kelasId yang benar
+        // Check if student is already in any class for this mata kuliah
+        $existingKelasMahasiswa = null;
+        $currentClass = null;
+
+        foreach ($this->relatedClasses as $class) {
+            foreach ($class->kelas as $kelas) {
+                $kelasMahasiswa = KelasMahasiswa::where('mahasiswaId', $mahasiswaId)
+                    ->where('kelasId', $kelas->id)
+                    ->first();
+
+                if ($kelasMahasiswa) {
+                    $existingKelasMahasiswa = $kelasMahasiswa;
+                    $currentClass = $class;
+                    break 2;
+                }
+            }
+        }
+
+        // If student is already in a class, check if they need to be moved
+        if ($existingKelasMahasiswa) {
+            $currentKelas = $existingKelasMahasiswa->kelas;
+
+            // If student is already in the correct class, return the class
+            if ($currentKelas->id === $targetKelas->id) {
+                Log::info("Mahasiswa ID {$mahasiswaId} sudah berada di kelas yang benar: {$targetKelas->namaKelas}");
+                return $targetClass;
+            }
+
+            // If student is in a different class, move them to the correct class
+            Log::info("Mahasiswa ID {$mahasiswaId} akan dipindahkan dari kelas '{$currentKelas->namaKelas}' ke kelas '{$targetKelas->namaKelas}'");
+
+            // Record class change
+            $mahasiswa = Mahasiswa::find($mahasiswaId);
+            if ($mahasiswa) {
+                $this->results['class_changes'][] = [
+                    'nim' => $mahasiswa->nim,
+                    'nama' => $mahasiswa->nama,
+                    'from_class' => $currentKelas->namaKelas,
+                    'to_class' => $targetKelas->namaKelas
+                ];
+            }
+
+            // Delete old KelasMahasiswa
+            $existingKelasMahasiswa->delete();
+
+            // Create new KelasMahasiswa in the correct class
+            $kelasMahasiswa = KelasMahasiswa::create([
+                'mahasiswaId' => $mahasiswaId,
+                'kelasId' => $targetKelas->id,
+            ]);
+
+            Log::info("Mahasiswa ID {$mahasiswaId} berhasil dipindahkan ke kelas '{$targetKelas->namaKelas}'");
+
+            return $targetClass;
+        }
+
+        // If student not found in any class, create new KelasMahasiswa
+        Log::info("Mahasiswa ID {$mahasiswaId} tidak terdaftar di kelas manapun, akan dibuatkan di kelas: {$kelasFromExcel}");
+
         $kelasMahasiswa = KelasMahasiswa::create([
             'mahasiswaId' => $mahasiswaId,
             'kelasId' => $targetKelas->id,

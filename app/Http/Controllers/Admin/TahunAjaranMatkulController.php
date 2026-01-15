@@ -613,12 +613,19 @@ class TahunAjaranMatkulController extends Controller
     public function import(Request $request)
     {
         $request->validate([
-            'file' => 'required|mimes:xlsx,xls|max:2048',
+            'file' => 'required|max:2048',
         ], [
             'file.required' => 'File Excel wajib diupload',
-            'file.mimes' => 'File harus berformat Excel (.xlsx atau .xls)',
             'file.max' => 'Ukuran file maksimal 2MB',
         ]);
+
+        // Validate extension manually as mimes:xlsx,xls can be unreliable
+        $extension = strtolower($request->file('file')->getClientOriginalExtension());
+        if (!in_array($extension, ['xlsx', 'xls'])) {
+            return redirect()->back()
+                ->with('error', 'File harus berformat Excel (.xlsx atau .xls)')
+                ->withInput();
+        }
 
         try {
             $import = new TahunAjaranMatkulImport();

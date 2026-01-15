@@ -41,10 +41,10 @@ class TahunAjaranMatkulImport implements ToModel, WithHeadingRow, WithValidation
             $nipDosen = trim($row['nip_dosen'] ?? $row['NIP_DOSEN'] ?? $row['Nip_Dosen'] ?? '');
             $emailDosen = trim($row['email_dosen'] ?? $row['EMAIL_DOSEN'] ?? $row['Email_Dosen'] ?? '');
 
-            // Skip baris kosong
-            if (empty($tahunAjaran) && empty($kodeMatkul) && empty($mataKuliah) && empty($semester) && empty($namaKelas) && empty($namaDosen) && empty($nipDosen) && empty($emailDosen)) {
+            // Skip baris kosong ATAU baris contoh ATAU baris yang hanya berisi instruksi
+            if (empty($kodeMatkul) || empty($mataKuliah) || strpos($tahunAjaran, 'Contoh:') !== false) {
                 return null;
-        }
+            }
 
             // Validasi data wajib
             if (empty($tahunAjaran)) {
@@ -87,11 +87,14 @@ class TahunAjaranMatkulImport implements ToModel, WithHeadingRow, WithValidation
                 return null;
             }
 
-            // Validasi format tahun ajaran
-            if (!preg_match('/^\d{4}\s+(Ganjil|Genap)$/', $tahunAjaran)) {
-                $this->results['errors'][] = "Format tahun ajaran tidak valid (gunakan format: YYYY Ganjil atau YYYY Genap)";
+            // Validasi format tahun ajaran (YYYY - Periode atau YYYY/YYYY - Periode)
+            if (!preg_match('/^(\d{4}(?:\/\d{4})?)\s*-\s*(Ganjil|Genap)$/i', $tahunAjaran, $matches)) {
+                $this->results['errors'][] = "Format tahun ajaran '{$tahunAjaran}' tidak valid (gunakan format: YYYY - Ganjil atau YYYY/YYYY - Ganjil)";
                 return null;
             }
+
+            $parsedTahun = $matches[1];
+            $parsedPeriode = ucfirst(strtolower($matches[2]));
 
             // Validasi semester
             if (!is_numeric($semester) || $semester < 1 || $semester > 8) {
@@ -120,8 +123,7 @@ class TahunAjaranMatkulImport implements ToModel, WithHeadingRow, WithValidation
 
             // Cari atau buat tahun ajaran
             $tahunAjaranModel = TahunAjaran::firstOrCreate(
-                ['tahun' => $tahunAjaran],
-                ['periode' => 'Ganjil'] // Default periode
+                ['tahun' => $parsedTahun, 'periode' => $parsedPeriode]
             );
 
             // Cari mata kuliah berdasarkan kode dan nama

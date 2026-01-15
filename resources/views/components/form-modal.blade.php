@@ -13,7 +13,7 @@
                     <span class="sr-only">Close modal</span>
                 </button>
             </div>
-            <form action="{{ $action }}" method="POST" class="p-4 md:p-5">
+            <form action="{{ $action }}" method="POST" class="p-4 md:p-5" {!! isset($enctype) ? 'enctype="' . $enctype . '"' : '' !!}>
                 @csrf
                 @if(isset($method))
                     @method($method)

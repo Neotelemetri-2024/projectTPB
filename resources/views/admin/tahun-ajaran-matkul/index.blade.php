@@ -10,18 +10,18 @@
                 <h2 class="text-lg font-semibold text-gray-900">Tahun Ajaran Mata Kuliah</h2>
                 <div class="flex space-x-2">
                     <!-- Import/Export Buttons -->
-                    <button type="button" onclick="openImportModal()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg flex items-center text-sm">
+                    <button type="button" data-modal-target="import-modal" data-modal-toggle="import-modal" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg flex items-center text-sm">
                         <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
                         </svg>
                         Import Excel
                     </button>
-                    <a href="{{ route('admin.tahun-ajaran-matkul.export-template', ['tahun_ajaran_id' => $selectedTahunAjaranId]) }}" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg flex items-center text-sm">
+                    <button type="button" data-modal-target="download-modal" data-modal-toggle="download-modal" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg flex items-center text-sm">
                         <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
                         Download Template
-                    </a>
+                    </button>
                     <button type="button" onclick="openDuplicateModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg flex items-center text-sm">
                         <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
@@ -218,40 +218,21 @@
 @endforeach
 
 <!-- Modal Import Excel -->
-<div id="import-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-        <div class="mt-3">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-medium text-gray-900">Import Data Mata Kuliah</h3>
-                <button onclick="closeImportModal()" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-            <form action="{{ route('admin.tahun-ajaran-matkul.import') }}" method="POST" enctype="multipart/form-data">
-                @csrf
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Upload File Excel</label>
-                    <input type="file" name="file" accept=".xlsx,.xls" required class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5">
-                    <p class="text-xs text-gray-500 mt-1">Format: .xlsx atau .xls (Maksimal 2MB)</p>
-                    <p class="text-xs text-gray-500 mt-1">Pastikan file Excel berisi kolom: TAHUN_AJARAN, KODE_MATKUL, MATA_KULIAH, SEMESTER, NAMA_KELAS, NAMA_DOSEN, NIP_DOSEN, EMAIL_DOSEN</p>
-                    <p class="text-xs text-gray-500 mt-1"><strong>Format:</strong> Satu baris = satu kelas. Jika mata kuliah sama, semester sama, buat baris terpisah per kelas.</p>
-                    <p class="text-xs text-gray-500 mt-1"><strong>Multiple Dosen:</strong> Gunakan titik koma (;) untuk memisahkan multiple dosen dalam satu baris.</p>
-                    <p class="text-xs text-gray-500 mt-1">Contoh: Dr. John Doe; Dr. Jane Smith | NIP1; NIP2 | email1; email2</p>
-                </div>
-                <div class="flex justify-end space-x-2">
-                    <button type="button" onclick="closeImportModal()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">
-                        Batal
-                    </button>
-                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
-                        Import
-                    </button>
-                </div>
-            </form>
+<x-form-modal id="import-modal" title="Import Data Mata Kuliah" :action="route('admin.tahun-ajaran-matkul.import')" submit-text="Import" enctype="multipart/form-data">
+    <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Upload File Excel</label>
+        <input type="file" name="file" accept=".xlsx,.xls" required class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5">
+        <div class="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200">
+            <h4 class="text-xs font-semibold text-amber-800 mb-1">Panduan Format File:</h4>
+            <ul class="text-[10px] text-amber-700 space-y-1 list-disc list-inside">
+                <li>Format: .xlsx atau .xls (Maksimal 2MB)</li>
+                <li>Gunakan header: TAHUN_AJARAN, KODE_MATKUL, MATA_KULIAH, SEMESTER, NAMA_KELAS, NAMA_DOSEN, NIP_DOSEN, EMAIL_DOSEN</li>
+                <li>Format Tahun: <b>2025/2026 - ganjil</b></li>
+                <li>Multiple Dosen: Gunakan titik koma (;) untuk memisahkan.</li>
+            </ul>
         </div>
     </div>
-</div>
+</x-form-modal>
 
 <!-- Modal Duplicate Tahun Sebelumnya -->
 <x-duplicate-modal id="duplicate-modal" title="Duplicate dari Tahun Sebelumnya" action="{{ route('admin.tahun-ajaran-matkul.duplicate') }}" submit-text="Duplicate">
@@ -274,59 +255,24 @@
         </select>
     </div>
 </x-duplicate-modal>
+ 
+<!-- Modal Download Template -->
+<x-form-modal id="download-modal" title="Download Template" :action="route('admin.tahun-ajaran-matkul.export-template')" method="GET" submit-text="Download">
+    <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Pilih Tahun Ajaran</label>
+        <select name="tahun_ajaran_id" required class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5">
+            <option value="">Pilih Tahun Ajaran</option>
+            @foreach($tahunAjarans as $tahunAjaran)
+            <option value="{{ $tahunAjaran->id }}" {{ $selectedTahunAjaranId == $tahunAjaran->id ? 'selected' : '' }}>
+                {{ $tahunAjaran->tahun }} - {{ $tahunAjaran->periode }}
+            </option>
+            @endforeach
+        </select>
+        <p class="text-xs text-gray-500 mt-2 italic">Kolom TAHUN_AJARAN di template akan terisi otomatis sesuai pilihan Anda.</p>
+    </div>
+</x-form-modal>
 
 <script>
-    function openImportModal() {
-        document.getElementById('import-modal').classList.remove('hidden');
-    }
-
-    function closeImportModal() {
-        document.getElementById('import-modal').classList.add('hidden');
-    }
-
-    function openDuplicateModal() {
-        const modal = document.getElementById('duplicate-modal');
-        const modalContent = modal.querySelector('[data-modal-content]');
-
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-
-        // Trigger animation
-        setTimeout(() => {
-            modal.classList.remove('bg-opacity-0');
-            modal.classList.add('bg-opacity-10');
-            modalContent.classList.remove('scale-95', 'opacity-0');
-            modalContent.classList.add('scale-100', 'opacity-100');
-        }, 10);
-    }
-
-    function closeDuplicateModal() {
-        const modal = document.getElementById('duplicate-modal');
-        const modalContent = modal.querySelector('[data-modal-content]');
-
-        modalContent.classList.add('scale-95', 'opacity-0');
-        modalContent.classList.remove('scale-100', 'opacity-100');
-        modal.classList.remove('bg-opacity-10');
-        modal.classList.add('bg-opacity-0');
-
-        setTimeout(() => {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }, 300);
-    }
-
-    // Close modal when clicking outside
-    window.onclick = function(event) {
-        const importModal = document.getElementById('import-modal');
-        const duplicateModal = document.getElementById('duplicate-modal');
-
-        if (event.target === importModal) {
-            closeImportModal();
-        }
-        if (event.target === duplicateModal) {
-            closeDuplicateModal();
-        }
-    }
 </script>
 
 <script>
@@ -344,7 +290,10 @@
         // 2. It's not in the URL
         // 3. We're on the first page (no page parameter)
         // 4. No search is active
-        if (tahunAjaranSelect && tahunAjaranSelect.value && !hasTahunAjaranInUrl && !hasPageParam && !hasSearchParam) {
+        // 5. No flash messages are present (to avoid cutting off notifications)
+        const hasFlashMessages = {{ session('success') || session('error') || $errors->any() ? 'true' : 'false' }};
+
+        if (tahunAjaranSelect && tahunAjaranSelect.value && !hasTahunAjaranInUrl && !hasPageParam && !hasSearchParam && !hasFlashMessages) {
             // Auto-submit the form to update URL with the selected tahun ajaran
             tahunAjaranSelect.form.submit();
         }

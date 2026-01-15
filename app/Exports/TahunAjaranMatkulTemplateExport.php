@@ -51,10 +51,10 @@ class TahunAjaranMatkulTemplateSheet implements FromCollection, WithHeadings, Wi
 
         $tahunAjaran = \App\Models\TahunAjaran::find($this->tahunAjaranId);
         if ($tahunAjaran) {
-            return $tahunAjaran->tahun . ' ' . $tahunAjaran->periode;
+            return $tahunAjaran->tahun . ' - ' . $tahunAjaran->periode;
         }
 
-        return '2025 Ganjil'; // Fallback
+        return '2025/2026 - Ganjil'; // Fallback
     }
 
     public function collection()
@@ -118,7 +118,7 @@ class TahunAjaranMatkulTemplateSheet implements FromCollection, WithHeadings, Wi
             ['FORMAT IMPORT MATA KULIAH TAHUN AJARAN (PER KELAS)'],
             [''],
             ['TAHUN_AJARAN', 'KODE_MATKUL', 'MATA_KULIAH', 'SEMESTER', 'NAMA_KELAS', 'NAMA_DOSEN', 'NIP_DOSEN', 'EMAIL_DOSEN'],
-            ['Contoh: 2025 Ganjil', 'Contoh: MTK101', 'Contoh: Matematika Dasar', 'Contoh: 1', 'Contoh: A', 'Contoh: Dr. John Doe', 'Contoh: 197304131998022001', 'Contoh: johndoe@ae.unand.ac.id']
+            ['Contoh: 2025 - Ganjil', 'Contoh: MTK101', 'Contoh: Matematika Dasar', 'Contoh: 1', 'Contoh: A', 'Contoh: Dr. John Doe', 'Contoh: 197304131998022001', 'Contoh: johndoe@ae.unand.ac.id']
         ];
     }
 
@@ -209,7 +209,7 @@ class InstruksiTahunAjaranMatkulSheet implements FromCollection, WithHeadings, W
             [''],
             ['1. Format File:', 'Excel (.xlsx atau .xls)'],
             ['2. Kolom yang Harus Diisi:', ''],
-            ['   - TAHUN_AJARAN', 'Tahun ajaran (contoh: 2025 Ganjil, 2025 Genap)'],
+            ['   - TAHUN_AJARAN', 'Tahun ajaran (contoh: 2025 - Ganjil, 2025 - Genap)'],
             ['   - KODE_MATKUL', 'Kode mata kuliah (harus sudah ada di database)'],
             ['   - MATA_KULIAH', 'Nama mata kuliah (harus sudah ada di database)'],
             ['   - SEMESTER', 'Semester (1-8)'],
@@ -229,7 +229,7 @@ class InstruksiTahunAjaranMatkulSheet implements FromCollection, WithHeadings, W
             ['   - EMAIL_DOSEN', 'Wajib diisi, format email yang valid'],
             [''],
             ['4. Contoh Pengisian:', ''],
-            ['   TAHUN_AJARAN', 'Sudah diisi otomatis (contoh: 2025 Ganjil)'],
+            ['   TAHUN_AJARAN', 'Sudah diisi otomatis (contoh: 2025 - Ganjil)'],
             ['   KODE_MATKUL', 'MTK101'],
             ['   MATA_KULIAH', 'Matematika Dasar'],
             ['   SEMESTER', '1'],
@@ -240,12 +240,12 @@ class InstruksiTahunAjaranMatkulSheet implements FromCollection, WithHeadings, W
             [''],
             ['5. Contoh Multiple Dosen:', ''],
             ['   Cara 1 - Baris Terpisah:', ''],
-            ['   Baris 1:', '2025 Ganjil | MTK101 | Matematika Dasar | 1 | A | Dr. John Doe | 197304131998022001 | johndoe@ae.unand.ac.id'],
-            ['   Baris 2:', '2025 Ganjil | MTK101 | Matematika Dasar | 1 | A | Dr. Jane Smith | 197304131998022002 | janesmith@ae.unand.ac.id'],
-            ['   Baris 3:', '2025 Ganjil | MTK101 | Matematika Dasar | 1 | B | Dr. John Doe | 197304131998022001 | johndoe@ae.unand.ac.id'],
+            ['   Baris 1:', '2025 - Ganjil | MTK101 | Matematika Dasar | 1 | A | Dr. John Doe | 197304131998022001 | johndoe@ae.unand.ac.id'],
+            ['   Baris 2:', '2025 - Ganjil | MTK101 | Matematika Dasar | 1 | A | Dr. Jane Smith | 197304131998022002 | janesmith@ae.unand.ac.id'],
+            ['   Baris 3:', '2025 - Ganjil | MTK101 | Matematika Dasar | 1 | B | Dr. John Doe | 197304131998022001 | johndoe@ae.unand.ac.id'],
             [''],
             ['   Cara 2 - Satu Baris (dengan titik koma):', ''],
-            ['   Baris 1:', '2025 Ganjil | MTK101 | Matematika Dasar | 1 | A | Dr. John Doe; Dr. Jane Smith | 197304131998022001; 197304131998022002 | johndoe@ae.unand.ac.id; janesmith@ae.unand.ac.id'],
+            ['   Baris 1:', '2025 - Ganjil | MTK101 | Matematika Dasar | 1 | A | Dr. John Doe; Dr. Jane Smith | 197304131998022001; 197304131998022002 | johndoe@ae.unand.ac.id; janesmith@ae.unand.ac.id'],
             [''],
             ['6. Catatan:', ''],
             ['   - Satu baris = satu kelas untuk mata kuliah tertentu'],
@@ -263,7 +263,7 @@ class InstruksiTahunAjaranMatkulSheet implements FromCollection, WithHeadings, W
             ['   - NIP tidak 18 digit', 'Periksa kembali jumlah digit NIP'],
             ['   - Email sudah digunakan', 'Gunakan email yang berbeda'],
             ['   - Format email tidak valid', 'Pastikan format email benar'],
-            ['   - Tahun ajaran tidak valid', 'Gunakan format YYYY Ganjil/Genap'],
+            ['   - Tahun ajaran tidak valid', 'Gunakan format YYYY - Ganjil/Genap'],
             ['   - Semester tidak valid', 'Gunakan angka 1-8'],
         ]);
     }

@@ -7,13 +7,22 @@
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <h2 class="text-lg font-semibold text-gray-900">Detail Mata Kuliah Tahun Ajaran</h2>
-                <a href="{{ request('back_url', route('admin.tahun-ajaran-matkul.index')) }}"
-                   class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                    </svg>
-                    Kembali
-                </a>
+                <div class="flex items-center space-x-3">
+                    <a href="{{ route('admin.tahun-ajaran-matkul.edit', $tahunAjaranMatkul->id) }}"
+                       class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                        </svg>
+                        Edit Mata Kuliah
+                    </a>
+                    <a href="{{ request('back_url', route('admin.tahun-ajaran-matkul.index')) }}"
+                       class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center transition-colors">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                        </svg>
+                        Kembali
+                    </a>
+                </div>
             </div>
         </div>
 
@@ -37,17 +46,8 @@
             <!-- Informasi Umum -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div class="bg-gray-50 rounded-lg p-4">
-                    <div class="flex items-center justify-between mb-4">
+                    <div class="mb-4">
                         <h3 class="text-md font-semibold text-gray-900">Informasi Mata Kuliah</h3>
-                        <button type="button"
-                                data-modal-target="addKelasModal"
-                                data-modal-toggle="addKelasModal"
-                                class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded text-sm flex items-center">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                            </svg>
-                            Tambah Kelas
-                        </button>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="space-y-3">
@@ -170,13 +170,7 @@
                                     </svg>
                                 </div>
                                 <h3 class="text-sm font-medium text-gray-900 mb-2">Belum ada kelas</h3>
-                                <p class="text-sm text-gray-500 mb-4">Tambahkan kelas pertama untuk mata kuliah ini</p>
-                                <button type="button"
-                                        data-modal-target="addKelasModal"
-                                        data-modal-toggle="addKelasModal"
-                                        class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm">
-                                    Tambah Kelas Pertama
-                                </button>
+                                <p class="text-sm text-gray-500 mb-4">Tambahkan kelas dengan cara menekan tombol Edit Mata Kuliah.</p>
                             </div>
                         @endif
                     </div>
@@ -185,178 +179,4 @@
         </div>
     </div>
 </div>
-
-<!-- Modal Tambah Kelas -->
-<x-form-modal
-    id="addKelasModal"
-    title="Tambah Kelas Baru"
-    :action="route('admin.tahun-ajaran-matkul.add-kelas', $tahunAjaranMatkul->id)"
-    submit-text="Tambah"
->
-    <div class="grid gap-4 mb-4 grid-cols-1">
-        <div>
-            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nama Kelas</label>
-            <div class="flex gap-2">
-                <input type="text"
-                       name="kelasNames[]"
-                       class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block p-2.5"
-                       placeholder="Contoh: A, B, C, atau 1, 2, 3"
-                       required>
-                <button type="button" 
-                        id="add-kelas-input"
-                        class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2.5 rounded-lg text-sm">
-                    +
-                </button>
-            </div>
-            <div id="additional-kelas-inputs" class="mt-2 space-y-2"></div>
-            <p class="mt-1 text-xs text-gray-500">Masukkan nama kelas (huruf atau angka). Klik + untuk menambah kelas lain.</p>
-        </div>
-
-        <div>
-            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Opsi Dosen Pengampu</label>
-            <div class="space-y-3">
-                <label class="flex items-center">
-                    <input type="radio" 
-                           name="dosenOption" 
-                           value="same" 
-                           id="dosen-same-add" 
-                           class="dosen-option-add rounded border-gray-300 text-amber-600 focus:ring-amber-500" 
-                           checked>
-                    <span class="ml-2 text-sm text-gray-700">Dosen sama untuk semua kelas baru</span>
-                </label>
-                <label class="flex items-center">
-                    <input type="radio" 
-                           name="dosenOption" 
-                           value="different" 
-                           id="dosen-different-add" 
-                           class="dosen-option-add rounded border-gray-300 text-amber-600 focus:ring-amber-500">
-                    <span class="ml-2 text-sm text-gray-700">Dosen berbeda per kelas</span>
-                </label>
-            </div>
-        </div>
-
-        <!-- Dosen Same Section -->
-        <div id="dosen-same-section-add" class="dosen-section-add">
-            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Pilih Dosen untuk Semua Kelas Baru</label>
-            <div class="max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3">
-                @forelse($availableDosens as $dosen)
-                    <label class="flex items-center mb-2 last:mb-0">
-                        <input type="checkbox"
-                               name="dosenIds[]"
-                               value="{{ $dosen->id }}"
-                               class="rounded border-gray-300 text-amber-600 shadow-sm focus:border-amber-300 focus:ring focus:ring-amber-200 focus:ring-opacity-50">
-                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                            {{ $dosen->nama }} ({{ $dosen->nip }})
-                        </span>
-                    </label>
-                @empty
-                    <p class="text-sm text-gray-500">Tidak ada dosen tersedia</p>
-                @endforelse
-            </div>
-        </div>
-
-        <!-- Dosen Different Section -->
-        <div id="dosen-different-section-add" class="dosen-section-add hidden">
-            <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Pilih Dosen per Kelas</label>
-            <div id="kelas-dosen-container-add" class="space-y-3">
-                <!-- Will be populated by JavaScript -->
-            </div>
-        </div>
-    </div>
-</x-form-modal>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const addKelasBtn = document.getElementById('add-kelas-input');
-    const additionalInputsContainer = document.getElementById('additional-kelas-inputs');
-    const dosenOptionRadios = document.querySelectorAll('.dosen-option-add');
-    const dosenSections = document.querySelectorAll('.dosen-section-add');
-    const dosenSameSection = document.getElementById('dosen-same-section-add');
-    const dosenDifferentSection = document.getElementById('dosen-different-section-add');
-    const kelasDosenContainer = document.getElementById('kelas-dosen-container-add');
-    const dosens = @json($availableDosens);
-
-    // Add kelas input functionality
-    addKelasBtn.addEventListener('click', function() {
-        const newInput = document.createElement('div');
-        newInput.className = 'flex gap-2';
-        newInput.innerHTML = `
-            <input type="text"
-                   name="kelasNames[]"
-                   class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block p-2.5"
-                   placeholder="Contoh: A, B, C, atau 1, 2, 3"
-                   required>
-            <button type="button" 
-                    class="remove-kelas-input bg-red-600 hover:bg-red-700 text-white px-3 py-2.5 rounded-lg text-sm">
-                ×
-            </button>
-        `;
-        
-        additionalInputsContainer.appendChild(newInput);
-        
-        // Add remove functionality
-        newInput.querySelector('.remove-kelas-input').addEventListener('click', function() {
-            newInput.remove();
-            updateDosenPerKelas();
-        });
-
-        // Add change event to update dosen per kelas
-        newInput.querySelector('input').addEventListener('input', updateDosenPerKelas);
-    });
-
-    // Dosen option change handler
-    dosenOptionRadios.forEach(radio => {
-        radio.addEventListener('change', function() {
-            dosenSections.forEach(section => {
-                section.classList.add('hidden');
-            });
-
-            if (this.value === 'same') {
-                dosenSameSection.classList.remove('hidden');
-            } else {
-                dosenDifferentSection.classList.remove('hidden');
-                updateDosenPerKelas();
-            }
-        });
-    });
-
-    // Update dosen per kelas when kelas inputs change
-    function updateDosenPerKelas() {
-        if (document.getElementById('dosen-different-add').checked) {
-            const kelasInputs = document.querySelectorAll('input[name="kelasNames[]"]');
-            const selectedKelas = Array.from(kelasInputs)
-                .map(input => input.value.trim())
-                .filter(value => value !== '');
-
-            kelasDosenContainer.innerHTML = '';
-
-            selectedKelas.forEach(kelasName => {
-                if (kelasName) {
-                    const kelasSection = document.createElement('div');
-                    kelasSection.className = 'p-3 border border-gray-200 rounded-lg';
-                    kelasSection.innerHTML = `
-                        <h4 class="text-sm font-medium text-gray-900 mb-2">Dosen untuk Kelas ${kelasName}</h4>
-                        <div class="grid grid-cols-1 gap-2">
-                            ${dosens.map(dosen => `
-                                <label class="flex items-center">
-                                    <input type="checkbox"
-                                           name="dosenPerKelas[${kelasName}][]"
-                                           value="${dosen.id}"
-                                           class="rounded border-gray-300 text-amber-600 shadow-sm focus:border-amber-300 focus:ring focus:ring-amber-200 focus:ring-opacity-50">
-                                    <span class="ml-2 text-sm text-gray-700">${dosen.nama} (${dosen.nip})</span>
-                                </label>
-                            `).join('')}
-                        </div>
-                    `;
-                    kelasDosenContainer.appendChild(kelasSection);
-                }
-            });
-        }
-    }
-
-    // Add change event to first kelas input
-    document.querySelector('input[name="kelasNames[]"]').addEventListener('input', updateDosenPerKelas);
-});
-</script>
-
 @endsection

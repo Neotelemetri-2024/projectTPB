@@ -587,8 +587,29 @@
             const removeBtn = item.querySelector('.remove-kelas-btn');
             if (removeBtn) {
                 removeBtn.addEventListener('click', () => {
-                    item.remove();
-                    updateRemoveButtons();
+                    const nameInput = item.querySelector('.kelas-name-input');
+                    const className = nameInput ? nameInput.value.trim() : '';
+                    
+                    if (className !== '') {
+                        Swal.fire({
+                            title: 'Hapus Kelas?',
+                            html: `Apakah Anda yakin ingin menghapus kelas <b>${className}</b> dari form ini?`,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#d33',
+                            cancelButtonColor: '#3085d6',
+                            confirmButtonText: 'Ya, Hapus',
+                            cancelButtonText: 'Batal'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                item.remove();
+                                updateRemoveButtons();
+                            }
+                        });
+                    } else {
+                        item.remove();
+                        updateRemoveButtons();
+                    }
                 });
             }
 

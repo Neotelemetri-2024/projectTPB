@@ -258,44 +258,44 @@ class TahunAjaranMatkulController extends Controller
                 'semester' => $request->semester ?? 1
             ]);
 
-            // Get existing kelas IDs for proper deletion
-            $existingKelasIds = $tahunAjaranMatkul->kelas->pluck('id');
+            // Get existing kelas for proper comparison
+            $existingKelas = $tahunAjaranMatkul->kelas;
+            $submittedKelasNames = $request->kelasNames;
 
-            // Store existing mahasiswa data before deletion
-            $existingMahasiswaData = [];
-            foreach ($tahunAjaranMatkul->kelas as $kelas) {
-                $existingMahasiswaData[$kelas->namaKelas] = $kelas->kelasMahasiswa->pluck('mahasiswaId')->toArray();
+            // Delete classes that are no longer in the submitted list
+            $kelasToDelete = $existingKelas->filter(function ($kelas) use ($submittedKelasNames) {
+                return !in_array($kelas->namaKelas, $submittedKelasNames);
+            });
+
+            foreach ($kelasToDelete as $kelas) {
+                $kelasIds = [$kelas->id];
+                // Get related DosenPengampuKelas IDs
+                $dosenPengampuKelasIds = DosenPengampuKelas::whereIn('kelasId', $kelasIds)->pluck('id');
+                // Delete nilai associated with this class
+                $tahunAjaranMatkul->nilai()->whereIn('dosenPengampuKelasId', $dosenPengampuKelasIds)->delete();
+                // Delete kelas_mahasiswa
+                KelasMahasiswa::whereIn('kelasId', $kelasIds)->delete();
+                // Delete dosen_pengampu_kelas
+                DosenPengampuKelas::whereIn('kelasId', $kelasIds)->delete();
+                // Delete kelas
+                $kelas->delete();
             }
 
-            // Delete related records in correct order
-            // 1. Delete nilai records (if any)
-            $tahunAjaranMatkul->nilai()->delete();
-
-            // 2. Delete dosen_pengampu_kelas records
-            DosenPengampuKelas::whereIn('kelasId', $existingKelasIds)->delete();
-
-            // 3. Delete kelas_mahasiswa records
-            KelasMahasiswa::whereIn('kelasId', $existingKelasIds)->delete();
-
-            // 4. Delete existing kelas records
-            $tahunAjaranMatkul->kelas()->delete();
-
-            // Create new kelas and restore mahasiswa data
-            foreach ($request->kelasNames as $index => $kelasName) {
-                $kelas = Kelas::create([
-                    'namaKelas' => $kelasName,
-                    'tahunAjaranMatkulId' => $tahunAjaranMatkul->id
-                ]);
-
-                // Restore mahasiswa data if kelas name matches
-                if (isset($existingMahasiswaData[$kelasName])) {
-                    foreach ($existingMahasiswaData[$kelasName] as $mahasiswaId) {
-                        KelasMahasiswa::create([
-                            'mahasiswaId' => $mahasiswaId,
-                            'kelasId' => $kelas->id
-                        ]);
-                    }
+            // Create new kelas or get existing ones
+            foreach ($submittedKelasNames as $index => $kelasName) {
+                $kelas = $tahunAjaranMatkul->kelas()->where('namaKelas', $kelasName)->first();
+                if (!$kelas) {
+                    $kelas = Kelas::create([
+                        'namaKelas' => $kelasName,
+                        'tahunAjaranMatkulId' => $tahunAjaranMatkul->id
+                    ]);
+                } else {
+                    // Clear existing dosen_pengampu_kelas for this class so we can recreate them
+                    DosenPengampuKelas::where('kelasId', $kelas->id)->delete();
                 }
+
+                // Mahasiswa data is kept automatically for existing classes.
+                // We only create classes here, so they won't have mahasiswa initially.
 
                 // Create dosen pengampu for this kelas
                 if ($request->dosenType === 'same') {

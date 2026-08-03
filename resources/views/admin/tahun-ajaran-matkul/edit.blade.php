@@ -613,8 +613,30 @@
             const removeBtn = item.querySelector('.remove-kelas-btn');
             if (removeBtn) {
                 removeBtn.addEventListener('click', () => {
-                    item.remove();
-                    updateRemoveButtons();
+                    const nameInput = item.querySelector('.kelas-name-input');
+                    const className = nameInput ? nameInput.value.trim() : '';
+                    const isExisting = existingKelas.some(k => k.namaKelas === className);
+
+                    if (isExisting && className !== '') {
+                        Swal.fire({
+                            title: 'Peringatan Hapus Kelas',
+                            html: `Menghapus kelas <b>${className}</b> dari form ini akan menghapus <b>semua data mahasiswa dan nilai</b> yang ada di kelas tersebut setelah form disimpan.<br><br>Apakah Anda yakin?`,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#d33',
+                            cancelButtonColor: '#3085d6',
+                            confirmButtonText: 'Ya, Hapus Kelas',
+                            cancelButtonText: 'Batal'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                item.remove();
+                                updateRemoveButtons();
+                            }
+                        });
+                    } else {
+                        item.remove();
+                        updateRemoveButtons();
+                    }
                 });
             }
 

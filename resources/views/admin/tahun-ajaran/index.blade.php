@@ -76,15 +76,15 @@
     submit-text="Simpan">
     <div class="grid gap-4 mb-4 grid-cols-2">
         <div class="col-span-2">
-            <label for="tahun" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tahun</label>
-            <input type="text" name="tahun" id="tahun" value="{{ old('tahun') }}" class="bg-gray-50 border {{ $errors->has('tahun') ? 'border-red-500' : 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="2024/2025" required>
+            <label for="tahun" class="block mb-2 text-sm font-medium text-gray-900">Tahun</label>
+            <input type="text" name="tahun" id="tahun" value="{{ old('tahun') }}" class="bg-gray-50 border {{ $errors->has('tahun') ? 'border-red-500' : 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5" placeholder="2024/2025" required>
             @error('tahun')
             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
             @enderror
         </div>
         <div class="col-span-2">
-            <label for="periode" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Periode</label>
-            <input type="text" name="periode" id="periode" value="{{ old('periode') }}" class="bg-gray-50 border {{ $errors->has('periode') ? 'border-red-500' : 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="Ganjil" required>
+            <label for="periode" class="block mb-2 text-sm font-medium text-gray-900">Periode</label>
+            <input type="text" name="periode" id="periode" value="{{ old('periode') }}" class="bg-gray-50 border {{ $errors->has('periode') ? 'border-red-500' : 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5" placeholder="Ganjil" required>
             @error('periode')
             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
             @enderror
@@ -102,15 +102,15 @@
     submit-text="Update">
     <div class="grid gap-4 mb-4 grid-cols-2">
         <div class="col-span-2">
-            <label for="tahun_{{ $ta->id }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Tahun</label>
-            <input type="text" name="tahun" id="tahun_{{ $ta->id }}" value="{{ old('tahun', $ta->tahun) }}" class="bg-gray-50 border {{ $errors->has('tahun') ? 'border-red-500' : 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="2024/2025" required>
+            <label for="tahun_{{ $ta->id }}" class="block mb-2 text-sm font-medium text-gray-900">Tahun</label>
+            <input type="text" name="tahun" id="tahun_{{ $ta->id }}" value="{{ old('tahun', $ta->tahun) }}" class="bg-gray-50 border {{ $errors->has('tahun') ? 'border-red-500' : 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5" placeholder="2024/2025" required>
             @error('tahun')
             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
             @enderror
         </div>
         <div class="col-span-2">
-            <label for="periode_{{ $ta->id }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Periode</label>
-            <input type="text" name="periode" id="periode_{{ $ta->id }}" value="{{ old('periode', $ta->periode) }}" class="bg-gray-50 border {{ $errors->has('periode') ? 'border-red-500' : 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="Ganjil" required>
+            <label for="periode_{{ $ta->id }}" class="block mb-2 text-sm font-medium text-gray-900">Periode</label>
+            <input type="text" name="periode" id="periode_{{ $ta->id }}" value="{{ old('periode', $ta->periode) }}" class="bg-gray-50 border {{ $errors->has('periode') ? 'border-red-500' : 'border-gray-300' }} text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5" placeholder="Ganjil" required>
             @error('periode')
             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
             @enderror

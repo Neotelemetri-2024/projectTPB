@@ -818,13 +818,20 @@ class NilaiController extends Controller
             $query->where('dosenId', $dosen->id);
         })->findOrFail($id);
 
-        $request->validate([
-            'excel_file' => 'required|file|mimes:xlsx,xls|max:10240' // Increased to 10MB
-        ], [
-            'excel_file.required' => 'File Excel harus dipilih.',
-            'excel_file.mimes' => 'File harus berformat Excel (.xlsx atau .xls).',
-            'excel_file.max' => 'Ukuran file maksimal 10MB.'
-        ]);
+        if (!$request->hasFile('excel_file')) {
+            if ($request->ajax()) {
+                return response()->json(['error' => 'File Excel harus dipilih.'], 400);
+            }
+            return redirect()->back()->with('error', 'File Excel harus dipilih.');
+        }
+
+        $extension = strtolower($request->file('excel_file')->getClientOriginalExtension());
+        if (!in_array($extension, ['xlsx', 'xls'])) {
+            if ($request->ajax()) {
+                return response()->json(['error' => 'File harus berformat Excel (.xlsx atau .xls).'], 400);
+            }
+            return redirect()->back()->with('error', 'File harus berformat Excel (.xlsx atau .xls).');
+        }
 
         try {
             // Get all related classes for this mata kuliah and dosen
@@ -839,27 +846,96 @@ class NilaiController extends Controller
                 return response()->json(['success' => false, 'message' => 'Tidak ada kelas yang ditemukan untuk mata kuliah ini.']);
             }
 
-            // Import Excel data
-            $import = new NilaiImport($id, $dosen->id, $relatedClasses);
-            Excel::import($import, $request->file('excel_file'));
+            // Import Excel data using background job
+            $jobId = uniqid('import_');
+            Log::info('[Import Nilai] Starting import with jobId: ' . $jobId);
 
-            $results = $import->getResults();
+            // Simpan file sementara
+            $filePath = $request->file('excel_file')->storeAs(
+                'temp_imports', 
+                $jobId . '.' . $request->file('excel_file')->getClientOriginalExtension()
+            );
+            $fullFilePath = storage_path('app/' . $filePath);
 
-            if ($results['success']) {
-                return redirect()->route('dosen.nilai.show', $id)
-                    ->with('success', $results['message']);
-            } else {
-                // For detailed error messages, we'll use a different approach
-                return redirect()->route('dosen.nilai.show', $id)
-                    ->with('error', $results['message'])
-                    ->with('import_errors', $results['errors'] ?? []);
+            \App\Jobs\ProcessNilaiImport::dispatch($jobId, $fullFilePath, $dosen->id, $id, $relatedClasses);
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'status' => 'success',
+                    'job_id' => $jobId,
+                    'message' => 'Proses import sedang berjalan di latar belakang.'
+                ]);
             }
-        } catch (\Exception $e) {
+
             return redirect()->route('dosen.nilai.show', $id)
-                ->with('error', 'Terjadi kesalahan saat import: ' . $e->getMessage());
+                ->with('success', 'Proses import sedang berjalan di latar belakang.');
+        } catch (\Exception $e) {
+            Log::error('Error in importNilai dispatch: ' . $e->getMessage());
+            if ($request->ajax()) {
+                return response()->json(['error' => 'Gagal memulai import: ' . $e->getMessage()], 500);
+            }
+            return redirect()->back()->with('error', 'Gagal memulai import: ' . $e->getMessage());
         }
     }
 
+    /**
+     * Check status of background import
+     */
+    public function checkImportStatus(Request $request, $id)
+    {
+        $jobId = $request->query('job_id');
+        
+        if (!$jobId) {
+            return response()->json(['error' => 'Job ID tidak ditemukan'], 400);
+        }
+        
+        // Cek apakah ada hasil (selesai/error)
+        $result = \Illuminate\Support\Facades\Cache::get('import_result_' . $jobId);
+        
+        if ($result) {
+            // Import selesai
+            // Hapus progress dari cache
+            \Illuminate\Support\Facades\Cache::forget('import_progress_' . $jobId . '_total');
+            \Illuminate\Support\Facades\Cache::forget('import_progress_' . $jobId . '_processed');
+            
+            // Simpan result sementara di session untuk ditampilkan setelah reload
+            if ($result['success']) {
+                session()->flash('success', $result['message']);
+            } else {
+                session()->flash('error', $result['message']);
+                if (!empty($result['errors'])) {
+                    session()->flash('import_errors', $result['errors']);
+                }
+            }
+            
+            return response()->json([
+                'status' => 'success',
+                'finished' => true,
+                'result' => $result
+            ]);
+        }
+        
+        // Baca progress
+        $total = \Illuminate\Support\Facades\Cache::get('import_progress_' . $jobId . '_total', 0);
+        $processed = \Illuminate\Support\Facades\Cache::get('import_progress_' . $jobId . '_processed', 0);
+        
+        $percentage = 0;
+        if ($total > 0) {
+            $percentage = round(($processed / $total) * 100);
+            if ($percentage > 99) $percentage = 99; // Tetap 99% sampai result ada
+        } else {
+            $percentage = 0; // Masih menyiapkan data
+        }
+        
+        return response()->json([
+            'status' => 'processing',
+            'finished' => false,
+            'total' => $total,
+            'processed' => $processed,
+            'percentage' => $percentage
+        ]);
+    }
+    
     /**
      * Reset all grades for a mata kuliah.
      */

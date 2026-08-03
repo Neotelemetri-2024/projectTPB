@@ -10,29 +10,29 @@ use Illuminate\Queue\SerializesModels;
 use App\Imports\NilaiImport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Cache;
 
 class ProcessNilaiImport implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $filePath;
-    protected $tahunAjaranMatkulId;
-    protected $dosenId;
-    protected $userId;
-
-    public $timeout = 300; // 5 menit timeout
-    public $tries = 3; // Retry 3 kali jika gagal
+    public $jobId;
+    public $filePath;
+    public $dosenId;
+    public $tahunAjaranMatkulId;
+    public $relatedClasses;
+    public $timeout = 3600;
 
     /**
      * Create a new job instance.
      */
-    public function __construct($filePath, $tahunAjaranMatkulId, $dosenId, $userId)
+    public function __construct($jobId, $filePath, $dosenId, $tahunAjaranMatkulId, $relatedClasses)
     {
+        $this->jobId = $jobId;
         $this->filePath = $filePath;
-        $this->tahunAjaranMatkulId = $tahunAjaranMatkulId;
         $this->dosenId = $dosenId;
-        $this->userId = $userId;
+        $this->tahunAjaranMatkulId = $tahunAjaranMatkulId;
+        $this->relatedClasses = $relatedClasses;
     }
 
     /**
@@ -41,63 +41,39 @@ class ProcessNilaiImport implements ShouldQueue
     public function handle()
     {
         try {
-            Log::info('Starting background import for user: ' . $this->userId);
-
+            Log::info("Starting ProcessNilaiImport for jobId: {$this->jobId}");
+            
+            // Initializing Cache
+            Cache::put('import_progress_' . $this->jobId . '_processed', 0, 3600);
+            
             // Process import
-            $import = new NilaiImport($this->tahunAjaranMatkulId, $this->dosenId);
+            $import = new NilaiImport($this->tahunAjaranMatkulId, $this->dosenId, $this->relatedClasses, $this->jobId);
             Excel::import($import, $this->filePath);
-
-            // Get results
-            $results = $import->getImportResults();
-
-            // Store results in cache/session for user to retrieve
-            $cacheKey = "import_results_{$this->userId}_{$this->tahunAjaranMatkulId}";
-            cache()->put($cacheKey, $results, now()->addHours(1));
-
-            // Clean up temporary file
-            if (Storage::exists($this->filePath)) {
-                Storage::delete($this->filePath);
-            }
-
-            Log::info('Background import completed successfully', $results);
+            
+            // The result is already cached by NilaiImport
+            Log::info("ProcessNilaiImport finished for jobId: {$this->jobId}");
 
         } catch (\Exception $e) {
             Log::error('Background import failed: ' . $e->getMessage(), [
-                'file' => $this->filePath,
-                'user_id' => $this->userId,
+                'job_id' => $this->jobId,
                 'trace' => $e->getTraceAsString()
             ]);
 
             // Store error in cache
-            $cacheKey = "import_results_{$this->userId}_{$this->tahunAjaranMatkulId}";
-            cache()->put($cacheKey, [
-                'error' => true,
-                'message' => $e->getMessage()
-            ], now()->addHours(1));
-
-            // Clean up temporary file
-            if (Storage::exists($this->filePath)) {
-                Storage::delete($this->filePath);
-            }
+            Cache::put('import_result_' . $this->jobId, [
+                'success' => false,
+                'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage(),
+                'errors' => [],
+                'total_success' => 0,
+                'total_errors' => 1
+            ], 3600);
 
             throw $e;
-        }
-    }
-
-    /**
-     * Handle a job failure.
-     */
-    public function failed(\Throwable $exception)
-    {
-        Log::error('Import job failed permanently', [
-            'file' => $this->filePath,
-            'user_id' => $this->userId,
-            'error' => $exception->getMessage()
-        ]);
-
-        // Clean up temporary file
-        if (Storage::exists($this->filePath)) {
-            Storage::delete($this->filePath);
+        } finally {
+            // Clean up temporary file
+            if (file_exists($this->filePath)) {
+                @unlink($this->filePath);
+            }
         }
     }
 }

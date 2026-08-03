@@ -169,6 +169,32 @@ class DosenController extends Controller
         }
     }
 
+    public function bulkDestroy(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:dosen,id'
+        ]);
+
+        try {
+            $dosens = Dosen::with('user')->whereIn('id', $request->ids)->get();
+            
+            foreach ($dosens as $dosen) {
+                if ($dosen->user) {
+                    $dosen->user->delete();
+                } else {
+                    $dosen->delete();
+                }
+            }
+
+            return redirect()->route('admin.dosen.index')
+                ->with('success', count($request->ids) . ' Data dosen berhasil dihapus!');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan saat menghapus data: ' . $e->getMessage());
+        }
+    }
+
     /**
      * Export template Excel untuk import dosen
      */

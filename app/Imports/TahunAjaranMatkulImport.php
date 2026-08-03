@@ -13,10 +13,15 @@ use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
 use Maatwebsite\Excel\Concerns\SkipsOnError;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\BeforeImport;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cache;
 
-class TahunAjaranMatkulImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnError
+class TahunAjaranMatkulImport implements ToModel, WithHeadingRow, WithValidation, SkipsOnError, WithChunkReading, ShouldQueue, WithEvents
 {
     private $results = [
         'success' => 0,
@@ -24,6 +29,13 @@ class TahunAjaranMatkulImport implements ToModel, WithHeadingRow, WithValidation
         'updated' => 0,
         'errors' => []
     ];
+
+    public $jobId;
+
+    public function __construct($jobId = null)
+    {
+        $this->jobId = $jobId;
+    }
 
     public function model(array $row)
     {
@@ -77,15 +89,6 @@ class TahunAjaranMatkulImport implements ToModel, WithHeadingRow, WithValidation
                 return null;
             }
 
-            if (empty($nipDosen)) {
-                $this->results['errors'][] = "NIP dosen wajib diisi";
-                return null;
-            }
-
-            if (empty($emailDosen)) {
-                $this->results['errors'][] = "Email dosen wajib diisi";
-                return null;
-            }
 
             // Validasi format tahun ajaran (YYYY - Periode atau YYYY/YYYY - Periode)
             if (!preg_match('/^(\d{4}(?:\/\d{4})?)\s*-\s*(Ganjil|Genap)$/i', $tahunAjaran, $matches)) {
@@ -102,24 +105,6 @@ class TahunAjaranMatkulImport implements ToModel, WithHeadingRow, WithValidation
                 return null;
             }
 
-            // Bersihkan NIP dari format scientific notation dan spasi
-            if (strpos($nipDosen, 'E') !== false || strpos($nipDosen, 'e') !== false) {
-                // Convert scientific notation to full number
-                $nipDosen = number_format((float)$nipDosen, 0, '', '');
-            }
-            
-            // Validasi NIP (harus 18 digit)
-            if (strlen($nipDosen) !== 18 || !is_numeric($nipDosen)) {
-                $this->results['errors'][] = "NIP {$namaDosen} harus 18 digit angka (ditemukan: " . strlen($nipDosen) . " digit)";
-                return null;
-            }
-
-            // Validasi format email - lebih fleksibel
-            $emailDosen = trim($emailDosen);
-            if (!filter_var($emailDosen, FILTER_VALIDATE_EMAIL)) {
-                $this->results['errors'][] = "Format email '{$emailDosen}' untuk dosen '{$namaDosen}' tidak valid";
-                return null;
-            }
 
             // Cari atau buat tahun ajaran
             $tahunAjaranModel = TahunAjaran::firstOrCreate(
@@ -140,12 +125,6 @@ class TahunAjaranMatkulImport implements ToModel, WithHeadingRow, WithValidation
             $nipDosenArray = array_map('trim', explode(';', $nipDosen));
             $emailDosenArray = array_map('trim', explode(';', $emailDosen));
 
-            // Validasi jumlah dosen sama
-            if (count($namaDosenArray) !== count($nipDosenArray) || count($namaDosenArray) !== count($emailDosenArray)) {
-                $this->results['errors'][] = "Jumlah nama, NIP, dan email dosen tidak sama untuk mata kuliah '{$mataKuliah}'";
-                return null;
-        }
-
             // Cari atau buat tahun ajaran mata kuliah
             $tahunAjaranMatkul = TahunAjaranMatkul::firstOrCreate([
                 'tahunAjaranId' => $tahunAjaranModel->id,
@@ -163,24 +142,40 @@ class TahunAjaranMatkulImport implements ToModel, WithHeadingRow, WithValidation
 
             // Proses setiap dosen
             foreach ($namaDosenArray as $index => $namaDosenSingle) {
-                $nipDosenSingle = $nipDosenArray[$index];
-                $emailDosenSingle = $emailDosenArray[$index];
+                if (empty($namaDosenSingle)) continue;
 
-                // Bersihkan NIP dari format scientific notation
-                if (strpos($nipDosenSingle, 'E') !== false || strpos($nipDosenSingle, 'e') !== false) {
-                    $nipDosenSingle = number_format((float)$nipDosenSingle, 0, '', '');
+                $nipDosenSingle = isset($nipDosenArray[$index]) && !empty($nipDosenArray[$index]) ? $nipDosenArray[$index] : '';
+                $emailDosenSingle = isset($emailDosenArray[$index]) && !empty($emailDosenArray[$index]) ? $emailDosenArray[$index] : '';
+                
+                $isNipGenerated = false;
+
+                if (empty($nipDosenSingle)) {
+                    // Auto-generate NIP (e.g. 20260802134703 + 4 digits = 18 digits)
+                    $nipDosenSingle = date('YmdHis') . rand(1000, 9999);
+                    $isNipGenerated = true;
+                } else {
+                    // Bersihkan NIP dari format scientific notation
+                    if (strpos($nipDosenSingle, 'E') !== false || strpos($nipDosenSingle, 'e') !== false) {
+                        $nipDosenSingle = number_format((float)$nipDosenSingle, 0, '', '');
+                    }
+                    
+                    // Validasi NIP (harus 15-20 digit)
+                    if (strlen($nipDosenSingle) < 15 || strlen($nipDosenSingle) > 20 || !is_numeric($nipDosenSingle)) {
+                        $this->results['errors'][] = "NIP {$namaDosenSingle} harus 15-20 digit angka (ditemukan: " . strlen($nipDosenSingle) . " digit)";
+                        continue;
+                    }
                 }
 
-                // Validasi NIP (harus 18 digit)
-                if (strlen($nipDosenSingle) !== 18 || !is_numeric($nipDosenSingle)) {
-                    $this->results['errors'][] = "NIP {$namaDosenSingle} harus 18 digit angka (ditemukan: " . strlen($nipDosenSingle) . " digit)";
-                    continue;
-                }
-
-                // Validasi format email
-                if (!filter_var($emailDosenSingle, FILTER_VALIDATE_EMAIL)) {
-                    $this->results['errors'][] = "Format email '{$emailDosenSingle}' untuk dosen '{$namaDosenSingle}' tidak valid";
-                    continue;
+                if (empty($emailDosenSingle)) {
+                    // Auto-generate email based on name and random number
+                    $cleanName = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $namaDosenSingle));
+                    $emailDosenSingle = $cleanName . rand(100, 999) . '@generated.com';
+                } else {
+                    // Validasi format email
+                    if (!filter_var($emailDosenSingle, FILTER_VALIDATE_EMAIL)) {
+                        $this->results['errors'][] = "Format email '{$emailDosenSingle}' untuk dosen '{$namaDosenSingle}' tidak valid";
+                        continue;
+                    }
                 }
 
                 // Cari atau buat dosen
@@ -194,11 +189,14 @@ class TahunAjaranMatkulImport implements ToModel, WithHeadingRow, WithValidation
                         continue;
                     }
 
+                    // Tentukan password (jika NIP digenerate maka "password123", jika tidak maka gunakan NIP)
+                    $password = $isNipGenerated ? 'password123' : $nipDosenSingle;
+
                     // Buat user baru
                     $user = User::create([
                         'name' => $namaDosenSingle,
                         'email' => $emailDosenSingle,
-                        'password' => Hash::make($nipDosenSingle), // Password = NIP
+                        'password' => Hash::make($password), 
                     'role' => 'dosen',
                 ]);
 
@@ -229,6 +227,10 @@ class TahunAjaranMatkulImport implements ToModel, WithHeadingRow, WithValidation
                 ]);
 
                 $this->results['success']++;
+            }
+
+            if ($this->jobId) {
+                Cache::increment('import_progress_' . $this->jobId . '_processed');
             }
 
             Log::info("TahunAjaranMatkul processed: {$mataKuliah} - {$tahunAjaran} - {$namaKelas}");
@@ -294,6 +296,29 @@ class TahunAjaranMatkulImport implements ToModel, WithHeadingRow, WithValidation
     public function getImportResults()
     {
         return $this->results;
+    }
+
+    public function chunkSize(): int
+    {
+        return 100;
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            BeforeImport::class => [$this, 'beforeImport'],
+        ];
+    }
+
+    public function beforeImport(BeforeImport $event)
+    {
+        if ($this->jobId) {
+            $totalRows = array_sum($event->reader->getTotalRows());
+            // Substract 3 for the heading rows we skip
+            $totalRows = max(0, $totalRows - 3);
+            Cache::put('import_progress_' . $this->jobId . '_total', $totalRows, 3600);
+            Cache::put('import_progress_' . $this->jobId . '_processed', 0, 3600);
+        }
     }
 
     /**

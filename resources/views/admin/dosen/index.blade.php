@@ -32,6 +32,12 @@
                     </svg>
                     Tambah Dosen
                 </a>
+                <button type="button" id="btn-bulk-delete" data-modal-target="modal-bulk-delete" data-modal-toggle="modal-bulk-delete" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center hidden">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                    Hapus Terpilih
+                </button>
                 </div>
             </div>
             
@@ -80,6 +86,9 @@
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
+                        <th class="px-6 py-3 w-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <input type="checkbox" id="selectAll" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                        </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIP</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama</th>
@@ -90,6 +99,9 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse($dosen as $dsn)
                     <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <input type="checkbox" value="{{ $dsn->id }}" class="dosen-checkbox w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $loop->iteration + ($dosen->currentPage() - 1) * $dosen->perPage() }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $dsn->nip }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $dsn->nama }}</td>
@@ -109,7 +121,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                     </svg>
                                 </a>
-                                <button type="button" data-modal-target="modal-confirm-hapus-{{ $dsn->id }}" data-modal-toggle="modal-confirm-hapus-{{ $dsn->id }}" class="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors" title="Hapus">
+                                <button type="button" data-modal-target="modal-confirm-hapus-{{ $dsn->id }}" data-modal-toggle="modal-confirm-hapus-{{ $dsn->id }}" class="text-red-600 hover:text-red-900 rounded hover:bg-red-50 transition-colors" title="Hapus">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                     </svg>
@@ -119,7 +131,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">Tidak ada data dosen</td>
+                        <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">Tidak ada data dosen</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -197,6 +209,39 @@
     </div>
 </x-import-modal>
 
+<!-- Modal Bulk Delete -->
+<div id="modal-bulk-delete" tabindex="-1" class="fixed top-0 left-0 right-0 z-50 hidden p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full flex items-center justify-center bg-gray-900/50">
+    <div class="relative w-full max-w-md max-h-full">
+        <div class="relative bg-white rounded-lg shadow">
+            <button type="button" class="absolute top-3 right-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ml-auto inline-flex justify-center items-center" data-modal-hide="modal-bulk-delete">
+                <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                </svg>
+                <span class="sr-only">Tutup modal</span>
+            </button>
+            <div class="p-6 text-center">
+                <svg class="mx-auto mb-4 text-gray-400 w-12 h-12" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                </svg>
+                <h3 class="mb-5 text-lg font-normal text-gray-500">Apakah Anda yakin ingin menghapus data dosen yang dipilih?</h3>
+                <form id="form-bulk-delete" action="{{ route('admin.dosen.bulk-destroy') ?? '#' }}" method="POST">
+                    @csrf
+                    @method('DELETE')
+                    <div id="bulk-delete-inputs"></div>
+                    <button type="submit" class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm inline-flex items-center justify-center px-5 py-2.5 text-center mr-2">
+                        <svg data-spinner class="hidden w-4 h-4 mr-2 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span data-submit-text>Ya, hapus</span>
+                    </button>
+                    <button data-modal-hide="modal-bulk-delete" type="button" class="text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10">Tidak, batal</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection 
 
 @if(session('import_errors'))
@@ -219,3 +264,62 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endif 
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const dosenCheckboxes = document.querySelectorAll('.dosen-checkbox');
+    const btnBulkDelete = document.getElementById('btn-bulk-delete');
+    const bulkDeleteInputs = document.getElementById('bulk-delete-inputs');
+
+    function updateBulkDeleteButton() {
+        const checkedCount = document.querySelectorAll('.dosen-checkbox:checked').length;
+        if (checkedCount > 0) {
+            btnBulkDelete.classList.remove('hidden');
+        } else {
+            btnBulkDelete.classList.add('hidden');
+        }
+    }
+
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            dosenCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateBulkDeleteButton();
+        });
+    }
+
+    dosenCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const allChecked = document.querySelectorAll('.dosen-checkbox:checked').length === dosenCheckboxes.length;
+            selectAllCheckbox.checked = allChecked;
+            updateBulkDeleteButton();
+        });
+    });
+
+    const formBulkDelete = document.getElementById('form-bulk-delete');
+    if (formBulkDelete) {
+        formBulkDelete.addEventListener('submit', function(e) {
+            bulkDeleteInputs.innerHTML = '';
+            document.querySelectorAll('.dosen-checkbox:checked').forEach(checkbox => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'ids[]';
+                input.value = checkbox.value;
+                bulkDeleteInputs.appendChild(input);
+            });
+            const submitBtn = formBulkDelete.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                setTimeout(() => {
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add('cursor-not-allowed', 'opacity-75');
+                    const spinner = submitBtn.querySelector('[data-spinner]');
+                    const text = submitBtn.querySelector('[data-submit-text]');
+                    if (spinner) spinner.classList.remove('hidden');
+                }, 10);
+            }
+        });
+    }
+});
+</script>

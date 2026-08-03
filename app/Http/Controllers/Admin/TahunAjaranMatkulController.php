@@ -15,6 +15,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use App\Exports\TahunAjaranMatkulTemplateExport;
 use App\Imports\TahunAjaranMatkulImport;
 
@@ -358,6 +360,43 @@ class TahunAjaranMatkulController extends Controller
         }
     }
 
+    public function bulkDestroy(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'exists:tahun_ajaran_matkul,id'
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $tahunAjaranMatkuls = TahunAjaranMatkul::whereIn('id', $request->ids)->get();
+
+            foreach ($tahunAjaranMatkuls as $tahunAjaranMatkul) {
+                // 1. Delete nilai records (if any)
+                $tahunAjaranMatkul->nilai()->delete();
+
+                // 2. Delete kelas_mahasiswa records
+                $kelasIds = $tahunAjaranMatkul->kelas->pluck('id');
+                KelasMahasiswa::whereIn('kelasId', $kelasIds)->delete();
+
+                // 3. Delete dosen_pengampu_kelas records
+                DosenPengampuKelas::whereIn('kelasId', $kelasIds)->delete();
+
+                // 4. Delete kelas records
+                $tahunAjaranMatkul->kelas()->delete();
+
+                // 5. Delete tahun_ajaran_matkul
+                $tahunAjaranMatkul->delete();
+            }
+
+            DB::commit();
+            return redirect()->route('admin.tahun-ajaran-matkul.index')->with('success', count($request->ids) . ' data berhasil dihapus.');
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->withErrors(['error' => 'Terjadi kesalahan saat menghapus data terpilih: ' . $e->getMessage()]);
+        }
+    }
+
     // Method untuk menambahkan mahasiswa ke kelas
     public function addMahasiswa(Request $request, $id)
     {
@@ -628,29 +667,51 @@ class TahunAjaranMatkulController extends Controller
         }
 
         try {
-            $import = new TahunAjaranMatkulImport();
+            $jobId = uniqid('import_');
+            Log::info('[Import] Starting import with jobId: ' . $jobId);
+            
+            $import = new TahunAjaranMatkulImport($jobId);
+            
+            // This will automatically push to the queue because the class implements ShouldQueue
             Excel::import($import, $request->file('file'));
 
-            // Get import results
-            $results = $import->getImportResults();
+            Log::info('[Import] Excel::import dispatched successfully for jobId: ' . $jobId);
 
-            $message = "Import berhasil! ";
-            $message .= "Berhasil memproses " . ($results['success'] ?? 0) . " data. ";
-
-            if (!empty($results['errors'])) {
-                $message .= "Terdapat " . count($results['errors']) . " error.";
-
-                // Store errors in session for detailed display
-                session()->flash('import_errors', $results['errors']);
-            }
-
-            return redirect()->route('admin.tahun-ajaran-matkul.index')
-                ->with('success', $message);
+            return response()->json([
+                'status' => 'success',
+                'job_id' => $jobId,
+                'message' => 'File Excel sedang diproses di latar belakang.'
+            ]);
         } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Gagal import data: ' . $e->getMessage())
-                ->withInput();
+            Log::error('[Import] Exception: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal import data: ' . $e->getMessage()
+            ], 500);
         }
+    }
+
+    public function importStatus(Request $request)
+    {
+        $jobId = $request->query('job_id');
+        
+        if (!$jobId) {
+            return response()->json(['error' => 'Job ID required'], 400);
+        }
+
+        $total = Cache::get('import_progress_' . $jobId . '_total', 0);
+        $processed = Cache::get('import_progress_' . $jobId . '_processed', 0);
+        
+        $percentage = $total > 0 ? min(100, round(($processed / $total) * 100)) : 0;
+
+        Log::info('[Import Status] jobId=' . $jobId . ', total=' . $total . ', processed=' . $processed . ', pct=' . $percentage);
+
+        return response()->json([
+            'total' => $total,
+            'processed' => $processed,
+            'percentage' => $percentage,
+            'finished' => ($total > 0 && $processed >= $total)
+        ]);
     }
 
     /**

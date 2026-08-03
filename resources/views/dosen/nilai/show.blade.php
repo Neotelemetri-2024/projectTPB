@@ -253,6 +253,18 @@
             @endif
         </div>
 
+        <!-- Progress Bar Container (Hidden by default) -->
+        <div id="import-progress-container" class="hidden px-6 py-4 border-b border-gray-200 bg-blue-50">
+            <div class="flex justify-between mb-1">
+                <span class="text-sm font-medium text-blue-700">Memproses Data Excel...</span>
+                <span id="import-progress-text" class="text-sm font-medium text-blue-700">0%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div id="import-progress-bar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+            </div>
+            <p id="import-progress-detail" class="text-xs text-blue-600 mt-2">Menginisialisasi import...</p>
+        </div>
+
         <div class="p-6">
             @if($mahasiswa->isEmpty())
             <div class="text-center py-12">
@@ -1688,9 +1700,16 @@
 
         // Handle import form submission for new modal
         const newImportForm = document.querySelector('#import-modal form');
+        const progressContainer = document.getElementById('import-progress-container');
+        const progressBar = document.getElementById('import-progress-bar');
+        const progressText = document.getElementById('import-progress-text');
+        const progressDetail = document.getElementById('import-progress-detail');
+
         if (newImportForm) {
             newImportForm.addEventListener('submit', function(e) {
-                // Get submit button
+                e.preventDefault();
+
+                const formData = new FormData(this);
                 const submitBtn = this.querySelector('#import-submit-btn');
                 const originalBtnText = submitBtn.innerHTML;
 
@@ -1701,12 +1720,114 @@
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Memproses Import...
+                Mengunggah...
             `;
 
-                // Let form submit normally - no preventDefault
-                // The page will reload after submission with flash message
+                fetch(this.action, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (response.redirected) {
+                        console.error('[Import] Request was REDIRECTED to:', response.url);
+                    }
+                    const contentType = response.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        return response.text().then(text => {
+                            throw new Error('Server mengembalikan HTML, bukan JSON. Kemungkinan redirect ke login.');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success' && data.job_id) {
+                        hideImportModal();
+                        progressContainer.classList.remove('hidden');
+                        // Scroll up to progress bar
+                        progressContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        pollImportStatus(data.job_id);
+                    } else {
+                        alert(data.message || data.error || 'Terjadi kesalahan saat memulai import.');
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalBtnText;
+                    }
+                })
+                .catch(error => {
+                    alert('Error: ' + error.message);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                });
             });
+        }
+
+        function pollImportStatus(jobId) {
+            let pollCount = 0;
+            const statusUrl = `{{ route('dosen.nilai.import-status', $tahunAjaranMatkul->id) }}?job_id=${jobId}`;
+            
+            const interval = setInterval(() => {
+                pollCount++;
+                
+                fetch(statusUrl, {
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(res => {
+                    const contentType = res.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        return res.text().then(text => {
+                            throw new Error('Polling response bukan JSON');
+                        });
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    if (data.error) {
+                        clearInterval(interval);
+                        progressDetail.innerText = 'Error: ' + data.error;
+                        return;
+                    }
+                    
+                    if (data.finished) {
+                        clearInterval(interval);
+                        progressBar.style.width = '100%';
+                        progressText.innerText = '100%';
+                        progressBar.classList.replace('bg-blue-600', 'bg-green-600');
+                        progressText.classList.replace('text-blue-700', 'text-green-700');
+                        progressDetail.classList.replace('text-gray-500', 'text-green-600');
+                        progressDetail.innerText = "Selesai! Memuat ulang halaman...";
+                        
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        const pct = data.percentage || 0;
+                        progressBar.style.width = `${pct}%`;
+                        progressText.innerText = `${pct}%`;
+                        
+                        if (data.total > 0) {
+                            progressDetail.innerText = `Memproses baris ke-${data.processed} dari ${data.total}...`;
+                        }
+                    }
+                    
+                    // Safety: stop polling after 300 attempts (7.5 minutes)
+                    if (pollCount >= 300) {
+                        clearInterval(interval);
+                        progressDetail.innerText = 'Polling dihentikan. Silakan reload halaman manual.';
+                    }
+                })
+                .catch(err => {
+                    // Don't stop polling on error, but show it
+                    progressDetail.innerText = 'Error polling: ' + err.message;
+                });
+            }, 1500);
         }
 
         // Restore edit mode state from localStorage

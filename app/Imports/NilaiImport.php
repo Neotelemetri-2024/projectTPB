@@ -14,6 +14,7 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cache;
 
 class NilaiImport implements ToCollection, WithHeadingRow
 {
@@ -31,11 +32,14 @@ class NilaiImport implements ToCollection, WithHeadingRow
         'class_changes' => [] // Track class changes
     ];
 
-    public function __construct($tahunAjaranMatkulId, $dosenId, $relatedClasses)
+    public $jobId;
+
+    public function __construct($tahunAjaranMatkulId, $dosenId, $relatedClasses, $jobId = null)
     {
         $this->tahunAjaranMatkulId = $tahunAjaranMatkulId;
         $this->dosenId = $dosenId;
         $this->relatedClasses = $relatedClasses;
+        $this->jobId = $jobId;
     }
 
     public function collection(Collection $rows)
@@ -68,6 +72,10 @@ class NilaiImport implements ToCollection, WithHeadingRow
             $dataRows = $rows->skip(2);
 
             Log::info('Data rows to process:', ['count' => $dataRows->count()]);
+            
+            if ($this->jobId) {
+                Cache::put('import_progress_' . $this->jobId . '_total', $dataRows->count(), 3600);
+            }
 
             foreach ($dataRows as $index => $row) {
                 try {
@@ -85,6 +93,10 @@ class NilaiImport implements ToCollection, WithHeadingRow
 
                     // Log error but continue processing other rows
                     Log::warning("Error processing row " . ($index + 3) . ": " . $e->getMessage());
+                }
+
+                if ($this->jobId) {
+                    Cache::increment('import_progress_' . $this->jobId . '_processed');
                 }
             }
 
@@ -119,6 +131,10 @@ class NilaiImport implements ToCollection, WithHeadingRow
             $this->results['success'] = false;
             $this->results['message'] = 'Terjadi kesalahan fatal: ' . $e->getMessage();
             Log::error('Fatal error during import: ' . $e->getMessage());
+        }
+
+        if ($this->jobId) {
+            Cache::put('import_result_' . $this->jobId, $this->results, 3600);
         }
     }
 

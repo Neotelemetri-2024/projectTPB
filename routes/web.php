@@ -61,6 +61,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/admin/dashboard', [DashboardController::class, 'adminDashboard'])->name('admin.dashboard');
 
         // Mahasiswa CRUD Routes
+        Route::delete('/admin/mahasiswa/bulk-destroy', [MahasiswaController::class, 'bulkDestroy'])->name('admin.mahasiswa.bulk-destroy');
         Route::resource('admin/mahasiswa', MahasiswaController::class)->names([
             'index' => 'admin.mahasiswa.index',
             'create' => 'admin.mahasiswa.create',
@@ -72,6 +73,7 @@ Route::middleware('auth')->group(function () {
         ]);
 
         // Dosen CRUD Routes
+        Route::delete('/admin/dosen/bulk-destroy', [DosenController::class, 'bulkDestroy'])->name('admin.dosen.bulk-destroy');
         Route::resource('admin/dosen', DosenController::class)->names([
             'index' => 'admin.dosen.index',
             'create' => 'admin.dosen.create',
@@ -95,6 +97,7 @@ Route::middleware('auth')->group(function () {
             'destroy' => 'admin.tahun-ajaran.destroy',
         ]);
 
+        Route::delete('/admin/mata-kuliah/bulk-destroy', [MataKuliahController::class, 'bulkDestroy'])->name('admin.mata-kuliah.bulk-destroy');
         Route::resource('admin/mata-kuliah', MataKuliahController::class)->names([
             'index' => 'admin.mata-kuliah.index',
             'store' => 'admin.mata-kuliah.store',
@@ -124,6 +127,14 @@ Route::middleware('auth')->group(function () {
         ]);
 
         // Tahun Ajaran Matkul Routes
+        // IMPORTANT: These specific routes MUST be before the resource route,
+        // otherwise the resource's {id} wildcard will catch them first.
+        Route::delete('/admin/tahun-ajaran-matkul/bulk-destroy', [TahunAjaranMatkulController::class, 'bulkDestroy'])->name('admin.tahun-ajaran-matkul.bulk-destroy');
+        Route::get('/admin/tahun-ajaran-matkul/export/template', [TahunAjaranMatkulController::class, 'exportTemplate'])->name('admin.tahun-ajaran-matkul.export-template');
+        Route::post('/admin/tahun-ajaran-matkul/import', [TahunAjaranMatkulController::class, 'import'])->name('admin.tahun-ajaran-matkul.import');
+        Route::get('/admin/tahun-ajaran-matkul/import-status', [TahunAjaranMatkulController::class, 'importStatus'])->name('admin.tahun-ajaran-matkul.import-status');
+        Route::post('/admin/tahun-ajaran-matkul/duplicate', [TahunAjaranMatkulController::class, 'duplicateFromPreviousYear'])->name('admin.tahun-ajaran-matkul.duplicate');
+
         Route::resource('admin/tahun-ajaran-matkul', TahunAjaranMatkulController::class)->names([
             'index' => 'admin.tahun-ajaran-matkul.index',
             'create' => 'admin.tahun-ajaran-matkul.create',
@@ -133,11 +144,6 @@ Route::middleware('auth')->group(function () {
             'update' => 'admin.tahun-ajaran-matkul.update',
             'destroy' => 'admin.tahun-ajaran-matkul.destroy',
         ]);
-
-        // Import/Export routes for tahun ajaran matkul
-        Route::get('/admin/tahun-ajaran-matkul/export/template', [TahunAjaranMatkulController::class, 'exportTemplate'])->name('admin.tahun-ajaran-matkul.export-template');
-        Route::post('/admin/tahun-ajaran-matkul/import', [TahunAjaranMatkulController::class, 'import'])->name('admin.tahun-ajaran-matkul.import');
-        Route::post('/admin/tahun-ajaran-matkul/duplicate', [TahunAjaranMatkulController::class, 'duplicateFromPreviousYear'])->name('admin.tahun-ajaran-matkul.duplicate');
 
         // Additional routes for managing students and lecturers
         Route::get('admin/tahun-ajaran-matkul/{id}/manage-mahasiswa', [TahunAjaranMatkulController::class, 'manageMahasiswa'])->name('admin.tahun-ajaran-matkul.manage-mahasiswa');

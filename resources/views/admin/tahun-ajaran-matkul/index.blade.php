@@ -22,11 +22,17 @@
                         </svg>
                         Download Template
                     </button>
-                    <button type="button" onclick="openDuplicateModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg flex items-center text-sm">
+                    <button type="button" data-modal-target="duplicate-modal" data-modal-toggle="duplicate-modal" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg flex items-center text-sm">
                         <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
                         </svg>
                         Duplicate Tahun Sebelumnya
+                    </button>
+                    <button type="button" id="btn-bulk-delete" data-modal-target="modal-bulk-delete" data-modal-toggle="modal-bulk-delete" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg flex items-center text-sm hidden">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                        Hapus Terpilih
                     </button>
                     <a href="{{ route('admin.tahun-ajaran-matkul.create') }}"
                         class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg flex items-center text-sm">
@@ -96,11 +102,26 @@
             </form>
         </div>
 
+        <!-- Progress Bar (Hidden by default) -->
+        <div id="import-progress-container" class="hidden px-6 py-4 border-b border-gray-200 bg-blue-50">
+            <div class="flex justify-between mb-1">
+                <span class="text-sm font-medium text-blue-700">Memproses Data Excel...</span>
+                <span id="import-progress-text" class="text-sm font-medium text-blue-700">0%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2.5">
+                <div id="import-progress-bar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+            </div>
+            <p id="import-progress-detail" class="text-xs text-blue-600 mt-2">Menginisialisasi import...</p>
+        </div>
+
         <!-- Table -->
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
+                        <th class="px-6 py-3 w-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <input type="checkbox" id="selectAll" class="w-4 h-4 text-amber-600 bg-gray-100 border-gray-300 rounded focus:ring-amber-500">
+                        </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tahun Ajaran</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mata Kuliah</th>
@@ -114,6 +135,9 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse($tahunAjaranMatkuls as $index => $item)
                     <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <input type="checkbox" value="{{ $item->id }}" class="item-checkbox w-4 h-4 text-amber-600 bg-gray-100 border-gray-300 rounded focus:ring-amber-500">
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $tahunAjaranMatkuls->firstItem() + $index }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {{ $item->tahunAjaran->tahun }}-{{ $item->tahunAjaran->periode }}
@@ -185,7 +209,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="px-6 py-4 text-center text-sm text-gray-500">
+                        <td colspan="9" class="px-6 py-4 text-center text-sm text-gray-500">
                             Tidak ada data tahun ajaran mata kuliah
                         </td>
                     </tr>
@@ -272,7 +296,96 @@
     </div>
 </x-form-modal>
 
+<!-- Modal Bulk Delete -->
+<div id="modal-bulk-delete" tabindex="-1" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center w-full md:inset-0 h-[calc(100%-1rem)] max-h-full" style="background: rgba(0,0,0,0.6);">
+    <div class="relative p-4 w-full max-w-md max-h-full">
+        <div class="relative bg-white rounded-lg shadow">
+            <button type="button" class="absolute top-3 end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center" data-modal-hide="modal-bulk-delete">
+                <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                </svg>
+                <span class="sr-only">Tutup modal</span>
+            </button>
+            <div class="p-4 md:p-5 text-center">
+                <svg class="mx-auto mb-4 text-gray-400 w-12 h-12" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                </svg>
+                <h3 class="mb-5 text-lg font-normal text-gray-500">Apakah Anda yakin ingin menghapus data mata kuliah terpilih?</h3>
+                <form id="form-bulk-delete" action="{{ route('admin.tahun-ajaran-matkul.bulk-destroy') }}" method="POST">
+                    @csrf
+                    @method('DELETE')
+                    <div id="bulk-delete-inputs"></div>
+                    <button type="submit" class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm inline-flex items-center justify-center px-5 py-2.5 text-center">
+                        <svg data-spinner class="hidden w-4 h-4 mr-2 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span data-submit-text>Ya, hapus</span>
+                    </button>
+                    <button data-modal-hide="modal-bulk-delete" type="button" class="py-2.5 px-5 ms-3 text-sm font-medium text-gray-900 focus:outline-none bg-white rounded-lg border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-4 focus:ring-gray-100">Batal</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+    const btnBulkDelete = document.getElementById('btn-bulk-delete');
+    const bulkDeleteInputs = document.getElementById('bulk-delete-inputs');
+
+    function updateBulkDeleteButton() {
+        const checkedCount = document.querySelectorAll('.item-checkbox:checked').length;
+        if (checkedCount > 0) {
+            btnBulkDelete.classList.remove('hidden');
+        } else {
+            btnBulkDelete.classList.add('hidden');
+        }
+    }
+
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            itemCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateBulkDeleteButton();
+        });
+    }
+
+    itemCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const allChecked = document.querySelectorAll('.item-checkbox:checked').length === itemCheckboxes.length;
+            if(selectAllCheckbox) selectAllCheckbox.checked = allChecked;
+            updateBulkDeleteButton();
+        });
+    });
+
+    const formBulkDelete = document.getElementById('form-bulk-delete');
+    if (formBulkDelete) {
+        formBulkDelete.addEventListener('submit', function(e) {
+            bulkDeleteInputs.innerHTML = '';
+            document.querySelectorAll('.item-checkbox:checked').forEach(checkbox => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'ids[]';
+                input.value = checkbox.value;
+                bulkDeleteInputs.appendChild(input);
+            });
+            const submitBtn = formBulkDelete.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                setTimeout(() => {
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add('cursor-not-allowed', 'opacity-75');
+                    const spinner = submitBtn.querySelector('[data-spinner]');
+                    const text = submitBtn.querySelector('[data-submit-text]');
+                    if (spinner) spinner.classList.remove('hidden');
+                }, 10);
+            }
+        });
+    }
+});
 </script>
 
 <script>
@@ -298,6 +411,151 @@
             tahunAjaranSelect.form.submit();
         }
     });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const importModal = document.getElementById('import-modal');
+    if (!importModal) return;
+    
+    const importForm = importModal.querySelector('form');
+    const progressContainer = document.getElementById('import-progress-container');
+    const progressBar = document.getElementById('import-progress-bar');
+    const progressText = document.getElementById('import-progress-text');
+    const progressDetail = document.getElementById('import-progress-detail');
+
+    
+    if (importForm) {
+        importForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const submitBtn = this.querySelector('button[type="submit"]');
+
+            
+            if(submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = 'Mengunggah...';
+            }
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                
+                if (response.redirected) {
+                    console.error('[Import] Request was REDIRECTED to:', response.url);
+                }
+
+                const contentType = response.headers.get('content-type');
+                
+                if (!contentType || !contentType.includes('application/json')) {
+                    return response.text().then(text => {
+                        throw new Error('Server mengembalikan HTML, bukan JSON. Kemungkinan redirect ke login.');
+                    });
+                }
+                
+                return response.json();
+            })
+            .then(data => {
+                
+                // Close modal
+                const closeBtn = importModal.querySelector('[data-modal-hide="import-modal"]');
+                if(closeBtn) closeBtn.click();
+                
+                if (data.status === 'success' && data.job_id) {
+                    progressContainer.classList.remove('hidden');
+                    pollImportStatus(data.job_id);
+                } else {
+                    alert(data.message || 'Terjadi kesalahan saat memulai import.');
+                    if(submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = 'Import';
+                    }
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error.message);
+                if(submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Import';
+                }
+            });
+        });
+    }
+    
+    function pollImportStatus(jobId) {
+        let pollCount = 0;
+        const statusUrl = `{{ route('admin.tahun-ajaran-matkul.import-status') }}?job_id=${jobId}`;
+        
+        const interval = setInterval(() => {
+            pollCount++;
+            
+            fetch(statusUrl, {
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(res => {
+                
+                const contentType = res.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    return res.text().then(text => {
+                        throw new Error('Polling response bukan JSON');
+                    });
+                }
+                
+                return res.json();
+            })
+            .then(data => {
+                
+                if (data.error) {
+                    clearInterval(interval);
+                    progressDetail.innerText = 'Error: ' + data.error;
+                    return;
+                }
+                
+                const pct = data.percentage || 0;
+                progressBar.style.width = `${pct}%`;
+                progressText.innerText = `${pct}%`;
+                
+                if (data.total > 0) {
+                    progressDetail.innerText = `Memproses ${data.processed} dari ${data.total} baris...`;
+                }
+                
+                if (data.finished) {
+                    clearInterval(interval);
+                    progressBar.classList.replace('bg-blue-600', 'bg-green-600');
+                    progressText.classList.replace('text-blue-700', 'text-green-700');
+                    progressDetail.classList.replace('text-blue-600', 'text-green-600');
+                    progressDetail.innerText = "Selesai! Memuat ulang halaman...";
+                    
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                }
+                
+                // Safety: stop polling after 200 attempts (5 minutes)
+                if (pollCount >= 200) {
+                    clearInterval(interval);
+                    progressDetail.innerText = 'Polling dihentikan. Silakan reload halaman manual.';
+                }
+            })
+            .catch(err => {
+                // Don't stop polling on error, but show it
+                progressDetail.innerText = 'Error polling: ' + err.message;
+            });
+        }, 1500);
+    }
+});
 </script>
 
 @endsection

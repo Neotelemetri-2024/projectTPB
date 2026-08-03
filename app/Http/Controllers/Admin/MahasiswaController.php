@@ -197,4 +197,30 @@ class MahasiswaController extends Controller
                 ->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
+
+    public function bulkDestroy(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:mahasiswa,id'
+        ]);
+
+        try {
+            $mahasiswas = Mahasiswa::with('user')->whereIn('id', $request->ids)->get();
+            
+            foreach ($mahasiswas as $mhs) {
+                if ($mhs->user) {
+                    $mhs->user->delete();
+                } else {
+                    $mhs->delete();
+                }
+            }
+
+            return redirect()->route('admin.mahasiswa.index')
+                ->with('success', count($request->ids) . ' Data mahasiswa berhasil dihapus!');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan saat menghapus data: ' . $e->getMessage());
+        }
+    }
 }

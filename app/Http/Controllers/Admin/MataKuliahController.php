@@ -189,6 +189,24 @@ class MataKuliahController extends Controller
         }
     }
 
+    public function bulkDestroy(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:mata_kuliah,id'
+        ]);
+
+        try {
+            MataKuliah::whereIn('id', $request->ids)->delete();
+            
+            return redirect()->route('admin.mata-kuliah.index')
+                ->with('success', count($request->ids) . ' Mata kuliah berhasil dihapus');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Terjadi kesalahan saat menghapus data: ' . $e->getMessage());
+        }
+    }
+
     /**
      * Export template Excel untuk import mata kuliah
      */

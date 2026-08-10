@@ -126,12 +126,16 @@ class TahunAjaranMatkulImport implements ToModel, WithHeadingRow, WithValidation
             $emailDosenArray = array_map('trim', explode(';', $emailDosen));
 
             // Cari atau buat tahun ajaran mata kuliah
+            // NOTE: 'semester' sengaja TIDAK dimasukkan ke kunci pencarian firstOrCreate
+            // agar tidak membuat duplikat TahunAjaranMatkul untuk mata kuliah + tahun ajaran
+            // yang sama hanya karena perbedaan semester (lihat issue duplikat TAM).
+            // Semester akan di-set hanya saat record baru dibuat.
             $tahunAjaranMatkul = TahunAjaranMatkul::firstOrCreate([
                 'tahunAjaranId' => $tahunAjaranModel->id,
                 'mataKuliahId' => $mataKuliahModel->id,
-                'semester' => $semester,
             ], [
-                'sks' => $mataKuliahModel->sks
+                'sks' => $mataKuliahModel->sks,
+                'semester' => $semester,
             ]);
 
             // Cari atau buat kelas

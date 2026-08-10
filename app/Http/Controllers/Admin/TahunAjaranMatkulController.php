@@ -68,6 +68,10 @@ class TahunAjaranMatkulController extends Controller
         $mataKuliahs = MataKuliah::all();
         $dosens = Dosen::all();
 
+        if ($request->ajax() || $request->wantsJson()) {
+            return view('admin.tahun-ajaran-matkul._table', compact('tahunAjaranMatkuls'));
+        }
+
         return view('admin.tahun-ajaran-matkul.index', compact('tahunAjaranMatkuls', 'tahunAjarans', 'mataKuliahs', 'dosens', 'selectedTahunAjaranId'));
     }
 

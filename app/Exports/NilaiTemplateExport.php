@@ -31,14 +31,20 @@ class NilaiTemplateExport implements WithMultipleSheets
         $this->tahunAjaranMatkul = TahunAjaranMatkul::with(['mataKuliah', 'tahunAjaran'])
             ->findOrFail($tahunAjaranMatkulId);
 
-        // Load komponen yang sudah ada bobot di mata kuliah ini (tidak semua komponen)
-        $this->komponen = \App\Models\Komponen::whereHas('bobot', function($query) use ($tahunAjaranMatkulId) {
-            $query->where('tahunAjaranMatkulId', $tahunAjaranMatkulId);
+        // Ambil semua TahunAjaranMatkul terkait (mata kuliah + tahun ajaran yang sama).
+        // Bisa ada lebih dari satu baris (mis. data duplikat dari import), sehingga bobot/CPMK
+        // bisa saja tersimpan pada baris yang berbeda dari $tahunAjaranMatkulId yang diakses dosen.
+        $relatedTahunAjaranMatkulIds = TahunAjaranMatkul::where('mataKuliahId', $this->tahunAjaranMatkul->mataKuliahId)
+            ->where('tahunAjaranId', $this->tahunAjaranMatkul->tahunAjaranId)
+            ->pluck('id');
+
+        // Load komponen yang sudah ada bobot di mata kuliah ini (dari semua TahunAjaranMatkul terkait)
+        $this->komponen = \App\Models\Komponen::whereHas('bobot', function($query) use ($relatedTahunAjaranMatkulIds) {
+            $query->whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds);
         })->orderBy('nama')->get();
 
         // Load semua mahasiswa dari semua kelas di mata kuliah dan tahun ajaran yang sama
-        $allTahunAjaranMatkul = \App\Models\TahunAjaranMatkul::where('mataKuliahId', $this->tahunAjaranMatkul->mataKuliahId)
-            ->where('tahunAjaranId', $this->tahunAjaranMatkul->tahunAjaranId)
+        $allTahunAjaranMatkul = \App\Models\TahunAjaranMatkul::whereIn('id', $relatedTahunAjaranMatkulIds)
             ->with('kelas.kelasMahasiswa.mahasiswa')
             ->get();
 

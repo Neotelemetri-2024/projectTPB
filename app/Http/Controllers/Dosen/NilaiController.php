@@ -195,8 +195,12 @@ class NilaiController extends Controller
             ->whereIn('tahunAjaranMatkulId', $mataKuliahClasses->pluck('id'))
             ->get();
 
-        // Check if penilaian is ready (total bobot = 100%)
-        $totalBobotKeseluruhan = $bobotData->sum('bobot');
+        // Check if penilaian is ready (total bobot = 100%).
+        // Bobot direplikasi ke setiap TahunAjaranMatkul terkait, jadi ambil dari satu
+        // TAM representatif saja agar tidak terjadi penggandaan (mis. 100% jadi 200%).
+        $bobotDataGrouped = $bobotData->groupBy('tahunAjaranMatkulId');
+        $representativeBobotData = $bobotDataGrouped->get($id) ?? $bobotDataGrouped->first() ?? collect();
+        $totalBobotKeseluruhan = $representativeBobotData->sum('bobot');
         $isPenilaianSiap = $totalBobotKeseluruhan == 100;
 
         // Check if there are CPMK for this mata kuliah
@@ -365,11 +369,17 @@ class NilaiController extends Controller
             ->get()
             ->keyBy('mahasiswaId');
 
-        // Hitung total bobot setiap komponen penilaian (untuk display) - dari semua kelas yang terkait
+        // Hitung total bobot setiap komponen penilaian (untuk display).
+        // Bobot direplikasi ke SETIAP TahunAjaranMatkul terkait (lihat BobotKomponenController::bulkStore),
+        // jadi harus diambil dari SATU TahunAjaranMatkul representatif saja, bukan dijumlahkan lintas TAM
+        // (kalau dijumlahkan akan terjadi penggandaan, mis. 100% jadi 200% jika ada 2 TAM terkait).
         $totalBobotKomponen = [];
-        $allBobot = Bobot::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)->get();
+        $allBobotGrouped = Bobot::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
+            ->get()
+            ->groupBy('tahunAjaranMatkulId');
+        $representativeBobotForDisplay = $allBobotGrouped->get($id) ?? $allBobotGrouped->first() ?? collect();
 
-        foreach ($allBobot as $bobot) {
+        foreach ($representativeBobotForDisplay as $bobot) {
             $totalBobotKomponen[$bobot->komponenId] = ($totalBobotKomponen[$bobot->komponenId] ?? 0) + $bobot->bobot;
         }
 
@@ -433,19 +443,35 @@ class NilaiController extends Controller
             })
             ->pluck('id');
 
-        // Cek apakah ada CPMK yang diatur (dari semua kelas terkait)
-        $cpmkCount = CpmkMatKul::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)->count();
+        // Cek apakah ada CPMK yang diatur (unik berdasarkan cpmkId, karena CPMK yang sama
+        // bisa saja tercatat di beberapa TahunAjaranMatkul terkait/duplikat)
+        $cpmkCount = CpmkMatKul::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
+            ->distinct('cpmkId')
+            ->count('cpmkId');
+
+        // Bobot komponen sengaja direplikasi ke SETIAP TahunAjaranMatkul terkait (lihat
+        // BobotKomponenController::bulkStore) agar tiap kelas punya bobot yang sama.
+        // Karena itu, total bobot TIDAK BOLEH dijumlahkan lintas TahunAjaranMatkul (akan
+        // menyebabkan penggandaan, mis. 100% + 100% = 200% jika ada 2 TahunAjaranMatkul terkait).
+        // Kelompokkan dulu per TahunAjaranMatkul, lalu ambil satu kelompok sebagai representasi.
+        $bobotPerTam = Bobot::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
+            ->get()
+            ->groupBy('tahunAjaranMatkulId');
+
+        // Prioritaskan data dari TahunAjaranMatkul yang sedang dibuka, jika ada.
+        // Jika tidak ada, gunakan kelompok manapun yang sudah memiliki bobot.
+        $representativeBobot = $bobotPerTam->get($tahunAjaranMatkulId) ?? $bobotPerTam->first() ?? collect();
 
         // Hitung total bobot CPMK: jumlah seluruh bobot CPMK-Komponen dari tabel bobot (bukan dari cpmk_mat_kul)
-        $totalBobotCpmk = Bobot::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
+        $totalBobotCpmk = $representativeBobot
             ->groupBy('cpmkId')
-            ->selectRaw('cpmkId, SUM(bobot) as total')
-            ->get()
-            ->sum('total');
+            ->map(function ($group) {
+                return $group->sum('bobot');
+            })
+            ->sum();
 
-        // Total bobot komponen (jumlah semua bobot pada tabel bobot untuk kelas terkait)
-        $totalBobotKomponen = Bobot::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
-            ->sum('bobot');
+        // Total bobot komponen (jumlah bobot pada tabel bobot untuk satu kelas representatif)
+        $totalBobotKomponen = $representativeBobot->sum('bobot');
 
         return [
             'hasCpmk' => $cpmkCount > 0,

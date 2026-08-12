@@ -17,18 +17,23 @@
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
 
-<body class="bg-gradient-to-br from-amber-50 to-yellow-100 min-h-screen">
-    <div class="flex flex-col items-center justify-center px-6 py-8 mx-auto min-h-screen">
-        <!-- Logo & Brand -->
-        <div class="flex items-center mb-8 text-3xl font-bold text-amber-700">
-            <span>Portal TPB</span>
+<body class="bg-white min-h-screen">
+    <div class="flex min-h-screen">
+        <!-- Left Side - Image -->
+        <div class="hidden lg:block lg:w-1/2 relative">
+            <img src="/images/rektorat.jpg" alt="Gedung Rektorat Universitas Andalas" class="absolute inset-0 w-full h-full object-cover">
         </div>
 
-        <!-- Login Card -->
-        <div class="w-full bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 md:mt-0 sm:max-w-md xl:p-0">
-            <div class="p-8 space-y-6">
+        <!-- Right Side - Login Form -->
+        <div class="w-full lg:w-1/2 flex flex-col items-center justify-center px-6 py-12 sm:px-12 lg:px-16">
+            <div class="w-full max-w-sm">
+                <!-- Logo & Brand -->
+                <div class="flex items-center justify-center mb-8 text-3xl font-bold text-amber-700">
+                    <span>Portal TPB</span>
+                </div>
+
                 <!-- Header -->
-                <div class="text-center">
+                <div class="mb-8 text-center">
                     <h1 class="text-2xl font-bold text-gray-900">
                         Selamat Datang Kembali
                     </h1>
@@ -39,7 +44,7 @@
 
                 <!-- Session Status -->
                 @if (session('status'))
-                <div class="p-4 text-sm text-amber-800 rounded-xl bg-amber-50 border border-amber-200" role="alert">
+                <div class="mb-6 p-4 text-sm text-amber-800 rounded-xl bg-amber-50 border border-amber-200" role="alert">
                     {{ session('status') }}
                 </div>
                 @endif
@@ -128,14 +133,14 @@
                         </p>
                     </div>
                 </form>
-            </div>
-        </div>
 
-        <!-- Footer -->
-        <div class="mt-8 text-center">
-            <p class="text-sm text-gray-500">
-                © {{ date('Y') }} Portal TPB by Neo Telemetri. All Rights Reserved.
-            </p>
+                <!-- Footer -->
+                <div class="mt-8 text-center">
+                    <p class="text-sm text-gray-500">
+                        © {{ date('Y') }} Portal TPB by Neo Telemetri. All Rights Reserved.
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 

@@ -1,43 +1,39 @@
 @extends('layouts.main')
 
 @section('content')
-<div class="p-6" x-data="{ selectedDetailIdx: null }">
-    <div class="bg-white rounded-lg shadow-md">
-        <div class="p-6 border-b border-gray-200">
-            <div>
-                <h2 class="text-lg font-semibold text-gray-900">Transkrip Mahasiswa</h2>
-                <p class="text-gray-600 mt-1 text-sm">Halaman ini menampilkan daftar nilai mata kuliah Anda per semester.</p>
-            </div>
+<div class="p-4 md:p-6 space-y-4" x-data="{ selectedDetailIdx: null }">
+    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-200">
+            <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Transkrip Mahasiswa</h1>
+            <p class="text-sm text-gray-500 mt-1">Daftar nilai mata kuliah per semester.</p>
         </div>
 
         <!-- Informasi Mahasiswa -->
-        <div class="p-6 border-b border-gray-200">
+        <div class="px-5 py-4 border-b border-gray-200">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Informasi Mahasiswa -->
                 <div>
-                    <h3 class="text-base font-semibold text-gray-900 mb-4">Informasi Mahasiswa</h3>
-                    <div class="space-y-3">
+                    <h3 class="text-base font-semibold text-gray-900 mb-3">Informasi Mahasiswa</h3>
+                    <div class="space-y-2">
                         <div class="flex justify-between">
-                            <span class="text-sm font-medium text-gray-600">No. BP</span>
+                            <span class="text-sm font-medium text-gray-500">No. BP</span>
                             <span class="text-sm text-gray-900">{{ $mahasiswa->nim ?? '-' }}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-sm font-medium text-gray-600">Nama Mahasiswa</span>
+                            <span class="text-sm font-medium text-gray-500">Nama Mahasiswa</span>
                             <span class="text-sm text-gray-900">{{ $mahasiswa->nama ?? '-' }}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-sm font-medium text-gray-600">Program Studi</span>
-                            <span class="text-sm text-gray-900">S1 TENIK PERTANIAN DAN BIOSISTEM</span>
+                            <span class="text-sm font-medium text-gray-500">Program Studi</span>
+                            <span class="text-sm text-gray-900">Teknik Pertanian dan Biosistem</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Prestasi Akademik -->
                 <div>
-                    <h3 class="text-base font-semibold text-gray-900 mb-4">Prestasi Akademik</h3>
-                    <div class="space-y-3">
+                    <h3 class="text-base font-semibold text-gray-900 mb-3">Prestasi Akademik</h3>
+                    <div class="space-y-2">
                         <div class="flex justify-between">
-                            <span class="text-sm font-medium text-gray-600">
+                            <span class="text-sm font-medium text-gray-500">
                                 @if($periodeTerpilih === 'all')
                                     Total SKS diambil
                                 @else
@@ -47,7 +43,7 @@
                             <span class="text-sm text-gray-900">{{ collect($matkulDiambil)->sum('sks') }}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-sm font-medium text-gray-600">
+                            <span class="text-sm font-medium text-gray-500">
                                 @if($periodeTerpilih === 'all')
                                     Total Matakuliah diambil
                                 @else
@@ -57,14 +53,14 @@
                             <span class="text-sm text-gray-900">{{ count($matkulDiambil) }}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-sm font-medium text-gray-600">
+                            <span class="text-sm font-medium text-gray-500">
                                 @if($periodeTerpilih === 'all')
                                     IPK (Indeks Prestasi Kumulatif)
                                 @else
                                     IP Semester
                                 @endif
                             </span>
-                            <span class="text-sm text-gray-900">
+                            <span class="text-sm font-semibold text-gray-900">
                                 @php
                                     $totalBobot = 0;
                                     $totalSks = 0;
@@ -98,26 +94,26 @@
         </div>
 
         <!-- Filter Periode Semester -->
-        <div class="p-6 border-b border-gray-200">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <form method="GET" action="" class="flex flex-col sm:flex-row sm:items-center gap-4">
-                    <label for="periode_id" class="text-sm font-medium text-gray-700">Pilih Periode Semester:</label>
-                    <select name="periode_id" id="periode_id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full sm:w-64 p-2.5" onchange="this.form.submit()">
-                        @foreach($periodes as $periode)
-                            <option value="{{ $periode['id'] }}" {{ $periodeTerpilih == $periode['id'] ? 'selected' : '' }}>{{ $periode['label'] }}</option>
-                        @endforeach
-                    </select>
+        <div class="px-5 py-4 border-b border-gray-200">
+            <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+                <form method="GET" action="" class="flex flex-col sm:flex-row sm:items-end gap-2">
+                    <div>
+                        <label for="periode_id" class="block text-[11px] font-medium text-gray-500 mb-1">Periode Semester</label>
+                        <select name="periode_id" id="periode_id" class="border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-amber-500 focus:border-amber-500 block w-full sm:w-64 p-2" onchange="this.form.submit()">
+                            @foreach($periodes as $periode)
+                                <option value="{{ $periode['id'] }}" {{ $periodeTerpilih == $periode['id'] ? 'selected' : '' }}>{{ $periode['label'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </form>
                 
-                <div class="flex gap-2">
-                    <a href="{{ route('mahasiswa.transkrip.export-pdf') }}" 
-                       class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        Export PDF
-                    </a>
-                </div>
+                <a href="{{ route('mahasiswa.transkrip.export-pdf') }}" 
+                   class="inline-flex items-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-md">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Export PDF
+                </a>
             </div>
         </div>
 
@@ -125,42 +121,38 @@
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">No</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Semester</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Kode Matkul</th>
-                        <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama Matkul</th>
-                        <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">SKS</th>
-                        <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Grade</th>
-                        <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Aksi</th>
+                        <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">No</th>
+                        <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Semester</th>
+                        <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Kode Matkul</th>
+                        <th class="px-5 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Nama Matkul</th>
+                        <th class="px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-gray-500">SKS</th>
+                        <th class="px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-gray-500">Grade</th>
+                        <th class="px-5 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-gray-500">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse($matkulDiambil as $idx => $mk)
                     <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $mk['no'] }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-                                {{ $mk['semester'] ?? '-' }}
-                            </span>
+                        <td class="px-5 py-3 whitespace-nowrap text-sm text-gray-900">{{ $mk['no'] }}</td>
+                        <td class="px-5 py-3 whitespace-nowrap text-sm text-gray-700">
+                            {{ $mk['semester'] ?? '-' }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $mk['kode'] }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $mk['nama'] }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">{{ $mk['sks'] }} SKS</span>
+                        <td class="px-5 py-3 whitespace-nowrap text-sm text-gray-900">{{ $mk['kode'] }}</td>
+                        <td class="px-5 py-3 whitespace-nowrap text-sm text-gray-900">{{ $mk['nama'] }}</td>
+                        <td class="px-5 py-3 whitespace-nowrap text-center text-sm text-gray-700">
+                            {{ $mk['sks'] }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                @if($mk['grade'] === 'A' || $mk['grade'] === 'A-') bg-purple-100 text-purple-700
-                                @elseif(Str::startsWith($mk['grade'], 'B')) bg-blue-100 text-blue-700
-                                @elseif(Str::startsWith($mk['grade'], 'C')) bg-yellow-100 text-yellow-800
-                                @elseif($mk['grade'] === 'D') bg-orange-100 text-orange-800
-                                @elseif($mk['grade'] === 'E') bg-red-100 text-red-800
-                                @else bg-gray-100 text-gray-800 @endif">
-                                {{ $mk['grade'] ?? '-' }}
-                            </span>
+                        <td class="px-5 py-3 whitespace-nowrap text-center text-sm font-semibold
+                            @if($mk['grade'] === 'A' || $mk['grade'] === 'A-') text-emerald-700
+                            @elseif(Str::startsWith($mk['grade'], 'B')) text-gray-900
+                            @elseif(Str::startsWith($mk['grade'], 'C')) text-amber-700
+                            @elseif($mk['grade'] === 'D') text-orange-700
+                            @elseif($mk['grade'] === 'E') text-red-700
+                            @else text-gray-500 @endif">
+                            {{ $mk['grade'] ?? '-' }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                            <button type="button" title="Lihat Detail" class="text-blue-600 hover:text-blue-900 inline-flex items-center justify-center" data-modal-toggle="modal-detail-nilai" @click="selectedDetailIdx = {{ $idx }}">
+                        <td class="px-5 py-3 whitespace-nowrap text-center text-sm font-medium">
+                            <button type="button" title="Lihat Detail" class="inline-flex items-center justify-center bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1.5 rounded-md text-xs font-medium" data-modal-toggle="modal-detail-nilai" @click="selectedDetailIdx = {{ $idx }}">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -170,7 +162,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="px-6 py-4 text-center text-gray-500">Belum ada mata kuliah diambil.</td>
+                        <td colspan="7" class="px-5 py-8 text-center text-gray-500">Belum ada mata kuliah diambil.</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -187,9 +179,9 @@
                             <table class="min-w-full divide-y divide-gray-200 mb-4">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">No</th>
-                                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Komponen</th>
-                                        <th class="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Nilai</th>
+                                        <th class="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">No</th>
+                                        <th class="px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Komponen</th>
+                                        <th class="px-4 py-2 text-center text-[11px] font-semibold uppercase tracking-wide text-gray-500">Nilai</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">

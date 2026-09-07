@@ -13,7 +13,7 @@
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
     <!-- Favicon -->
-    <link href="/images/logo-unand.png" rel="shortcut icon" type="image/png">
+    <link href="/images/favicon.png" rel="shortcut icon" type="image/png">
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -50,9 +50,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Flowbite JavaScript -->
-    <script src="https://cdn.jsdelivr.net/npm/flowbite@3.1.2/dist/flowbite.min.js"></script>
 </body>
 
 </html>

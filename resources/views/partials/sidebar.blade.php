@@ -45,7 +45,7 @@
                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
                 </svg>
              </button>
-             <ul id="dropdown-master" class="py-2 space-y-1 {{ request()->routeIs('admin.tahun-ajaran.*', 'admin.mata-kuliah.*', 'admin.cpl.*', 'admin.komponen.*', 'admin.tahun-ajaran-matkul.*') ? '' : 'hidden' }}">
+             <ul id="dropdown-master" class="py-2 space-y-1 {{ request()->routeIs('admin.tahun-ajaran.*', 'admin.mata-kuliah.*', 'admin.cpl.index', 'admin.cpl.create', 'admin.cpl.edit', 'admin.komponen.*') ? '' : 'hidden' }}">
                 <li>
                    <a href="{{ route('admin.tahun-ajaran.index') }}" class="flex items-center w-full p-2 rounded-lg pl-11 transition duration-75 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('admin.tahun-ajaran.*') ? 'bg-amber-100 text-amber-700' : '' }}">
 
@@ -59,14 +59,12 @@
                    </a>
                 </li>
                 <li>
-                   <a href="{{ route('admin.cpl.index') }}" class="flex items-center w-full p-2 rounded-lg pl-11 transition duration-75 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('admin.cpl.*') ? 'bg-amber-100 text-amber-700' : '' }}">
-
+                   <a href="{{ route('admin.cpl.index') }}" class="flex items-center w-full p-2 rounded-lg pl-11 transition duration-75 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('admin.cpl.index', 'admin.cpl.create', 'admin.cpl.edit') ? 'bg-amber-100 text-amber-700' : '' }}">
                       CPL
                    </a>
                 </li>
                 <li>
                    <a href="{{ route('admin.komponen.index') }}" class="flex items-center w-full p-2 rounded-lg pl-11 transition duration-75 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('admin.komponen.*') ? 'bg-amber-100 text-amber-700' : '' }}">
-
                       Komponen
                    </a>
                 </li>
@@ -76,12 +74,37 @@
 
           <li>
             <a href="{{ route('admin.tahun-ajaran-matkul.index') }}" class="flex items-center p-2 rounded-lg group transition-colors duration-200 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('admin.tahun-ajaran-matkul.*') ? 'bg-amber-100 text-amber-700' : '' }}">
-               <svg class="w-5 h-5 transition duration-75 text-gray-500 group-hover:text-gray-900 {{ request()->routeIs('admin.dosen.*') ? 'text-amber-700' : '' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+               <svg class="w-5 h-5 transition duration-75 text-gray-500 group-hover:text-gray-900 {{ request()->routeIs('admin.tahun-ajaran-matkul.*') ? 'text-amber-700' : '' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
                </svg>
                <span class="ml-3">Mata Kuliah Per TA</span>
             </a>
          </li>
+          <li>
+             <a href="{{ route('admin.cpl-mapping.index') }}" class="flex items-center p-2 rounded-lg group transition-colors duration-200 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('admin.cpl-mapping.*') ? 'bg-amber-100 text-amber-700' : '' }}">
+                <svg class="w-5 h-5 transition duration-75 text-gray-500 group-hover:text-gray-900 {{ request()->routeIs('admin.cpl-mapping.*') ? 'text-amber-700' : '' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                   <path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0112 18.375m9.75-12.75c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125m19.5 0v1.5c0 .621-.504 1.125-1.125 1.125M2.25 5.625v1.5c0 .621.504 1.125 1.125 1.125m0 0h17.25m-17.25 0h7.5c.621 0 1.125.504 1.125 1.125M3.375 8.25c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m17.25-3.75h-7.5c-.621 0-1.125.504-1.125 1.125m8.625-1.125c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h7.5m9.75 0h-.375" />
+                </svg>
+                <span class="ml-3">Mapping CPL×CPMK</span>
+             </a>
+          </li>
+          <li>
+             <a href="{{ route('admin.cpl-laporan.index') }}" class="flex items-center p-2 rounded-lg group transition-colors duration-200 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('admin.cpl-laporan.*') ? 'bg-amber-100 text-amber-700' : '' }}">
+                <svg class="w-5 h-5 transition duration-75 text-gray-500 group-hover:text-gray-900 {{ request()->routeIs('admin.cpl-laporan.*') ? 'text-amber-700' : '' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                   <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                </svg>
+                <span class="ml-3">Laporan CPL</span>
+             </a>
+          </li>
+          <li>
+             <a href="{{ route('admin.cpl-achievement.index') }}" class="flex items-center p-2 rounded-lg group transition-colors duration-200 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('admin.cpl-achievement.*') ? 'bg-amber-100 text-amber-700' : '' }}">
+                <svg class="w-5 h-5 transition duration-75 text-gray-500 group-hover:text-gray-900 {{ request()->routeIs('admin.cpl-achievement.*') ? 'text-amber-700' : '' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
+                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                </svg>
+                <span class="ml-3">Ketercapaian CPL</span>
+             </a>
+          </li>
           @endif
           @if (auth()->user()->role === 'dosen')
              <li>
@@ -119,6 +142,22 @@
                 </a>
              </li>
              <li>
+                <a href="{{ route('pimpinan.cpl-mapping.index') }}" class="flex items-center p-2 rounded-lg group transition-colors duration-200 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('pimpinan.cpl-mapping.*') ? 'bg-amber-100 text-amber-700' : '' }}">
+                   <svg class="w-5 h-5 transition duration-75 text-gray-500 group-hover:text-gray-900 {{ request()->routeIs('pimpinan.cpl-mapping.*') ? 'text-amber-700' : '' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0112 18.375m9.75-12.75c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125m19.5 0v1.5c0 .621-.504 1.125-1.125 1.125M2.25 5.625v1.5c0 .621.504 1.125 1.125 1.125m0 0h17.25m-17.25 0h7.5c.621 0 1.125.504 1.125 1.125M3.375 8.25c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m17.25-3.75h-7.5c-.621 0-1.125.504-1.125 1.125m8.625-1.125c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h7.5m9.75 0h-.375" />
+                   </svg>
+                   <span class="ml-3">Mapping CPL×CPMK</span>
+                </a>
+             </li>
+             <li>
+                <a href="{{ route('pimpinan.cpl-laporan.index') }}" class="flex items-center p-2 rounded-lg group transition-colors duration-200 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('pimpinan.cpl-laporan.*') ? 'bg-amber-100 text-amber-700' : '' }}">
+                   <svg class="w-5 h-5 transition duration-75 text-gray-500 group-hover:text-gray-900 {{ request()->routeIs('pimpinan.cpl-laporan.*') ? 'text-amber-700' : '' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                   </svg>
+                   <span class="ml-3">Laporan CPL</span>
+                </a>
+             </li>
+             <li>
                 <a href="{{ route('pimpinan.cpl-achievement.index') }}" class="flex items-center p-2 rounded-lg group transition-colors duration-200 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('pimpinan.cpl-achievement.*') ? 'bg-amber-100 text-amber-700' : '' }}">
                    <svg class="w-5 h-5 transition duration-75 text-gray-500 group-hover:text-gray-900 {{ request()->routeIs('pimpinan.cpl-achievement.*') ? 'text-amber-700' : '' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
@@ -143,7 +182,7 @@
                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
                 </svg>
-                <span class="ml-3">Capaian CPL & CPMK</span>
+                <span class="ml-3">Surat Capaian Pembelajaran</span>
              </a>
           </li>
           @endif

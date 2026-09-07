@@ -21,17 +21,16 @@
 @endphp
 
 @section('content')
-<div class="p-6">
-    <div class="bg-white rounded-lg shadow-md">
-        <div class="p-6 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-gray-900">Edit Mata Kuliah Tahun Ajaran</h2>
-            </div>
+<div class="p-4 md:p-6 space-y-4">
+    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-200">
+            <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Edit Mata Kuliah Tahun Ajaran</h1>
+            <p class="text-sm text-gray-500 mt-1">Perbarui informasi mata kuliah, dosen, dan kelas.</p>
         </div>
 
-        <div class="p-6">
+        <div class="p-5 space-y-4">
             @if($errors->any())
-            <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md" role="alert">
                 <ul class="list-disc list-inside">
                     @foreach($errors->all() as $error)
                     <li>{{ $error }}</li>
@@ -40,19 +39,19 @@
             </div>
             @endif
 
-            <form action="{{ route('admin.tahun-ajaran-matkul.update', $tahunAjaranMatkul->id) }}" method="POST" class="space-y-6" id="editForm">
+            <form action="{{ route('admin.tahun-ajaran-matkul.update', $tahunAjaranMatkul->id) }}" method="POST" class="space-y-4" id="editForm">
                 @csrf
                 @method('PUT')
 
                 {{-- ============================== --}}
                 {{-- STEP 1: Informasi Mata Kuliah --}}
                 {{-- ============================== --}}
-                <div>
+                <div class="bg-white border border-gray-200 rounded-xl p-4">
                     <h3 class="text-sm font-semibold text-gray-800 mb-3 flex items-center">
                         <span class="flex items-center justify-center w-6 h-6 bg-amber-600 text-white text-xs font-bold rounded-full mr-2">1</span>
                         Informasi Mata Kuliah
                     </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label for="tahunAjaranId" class="block text-sm font-medium text-gray-700 mb-2">
                                 Tahun Ajaran <span class="text-red-500">*</span>
@@ -93,7 +92,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                     </svg>
                                 </button>
-                                <div id="custom-mk-panel" class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg hidden">
+                                <div id="custom-mk-panel" class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md hidden">
                                     <div class="p-2 border-b border-gray-100">
                                         <input id="custom-mk-search" type="text" class="w-full bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-amber-500 focus:border-amber-500 p-2" placeholder="Cari mata kuliah...">
                                     </div>
@@ -129,17 +128,17 @@
                 {{-- ============================== --}}
                 {{-- STEP 2: Dosen Pengampu --}}
                 {{-- ============================== --}}
-                <div>
+                <div class="bg-white border border-gray-200 rounded-xl p-4">
                     <h3 class="text-sm font-semibold text-gray-800 mb-3 flex items-center">
                         <span class="flex items-center justify-center w-6 h-6 bg-amber-600 text-white text-xs font-bold rounded-full mr-2">2</span>
                         Dosen Pengampu
                     </h3>
-                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <div>
                         {{-- Radio options --}}
                         <div class="mb-4">
                             <p class="text-sm text-gray-600 mb-3">Bagaimana pengaturan dosen pengampu untuk kelas?</p>
                             <div class="flex flex-col sm:flex-row gap-3">
-                                <label class="flex items-center px-4 py-3 bg-white border border-gray-200 rounded-lg cursor-pointer hover:bg-amber-50 hover:border-amber-300 transition-colors has-[:checked]:bg-amber-50 has-[:checked]:border-amber-500 {{ $isSameDosen ? 'bg-amber-50 border-amber-500' : '' }}" id="label-dosen-same">
+                                <label class="flex items-center px-4 py-3 bg-white border border-gray-200 rounded-md cursor-pointer hover:bg-amber-50 hover:border-amber-300 transition-colors has-[:checked]:bg-amber-50 has-[:checked]:border-amber-500 {{ $isSameDosen ? 'bg-amber-50 border-amber-500' : '' }}" id="label-dosen-same">
                                     <input type="radio"
                                         name="dosenType"
                                         value="same"
@@ -151,7 +150,7 @@
                                         <p class="text-xs text-gray-500">Semua kelas diampu oleh dosen yang sama</p>
                                     </div>
                                 </label>
-                                <label class="flex items-center px-4 py-3 bg-white border border-gray-200 rounded-lg cursor-pointer hover:bg-amber-50 hover:border-amber-300 transition-colors has-[:checked]:bg-amber-50 has-[:checked]:border-amber-500 {{ !$isSameDosen ? 'bg-amber-50 border-amber-500' : '' }}" id="label-dosen-different">
+                                <label class="flex items-center px-4 py-3 bg-white border border-gray-200 rounded-md cursor-pointer hover:bg-amber-50 hover:border-amber-300 transition-colors has-[:checked]:bg-amber-50 has-[:checked]:border-amber-500 {{ !$isSameDosen ? 'bg-amber-50 border-amber-500' : '' }}" id="label-dosen-different">
                                     <input type="radio"
                                         name="dosenType"
                                         value="different"
@@ -177,11 +176,11 @@
 
                         {{-- Info when "different" selected --}}
                         <div id="dosen-different-section" class="{{ !$isSameDosen ? '' : 'hidden' }}">
-                            <div class="flex items-center p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                <svg class="w-4 h-4 text-blue-600 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="flex items-center p-3 bg-gray-50 border border-gray-200 rounded-md">
+                                <svg class="w-4 h-4 text-gray-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
-                                <p class="text-sm text-blue-700">Pilih dosen untuk setiap kelas pada bagian input kelas di bawah.</p>
+                                <p class="text-sm text-gray-700">Pilih dosen untuk setiap kelas pada bagian input kelas di bawah.</p>
                             </div>
                         </div>
 
@@ -197,14 +196,14 @@
                 {{-- ============================== --}}
                 {{-- STEP 3: Input Kelas --}}
                 {{-- ============================== --}}
-                <div id="step-kelas-wrapper">
+                <div id="step-kelas-wrapper" class="bg-white border border-gray-200 rounded-xl p-4">
                     <h3 class="text-sm font-semibold text-gray-800 mb-3 flex items-center">
                         <span class="flex items-center justify-center w-6 h-6 bg-amber-600 text-white text-xs font-bold rounded-full mr-2">3</span>
                         Input Kelas
                     </h3>
-                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <div>
                         <div id="kelas-container" class="space-y-3"></div>
-                        <button type="button" id="add-kelas-btn" class="mt-3 inline-flex items-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors">
+                        <button type="button" id="add-kelas-btn" class="mt-3 inline-flex items-center px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm rounded-md transition-colors">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                             </svg>
@@ -214,16 +213,16 @@
                     </div>
                 </div>
 
-                <div class="flex justify-between pt-6 border-t border-gray-200">
+                <div class="flex justify-between pt-4 border-t border-gray-200">
                     <a href="{{ request('back_url', route('admin.tahun-ajaran-matkul.index')) }}"
-                        class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 flex items-center">
+                        class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-md flex items-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                         </svg>
                         Kembali
                     </a>
                     <button type="submit"
-                        class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 flex items-center">
+                        class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-md flex items-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                         </svg>
@@ -348,7 +347,7 @@
             button.appendChild(chevron);
 
             const panel = document.createElement('div');
-            panel.className = 'absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg hidden';
+            panel.className = 'absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md hidden';
 
             const searchWrap = document.createElement('div');
             searchWrap.className = 'p-2 border-b border-gray-100';
@@ -440,7 +439,7 @@
                 const dosen = dosenList.find(d => String(d.id) === String(id));
                 if (!dosen) return;
                 const tag = document.createElement('span');
-                tag.className = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800 border border-amber-200';
+                tag.className = 'inline-flex items-center px-2.5 py-1 rounded-md text-sm font-medium text-amber-800 border border-amber-200 bg-amber-50';
                 tag.innerHTML = `
                     <svg class="w-3.5 h-3.5 mr-1.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
@@ -450,7 +449,7 @@
                 if (typeof removeCallback === 'function') {
                     const closeBtn = document.createElement('button');
                     closeBtn.type = 'button';
-                    closeBtn.className = 'ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full text-amber-600 hover:bg-amber-200 hover:text-amber-900 transition-colors';
+                    closeBtn.className = 'ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded text-amber-600 hover:bg-amber-100 hover:text-amber-900 transition-colors';
                     closeBtn.innerHTML = `<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
                     closeBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -530,7 +529,7 @@
             kelasCount++;
             const idx = kelasCount;
             const item = document.createElement('div');
-            item.className = 'kelas-item border border-gray-200 rounded-lg p-4 bg-white';
+            item.className = 'kelas-item border border-gray-200 rounded-md p-3 bg-white';
             item.dataset.index = idx;
 
             if (currentDosenOption === 'same') {

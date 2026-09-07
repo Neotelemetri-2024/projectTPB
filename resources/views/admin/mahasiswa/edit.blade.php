@@ -3,10 +3,10 @@
 @section('title', 'Edit Mahasiswa')
 
 @section('content')
-<div class="p-6">
+<div class="p-4 md:p-6 space-y-4">
 
 
-    <div class="bg-white rounded-lg shadow-md">
+    <div class="bg-white border border-gray-200 rounded-xl">
         <div class="p-6 border-b border-gray-200">
             <h2 class="text-lg font-semibold text-gray-900">Form Edit Mahasiswa</h2>
         </div>
@@ -98,7 +98,7 @@
                 
                 <div class="flex justify-between items-center mt-8">
                     <a href="{{ route('admin.mahasiswa.index') }}" 
-                       class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center">
+                       class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                         </svg>

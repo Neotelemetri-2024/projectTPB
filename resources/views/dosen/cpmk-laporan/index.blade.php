@@ -3,81 +3,114 @@
 @section('title', 'Laporan CPMK')
 
 @section('content')
-<div class="p-6">
-    <!-- Header -->
-    <div class="mb-6">
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+@php
+    $pageMk = $mataKuliahDiampu->count();
+    $pageKelas = $mataKuliahDiampu->sum(fn ($m) => $m->kelas->count());
+    $pageMhs = $mataKuliahDiampu->sum(fn ($m) => $m->kelas->sum('kelas_mahasiswa_count'));
+    $pageCpmk = $mataKuliahDiampu->sum(fn ($m) => $m->cpmkMatKul->count());
+@endphp
+<div class="p-4 md:p-6 space-y-4">
+    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-200 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-bold text-gray-900">Laporan Pengukuran CPMK</h1>
-                <p class="mt-2 text-gray-600">Analisis detail ketercapaian CPMK per mata kuliah</p>
+                <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Laporan Pengukuran CPMK</h1>
+                <p class="text-sm text-gray-500 mt-1">Ketercapaian CPMK mata kuliah yang Anda ampu</p>
             </div>
-            <form method="GET" action="" class="flex items-center gap-2">
-                <!-- Reset page to 1 when filtering -->
-                <label for="tahun_ajaran_id" class="text-sm font-medium text-gray-700">Tahun Ajaran:</label>
-                <select name="tahun_ajaran_id" id="tahun_ajaran_id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 p-2.5" onchange="this.form.submit()">
-                    @foreach($tahunAjaranList as $ta)
-                    <option value="{{ $ta->id }}" {{ $selectedTahunAjaranId == $ta->id ? 'selected' : '' }}>
-                        {{ $ta->tahun }} - {{ ucfirst($ta->periode) }}
-                    </option>
-                    @endforeach
-                </select>
+            <form method="GET" action="" class="flex flex-wrap items-end gap-2">
+                <div>
+                    <label for="tahun_ajaran_id" class="block text-[11px] font-medium text-gray-500 mb-1">Tahun Ajaran</label>
+                    <select name="tahun_ajaran_id" id="tahun_ajaran_id" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2 min-w-[200px] shadow-sm" onchange="this.form.submit()">
+                        @foreach($tahunAjaranList as $ta)
+                            <option value="{{ $ta->id }}" @selected($selectedTahunAjaranId == $ta->id)>
+                                {{ $ta->tahun }} - {{ ucfirst($ta->periode) }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
             </form>
         </div>
     </div>
 
     @if($mataKuliahDiampu->count() > 0)
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        @foreach($mataKuliahDiampu as $matkul)
-        <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200">
-            <div class="p-6">
-                <div class="flex items-start justify-between mb-4">
-                    <div class="flex-1">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-1">
-                            {{ $matkul->mataKuliah->kodeMatkul }}-{{ $matkul->mataKuliah->kurikulum }}
-                        </h3>
-                        <p class="text-sm text-gray-600 mb-2">
-                            {{ $matkul->mataKuliah->namaMatkul }}
-                        </p>
-                        <div class="flex items-center gap-4 text-xs text-gray-500">
-                            <span>{{ $matkul->kelas->count() }} Kelas</span>
-                            <span>{{ $matkul->kelas->flatMap->kelasMahasiswa->count() }} Mahasiswa</span>
-                        </div>
-                    </div>
-                    <div class="text-right">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Aktif
-                        </span>
-                    </div>
-                </div>
-
-                <div class="border-t border-gray-200 pt-4">
-                    <a href="{{ route('dosen.cpmk-laporan.show', $matkul->id) }}"
-                        class="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 px-4 rounded-lg flex items-center justify-center transition-colors duration-200">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
-                        Lihat Laporan Detail
-                    </a>
-                </div>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div class="bg-white border border-gray-200 rounded-xl px-4 py-3">
+                <p class="text-[11px] uppercase tracking-wide text-gray-500">Mata Kuliah</p>
+                <p class="text-2xl font-semibold text-gray-900 mt-0.5">{{ $pageMk }}</p>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-xl px-4 py-3">
+                <p class="text-[11px] uppercase tracking-wide text-gray-500">Kelas</p>
+                <p class="text-2xl font-semibold text-gray-900 mt-0.5">{{ $pageKelas }}</p>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-xl px-4 py-3">
+                <p class="text-[11px] uppercase tracking-wide text-gray-500">Mahasiswa</p>
+                <p class="text-2xl font-semibold text-gray-900 mt-0.5">{{ number_format($pageMhs) }}</p>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-xl px-4 py-3">
+                <p class="text-[11px] uppercase tracking-wide text-gray-500">CPMK</p>
+                <p class="text-2xl font-semibold text-gray-900 mt-0.5">{{ $pageCpmk }}</p>
             </div>
         </div>
-        @endforeach
-    </div>
-    @else
-    <div class="bg-white rounded-lg shadow-md p-8 text-center">
-        <div class="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-            </svg>
+
+        <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead>
+                        <tr class="text-left text-[11px] uppercase tracking-wide text-gray-500 border-b border-gray-200">
+                            <th class="px-4 py-3 font-semibold">Kode</th>
+                            <th class="px-4 py-3 font-semibold">Mata Kuliah</th>
+                            <th class="px-4 py-3 font-semibold text-center">Kelas</th>
+                            <th class="px-4 py-3 font-semibold text-center">Mahasiswa</th>
+                            <th class="px-4 py-3 font-semibold text-center">CPMK</th>
+                            <th class="px-4 py-3 font-semibold">Status</th>
+                            <th class="px-4 py-3 font-semibold text-right">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @foreach($mataKuliahDiampu as $matkul)
+                            @php
+                                $cpmkCount = $matkul->cpmkMatKul->count();
+                                $mhsCount = $matkul->kelas->sum('kelas_mahasiswa_count');
+                            @endphp
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
+                                    {{ $matkul->mataKuliah->kodeMatkul }}-{{ $matkul->mataKuliah->kurikulum }}
+                                </td>
+                                <td class="px-4 py-3 text-gray-700">{{ $matkul->mataKuliah->namaMatkul }}</td>
+                                <td class="px-4 py-3 text-center text-gray-700">{{ $matkul->kelas->count() }}</td>
+                                <td class="px-4 py-3 text-center text-gray-700">{{ $mhsCount }}</td>
+                                <td class="px-4 py-3 text-center text-gray-700">{{ $cpmkCount }}</td>
+                                <td class="px-4 py-3">
+                                    @if($cpmkCount > 0)
+                                        <span class="text-emerald-700">Siap dianalisis</span>
+                                    @else
+                                        <span class="text-amber-700">Belum ada CPMK</span>
+                                    @endif
+                                </td>
+                                <td class="px-4 py-3 text-right">
+                                    <a href="{{ route('dosen.cpmk-laporan.show', $matkul->id) }}"
+                                       class="inline-flex items-center bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-md text-sm font-medium">
+                                        Lihat
+                                    </a>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            @if(method_exists($mataKuliahDiampu, 'hasPages') && $mataKuliahDiampu->hasPages())
+                <div class="px-4 py-3 border-t border-gray-200 flex justify-center">
+                    {{ $mataKuliahDiampu->links() }}
+                </div>
+            @endif
         </div>
-        <h3 class="text-lg font-medium text-gray-900 mb-2">Tidak Ada Mata Kuliah</h3>
-        <p class="text-gray-600 mb-4">
-            Anda belum mengampu mata kuliah pada tahun ajaran yang dipilih.
-        </p>
-        <a href="{{ route('dosen.dashboard') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-amber-600 hover:bg-amber-700">
-            Kembali ke Dashboard
-        </a>
-    </div>
+    @else
+        <div class="bg-white border border-gray-200 rounded-xl px-5 py-12 text-center">
+            <p class="text-sm font-medium text-gray-900">Tidak ada mata kuliah</p>
+            <p class="text-sm text-gray-500 mt-1">Anda belum mengampu mata kuliah pada tahun ajaran yang dipilih.</p>
+            <a href="{{ route('dosen.dashboard') }}" class="inline-flex items-center mt-4 bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+                Kembali ke Dashboard
+            </a>
+        </div>
     @endif
 </div>
 @endsection

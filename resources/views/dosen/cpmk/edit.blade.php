@@ -3,8 +3,8 @@
 @section('title', 'Edit CPMK - ' . $cpmk->kodeCpmk)
 
 @section('content')
-<div class="p-6">
-        <nav class="mb-6">
+<div class="p-4 md:p-6 space-y-4">
+        <nav>
         <ol class="flex items-center space-x-2 text-sm text-gray-500">
             <li>
                 <a href="{{ route('dosen.cpmk.index') }}" class="hover:text-gray-700">Kelola CPMK</a>
@@ -26,11 +26,11 @@
         </ol>
     </nav>
     <!-- Header -->
-    <div class="bg-white rounded-lg shadow-md mb-6">
+    <div class="bg-white border border-gray-200 rounded-xl">
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Edit CPMK</h1>
+                    <h1 class="text-xl font-semibold text-gray-900">Edit CPMK</h1>
                     <p class="text-gray-600 mt-1">{{ $tahunAjaranMatkul->mataKuliah->namaMatkul }} • {{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }}-{{ $tahunAjaranMatkul->mataKuliah->kurikulum }}</p>
                 </div>
                 <a href="{{ route('dosen.cpmk.show', $tahunAjaranMatkul->id) }}"
@@ -45,7 +45,7 @@
     </div>
 
     <!-- Form -->
-    <div class="bg-white rounded-lg shadow-md">
+    <div class="bg-white border border-gray-200 rounded-xl">
         <div class="p-6 border-b border-gray-200">
             <h2 class="text-xl font-semibold text-gray-900">Edit Informasi CPMK</h2>
             <p class="text-sm text-gray-600 mt-1">Perbarui informasi CPMK {{ $cpmk->kodeCpmk }}</p>
@@ -126,7 +126,7 @@
             <!-- Action Buttons -->
             <div class="flex items-center justify-end gap-4 mt-8 pt-6 border-t border-gray-200">
                 <a href="{{ route('dosen.cpmk.show', $tahunAjaranMatkul->id) }}"
-                   class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-2.5 rounded-lg font-medium transition-colors duration-200">
+                   class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors duration-200">
                     Batal
                 </a>
                 <button type="submit"

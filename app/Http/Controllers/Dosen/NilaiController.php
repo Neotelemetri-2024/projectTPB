@@ -35,33 +35,28 @@ class NilaiController extends Controller
             return redirect()->back()->with('error', 'Data dosen tidak ditemukan.');
         }
 
-        // Get the latest tahun ajaran for default filter
         $latestTahunAjaran = TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->first();
 
-        // Set default filter to latest tahun ajaran if no filter is selected
-        // Check if tahun_ajaran_id parameter exists in request (even if empty)
         if ($request->has('tahun_ajaran_id')) {
-            // Parameter exists, use the value (could be empty for "Semua Tahun Ajaran")
             $selectedTahunAjaranId = $request->tahun_ajaran_id;
         } else {
-            // Parameter doesn't exist, use default (latest tahun ajaran)
             $selectedTahunAjaranId = $latestTahunAjaran ? $latestTahunAjaran->id : null;
         }
 
-        // Get filter parameters
         $jenis = $request->get('jenis');
+        $search = $request->get('search');
 
-        // Build query for TahunAjaranMatkul
         $query = TahunAjaranMatkul::with([
             'mataKuliah',
             'tahunAjaran',
-            'kelas.dosenPengampuKelas.dosen', // Load all dosen pengampu through kelas
-            'kelas.kelasMahasiswa.mahasiswa'
+            'kelas' => function ($q) {
+                $q->withCount('kelasMahasiswa')
+                    ->with(['dosenPengampuKelas.dosen']);
+            },
         ])->whereHas('kelas.dosenPengampuKelas', function ($query) use ($dosen) {
             $query->where('dosenId', $dosen->id);
         });
 
-        // Apply filters
         if ($selectedTahunAjaranId) {
             $query->where('tahunAjaranId', $selectedTahunAjaranId);
         }
@@ -72,50 +67,61 @@ class NilaiController extends Controller
             });
         }
 
-        // Get filtered results
+        if ($search) {
+            $query->whereHas('mataKuliah', function ($q) use ($search) {
+                $q->where('namaMatkul', 'like', "%{$search}%")
+                    ->orWhere('kodeMatkul', 'like', "%{$search}%");
+            });
+        }
+
         $allMataKuliah = $query->orderBy('tahunAjaranId', 'desc')
             ->orderBy('mataKuliahId')
             ->get();
 
-        // Group by mata kuliah and tahun ajaran to combine different classes
         $mataKuliahDiampu = $allMataKuliah->groupBy(function ($item) {
             return $item->mataKuliahId . '_' . $item->tahunAjaranId;
         })->map(function ($group) {
-            // Get the first item as representative
             $representative = $group->first();
 
-            // Combine all kelas mahasiswa from all classes
-            $allKelasMahasiswa = collect();
             $allDosenPengampu = collect();
             $allKelas = collect();
+            $mahasiswaCount = 0;
 
             foreach ($group as $item) {
                 foreach ($item->kelas as $kelas) {
-                    $allKelasMahasiswa = $allKelasMahasiswa->merge($kelas->kelasMahasiswa);
                     $allKelas->push($kelas->namaKelas);
                     $allDosenPengampu = $allDosenPengampu->merge($kelas->dosenPengampuKelas);
+                    $mahasiswaCount += (int) ($kelas->kelas_mahasiswa_count ?? 0);
                 }
             }
 
-            // Set aggregated data to representative
-            $representative->setRelation('kelasMahasiswa', $allKelasMahasiswa->unique('id'));
+            $representative->mahasiswa_count = $mahasiswaCount;
             $representative->setRelation('dosenPengampuKelas', $allDosenPengampu->unique('id'));
 
-            // Get unique dosen pengampu with their names
             $uniqueDosenPengampu = $allDosenPengampu->unique('dosenId');
             $dosenNames = $uniqueDosenPengampu->map(function ($dosenPengampuKelas) {
                 return $dosenPengampuKelas->dosen->nama ?? 'Unknown';
             })->unique()->values();
             $representative->dosenPengampuNames = $dosenNames;
-
-            // Get unique kelas names
             $representative->kelasNames = $allKelas->unique()->sort()->values();
             $representative->groupedItems = $group;
 
             return $representative;
         })->values();
 
-        // Get data for filters
+        $perPage = 10;
+        $page = (int) $request->get('page', 1);
+        $mataKuliahDiampu = new \Illuminate\Pagination\LengthAwarePaginator(
+            $mataKuliahDiampu->forPage($page, $perPage)->values(),
+            $mataKuliahDiampu->count(),
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
+
         $tahunAjaranList = TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->get();
         $jenisList = ['wajib', 'pilihan'];
 
@@ -158,190 +164,121 @@ class NilaiController extends Controller
             return redirect()->route('dosen.nilai.index')->with('error', 'Akses ditolak.');
         }
 
-        // Get all classes for this mata kuliah and tahun ajaran
+        // Get classes for this mata kuliah/tahun ajaran (tanpa load semua mahasiswa)
         $mataKuliahClasses = TahunAjaranMatkul::with([
-            'kelas.kelasMahasiswa.mahasiswa',
-            'kelas.dosenPengampuKelas'
+            'kelas' => fn ($q) => $q->withCount('kelasMahasiswa')->with('dosenPengampuKelas'),
         ])
             ->where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
             ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId)
             ->get()
             ->filter(function ($tam) use ($dosen) {
-                // Filter to only include classes where this dosen teaches
                 return $tam->kelas->some(function ($kelas) use ($dosen) {
                     return $kelas->dosenPengampuKelas->contains('dosenId', $dosen->id);
                 });
-            });
+            })
+            ->values();
+
+        $relatedTahunAjaranMatkulIds = $mataKuliahClasses->pluck('id');
+        $allowedKelasIds = $mataKuliahClasses->flatMap->kelas
+            ->filter(fn ($kelas) => $kelas->dosenPengampuKelas->contains('dosenId', $dosen->id))
+            ->pluck('id')
+            ->unique()
+            ->values();
 
         // Get all CPMK for this mata kuliah
         $cpmkList = CpmkMatKul::with(['cpmk.cpl'])
-            ->whereIn('tahunAjaranMatkulId', $mataKuliahClasses->pluck('id'))
+            ->whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
             ->get()
             ->unique('cpmkId')
             ->map(function ($cpmkMatKul) {
                 return $cpmkMatKul->cpmk;
             });
 
-        // Get all komponen
-        $allKomponen = Komponen::orderBy('nama')->get();
-
-        // Get bobot data for all classes
+        // Get bobot data for all classes (needed for readiness check)
         $bobotData = Bobot::with(['komponen', 'cpmk'])
-            ->whereIn('tahunAjaranMatkulId', $mataKuliahClasses->pluck('id'))
+            ->whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
             ->get();
 
-        // Get existing nilai data for all classes
-        $nilaiData = Nilai::with(['mahasiswa', 'cpmk', 'bobot.komponen'])
-            ->whereIn('tahunAjaranMatkulId', $mataKuliahClasses->pluck('id'))
-            ->get();
-
-        // Check if penilaian is ready (total bobot = 100%).
-        // Bobot direplikasi ke setiap TahunAjaranMatkul terkait, jadi ambil dari satu
-        // TAM representatif saja agar tidak terjadi penggandaan (mis. 100% jadi 200%).
         $bobotDataGrouped = $bobotData->groupBy('tahunAjaranMatkulId');
         $representativeBobotData = $bobotDataGrouped->get($id) ?? $bobotDataGrouped->first() ?? collect();
         $totalBobotKeseluruhan = $representativeBobotData->sum('bobot');
         $isPenilaianSiap = $totalBobotKeseluruhan == 100;
-
-        // Check if there are CPMK for this mata kuliah
         $adaCpmk = $cpmkList->count() > 0;
 
-        // Get all unique mahasiswa across all classes
-        $allMahasiswa = collect();
-        foreach ($mataKuliahClasses as $tam) {
-            foreach ($tam->kelas as $kelas) {
-                $allMahasiswa = $allMahasiswa->merge($kelas->kelasMahasiswa->pluck('mahasiswa'));
+        $perPage = 10;
+        $isBulkMode = (bool) $request->get('bulk', false);
+        $activeTab = $request->get('tab', 'all');
+        $sortBy = $request->get('sort', 'nim');
+        $sortDirection = $request->get('direction', 'asc') === 'desc' ? 'desc' : 'asc';
+        $search = $request->get('search', '');
+
+        // Jumlah per kelas (untuk tab) — query agregasi, bukan load semua row
+        $mahasiswaByKelasCounts = $allowedKelasIds->isEmpty()
+            ? collect()
+            : KelasMahasiswa::query()
+                ->select('kelas.namaKelas', DB::raw('COUNT(DISTINCT kelas_mahasiswa.mahasiswaId) as total'))
+                ->join('kelas', 'kelas.id', '=', 'kelas_mahasiswa.kelasId')
+                ->whereIn('kelas.id', $allowedKelasIds)
+                ->groupBy('kelas.namaKelas')
+                ->orderBy('kelas.namaKelas')
+                ->pluck('total', 'namaKelas');
+
+        $mahasiswaByKelas = $mahasiswaByKelasCounts->all();
+        $totalMahasiswaCount = (int) $mahasiswaByKelasCounts->sum();
+        $allMahasiswaCollection = collect()->pad($totalMahasiswaCount, null);
+
+        $mahasiswaQuery = Mahasiswa::query()
+            ->select('mahasiswa.*')
+            ->join('kelas_mahasiswa', 'kelas_mahasiswa.mahasiswaId', '=', 'mahasiswa.id')
+            ->join('kelas', 'kelas.id', '=', 'kelas_mahasiswa.kelasId')
+            ->when($allowedKelasIds->isNotEmpty(), fn ($q) => $q->whereIn('kelas.id', $allowedKelasIds))
+            ->when($allowedKelasIds->isEmpty(), fn ($q) => $q->whereRaw('1 = 0'))
+            ->distinct();
+
+        if ($activeTab !== 'all') {
+            $kelasSlug = str_replace('kelas-', '', $activeTab);
+            $matchedKelas = $mahasiswaByKelasCounts->keys()->first(function ($kelasNama) use ($kelasSlug) {
+                return strtolower(str_replace(' ', '-', $kelasNama)) === $kelasSlug
+                    || \Illuminate\Support\Str::slug($kelasNama) === $kelasSlug;
+            });
+
+            if ($matchedKelas) {
+                $mahasiswaQuery->where('kelas.namaKelas', $matchedKelas);
+            } else {
+                $mahasiswaQuery->whereRaw('1 = 0');
             }
         }
-        $allMahasiswaCollection = $allMahasiswa->unique('id')->values();
 
-        // Handle pagination, sorting, and search - get request parameters
-        $perPage = 10; // Number of students per page
-        $currentPage = $request->get('page', 1);
-        $isBulkMode = $request->get('bulk', false);
-        $activeTab = $request->get('tab', 'all'); // Get active tab
-        $sortBy = $request->get('sort', 'nim'); // Default sort by NIM
-        $sortDirection = $request->get('direction', 'asc'); // Default ascending
-        $search = $request->get('search', ''); // Search parameter
-
-        // Apply sorting to all mahasiswa collection
-        $allMahasiswaCollection = $allMahasiswaCollection->sortBy(function ($mahasiswa) use ($sortBy) {
-            switch ($sortBy) {
-                case 'nim':
-                    return $mahasiswa->nim;
-                case 'nama':
-                    return $mahasiswa->nama;
-                default:
-                    return $mahasiswa->nim;
-            }
-        });
-
-        // Reverse if descending
-        if ($sortDirection === 'desc') {
-            $allMahasiswaCollection = $allMahasiswaCollection->reverse();
+        if ($search !== '') {
+            $mahasiswaQuery->where(function ($q) use ($search) {
+                $q->where('mahasiswa.nim', 'like', "%{$search}%")
+                    ->orWhere('mahasiswa.nama', 'like', "%{$search}%");
+            });
         }
 
-        $allMahasiswaCollection = $allMahasiswaCollection->values();
+        $sortColumn = $sortBy === 'nama' ? 'mahasiswa.nama' : 'mahasiswa.nim';
+        $mahasiswaQuery->orderBy($sortColumn, $sortDirection);
 
-        // Apply search filter if search term is provided
-        if (!empty($search)) {
-            $allMahasiswaCollection = $allMahasiswaCollection->filter(function ($mahasiswa) use ($search) {
-                $searchTerm = strtolower($search);
-                return (
-                    stripos($mahasiswa->nim, $searchTerm) !== false ||
-                    stripos($mahasiswa->nama, $searchTerm) !== false
-                );
-            })->values();
-        }
-
-        // If bulk mode, show all students without pagination
+        $mahasiswaPaginated = null;
         if ($isBulkMode) {
-            $mahasiswa = $allMahasiswaCollection;
-            $mahasiswaPaginated = null;
-            $mahasiswaByKelas = [];
+            $mahasiswa = $mahasiswaQuery->get();
         } else {
-            // Group mahasiswa by kelas first for pagination
-            $mahasiswaByKelas = [];
-            foreach ($allMahasiswaCollection as $mhs) {
-                $kelasNama = 'Tidak Ada Kelas';
-
-                // Find the class this student belongs to
-                foreach ($mataKuliahClasses as $tam) {
-                    foreach ($tam->kelas as $kelas) {
-                        $studentInClass = $kelas->kelasMahasiswa->where('mahasiswaId', $mhs->id)->first();
-                        if ($studentInClass) {
-                            $kelasNama = $kelas->namaKelas;
-                            break 2;
-                        }
-                    }
-                }
-
-                if (!isset($mahasiswaByKelas[$kelasNama])) {
-                    $mahasiswaByKelas[$kelasNama] = [];
-                }
-                $mahasiswaByKelas[$kelasNama][] = $mhs;
-            }
-
-            // Apply tab filtering
-            if ($activeTab !== 'all') {
-                $kelasSlug = str_replace('kelas-', '', $activeTab);
-                // Convert slug back to original kelas name format
-                $kelasNama = strtoupper($kelasSlug);
-
-                if (isset($mahasiswaByKelas[$kelasNama])) {
-                    $mahasiswa = collect($mahasiswaByKelas[$kelasNama]);
-                } else {
-                    // If exact match not found, try to find by partial match
-                    $foundKelas = null;
-                    foreach ($mahasiswaByKelas as $kelasKey => $mahasiswaList) {
-                        if (strtolower(str_replace(' ', '-', $kelasKey)) === $kelasSlug) {
-                            $foundKelas = $kelasKey;
-                            break;
-                        }
-                    }
-
-                    if ($foundKelas) {
-                        $mahasiswa = collect($mahasiswaByKelas[$foundKelas]);
-                    } else {
-                        $mahasiswa = collect();
-                    }
-                }
-            } else {
-                $mahasiswa = $allMahasiswaCollection;
-            }
-
-            // Apply pagination
-            if ($mahasiswa->count() > 0) {
-                $mahasiswaPaginated = new \Illuminate\Pagination\LengthAwarePaginator(
-                    $mahasiswa->forPage($currentPage, $perPage),
-                    $mahasiswa->count(),
-                    $perPage,
-                    $currentPage,
-                    [
-                        'path' => $request->url(),
-                        'pageName' => 'page',
-                    ]
-                );
-                $mahasiswaPaginated->appends($request->query());
-
-                // Update $mahasiswa to only contain data for current page
-                $mahasiswa = $mahasiswa->forPage($currentPage, $perPage);
-            } else {
-                $mahasiswaPaginated = null;
-            }
+            $mahasiswaPaginated = $mahasiswaQuery->paginate($perPage)->withQueryString();
+            $mahasiswa = collect($mahasiswaPaginated->items());
         }
 
-        // Get all unique kelas numbers for display
-        $kelasNumbers = collect();
-        foreach ($mataKuliahClasses as $tam) {
-            foreach ($tam->kelas as $kelas) {
-                $kelasNumbers->push($kelas->namaKelas);
-            }
-        }
-        $kelasNumbers = $kelasNumbers->unique()->sort()->values();
+        $kelasNumbers = $mataKuliahClasses->flatMap->kelas->pluck('namaKelas')->unique()->sort()->values();
 
-        // Get all components for this mata kuliah through bobot table (dari semua kelas yang terkait)
-        $relatedTahunAjaranMatkulIds = $mataKuliahClasses->pluck('id');
+        // Map kelas untuk mahasiswa yang ditampilkan saja
+        $kelasMahasiswaMap = $mahasiswa->isEmpty()
+            ? collect()
+            : KelasMahasiswa::with('kelas')
+                ->whereIn('mahasiswaId', $mahasiswa->pluck('id'))
+                ->whereIn('kelasId', $allowedKelasIds)
+                ->get()
+                ->keyBy('mahasiswaId');
+
+        // Get all components for this mata kuliah through bobot table
         $allKomponen = Komponen::whereHas('bobot', function ($query) use ($relatedTahunAjaranMatkulIds) {
             $query->whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds);
         })
@@ -351,44 +288,35 @@ class NilaiController extends Controller
             ->orderBy('nama')
             ->get();
 
-        // Get existing nilai for displayed students (hanya dari satu kelas)
-        $existingNilai = Nilai::with('bobot')
-            ->whereIn('mahasiswaId', $mahasiswa->pluck('id'))
-            ->where('tahunAjaranMatkulId', $id)
-            ->get()
+        $displayedMahasiswaIds = $mahasiswa->pluck('id');
+        $nilaiData = $displayedMahasiswaIds->isEmpty()
+            ? collect()
+            : Nilai::with(['mahasiswa', 'cpmk', 'bobot.komponen'])
+                ->whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
+                ->whereIn('mahasiswaId', $displayedMahasiswaIds)
+                ->get();
+
+        $existingNilai = $nilaiData
+            ->where('tahunAjaranMatkulId', (int) $id)
             ->groupBy('mahasiswaId');
 
-        // Get final grades from kelasMahasiswa table for displayed students (hanya dari satu kelas)
-        $nilaiMahasiswa = KelasMahasiswa::whereIn('mahasiswaId', $mahasiswa->pluck('id'))
-            ->where('kelasId', function ($query) use ($id) {
-                $query->select('id')
-                    ->from('kelas')
-                    ->where('tahunAjaranMatkulId', $id)
-                    ->limit(1);
-            })
-            ->get()
-            ->keyBy('mahasiswaId');
+        $nilaiMahasiswa = $displayedMahasiswaIds->isEmpty()
+            ? collect()
+            : KelasMahasiswa::whereIn('mahasiswaId', $displayedMahasiswaIds)
+                ->whereIn('kelasId', $allowedKelasIds)
+                ->get()
+                ->keyBy('mahasiswaId');
 
-        // Hitung total bobot setiap komponen penilaian (untuk display).
-        // Bobot direplikasi ke SETIAP TahunAjaranMatkul terkait (lihat BobotKomponenController::bulkStore),
-        // jadi harus diambil dari SATU TahunAjaranMatkul representatif saja, bukan dijumlahkan lintas TAM
-        // (kalau dijumlahkan akan terjadi penggandaan, mis. 100% jadi 200% jika ada 2 TAM terkait).
         $totalBobotKomponen = [];
-        $allBobotGrouped = Bobot::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)
-            ->get()
-            ->groupBy('tahunAjaranMatkulId');
+        $allBobotGrouped = $bobotData->groupBy('tahunAjaranMatkulId');
         $representativeBobotForDisplay = $allBobotGrouped->get($id) ?? $allBobotGrouped->first() ?? collect();
 
         foreach ($representativeBobotForDisplay as $bobot) {
             $totalBobotKomponen[$bobot->komponenId] = ($totalBobotKomponen[$bobot->komponenId] ?? 0) + $bobot->bobot;
         }
 
-
-
-        // Validasi CPMK dan Bobot untuk Import
         $cpmkValidation = $this->validateCpmkAndBobot($id, $dosen);
 
-        // Build bulk URL for the view
         $bulkUrl = request()->fullUrl();
         $bulkUrl .= (strpos($bulkUrl, '?') !== false ? '&' : '?') . 'bulk=1';
 
@@ -398,8 +326,10 @@ class NilaiController extends Controller
             'mahasiswa',
             'mahasiswaPaginated',
             'allMahasiswaCollection',
+            'totalMahasiswaCount',
             'mahasiswaByKelas',
             'kelasNumbers',
+            'kelasMahasiswaMap',
             'allKomponen',
             'dosen',
             'isBulkMode',
@@ -412,9 +342,9 @@ class NilaiController extends Controller
             'isPenilaianSiap',
             'adaCpmk',
             'cpmkList',
-            'allKomponen',
             'bobotData',
             'nilaiData',
+            'nilaiMahasiswa',
             'bulkUrl',
             'cpmkValidation'
         ));

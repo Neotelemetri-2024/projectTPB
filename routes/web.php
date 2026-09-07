@@ -164,6 +164,13 @@ Route::middleware('auth')->group(function () {
         Route::delete('admin/kelas/{id}/remove-dosen/{dosenId}', [KelasController::class, 'removeDosen'])->name('admin.kelas.remove-dosen');
         Route::post('admin/kelas/{id}/bulk-add-mahasiswa', [KelasController::class, 'bulkAddMahasiswa'])->name('admin.kelas.bulk-add-mahasiswa');
         Route::delete('admin/kelas/{id}/bulk-remove-mahasiswa', [KelasController::class, 'bulkRemoveMahasiswa'])->name('admin.kelas.bulk-remove-mahasiswa');
+
+        // Mapping & Laporan CPL
+        Route::get('/admin/cpl-mapping', [\App\Http\Controllers\CplMappingController::class, 'index'])->name('admin.cpl-mapping.index');
+        Route::get('/admin/cpl-laporan', [\App\Http\Controllers\CplLaporanController::class, 'index'])->name('admin.cpl-laporan.index');
+        Route::get('/admin/cpl-laporan/export-pdf', [\App\Http\Controllers\CplLaporanController::class, 'exportPdf'])->name('admin.cpl-laporan.export-pdf');
+        Route::get('/admin/cpl-achievement', [\App\Http\Controllers\Pimpinan\CplAchievementController::class, 'index'])->name('admin.cpl-achievement.index');
+        Route::get('/admin/cpl-achievement/export-pdf', [\App\Http\Controllers\Pimpinan\CplAchievementController::class, 'exportPdf'])->name('admin.cpl-achievement.export-pdf');
     });
 
     // Dosen Dashboard
@@ -230,6 +237,12 @@ Route::middleware('auth')->group(function () {
 
         // Ketercapaian CPL
         Route::get('/pimpinan/cpl-achievement', [\App\Http\Controllers\Pimpinan\CplAchievementController::class, 'index'])->name('pimpinan.cpl-achievement.index');
+        Route::get('/pimpinan/cpl-achievement/export-pdf', [\App\Http\Controllers\Pimpinan\CplAchievementController::class, 'exportPdf'])->name('pimpinan.cpl-achievement.export-pdf');
+
+        // Mapping & Laporan CPL (gaya MyUNAND, tanpa SCP)
+        Route::get('/pimpinan/cpl-mapping', [\App\Http\Controllers\CplMappingController::class, 'index'])->name('pimpinan.cpl-mapping.index');
+        Route::get('/pimpinan/cpl-laporan', [\App\Http\Controllers\CplLaporanController::class, 'index'])->name('pimpinan.cpl-laporan.index');
+        Route::get('/pimpinan/cpl-laporan/export-pdf', [\App\Http\Controllers\CplLaporanController::class, 'exportPdf'])->name('pimpinan.cpl-laporan.export-pdf');
     });
 });
 

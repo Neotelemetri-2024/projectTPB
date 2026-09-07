@@ -13,7 +13,14 @@ class Cpl extends Model
 
     protected $fillable = [
         'kodeCpl',
-        'deskripsi'
+        'deskripsi',
+        'nilaiMinimal',
+        'targetPersen',
+    ];
+
+    protected $casts = [
+        'nilaiMinimal' => 'integer',
+        'targetPersen' => 'integer',
     ];
 
     public function cpmk()

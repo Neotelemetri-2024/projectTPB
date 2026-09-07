@@ -2,13 +2,13 @@
 @section('title', 'Kelola Mahasiswa Kelas')
 
 @section('content')
-<div class="p-6">
-    <div class="bg-white rounded-lg shadow-md">
+<div class="p-4 md:p-6 space-y-4">
+    <div class="bg-white border border-gray-200 rounded-xl">
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <h2 class="text-lg font-semibold text-gray-900">Kelola Mahasiswa Kelas {{ $kelas->namaKelas }}</h2>
                 <a href="{{ route('admin.kelas.show', $kelas->id) }}"
-                   class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center">
+                   class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
@@ -16,7 +16,7 @@
                 </a>
             </div>
             <div class="mt-2 text-sm text-gray-600">
-                {{ $kelas->tahunAjaranMatkul->mataKuliah->namaMatkul }} • {{ $kelas->tahunAjaranMatkul->tahunAjaran->tahun }}-{{ $kelas->tahunAjaranMatkul->tahunAjaran->periode }}
+                {{ $kelas->tahunAjaranMatkul->mataKuliah->namaMatkul }} â€¢ {{ $kelas->tahunAjaranMatkul->tahunAjaran->tahun }}-{{ $kelas->tahunAjaranMatkul->tahunAjaran->periode }}
             </div>
         </div>
 
@@ -61,14 +61,14 @@
                     </div>
                     <div class="flex-shrink-0 flex space-x-2">
                         <button type="submit"
-                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg flex items-center">
+                                class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2.5 rounded-lg flex items-center">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                             Cari
                         </button>
                         <a href="{{ route('admin.kelas.manage-mahasiswa', $kelas->id) }}"
-                           class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2.5 rounded-lg flex items-center">
+                           class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2.5 rounded-lg  flex items-center">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                             </svg>
@@ -79,13 +79,13 @@
             </form>
 
             <!-- Mahasiswa List -->
-            <div class="bg-white rounded-lg border border-gray-200">
+            <div class="bg-white rounded-xl border border-gray-200">
                 <div class="p-4 border-b border-gray-200">
                     <div class="flex justify-between items-center">
-                        <h3 class="text-md font-semibold text-gray-900">Mahasiswa Tersedia</h3>
+                        <h3 class="text-base font-semibold text-gray-900">Mahasiswa Tersedia</h3>
                         <div class="flex items-center space-x-2">
                             <span class="text-sm text-gray-600" id="selected-count">0 mahasiswa dipilih</span>
-                            <button type="button" id="select-all-btn" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                            <button type="button" id="select-all-btn" class="inline-flex items-center bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-md text-sm font-medium">
                                 Pilih Semua
                             </button>
                             @if($kelas->kelasMahasiswa->count() > 0)
@@ -109,7 +109,7 @@
                                     <thead class="bg-gray-50">
                                         <tr>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                <input type="checkbox" id="select-all" class="rounded border-gray-300 text-amber-600 shadow-sm focus:border-amber-300 focus:ring focus:ring-amber-200 focus:ring-opacity-50">
+                                                <input type="checkbox" id="select-all" class="rounded border-gray-300 text-amber-600 focus:border-amber-300 focus:ring focus:ring-amber-200 focus:ring-opacity-50">
                                             </th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIM</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Mahasiswa</th>
@@ -124,7 +124,7 @@
                                                     <input type="checkbox"
                                                            name="mahasiswa_ids[]"
                                                            value="{{ $mahasiswa->id }}"
-                                                           class="mahasiswa-checkbox rounded border-gray-300 text-amber-600 shadow-sm focus:border-amber-300 focus:ring focus:ring-amber-200 focus:ring-opacity-50">
+                                                           class="mahasiswa-checkbox rounded border-gray-300 text-amber-600 focus:border-amber-300 focus:ring focus:ring-amber-200 focus:ring-opacity-50">
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $mahasiswa->nim }}</td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $mahasiswa->nama }}</td>

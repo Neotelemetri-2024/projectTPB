@@ -2,13 +2,13 @@
 @section('title', 'Detail Kelas')
 
 @section('content')
-<div class="p-6">
-    <div class="bg-white rounded-lg shadow-md">
+<div class="p-4 md:p-6 space-y-4">
+    <div class="bg-white border border-gray-200 rounded-xl">
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <h2 class="text-lg font-semibold text-gray-900">Detail Kelas {{ $kelas->namaKelas }}</h2>
                 <a href="{{ route('admin.tahun-ajaran-matkul.show', $kelas->tahunAjaranMatkul->id) }}"
-                   class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center">
+                   class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
@@ -35,9 +35,9 @@
             @endif
 
             <!-- Informasi Kelas -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div class="bg-gray-50 rounded-lg p-4">
-                    <h3 class="text-md font-semibold text-gray-900 mb-4">Informasi Kelas</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div class="bg-white border border-gray-200 rounded-xl p-4">
+                    <h3 class="text-base font-semibold text-gray-900 mb-4">Informasi Kelas</h3>
                     <div class="space-y-3">
                         <div class="flex">
                             <span class="w-24 text-sm font-medium text-gray-600">Mata Kuliah:</span>
@@ -57,16 +57,16 @@
                         </div>
                     </div>
                 </div>
-                <div class="bg-gray-50 rounded-lg p-4">
-                    <h3 class="text-md font-semibold text-gray-900 mb-4">Statistik</h3>
+                <div class="bg-white border border-gray-200 rounded-xl p-4">
+                    <h3 class="text-base font-semibold text-gray-900 mb-4">Statistik</h3>
                     <div class="grid grid-cols-2 gap-4 text-center">
-                        <div class="border-r border-gray-300">
-                            <div class="text-2xl font-bold text-blue-600">{{ $kelas->dosenPengampuKelas->count() }}</div>
-                            <p class="text-sm text-gray-600">Dosen Pengampu</p>
+                        <div class="border-r border-gray-200">
+                            <div class="text-2xl font-semibold text-gray-900">{{ $kelas->dosenPengampuKelas->count() }}</div>
+                            <p class="text-sm text-gray-500">Dosen Pengampu</p>
                         </div>
                         <div>
-                            <div class="text-2xl font-bold text-green-600">{{ $kelas->kelasMahasiswa->count() }}</div>
-                            <p class="text-sm text-gray-600">Mahasiswa</p>
+                            <div class="text-2xl font-semibold text-gray-900">{{ $kelas->kelasMahasiswa->count() }}</div>
+                            <p class="text-sm text-gray-500">Mahasiswa</p>
                         </div>
                     </div>
                 </div>
@@ -74,9 +74,9 @@
 
             <!-- Dosen Pengampu -->
             <div class="mb-6">
-                <div class="bg-white rounded-lg border border-gray-200">
+                <div class="bg-white rounded-xl border border-gray-200">
                     <div class="p-4 border-b border-gray-200 flex justify-between items-center">
-                        <h3 class="text-md font-semibold text-gray-900">Dosen Pengampu</h3>
+                        <h3 class="text-base font-semibold text-gray-900">Dosen Pengampu</h3>
                         <a href="{{ route('admin.kelas.manage-dosen', $kelas->id) }}"
                            class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded text-sm flex items-center">
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -112,7 +112,7 @@
                                                     <button type="button"
                                                             data-modal-target="modal-confirm-hapus-dosen-{{ $dosen->id }}"
                                                             data-modal-toggle="modal-confirm-hapus-dosen-{{ $dosen->id }}"
-                                                            class="text-red-600 hover:text-red-900" title="Hapus">
+                                                            class="inline-flex items-center justify-center bg-red-600 hover:bg-red-700 text-white p-1.5 rounded-md" title="Hapus">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                                         </svg>
@@ -132,12 +132,12 @@
 
             <!-- Mahasiswa -->
             <div class="mb-6">
-                <div class="bg-white rounded-lg border border-gray-200">
+                <div class="bg-white rounded-xl border border-gray-200">
                     <div class="p-4 border-b border-gray-200 flex justify-between items-center">
-                        <h3 class="text-md font-semibold text-gray-900">Mahasiswa</h3>
+                        <h3 class="text-base font-semibold text-gray-900">Mahasiswa</h3>
                         <div class="flex items-center space-x-2">
                             <a href="{{ route('admin.kelas.manage-mahasiswa', $kelas->id) }}"
-                               class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm flex items-center">
+                               class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded text-sm flex items-center">
                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                                 </svg>
@@ -188,7 +188,7 @@
                                     <thead class="bg-gray-50">
                                         <tr>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bulk-delete-column hidden">
-                                                <input type="checkbox" id="select-all-checkbox" class="rounded border-gray-300 text-red-600 shadow-sm focus:border-red-300 focus:ring focus:ring-red-200 focus:ring-opacity-50">
+                                                <input type="checkbox" id="select-all-checkbox" class="rounded border-gray-300 text-red-600 focus:border-red-300 focus:ring focus:ring-red-200 focus:ring-opacity-50">
                                             </th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No</th>
                                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIM</th>
@@ -205,7 +205,7 @@
                                                     <input type="checkbox"
                                                            name="mahasiswa_ids[]"
                                                            value="{{ $kelasMahasiswaItem->mahasiswa->id }}"
-                                                           class="mahasiswa-checkbox rounded border-gray-300 text-red-600 shadow-sm focus:border-red-300 focus:ring focus:ring-red-200 focus:ring-opacity-50">
+                                                           class="mahasiswa-checkbox rounded border-gray-300 text-red-600 focus:border-red-300 focus:ring focus:ring-red-200 focus:ring-opacity-50">
                                                 </td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $index + 1 }}</td>
                                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $kelasMahasiswaItem->mahasiswa->nim }}</td>
@@ -216,7 +216,7 @@
                                                     <button type="button"
                                                             data-modal-target="modal-confirm-hapus-mahasiswa-{{ $kelasMahasiswaItem->mahasiswa->id }}"
                                                             data-modal-toggle="modal-confirm-hapus-mahasiswa-{{ $kelasMahasiswaItem->mahasiswa->id }}"
-                                                            class="text-red-600 hover:text-red-900" title="Hapus">
+                                                            class="inline-flex items-center justify-center bg-red-600 hover:bg-red-700 text-white p-1.5 rounded-md" title="Hapus">
                                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                                         </svg>
@@ -265,7 +265,7 @@
 <!-- Modal Konfirmasi Bulk Delete -->
 <div id="modal-confirm-bulk-delete" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center min-h-screen w-full transition-opacity duration-300 ease-out" style="background: rgba(0,0,0,0.6);">
     <div class="relative p-4 w-full max-w-md max-h-full transform transition-all duration-300 ease-out scale-95 opacity-0" data-modal-content>
-        <div class="relative bg-white rounded-lg shadow-xl animate-in fade-in slide-in-from-top-4 duration-300">
+        <div class="relative bg-white rounded-xl border border-gray-200 animate-in fade-in slide-in-from-top-4 duration-300">
             <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t">
                 <h3 class="text-lg font-semibold text-gray-900">
                     Konfirmasi Hapus Bulk Mahasiswa
@@ -289,7 +289,7 @@
                     </div>
                 </div>
                 <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
-                    <button type="button" class="text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10 transition-colors duration-200" data-modal-hide="modal-confirm-bulk-delete">
+                    <button type="button" class="bg-gray-600 hover:bg-gray-700 text-white focus:ring-4 focus:outline-none focus:ring-gray-300 rounded-lg text-sm font-medium px-5 py-2.5 focus:z-10 transition-colors duration-200" data-modal-hide="modal-confirm-bulk-delete">
                         Batal
                     </button>
                     <button type="button" id="confirm-bulk-delete-submit" class="text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-colors duration-200">

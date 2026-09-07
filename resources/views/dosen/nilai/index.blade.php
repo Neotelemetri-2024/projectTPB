@@ -3,17 +3,17 @@
 @section('title', 'Kelola Nilai Mahasiswa')
 
 @section('content')
-<div class="p-6">
-    <div class="bg-white rounded-lg shadow-md">
+<div class="p-4 md:p-6 space-y-4">
+    <div class="bg-white border border-gray-200 rounded-xl">
         <div class="p-6 border-b border-gray-200">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>
-                    <h2 class="text-2xl font-bold text-gray-900">Kelola Nilai Mahasiswa</h2>
+                    <h2 class="text-xl font-semibold text-gray-900">Kelola Nilai Mahasiswa</h2>
                     <p class="text-gray-600 mt-1">Kelola dan input nilai mahasiswa untuk mata kuliah yang diampu</p>
                 </div>
                 <div class="flex items-center gap-4">
                     <div class="text-sm text-gray-500">
-                        Total: <span id="total-count">{{ $mataKuliahDiampu->count() }}</span> mata kuliah
+                        Total: <span id="total-count">{{ method_exists($mataKuliahDiampu, 'total') ? $mataKuliahDiampu->total() : $mataKuliahDiampu->count() }}</span> mata kuliah
                     </div>
                 </div>
             </div>
@@ -51,7 +51,7 @@
                             <input type="text" name="search" id="search-input" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5" placeholder="Cari nama atau kode mata kuliah..." value="{{ request('search') }}">
                         </div>
                         <div class="flex gap-2">
-                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg flex items-center justify-center whitespace-nowrap">
+                            <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2.5 rounded-lg flex items-center justify-center whitespace-nowrap">
                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                 </svg>
@@ -163,10 +163,7 @@
                             <!-- Jenis -->
                             <td class="px-6 py-4">
                                 @if($mataKuliah->mataKuliah->jenis)
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                                {{ $mataKuliah->mataKuliah->jenis == 'wajib' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800' }}">
-                                    {{ ucfirst($mataKuliah->mataKuliah->jenis) }}
-                                </span>
+                                <span class="text-sm font-medium {{ $mataKuliah->mataKuliah->jenis == 'wajib' ? 'text-emerald-700' : 'text-gray-700' }}">{{ ucfirst($mataKuliah->mataKuliah->jenis) }}</span>
                                 @else
                                 <span class="text-gray-400">-</span>
                                 @endif
@@ -192,9 +189,7 @@
 
                             <!-- Jumlah Mahasiswa -->
                             <td class="px-6 py-4 text-center">
-                                <div class="inline-flex items-center justify-center w-8 h-8 bg-orange-100 rounded-full">
-                                    <span class="text-sm font-semibold text-orange-800">{{ $mataKuliah->kelasMahasiswa->count() }}</span>
-                                </div>
+                                <span class="text-sm font-semibold text-gray-900">{{ $mataKuliah->mahasiswa_count ?? ($mataKuliah->kelasMahasiswa->count() ?? 0) }}</span>
                             </td>
 
                             <!-- Dosen Pengampu -->
@@ -203,7 +198,7 @@
                                     @if(isset($mataKuliah->dosenPengampuNames) && $mataKuliah->dosenPengampuNames->count() > 0)
                                     @if($mataKuliah->dosenPengampuNames->count() <= 2)
                                         @foreach($mataKuliah->dosenPengampuNames as $dosenName)
-                                        <span class="inline-block {{ $dosenName === $dosen->nama ? 'bg-green-100 text-green-800 font-medium' : 'bg-blue-100 text-blue-800' }} text-xs px-2 py-1 rounded-full mr-1"
+                                        <span class="inline-block {{ $dosenName === $dosen->nama ? 'text-emerald-700 font-medium' : 'text-gray-700' }} text-xs mr-1"
                                             title="{{ $dosenName === $dosen->nama ? 'Anda' : $dosenName }}">
                                             {{ $dosenName === $dosen->nama ? 'Anda' : Str::limit($dosenName, 12) }}
                                         </span>
@@ -213,7 +208,7 @@
                                         $currentUserFirst = $mataKuliah->dosenPengampuNames->contains($dosen->nama);
                                         $firstDosen = $currentUserFirst ? $dosen->nama : $mataKuliah->dosenPengampuNames->first();
                                         @endphp
-                                        <span class="inline-block {{ $firstDosen === $dosen->nama ? 'bg-green-100 text-green-800 font-medium' : 'bg-blue-100 text-blue-800' }} text-xs px-2 py-1 rounded-full mr-1"
+                                        <span class="inline-block {{ $firstDosen === $dosen->nama ? 'text-emerald-700 font-medium' : 'text-gray-700' }} text-xs mr-1"
                                             title="{{ $firstDosen === $dosen->nama ? 'Anda' : $firstDosen }}">
                                             {{ $firstDosen === $dosen->nama ? 'Anda' : Str::limit($firstDosen, 8) }}
                                         </span>
@@ -263,6 +258,15 @@
                     </tbody>
                 </table>
             </div>
+            @if(method_exists($mataKuliahDiampu, 'hasPages') && $mataKuliahDiampu->hasPages())
+            <div class="mt-4 flex justify-between items-center">
+                <div class="text-sm text-gray-600">
+                    Menampilkan {{ $mataKuliahDiampu->firstItem() }} - {{ $mataKuliahDiampu->lastItem() }}
+                    dari {{ $mataKuliahDiampu->total() }} mata kuliah
+                </div>
+                <div>{{ $mataKuliahDiampu->links() }}</div>
+            </div>
+            @endif
             @endif
         </div>
     </div>

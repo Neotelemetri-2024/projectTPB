@@ -10,7 +10,7 @@ class KomponenController extends Controller
 {
     public function index()
     {
-        $komponen = Komponen::orderBy('id', 'asc')->get();
+        $komponen = Komponen::orderBy('id', 'asc')->paginate(20)->withQueryString();
         return view('admin.komponen.index', compact('komponen'));
     }
 

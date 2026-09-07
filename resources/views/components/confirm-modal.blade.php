@@ -39,7 +39,7 @@
                     </div>
                 </div>
                 <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
-                    <button type="button" class="text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10 transition-colors duration-200" data-modal-hide="{{ $id }}">
+                    <button type="button" class="bg-gray-600 hover:bg-gray-700 text-white focus:ring-4 focus:outline-none focus:ring-gray-300 rounded-lg text-sm font-medium px-5 py-2.5 focus:z-10 transition-colors duration-200" data-modal-hide="{{ $id }}">
                         {{ $cancelText ?? 'Batal' }}
                     </button>
                     @if(isset($type) && $type === 'success')
@@ -152,37 +152,21 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', function() {
             const url = btn.getAttribute('data-modal-confirm-link');
             if (url) {
-                setTimeout(() => {
+                if (typeof setButtonLoading === 'function') {
+                    setButtonLoading(btn, true);
+                } else {
                     btn.disabled = true;
                     btn.classList.add('cursor-not-allowed', 'opacity-75');
                     const spinner = btn.querySelector('[data-spinner]');
                     const icon = btn.querySelector('[data-icon]');
-                    const text = btn.querySelector('[data-submit-text]');
                     if (spinner) spinner.classList.remove('hidden');
                     if (icon) icon.classList.add('hidden');
-                }, 10);
+                }
                 window.location.href = url;
             }
         });
     });
 
-    // Form submission spinner
-    const form = modal.querySelector('form');
-    if (form) {
-        form.addEventListener('submit', function() {
-            const submitBtn = form.querySelector('button[type="submit"]');
-            if (submitBtn) {
-                setTimeout(() => {
-                    submitBtn.disabled = true;
-                    submitBtn.classList.add('cursor-not-allowed', 'opacity-75');
-                    const spinner = submitBtn.querySelector('[data-spinner]');
-                    const icon = submitBtn.querySelector('[data-icon]');
-                    const text = submitBtn.querySelector('[data-submit-text]');
-                    if (spinner) spinner.classList.remove('hidden');
-                    if (icon) icon.classList.add('hidden');
-                }, 10);
-            }
-        });
-    }
+    // Form submission spinner handled globally by setButtonLoading in app.js
 });
 </script>

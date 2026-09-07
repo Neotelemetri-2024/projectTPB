@@ -125,12 +125,18 @@
                         <tr>
                             <td><strong>Program Studi</strong></td>
                             <td>:</td>
-                            <td>S1 Teknik Pertanian dan Biosistem</td>
+                            <td>Teknik Pertanian dan Biosistem</td>
                         </tr>
                     </table>
                 </td>
                 <td class="info-right">
-                    <!-- Kolom kanan kosong atau bisa diisi informasi lain jika diperlukan -->
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="width: 35%;"><strong>Jumlah SKS</strong></td>
+                            <td style="width: 5%;">:</td>
+                            <td>{{ $totalSks }}</td>
+                        </tr>
+                    </table>
                 </td>
             </tr>
         </table>
@@ -177,7 +183,7 @@
                         <td class="left">{{ $chunk[0]['nama'] }}</td>
                         <td class="center">{{ $chunk[0]['sks'] }}</td>
                         <td class="center">{{ $chunk[0]['grade'] ?? '-' }}</td>
-                        <td class="center">{{ $chunk[0]['nilai_akhir'] ?? '' }}</td>
+                        <td class="center">{{ $chunk[0]['nilai_mutu'] ?? '' }}</td>
                     @else
                         <td></td>
                         <td></td>
@@ -191,7 +197,7 @@
                         <td class="left">{{ $chunk[1]['nama'] }}</td>
                         <td class="center">{{ $chunk[1]['sks'] }}</td>
                         <td class="center">{{ $chunk[1]['grade'] ?? '-' }}</td>
-                        <td class="center">{{ $chunk[1]['nilai_akhir'] ?? '' }}</td>
+                        <td class="center">{{ $chunk[1]['nilai_mutu'] ?? '' }}</td>
                     @else
                         <td></td>
                         <td></td>
@@ -210,7 +216,7 @@
                 <tr style="background-color: #f8f8f8;">
                     <td colspan="2" class="center"><strong>Jumlah</strong></td>
                     <td class="center"><strong>{{ $totalSks }}</strong></td>
-                    <td colspan="2" class="center"><strong>{{ number_format(collect($matkulDiambil)->sum('nilai_akhir'), 2) }}</strong></td>
+                    <td colspan="2" class="center"></td>
                     <td colspan="5" class="center"></td>
                 </tr>
 
@@ -229,7 +235,7 @@
                     <td class="left">{{ $mk['nama'] }}</td>
                     <td class="center">{{ $mk['sks'] }}</td>
                     <td class="center">{{ $mk['grade'] ?? '-' }}</td>
-                    <td class="center">{{ $mk['nilai_akhir'] ?? '' }}</td>
+                    <td class="center">{{ $mk['nilai_mutu'] ?? '' }}</td>
                 </tr>
                 @empty
                 <tr>
@@ -242,7 +248,7 @@
                     <td colspan="2" class="center"><strong>Jumlah</strong></td>
                     <td class="center"><strong>{{ $totalSks }}</strong></td>
                     <td class="center"></td>
-                    <td class="center"><strong>{{ number_format(collect($matkulDiambil)->sum('nilai_akhir'), 2) }}</strong></td>
+                    <td class="center"></td>
                 </tr>
 
                 <!-- Row untuk indeks prestasi (1 kolom) -->

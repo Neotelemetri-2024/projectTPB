@@ -3,9 +3,9 @@
 @section('title', 'Tambah Sub-CPMK - ' . $tahunAjaranMatkul->mataKuliah->namaMatkul)
 
 @section('content')
-<div class="p-6">
+<div class="p-4 md:p-6 space-y-4">
     <!-- Breadcrumb -->
-    <nav class="mb-6">
+    <nav>
         <ol class="flex items-center space-x-2 text-sm text-gray-500">
             <li>
                 <a href="{{ route('dosen.cpmk.index') }}" class="hover:text-gray-700">Kelola CPMK</a>
@@ -28,11 +28,11 @@
     </nav>
 
     <!-- Header -->
-    <div class="bg-white rounded-lg shadow-md mb-6">
+    <div class="bg-white border border-gray-200 rounded-xl">
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Tambah Sub-CPMK</h1>
+                    <h1 class="text-xl font-semibold text-gray-900">Tambah Sub-CPMK</h1>
                     <p class="text-gray-600 mt-1">{{ $tahunAjaranMatkul->mataKuliah->namaMatkul }} • {{ $tahunAjaranMatkul->tahunAjaran->tahun }} - {{ $tahunAjaranMatkul->tahunAjaran->periode }}</p>
                 </div>
                 <div class="flex items-center">
@@ -57,7 +57,7 @@
                     <p class="text-sm text-gray-600 mt-1">Tambah beberapa sub-CPMK sekaligus dalam satu halaman</p>
                 </div>
                 <button type="button" id="addSubCpmkBtn"
-                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center">
+                        class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>
@@ -75,11 +75,11 @@
             <!-- Action Buttons -->
             <div class="flex items-center justify-end gap-4 mt-8 pt-6 border-t border-gray-200">
                 <a href="{{ route('dosen.cpmk.show', $tahunAjaranMatkul->id) }}"
-                   class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-6 py-2.5 rounded-lg font-medium transition-colors duration-200">
+                   class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors duration-200">
                     Batal
                 </a>
                 <button type="submit"
-                        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors duration-200 flex items-center">
+                        class="bg-amber-600 hover:bg-amber-700 text-white px-6 py-2.5 rounded-lg font-medium transition-colors duration-200 flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>

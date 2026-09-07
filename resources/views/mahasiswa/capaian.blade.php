@@ -1,102 +1,155 @@
 @extends('layouts.main')
 
 @section('content')
-<div class="p-6">
-    <div class="bg-white rounded-lg shadow-md">
-        <div class="p-6 border-b border-gray-200 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+<div class="p-4 md:p-6 space-y-4">
+    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-200 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div>
-                <h2 class="text-lg font-semibold text-gray-900">Capaian CPL & CPMK</h2>
-                <p class="text-gray-600 mt-1 text-sm">Halaman ini menampilkan capaian pembelajaran Anda berdasarkan CPL dan CPMK yang mendukungnya.</p>
+                <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Capaian Pembelajaran</h1>
+                <p class="text-sm text-gray-500 mt-1">Ringkasan CPL mahasiswa dan unduhan surat keterangan.</p>
             </div>
-            <div class="flex items-center gap-2">
-                <form method="GET" action="" class="flex items-center gap-2 w-full md:w-auto">
-                    <label for="cpl_id" class="text-sm font-medium text-gray-700 mr-2">Pilih CPL</label>
-                    <select name="cpl_id" id="cpl_id" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-48 p-2.5" onchange="this.form.submit()">
-                        <option value="">Semua CPL</option>
-                        @foreach($cplList as $cpl)
-                            <option value="{{ $cpl->id }}" {{ $cplIdTerpilih == $cpl->id ? 'selected' : '' }}>{{ $cpl->kodeCpl }}</option>
-                        @endforeach
-                    </select>
-                </form>
-
-                <!-- Tombol Export PDF -->
-                <form method="GET" action="{{ route('mahasiswa.capaian.export-pdf') }}" class="ml-2">
-                    @if($cplIdTerpilih)
-                        <input type="hidden" name="cpl_id" value="{{ $cplIdTerpilih }}">
-                    @endif
-                    <button type="submit" class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        Export PDF
-                    </button>
-                </form>
-            </div>
+            <a href="{{ route('mahasiswa.capaian.export-pdf') }}"
+               class="inline-flex items-center justify-center px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm rounded-md">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Unduh Surat Keterangan PDF
+            </a>
         </div>
 
-        @if(count($cplData) > 0)
-            @foreach($cplData as $index => $cpl)
-            <div class="mb-6 border border-gray-200 rounded-lg overflow-hidden">
-                <!-- CPL Header with Toggle Button -->
-                <div class="bg-gray-50 border-b border-gray-200 p-4 cursor-pointer hover:bg-gray-100 transition-colors duration-200"
-                     onclick="toggleCplTable({{ $index }})">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="flex-shrink-0">
-                                <svg id="icon-{{ $index }}" class="w-5 h-5 text-gray-600 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-800">{{ $cpl['kode'] }}</h3>
-                                <p class="text-gray-600 mt-1 text-sm">{{ $cpl['deskripsi'] }}</p>
-                            </div>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-sm text-gray-600 font-medium w-44">Total Capaian:</div>
-                            @if($cpl['status_cpl'] === 'Tercapai')
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                                    {{ $cpl['total_cpl'] }}
-                                </span>
-                            @else
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
-                                    {{ $cpl['missing_cpmk_count'] ?? 0 }} CPMK belum bernilai
-                                </span>
-                            @endif
-                            <div class="mt-1">
-                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ $cpl['status_cpl'] === 'Tercapai' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                    {{ $cpl['status_cpl'] }}
-                                </span>
-                            </div>
-                        </div>
+        {{-- Identitas singkat --}}
+        <div class="px-5 py-4 border-b border-gray-200">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <p class="text-[11px] uppercase tracking-wide text-gray-500 mb-1">Mahasiswa</p>
+                    <p class="text-lg font-semibold text-gray-900">{{ strtoupper($mahasiswa->nama ?? '-') }}</p>
+                    <p class="text-sm text-gray-700 mt-0.5">NIM {{ $mahasiswa->nim ?? '-' }}</p>
+                    <p class="text-sm text-gray-600 mt-3">{{ $institution['prodi'] }}</p>
+                    <p class="text-sm text-gray-600">{{ $institution['fakultas'] }}</p>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="border border-gray-200 rounded-xl px-4 py-3">
+                        <p class="text-[11px] uppercase tracking-wide text-gray-500">IPK</p>
+                        <p class="text-2xl font-semibold text-gray-900 mt-0.5">{{ $akademik['ipk'] !== null ? number_format($akademik['ipk'], 2) : '-' }}</p>
+                    </div>
+                    <div class="border border-gray-200 rounded-xl px-4 py-3">
+                        <p class="text-[11px] uppercase tracking-wide text-gray-500">SKS Lulus</p>
+                        <p class="text-2xl font-semibold text-gray-900 mt-0.5">{{ $akademik['total_sks'] }}</p>
+                    </div>
+                    <div class="border border-gray-200 rounded-xl px-4 py-3">
+                        <p class="text-[11px] uppercase tracking-wide text-gray-500">Predikat</p>
+                        <p class="text-base font-semibold text-gray-900 mt-1">{{ $akademik['predikat'] }}</p>
+                    </div>
+                    <div class="border border-gray-200 rounded-xl px-4 py-3">
+                        <p class="text-[11px] uppercase tracking-wide text-gray-500">Gelar</p>
+                        <p class="text-base font-semibold text-gray-900 mt-1">{{ $akademik['gelar'] }}</p>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
 
-                <!-- Collapsible Table Content -->
-                <div id="table-{{ $index }}" class="hidden bg-white">
-                    <div class="overflow-x-auto">
-                        <table class="w-full table-fixed divide-y divide-gray-200">
-                            <colgroup>
-                                <col class="w-28"> <!-- Kode Mata Kuliah - Reduced width -->
-                                <col class="w-48"> <!-- Nama Mata Kuliah - Reduced width -->
-                                <col class="w-32"> <!-- Kode CPMK - Fixed width -->
-                                <col class="w-auto"> <!-- Deskripsi CPMK - Auto width for more space -->
-                                <col class="w-24"> <!-- Nilai - Fixed width -->
-                            </colgroup>
+    {{-- Tabel CPL utama (format surat) --}}
+    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+            <div>
+                <h2 class="text-base font-semibold text-gray-900">Rincian Capaian Pembelajaran Lulusan</h2>
+                <p class="text-sm text-gray-500 mt-0.5">Nilai CPL diambil dari CPMK pendukung tertinggi.</p>
+            </div>
+            <form method="GET" action="{{ route('mahasiswa.capaian') }}" class="flex items-end gap-2">
+                <div>
+                    <label for="cpl_id" class="block text-[11px] font-medium text-gray-500 mb-1">Filter</label>
+                    <select name="cpl_id" id="cpl_id" onchange="this.form.submit()"
+                        class="border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-amber-600 focus:border-amber-600 block w-44 p-2">
+                        <option value="">Semua CPL</option>
+                        @foreach($cplList as $cpl)
+                            <option value="{{ $cpl->id }}" {{ (string)$cplIdTerpilih === (string)$cpl->id ? 'selected' : '' }}>
+                                {{ $cpl->kodeCpl }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </form>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-gray-500 w-14">No.</th>
+                        <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500 w-28">Kode CPL</th>
+                        <th class="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">Deskripsi Capaian Pembelajaran</th>
+                        <th class="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-gray-500 w-24">Nilai</th>
+                        <th class="px-4 py-3 text-center text-[11px] font-semibold uppercase tracking-wide text-gray-500 w-28">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($cplData as $i => $cpl)
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 text-center text-gray-700">{{ $i + 1 }}</td>
+                            <td class="px-4 py-3 font-semibold text-gray-900">{{ $cpl['kode'] }}</td>
+                            <td class="px-4 py-3 text-gray-700 leading-relaxed">{{ $cpl['deskripsi'] }}</td>
+                            <td class="px-4 py-3 text-center text-xl font-semibold text-gray-900">
+                                {{ $cpl['nilai_surat'] }}
+                            </td>
+                            <td class="px-4 py-3 text-center">
+                                @if($cpl['status_cpl'] === 'Tercapai')
+                                    <span class="text-sm font-medium text-emerald-700">Tercapai</span>
+                                @else
+                                    <span class="text-sm font-medium text-red-700">Belum</span>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5" class="px-4 py-10 text-center text-gray-500">Belum ada data CPL.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {{-- Detail CPMK (sekunder, collapsible) --}}
+    @if(count($cplData) > 0)
+    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-200">
+            <h2 class="text-base font-semibold text-gray-900">Detail CPMK pendukung</h2>
+            <p class="text-sm text-gray-500 mt-0.5">Buka tiap CPL untuk melihat mata kuliah dan nilai CPMK.</p>
+        </div>
+
+        <div class="divide-y divide-gray-100">
+            @foreach($cplData as $index => $cpl)
+            <div x-data="{ open: {{ $index === 0 ? 'true' : 'false' }} }">
+                <button type="button" @click="open = !open"
+                    class="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors">
+                    <div class="pr-4">
+                        <p class="font-semibold text-gray-900">{{ $cpl['kode'] }}</p>
+                        <p class="text-sm text-gray-500 mt-0.5 line-clamp-2">{{ $cpl['deskripsi'] }}</p>
+                    </div>
+                    <div class="flex items-center gap-3 shrink-0">
+                        <span class="text-lg font-semibold text-gray-900">{{ $cpl['nilai_surat'] }}</span>
+                        <svg class="w-5 h-5 text-gray-500 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                </button>
+
+                <div x-show="open" x-cloak class="px-5 pb-5">
+                    <div class="overflow-x-auto border border-gray-200 rounded-md">
+                        <table class="min-w-full text-sm">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Kode Mata Kuliah</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama Mata Kuliah</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Kode CPMK</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Deskripsi CPMK</th>
-                                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Nilai</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-500">Kode MK</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-500">Mata Kuliah</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-500">CPMK</th>
+                                    <th class="px-3 py-2 text-left font-medium text-gray-500">Deskripsi</th>
+                                    <th class="px-3 py-2 text-center font-medium text-gray-500">Nilai</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
+                            <tbody class="divide-y divide-gray-100">
                                 @php
-                                    $grouped = collect($cpl['cpmk'])->groupBy(function($item) {
-                                        return $item['kode_mk'].'|'.$item['nama_mk'];
-                                    });
+                                    $grouped = collect($cpl['cpmk'])->groupBy(fn ($item) => $item['kode_mk'].'|'.$item['nama_mk']);
                                 @endphp
                                 @foreach($grouped as $mkKey => $cpmkList)
                                     @php
@@ -104,19 +157,17 @@
                                         $rowspan = count($cpmkList);
                                         $printedMk = false;
                                     @endphp
-                                    @foreach($cpmkList as $idx => $cpmk)
-                                    <tr class="hover:bg-gray-50">
+                                    @foreach($cpmkList as $cpmk)
+                                    <tr>
                                         @if(!$printedMk)
-                                            <td class="px-4 py-3 font-medium text-gray-900" rowspan="{{ $rowspan }}">{{ $kode_mk }}</td>
-                                            <td class="px-4 py-3 text-gray-700" rowspan="{{ $rowspan }}">{{ $nama_mk }}</td>
+                                            <td class="px-3 py-2 font-medium text-gray-900 align-top" rowspan="{{ $rowspan }}">{{ $kode_mk }}</td>
+                                            <td class="px-3 py-2 text-gray-700 align-top" rowspan="{{ $rowspan }}">{{ $nama_mk }}</td>
                                             @php $printedMk = true; @endphp
                                         @endif
-                                        <td class="px-4 py-3 font-medium text-gray-900">{{ $cpmk['kode'] }}</td>
-                                        <td class="px-4 py-3 text-gray-700">{{ $cpmk['deskripsi'] }}</td>
-                                        <td class="px-4 py-3 text-center">
-                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium {{ is_numeric($cpmk['nilai']) && $cpmk['nilai'] >= 55 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                                {{ $cpmk['nilai'] }}
-                                            </span>
+                                        <td class="px-3 py-2 font-medium text-gray-900">{{ $cpmk['kode'] }}</td>
+                                        <td class="px-3 py-2 text-gray-700">{{ $cpmk['deskripsi'] }}</td>
+                                        <td class="px-3 py-2 text-center font-medium {{ is_numeric($cpmk['nilai']) && $cpmk['nilai'] >= 55 ? 'text-emerald-700' : 'text-red-700' }}">
+                                            {{ $cpmk['nilai'] }}
                                         </td>
                                     </tr>
                                     @endforeach
@@ -127,33 +178,12 @@
                 </div>
             </div>
             @endforeach
-        @else
-        <div class="p-6 text-center text-gray-500">Tidak ada data CPL yang dipilih.</div>
-        @endif
+        </div>
     </div>
+    @endif
 </div>
 
-<script>
-function toggleCplTable(index) {
-    const table = document.getElementById(`table-${index}`);
-    const icon = document.getElementById(`icon-${index}`);
-
-    if (table.classList.contains('hidden')) {
-        // Show table
-        table.classList.remove('hidden');
-        icon.style.transform = 'rotate(180deg)';
-    } else {
-        // Hide table
-        table.classList.add('hidden');
-        icon.style.transform = 'rotate(0deg)';
-    }
-}
-
-// Auto-expand first CPL table on page load
-document.addEventListener('DOMContentLoaded', function() {
-    if (document.getElementById('table-0')) {
-        toggleCplTable(0);
-    }
-});
-</script>
+<style>
+    [x-cloak] { display: none !important; }
+</style>
 @endsection

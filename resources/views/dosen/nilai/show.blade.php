@@ -3,9 +3,9 @@
 @section('title', 'Nilai Mahasiswa - ' . $tahunAjaranMatkul->mataKuliah->namaMatkul)
 
 @section('content')
-<div class="p-6">
+<div class="p-4 md:p-6 space-y-4">
     <!-- Breadcrumb -->
-    <nav class="mb-6">
+    <nav>
         <ol class="flex items-center space-x-2 text-sm text-gray-500">
             <li>
                 <a href="{{ route('dosen.nilai.index') }}" class="hover:text-gray-700">Kelola Nilai Mahasiswa</a>
@@ -42,11 +42,11 @@
     @endif
 
     <!-- Header -->
-    <div class="bg-white rounded-lg shadow-md mb-6">
+    <div class="bg-white border border-gray-200 rounded-xl">
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Nilai Mahasiswa - {{ $tahunAjaranMatkul->mataKuliah->namaMatkul }}</h1>
+                    <h1 class="text-xl font-semibold text-gray-900">Nilai Mahasiswa - {{ $tahunAjaranMatkul->mataKuliah->namaMatkul }}</h1>
                     <p class="text-gray-600 mt-1">{{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }}-{{ $tahunAjaranMatkul->mataKuliah->kurikulum }} • {{ $tahunAjaranMatkul->tahunAjaran->tahun }} - {{ $tahunAjaranMatkul->tahunAjaran->periode }}</p>
                 </div>
                 <div class="flex items-center gap-3">
@@ -65,86 +65,46 @@
 
 
     <!-- Course Info Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-blue-100 text-blue-600 mr-4">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                    </svg>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-gray-600">Total Mahasiswa</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $allMahasiswaCollection->count() }}</p>
-                </div>
-            </div>
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="bg-white border border-gray-200 rounded-xl px-4 py-3">
+            <p class="text-[11px] uppercase tracking-wide text-gray-500">Total Mahasiswa</p>
+            <p class="text-2xl font-semibold text-gray-900 mt-0.5">{{ $totalMahasiswaCount ?? $allMahasiswaCollection->count() }}</p>
         </div>
 
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-purple-100 text-purple-600 mr-4">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z"></path>
-                    </svg>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-gray-600">Kelas</p>
-                    <p class="text-2xl font-bold text-gray-900">
-                        {{ $kelasNumbers->implode(', ') }}
-                    </p>
-                </div>
-            </div>
+        <div class="bg-white border border-gray-200 rounded-xl px-4 py-3">
+            <p class="text-[11px] uppercase tracking-wide text-gray-500">Kelas</p>
+            <p class="text-2xl font-semibold text-gray-900 mt-0.5">{{ $kelasNumbers->implode(', ') }}</p>
         </div>
 
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-orange-100 text-orange-600 mr-4">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
-                    </svg>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-gray-600">SKS</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $tahunAjaranMatkul->mataKuliah->sks ?? '-' }}</p>
-                </div>
-            </div>
+        <div class="bg-white border border-gray-200 rounded-xl px-4 py-3">
+            <p class="text-[11px] uppercase tracking-wide text-gray-500">SKS</p>
+            <p class="text-2xl font-semibold text-gray-900 mt-0.5">{{ $tahunAjaranMatkul->mataKuliah->sks ?? '-' }}</p>
         </div>
 
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <div class="flex items-center">
-                <div class="p-3 rounded-full bg-green-100 text-green-600 mr-4">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                    </svg>
-                </div>
-                <div>
-                    @php
-                    // Get all related class IDs for this mata kuliah that are taught by this dosen
-                    $relatedTahunAjaranMatkulIds = $mataKuliahClasses->pluck('id');
-                    $lastNilaiUpdate = \App\Models\Nilai::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)->max('updated_at');
-                    @endphp
-                    <div class="flex items-center gap-2">
-                        <p class="text-sm font-medium text-gray-600">Last Modified</p>
-                        @if($lastNilaiUpdate)
-                        <span class="text-xs text-gray-500">
-                            ({{ \Carbon\Carbon::parse($lastNilaiUpdate)->diffForHumans() }})
-                        </span>
-                        @endif
-                    </div>
-                    @if($lastNilaiUpdate)
-                    <p class="text-sm font-bold text-gray-900" title="{{ \Carbon\Carbon::parse($lastNilaiUpdate)->format('d/m/Y H:i:s') }}">
-                        {{ \Carbon\Carbon::parse($lastNilaiUpdate)->format('d/m/Y H:i') }}
-                    </p>
-                    @else
-                    <p class="text-sm font-bold text-gray-400">Belum ada nilai</p>
-                    @endif
-                </div>
-            </div>
+        <div class="bg-white border border-gray-200 rounded-xl px-4 py-3">
+            @php
+            // Get all related class IDs for this mata kuliah that are taught by this dosen
+            $relatedTahunAjaranMatkulIds = $mataKuliahClasses->pluck('id');
+            $lastNilaiUpdate = \App\Models\Nilai::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)->max('updated_at');
+            @endphp
+            <p class="text-[11px] uppercase tracking-wide text-gray-500">
+                Last Modified
+                @if($lastNilaiUpdate)
+                <span class="normal-case tracking-normal text-gray-400">({{ \Carbon\Carbon::parse($lastNilaiUpdate)->diffForHumans() }})</span>
+                @endif
+            </p>
+            @if($lastNilaiUpdate)
+            <p class="text-sm font-semibold text-gray-900 mt-0.5" title="{{ \Carbon\Carbon::parse($lastNilaiUpdate)->format('d/m/Y H:i:s') }}">
+                {{ \Carbon\Carbon::parse($lastNilaiUpdate)->format('d/m/Y H:i') }}
+            </p>
+            @else
+            <p class="text-sm font-semibold text-gray-400 mt-0.5">Belum ada nilai</p>
+            @endif
         </div>
     </div>
 
     <!-- Students List -->
-    <div class="bg-white rounded-lg shadow-md">
+    <div class="bg-white border border-gray-200 rounded-xl">
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <div>
@@ -163,7 +123,7 @@
 
                     <!-- Import Excel Button -->
                     <button type="button" onclick="checkImportValidation()"
-                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
+                        class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
                         <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
                         </svg>
@@ -214,7 +174,7 @@
                             name="search"
                             value="{{ request('search', '') }}"
                             placeholder="Cari berdasarkan NIM atau nama mahasiswa..."
-                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -224,7 +184,7 @@
                 </div>
 
                 <button type="submit"
-                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 flex items-center">
+                    class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
@@ -247,22 +207,22 @@
             <div class="mt-3 text-sm text-gray-600">
                 Menampilkan hasil pencarian untuk: <span class="font-semibold">"{{ request('search') }}"</span>
                 @if($mahasiswa->count() > 0)
-                ({{ $allMahasiswaCollection->count() }} mahasiswa ditemukan)
+                ({{ $totalMahasiswaCount ?? $allMahasiswaCollection->count() }} mahasiswa ditemukan)
                 @endif
             </div>
             @endif
         </div>
 
         <!-- Progress Bar Container (Hidden by default) -->
-        <div id="import-progress-container" class="hidden px-6 py-4 border-b border-gray-200 bg-blue-50">
+        <div id="import-progress-container" class="hidden px-6 py-4 border-b border-gray-200 bg-gray-50">
             <div class="flex justify-between mb-1">
-                <span class="text-sm font-medium text-blue-700">Memproses Data Excel...</span>
-                <span id="import-progress-text" class="text-sm font-medium text-blue-700">0%</span>
+                <span class="text-sm font-medium text-gray-700">Memproses Data Excel...</span>
+                <span id="import-progress-text" class="text-sm font-medium text-gray-700">0%</span>
             </div>
             <div class="w-full bg-gray-200 rounded-full h-2.5">
-                <div id="import-progress-bar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+                <div id="import-progress-bar" class="bg-amber-600 h-2.5 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
             </div>
-            <p id="import-progress-detail" class="text-xs text-blue-600 mt-2">Menginisialisasi import...</p>
+            <p id="import-progress-detail" class="text-xs text-gray-600 mt-2">Menginisialisasi import...</p>
         </div>
 
         <div class="p-6">
@@ -283,8 +243,8 @@
                             class="tab-button {{ (!request('tab') || request('tab') === 'all') ? 'active border-amber-500 text-amber-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm"
                             data-tab="all">
                             Semua Mahasiswa
-                            <span class="ml-2 {{ (!request('tab') || request('tab') === 'all') ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-600' }} py-0.5 px-2 rounded-full text-xs font-medium">
-                                {{ $allMahasiswaCollection->count() }}
+                            <span class="ml-2 text-xs font-medium {{ (!request('tab') || request('tab') === 'all') ? 'text-amber-700' : 'text-gray-500' }}">
+                                {{ $totalMahasiswaCount ?? $allMahasiswaCollection->count() }}
                             </span>
                         </button>
                         @if(!empty($mahasiswaByKelas))
@@ -292,12 +252,13 @@
                         @php
                         $kelasSlug = 'kelas-' . Str::slug($kelasNama);
                         $isActive = request('tab') === $kelasSlug;
+                        $kelasCount = is_numeric($mahasiswaInKelas) ? $mahasiswaInKelas : count($mahasiswaInKelas);
                         @endphp
                         <button type="button"
                             class="tab-button {{ $isActive ? 'active border-amber-500 text-amber-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm"
                             data-tab="{{ $kelasSlug }}">
                             Kelas {{ $kelasNama }}
-                            <span class="ml-2 {{ $isActive ? 'bg-amber-100 text-amber-600' : 'bg-gray-100 text-gray-600' }} py-0.5 px-2 rounded-full text-xs font-medium">{{ count($mahasiswaInKelas) }}</span>
+                            <span class="ml-2 text-xs font-medium {{ $isActive ? 'text-amber-700' : 'text-gray-500' }}">{{ $kelasCount }}</span>
                         </button>
                         @endforeach
                         @endif
@@ -334,34 +295,23 @@
                             $kelasNama = 'Tidak Ada Kelas';
                             $studentClassId = null;
 
-                            // Cari kelas mahasiswa
-                            foreach($mataKuliahClasses as $tam) {
-                            foreach($tam->kelas as $kelas) {
-                            $studentInClass = $kelas->kelasMahasiswa->where('mahasiswaId', $mhs->id)->first();
-                            if ($studentInClass) {
-                            $kelasNama = $kelas->namaKelas;
-                            $studentClassId = $tam->id;
-                            break 2;
-                            }
-                            }
+                            $km = $kelasMahasiswaMap[$mhs->id] ?? null;
+                            if ($km && $km->kelas) {
+                                $kelasNama = $km->kelas->namaKelas;
+                                $studentClassId = $km->kelas->tahunAjaranMatkulId;
                             }
 
                             // Fallback: Jika tidak ada kelas, gunakan tahunAjaranMatkul->id
                             if (!$studentClassId) {
-                            $studentClassId = $tahunAjaranMatkul->id;
-                            $kelasNama = 'Default';
+                                $studentClassId = $tahunAjaranMatkul->id;
+                                $kelasNama = 'Default';
                             }
-
-                            // Debug: Log studentClassId
-                            \Log::info("Mahasiswa {$mhs->id} ({$mhs->nama}): studentClassId = {$studentClassId}, kelasNama = {$kelasNama}");
                             @endphp
                             <tr data-mahasiswa-id="{{ $mhs->id }}">
                                 <td class="px-6 py-4 whitespace-nowrap">{{ $mhs->nim }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">{{ $mhs->nama }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                        Kelas {{ $kelasNama }}
-                                    </span>
+                                    <span class="text-sm text-gray-700">Kelas {{ $kelasNama }}</span>
                                 </td>
                                 @foreach($allKomponen as $komponen)
                                 <td class="px-4 py-4 whitespace-nowrap text-center">
@@ -380,7 +330,7 @@
                                         min="0"
                                         max="100"
                                         step="0.01"
-                                        class="w-20 px-2 py-1 text-sm text-center border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 nilai-input hidden"
+                                        class="w-20 px-2 py-1 text-sm text-center border border-gray-300 rounded focus:ring-2 focus:ring-amber-500 focus:border-amber-500 nilai-input hidden"
                                         data-mahasiswa-id="{{ $mhs->id }}"
                                         data-komponen-id="{{ $komponen->id }}"
                                         data-original-value="{{ $nilaiValue }}"
@@ -425,11 +375,11 @@
                                 </td>
                                 <!-- Kolom Grade -->
                                 <td class="px-4 py-4 whitespace-nowrap text-center grade-column">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                            {{ $grade == 'A' || $grade == 'A-' ? 'bg-green-100 text-green-800' :
-                                               ($grade == 'B+' || $grade == 'B' || $grade == 'B-' ? 'bg-blue-100 text-blue-800' :
-                                               ($grade == 'C+' || $grade == 'C' ? 'bg-yellow-100 text-yellow-800' :
-                                               ($grade == 'D' ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800'))) }}">
+                                    <span class="text-sm font-semibold
+                                            {{ $grade == 'A' || $grade == 'A-' ? 'text-emerald-700' :
+                                               ($grade == 'B+' || $grade == 'B' || $grade == 'B-' ? 'text-gray-900' :
+                                               ($grade == 'C+' || $grade == 'C' ? 'text-amber-700' :
+                                               ($grade == 'D' ? 'text-orange-700' : 'text-red-700'))) }}">
                                         {{ $grade ?: '-' }}
                                     </span>
                                 </td>
@@ -438,7 +388,7 @@
                                     <div class="flex items-center justify-center space-x-2">
                                         <!-- Tombol Detail (selalu terlihat) -->
                                         <button type="button"
-                                            class="btn-detail-nilai px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded transition-colors duration-200"
+                                            class="btn-detail-nilai px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-xs font-medium rounded transition-colors duration-200"
                                             data-mahasiswa-id="{{ $mhs->id }}"
                                             data-mahasiswa-nama="{{ $mhs->nama }}"
                                             data-nim="{{ $mhs->nim }}">
@@ -453,7 +403,7 @@
                                         <div class="aksi-column hidden">
                                             <button type="button"
                                                 id="save-btn-{{ $mhs->id }}"
-                                                class="btn-simpan-nilai px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                                class="btn-simpan-nilai px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
                                                 data-mahasiswa-id="{{ $mhs->id }}"
                                                 disabled>
                                                 <svg class="w-3 h-3 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -533,10 +483,10 @@
 <!-- Modal Import Excel -->
 <div id="import-modal" tabindex="-1" aria-hidden="true" class="overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center min-h-screen w-full hidden transition-opacity duration-300 ease-out" style="background: rgba(0,0,0,0.6);">
     <div class="relative p-4 w-full max-w-md max-h-full transform transition-all duration-300 ease-out scale-95 opacity-0" data-modal-content>
-        <div class="relative bg-white rounded-lg shadow-xl animate-in fade-in slide-in-from-top-4 duration-300">
+        <div class="relative bg-white rounded-xl border border-gray-200 animate-in fade-in slide-in-from-top-4 duration-300">
             <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t">
                 <h3 class="text-lg font-semibold text-gray-900">
-                    <svg class="w-5 h-5 mr-2 inline-block text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-5 h-5 mr-2 inline-block text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
                     Import Nilai dari Excel
@@ -559,7 +509,7 @@
                         id="excel_file"
                         name="excel_file"
                         accept=".xlsx,.xls"
-                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
                         required>
                 </div>
 
@@ -597,10 +547,10 @@
                 </div>
 
                 <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
-                    <button type="button" onclick="hideImportModal()" class="text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg border border-gray-200 text-sm font-medium px-5 py-2.5 hover:text-gray-900 focus:z-10 transition-colors duration-200">
+                    <button type="button" onclick="hideImportModal()" class="bg-gray-600 hover:bg-gray-700 text-white focus:ring-4 focus:outline-none focus:ring-gray-300 rounded-lg text-sm font-medium px-5 py-2.5 focus:z-10 transition-colors duration-200">
                         Batal
                     </button>
-                    <button type="submit" id="import-submit-btn" class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-colors duration-200">
+                    <button type="submit" id="import-submit-btn" class="text-white bg-amber-600 hover:bg-amber-700 focus:ring-4 focus:outline-none focus:ring-amber-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-colors duration-200">
                         <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                         </svg>
@@ -615,7 +565,7 @@
 <!-- Detail Nilai Modal -->
 <div id="detail-modal" class="fixed inset-0 overflow-y-auto overflow-x-hidden justify-center items-center min-h-screen w-full z-50 hidden" style="background: rgba(0,0,0,0.6); display: none;">
     <div class="relative p-4 w-full max-w-6xl max-h-full transform transition-all duration-300 ease-out modal-content scale-95 opacity-0">
-        <div class="relative bg-white rounded-lg shadow-xl">
+        <div class="relative bg-white rounded-xl border border-gray-200">
             <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t">
                 <h3 class="text-lg font-semibold text-gray-900" id="detail-modal-title">Detail Nilai Mahasiswa</h3>
                 <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center transition-colors duration-200" data-modal-hide="detail-modal">
@@ -629,7 +579,7 @@
             <div class="p-4 md:p-5 overflow-y-auto max-h-[70vh]">
                 <div id="detail-content-placeholder" class="space-y-4">
                     <div class="flex justify-center py-8">
-                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
                     </div>
                 </div>
             </div>
@@ -653,7 +603,7 @@
 <!-- Created Students Modal -->
 <div id="created-students-modal" tabindex="-1" aria-hidden="true" class="overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center min-h-screen w-full flex transition-opacity duration-300 ease-out" style="background: rgba(0,0,0,0.6);">
     <div class="relative p-4 w-full max-w-4xl max-h-full transform transition-all duration-300 ease-out scale-100 opacity-100">
-        <div class="relative bg-white rounded-lg shadow-xl animate-in fade-in slide-in-from-top-4 duration-300">
+        <div class="relative bg-white rounded-xl border border-gray-200 animate-in fade-in slide-in-from-top-4 duration-300">
             <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t">
                 <h3 class="text-lg font-semibold text-green-900">
                     <svg class="w-5 h-5 mr-2 inline-block text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -699,7 +649,7 @@
             </div>
 
             <div class="flex items-center justify-end space-x-3 p-4 md:p-5 border-t border-gray-200">
-                <button type="button" onclick="hideCreatedStudentsModal()" class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-colors duration-200">
+                <button type="button" onclick="hideCreatedStudentsModal()" class="text-white bg-amber-600 hover:bg-amber-700 focus:ring-4 focus:outline-none focus:ring-amber-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-colors duration-200">
                     <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
@@ -715,7 +665,7 @@
 <!-- Import Errors Modal -->
 <div id="import-errors-modal" tabindex="-1" aria-hidden="true" class="overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center min-h-screen w-full flex transition-opacity duration-300 ease-out" style="background: rgba(0,0,0,0.6);">
     <div class="relative p-4 w-full max-w-2xl max-h-full transform transition-all duration-300 ease-out scale-100 opacity-100">
-        <div class="relative bg-white rounded-lg shadow-xl animate-in fade-in slide-in-from-top-4 duration-300">
+        <div class="relative bg-white rounded-xl border border-gray-200 animate-in fade-in slide-in-from-top-4 duration-300">
             <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t">
                 <h3 class="text-lg font-semibold text-red-900">
                     <svg class="w-5 h-5 mr-2 inline-block text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -754,8 +704,8 @@
                     </ul>
                 </div>
 
-                <div class="mt-4 p-3 bg-blue-50 rounded-lg">
-                    <p class="text-sm text-blue-800">
+                <div class="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    <p class="text-sm text-gray-700">
                         <svg class="w-4 h-4 mr-2 inline-block" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
                         </svg>
@@ -810,20 +760,20 @@
                             Pilih File Excel
                         </label>
                         <input type="file" name="excel_file" id="excel_file" accept=".xlsx,.xls"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500" required>
                         <p class="text-xs text-gray-500 mt-1">Format yang didukung: .xlsx, .xls (Maksimal 10MB)</p>
                     </div>
 
                     <div class="mb-4">
                         <a href="{{ route('dosen.nilai.export-template', $tahunAjaranMatkul->id) }}"
-                            class="text-blue-600 hover:text-blue-800 text-sm underline">
+                            class="inline-flex items-center bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-md text-sm font-medium no-underline">
                             Download Template Excel
                         </a>
                     </div>
 
-                    <div class="mb-4 p-3 bg-blue-50 rounded-lg">
-                        <h4 class="text-sm font-medium text-blue-900 mb-2">Kelas yang Tersedia:</h4>
-                        <div class="text-sm text-blue-800">
+                    <div class="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                        <h4 class="text-sm font-medium text-gray-900 mb-2">Kelas yang Tersedia:</h4>
+                        <div class="text-sm text-gray-700">
                             @php
                             $availableClasses = [];
                             foreach($tahunAjaranMatkul->kelas as $kelas) {
@@ -836,11 +786,11 @@
 
                     <div class="flex justify-end space-x-3">
                         <button type="button" onclick="closeImportModal()"
-                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300">
+                            class="px-4 py-2 text-sm font-medium bg-gray-600 hover:bg-gray-700 text-white">
                             Batal
                         </button>
                         <button type="submit" id="importSubmitBtn"
-                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            class="px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500">
                             Import
                         </button>
                     </div>
@@ -850,7 +800,7 @@
             <!-- Loading State -->
             <div id="importLoading" class="hidden">
                 <div class="text-center">
-                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4"></div>
                     <h4 class="text-lg font-medium text-gray-900 mb-2">Sedang Memproses Import...</h4>
                     <p class="text-sm text-gray-600 mb-4">Mohon tunggu, jangan tutup halaman ini</p>
                 </div>
@@ -973,7 +923,7 @@
             if (contentDiv) {
                 contentDiv.innerHTML = `
                 <div class="flex justify-center py-8">
-                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
                 </div>
             `;
             }
@@ -1330,17 +1280,17 @@
                     gradeSpan.textContent = grade;
 
                     // Update grade color classes
-                    gradeSpan.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium';
+                    gradeSpan.className = 'text-sm font-semibold';
                     if (grade === 'A' || grade === 'A-') {
-                        gradeSpan.classList.add('bg-green-100', 'text-green-800');
+                        gradeSpan.classList.add('text-emerald-700');
                     } else if (grade === 'B+' || grade === 'B' || grade === 'B-') {
-                        gradeSpan.classList.add('bg-blue-100', 'text-blue-800');
+                        gradeSpan.classList.add('text-gray-900');
                     } else if (grade === 'C+' || grade === 'C') {
-                        gradeSpan.classList.add('bg-yellow-100', 'text-yellow-800');
+                        gradeSpan.classList.add('text-amber-700');
                     } else if (grade === 'D') {
-                        gradeSpan.classList.add('bg-orange-100', 'text-orange-800');
+                        gradeSpan.classList.add('text-orange-700');
                     } else if (grade !== '-') {
-                        gradeSpan.classList.add('bg-red-100', 'text-red-800');
+                        gradeSpan.classList.add('text-red-700');
                     }
                 }
             }
@@ -1422,10 +1372,10 @@
                     saveBtn.disabled = !hasChanged;
                     if (hasChanged) {
                         saveBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
-                        saveBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                        saveBtn.classList.add('bg-amber-600', 'hover:bg-amber-700');
                     } else {
                         saveBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
-                        saveBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                        saveBtn.classList.remove('bg-amber-600', 'hover:bg-amber-700');
                     }
                 }
 
@@ -1454,6 +1404,9 @@
             if (e.target.closest('.btn-simpan-nilai')) {
                 e.preventDefault();
                 const button = e.target.closest('.btn-simpan-nilai');
+                if (button.disabled || button.dataset.loading === '1') {
+                    return;
+                }
                 const mahasiswaId = button.getAttribute('data-mahasiswa-id');
 
                 // Validate mahasiswaId
@@ -1561,6 +1514,12 @@
                     console.log(`${key}: ${value}`);
                 }
 
+                if (typeof setButtonLoading === 'function') {
+                    setButtonLoading(button, true, 'Menyimpan...');
+                } else {
+                    button.disabled = true;
+                }
+
                 fetch(`/dosen/nilai/{{ $tahunAjaranMatkul->id }}/individual-store`, {
                         method: 'POST',
                         headers: {
@@ -1575,9 +1534,13 @@
                             nilaiInputs.forEach(input => {
                                 input.setAttribute('data-original-value', input.value);
                             });
+
+                            if (typeof setButtonLoading === 'function') {
+                                setButtonLoading(button, false);
+                            }
                             button.disabled = true;
                             button.classList.add('bg-gray-400', 'cursor-not-allowed');
-                            button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                            button.classList.remove('bg-amber-600', 'hover:bg-amber-700');
 
                             // Update nilai plain text display to show new values
                             nilaiInputs.forEach(input => {
@@ -1608,6 +1571,11 @@
                                 exitEditMode();
                             }, 1000); // Delay 1 detik agar user bisa lihat pesan sukses
                         } else {
+                            if (typeof setButtonLoading === 'function') {
+                                setButtonLoading(button, false);
+                            } else {
+                                button.disabled = false;
+                            }
                             if (typeof showToast === 'function') {
                                 showToast('Gagal menyimpan nilai: ' + data.message, 'error');
                             }
@@ -1615,6 +1583,11 @@
                     })
                     .catch(error => {
                         console.error('Error saving nilai:', error);
+                        if (typeof setButtonLoading === 'function') {
+                            setButtonLoading(button, false);
+                        } else {
+                            button.disabled = false;
+                        }
                         if (typeof showToast === 'function') {
                             showToast('Terjadi kesalahan saat menyimpan nilai', 'error');
                         }
@@ -1640,6 +1613,10 @@
 
         if (bulkSaveBtn) {
             bulkSaveBtn.addEventListener('click', function() {
+                if (bulkSaveBtn.disabled || bulkSaveBtn.dataset.loading === '1') {
+                    return;
+                }
+
                 if (confirmBulkSave && confirmBulkSave.checked) {
                     // Collect all changed values from localStorage across all pages
                     const allChangedValues = collectAllChangedValuesFromStorage();
@@ -1690,6 +1667,13 @@
 
                         // Clear all edit mode data from localStorage before submitting
                         clearAllEditModeData();
+
+                        // Lock button (form.submit() does not fire submit event)
+                        if (typeof setButtonLoading === 'function') {
+                            setButtonLoading(bulkSaveBtn, true, 'Menyimpan...');
+                        } else {
+                            bulkSaveBtn.disabled = true;
+                        }
 
                         // Submit the form
                         bulkForm.submit();
@@ -1799,8 +1783,8 @@
                         clearInterval(interval);
                         progressBar.style.width = '100%';
                         progressText.innerText = '100%';
-                        progressBar.classList.replace('bg-blue-600', 'bg-green-600');
-                        progressText.classList.replace('text-blue-700', 'text-green-700');
+                        progressBar.classList.replace('bg-amber-600', 'bg-green-600');
+                        progressText.classList.replace('text-amber-700', 'text-green-700');
                         progressDetail.classList.replace('text-gray-500', 'text-green-600');
                         progressDetail.innerText = "Selesai! Memuat ulang halaman...";
                         
@@ -1927,12 +1911,12 @@
                         </div>
                     </div>
 
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
                         <div class="flex">
-                            <svg class="h-5 w-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="h-5 w-5 text-gray-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
                             </svg>
-                            <div class="text-sm text-blue-700">
+                            <div class="text-sm text-gray-700">
                                 <p class="font-semibold mb-1">Langkah yang harus dilakukan:</p>
                                 <div class="text-xs" style="white-space: pre-line;">${steps}</div>
                             </div>

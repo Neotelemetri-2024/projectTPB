@@ -2,615 +2,343 @@
 
 @section('title', 'Laporan Detail CPMK - ' . $tahunAjaranMatkul->mataKuliah->namaMatkul)
 
+@push('head')
+    @vite('resources/js/charts.js')
+@endpush
+
 @section('content')
-<div class="p-6">
-    <!-- Breadcrumb -->
-    <nav class="mb-6">
-        <ol class="flex items-center space-x-2 text-sm text-gray-500">
-            <li>
-                <a href="{{ route('dosen.dashboard') }}" class="hover:text-gray-700">Dashboard</a>
-            </li>
-            <li>
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                </svg>
-            </li>
-            <li>
-                <a href="{{ route('dosen.cpmk-laporan.index') }}" class="hover:text-gray-700">Laporan CPMK</a>
-            </li>
-            <li>
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                </svg>
-            </li>
-            <li class="text-gray-900 font-medium">{{ $tahunAjaranMatkul->mataKuliah->namaMatkul }}</li>
-        </ol>
+<div class="p-4 md:p-6 space-y-4">
+    <nav class="text-sm text-gray-500">
+        <a href="{{ route('dosen.dashboard') }}" class="text-amber-700 hover:underline">Dashboard</a>
+        <span class="mx-1.5 text-gray-400">/</span>
+        <a href="{{ route('dosen.cpmk-laporan.index') }}" class="text-amber-700 hover:underline">Laporan CPMK</a>
+        <span class="mx-1.5 text-gray-400">/</span>
+        <span class="text-gray-900">{{ $tahunAjaranMatkul->mataKuliah->namaMatkul }}</span>
     </nav>
 
-    <!-- Header -->
-    <div class="bg-white rounded-lg shadow-md mb-6">
-        <div class="p-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Pengukuran CPMK {{ $tahunAjaranMatkul->mataKuliah->namaMatkul }}</h1>
-                    <p class="text-gray-600 mt-1">{{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }}-{{ $tahunAjaranMatkul->mataKuliah->kurikulum }} • {{ $tahunAjaranMatkul->tahunAjaran->tahun }} - {{ ucfirst($tahunAjaranMatkul->tahunAjaran->periode) }}</p>
-                </div>
-                <div class="flex items-center gap-3">
-                    <a href="{{ route('dosen.cpmk-laporan.export-pdf', $tahunAjaranMatkul->id) }}"
-                       class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        Export PDF
-                    </a>
-                    <a href="{{ route('dosen.cpmk-laporan.index') }}"
-                       class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                        </svg>
-                        Kembali
-                    </a>
-                </div>
+    <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-200 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
+            <div>
+                <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Pengukuran CPMK {{ $tahunAjaranMatkul->mataKuliah->namaMatkul }}</h1>
+                <p class="text-sm text-gray-500 mt-1">
+                    {{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }}-{{ $tahunAjaranMatkul->mataKuliah->kurikulum }}
+                    · {{ $tahunAjaranMatkul->tahunAjaran->tahun }} - {{ ucfirst($tahunAjaranMatkul->tahunAjaran->periode) }}
+                </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="{{ route('dosen.cpmk-laporan.export-pdf', $tahunAjaranMatkul->id) }}"
+                   class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-md text-sm">
+                    Export PDF
+                </a>
+                <a href="{{ route('dosen.cpmk-laporan.index') }}"
+                   class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-md text-sm">
+                    Kembali
+                </a>
             </div>
         </div>
     </div>
 
     @if(count($cpmkData) > 0)
+        @php
+            $summaryCpmk = count($cpmkData);
+            $summaryAvg = round(collect($cpmkData)->avg('averageNilai'), 2);
+            $summaryKompeten = round(collect($cpmkData)->avg('competentPercentage'), 1);
+            $summaryDenganNilai = collect($cpmkData)->max('mahasiswaDenganNilai') ?? 0;
+            $summaryTotalMhs = collect($cpmkData)->max('totalMahasiswa') ?? 0;
+        @endphp
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div class="bg-white border border-gray-200 rounded-xl px-4 py-3">
+                <p class="text-[11px] uppercase tracking-wide text-gray-500">Jumlah CPMK</p>
+                <p class="text-2xl font-semibold text-gray-900 mt-0.5">{{ $summaryCpmk }}</p>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-xl px-4 py-3">
+                <p class="text-[11px] uppercase tracking-wide text-gray-500">Mahasiswa</p>
+                <p class="text-2xl font-semibold text-gray-900 mt-0.5">{{ $summaryDenganNilai }} / {{ $summaryTotalMhs }}</p>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-xl px-4 py-3">
+                <p class="text-[11px] uppercase tracking-wide text-gray-500">Rata-rata Nilai</p>
+                <p class="text-2xl font-semibold text-gray-900 mt-0.5">{{ $summaryAvg }}</p>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-xl px-4 py-3">
+                <p class="text-[11px] uppercase tracking-wide text-gray-500">Rata-rata Kompeten</p>
+                <p class="text-2xl font-semibold text-gray-900 mt-0.5">{{ $summaryKompeten }}%</p>
+            </div>
+        </div>
+
         @foreach($cpmkData as $index => $data)
-            <div class="bg-white rounded-lg shadow-md mb-6">
-                <div class="p-6 border-b border-gray-200">
-                    <h2 class="text-xl font-semibold text-gray-900">{{ $data['cpmk']->kodeCpmk }} - {{ $data['cpmk']->deskripsi }}</h2>
-                    <div class="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded">Total: {{ $data['totalMahasiswa'] }} Mahasiswa</span>
-                        <span class="bg-green-100 text-green-800 px-2 py-1 rounded">Dengan Nilai: {{ $data['mahasiswaDenganNilai'] }} Mahasiswa</span>
-                        <span class="bg-amber-100 text-amber-800 px-2 py-1 rounded">Rata-rata: {{ $data['averageNilai'] }}</span>
-                        <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded">Kompeten: {{ $data['competentPercentage'] }}%</span>
-                    </div>
+            <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                <div class="px-5 py-4 border-b border-gray-200">
+                    <h2 class="text-base font-semibold text-gray-900">{{ $data['cpmk']->kodeCpmk }} — {{ $data['cpmk']->deskripsi }}</h2>
+                    <p class="mt-2 text-sm text-gray-600 flex flex-wrap items-center gap-x-3 gap-y-1">
+                        <span>Total: {{ $data['totalMahasiswa'] }} mahasiswa</span>
+                        <span class="text-gray-300">|</span>
+                        <span>Dengan nilai: {{ $data['mahasiswaDenganNilai'] }}</span>
+                        <span class="text-gray-300">|</span>
+                        <span>Rata-rata: {{ $data['averageNilai'] }}</span>
+                        <span class="text-gray-300">|</span>
+                        <span>Kompeten: {{ $data['competentPercentage'] }}%</span>
+                        <span class="text-gray-300">|</span>
+                        <span>Tidak kompeten: {{ $data['notCompetentPercentage'] }}%</span>
+                    </p>
                 </div>
 
-                <div class="p-6">
-                    <!-- Charts Row -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                        <!-- Pie Chart -->
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            <div class="flex items-center justify-between mb-4">
-                                <div>
-                                    <h3 class="text-lg font-semibold text-gray-900">Persentase Pengukuran CPMK</h3>
-                                    <p class="text-sm text-gray-600 mt-1">Distribusi persentase berdasarkan grade pencapaian</p>
-                                </div>
-                                <button id="maximize-pie-{{ $index }}"
-                                        onclick="maximizeChart('pie-chart-{{ $index }}', 'Persentase Pengukuran CPMK - {{ $data['cpmk']->kodeCpmk }}')"
-                                        class="text-amber-600 hover:text-amber-700 p-1 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                                        disabled>
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
-                                    </svg>
-                                </button>
-                            </div>
-                            <div class="relative" style="height: 256px;">
-                                <canvas id="pie-chart-{{ $index }}"></canvas>
+                <div class="p-5 space-y-5">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-900">Persentase Pengukuran CPMK</h3>
+                            <p class="text-xs text-gray-500 mt-0.5 mb-3">Distribusi persentase berdasarkan grade pencapaian</p>
+                            <div class="relative h-64">
+                                <div id="pie-chart-{{ $index }}" class="h-full w-full"></div>
                             </div>
                         </div>
 
-                        <!-- Histogram -->
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            <div class="flex items-center justify-between mb-4">
-                                <div>
-                                    <h3 class="text-lg font-semibold text-gray-900">Histogram Pengukuran CPMK</h3>
-                                    <p class="text-sm text-gray-600 mt-1">Distribusi frekuensi nilai dengan pengelompokan grade (U, C, E, X)</p>
-                                </div>
-                                <button id="maximize-histogram-{{ $index }}"
-                                        onclick="maximizeChart('histogram-{{ $index }}', 'Histogram Pengukuran CPMK - {{ $data['cpmk']->kodeCpmk }}')"
-                                        class="text-amber-600 hover:text-amber-700 p-1 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                                        disabled>
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
-                                        </svg>
-                                </button>
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-900">Histogram Pengukuran CPMK</h3>
+                            <p class="text-xs text-gray-500 mt-0.5 mb-3">Distribusi frekuensi nilai dengan pengelompokan grade (U, C, E, X)</p>
+                            <div class="relative h-64">
+                                <div id="histogram-{{ $index }}" class="h-full w-full"></div>
                             </div>
-                            <div class="relative" style="height: 256px;">
-                                <canvas id="histogram-{{ $index }}"></canvas>
-                            </div>
-                            <!-- Legend untuk histogram -->
-                            <div class="mt-4 grid grid-cols-2 gap-2 text-xs">
-                                <div class="flex items-center">
-                                    <div class="w-3 h-3 bg-blue-500 mr-2 rounded"></div>
+                            <div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-600">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
                                     <span>U (0-59): Uncompetence</span>
                                 </div>
-                                <div class="flex items-center">
-                                    <div class="w-3 h-3 bg-red-500 mr-2 rounded"></div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
                                     <span>C (60-74): Competence</span>
                                 </div>
-                                <div class="flex items-center">
-                                    <div class="w-3 h-3 bg-green-500 mr-2 rounded"></div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
                                     <span>E (75-89): Excellent</span>
                                 </div>
-                                <div class="flex items-center">
-                                    <div class="w-3 h-3 bg-purple-500 mr-2 rounded"></div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
                                     <span>X (90-100): Extraordinary</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Table -->
                     <div class="overflow-x-auto">
-                        <table class="min-w-full bg-white border border-gray-200 rounded-lg">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Nilai Angka (NA)</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Nilai Mutu (NM)</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Sebutan Mutu</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Persentase</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Competen (%)</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200">Tidak Competen (%)</th>
+                        <table class="min-w-full border-collapse text-sm">
+                            <thead>
+                                <tr class="text-left text-[11px] uppercase tracking-wide text-gray-500">
+                                    <th class="border border-gray-300 px-3 py-2.5 font-semibold">Nilai Angka (NA)</th>
+                                    <th class="border border-gray-300 px-3 py-2.5 font-semibold">Nilai Mutu (NM)</th>
+                                    <th class="border border-gray-300 px-3 py-2.5 font-semibold">Sebutan Mutu</th>
+                                    <th class="border border-gray-300 px-3 py-2.5 font-semibold">Persentase</th>
+                                    <th class="border border-gray-300 px-3 py-2.5 font-semibold">Kompeten (%)</th>
+                                    <th class="border border-gray-300 px-3 py-2.5 font-semibold">Tidak Kompeten (%)</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-200">
+                            <tbody>
                                 <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">0 ≤ Nilai < 60</td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">U</td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">Uncompetence</td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">{{ $data['distribution']['U']['percentage'] }}%</td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200" rowspan="4">{{ $data['competentPercentage'] }}%</td>
-                                    <td class="px-4 py-3 text-sm text-gray-900" rowspan="4">{{ $data['notCompetentPercentage'] }}%</td>
+                                    <td class="border border-gray-300 px-3 py-2 text-gray-900">0 ≤ Nilai &lt; 60</td>
+                                    <td class="border border-gray-300 px-3 py-2 text-gray-900">U</td>
+                                    <td class="border border-gray-300 px-3 py-2 text-gray-900">Uncompetence</td>
+                                    <td class="border border-gray-300 px-3 py-2 text-gray-900">{{ $data['distribution']['U']['percentage'] }}%</td>
+                                    <td class="border border-gray-300 px-3 py-2 text-gray-900" rowspan="4">{{ $data['competentPercentage'] }}%</td>
+                                    <td class="border border-gray-300 px-3 py-2 text-gray-900" rowspan="4">{{ $data['notCompetentPercentage'] }}%</td>
                                 </tr>
                                 <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">60 ≤ Nilai < 75</td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">C</td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">Competence</td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">{{ $data['distribution']['C']['percentage'] }}%</td>
+                                    <td class="border border-gray-300 px-3 py-2 text-gray-900">60 ≤ Nilai &lt; 75</td>
+                                    <td class="border border-gray-300 px-3 py-2 text-gray-900">C</td>
+                                    <td class="border border-gray-300 px-3 py-2 text-gray-900">Competence</td>
+                                    <td class="border border-gray-300 px-3 py-2 text-gray-900">{{ $data['distribution']['C']['percentage'] }}%</td>
                                 </tr>
                                 <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">75 ≤ Nilai < 90</td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">E</td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">Excellent</td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">{{ $data['distribution']['E']['percentage'] }}%</td>
+                                    <td class="border border-gray-300 px-3 py-2 text-gray-900">75 ≤ Nilai &lt; 90</td>
+                                    <td class="border border-gray-300 px-3 py-2 text-gray-900">E</td>
+                                    <td class="border border-gray-300 px-3 py-2 text-gray-900">Excellent</td>
+                                    <td class="border border-gray-300 px-3 py-2 text-gray-900">{{ $data['distribution']['E']['percentage'] }}%</td>
                                 </tr>
                                 <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">90 ≤ Nilai ≤ 100</td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">X</td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">Extraordinary</td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 border-r border-gray-200">{{ $data['distribution']['X']['percentage'] }}%</td>
+                                    <td class="border border-gray-300 px-3 py-2 text-gray-900">90 ≤ Nilai ≤ 100</td>
+                                    <td class="border border-gray-300 px-3 py-2 text-gray-900">X</td>
+                                    <td class="border border-gray-300 px-3 py-2 text-gray-900">Extraordinary</td>
+                                    <td class="border border-gray-300 px-3 py-2 text-gray-900">{{ $data['distribution']['X']['percentage'] }}%</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
-
-
                 </div>
             </div>
         @endforeach
     @else
-        <div class="bg-white rounded-lg shadow-md p-8 text-center">
-            <div class="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                </svg>
-            </div>
-            <h3 class="text-lg font-medium text-gray-900 mb-2">Belum Ada Data CPMK</h3>
-            <p class="text-gray-600 mb-4">
-                Belum ada data nilai CPMK untuk mata kuliah ini.
-            </p>
+        <div class="bg-white border border-gray-200 rounded-xl px-5 py-10 text-center">
+            <p class="text-sm font-medium text-gray-900">Belum ada data CPMK</p>
+            <p class="text-sm text-gray-500 mt-1">Belum ada data nilai CPMK untuk mata kuliah ini.</p>
         </div>
     @endif
 </div>
+@endsection
 
-<!-- Chart Modal -->
-<div id="chartModal" class="fixed inset-0 z-50 hidden">
-    <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
-    <div class="relative flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
-            <div class="flex items-center justify-between p-6 border-b border-gray-200">
-                <h3 id="chartModalTitle" class="text-xl font-semibold text-gray-900"></h3>
-                <button onclick="closeChartModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-            <div class="p-6">
-                <div class="relative w-full h-[70vh] flex items-center justify-center bg-gray-50 rounded-lg">
-                    <canvas id="chartModalCanvas" class="w-full h-full max-w-full max-h-full"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<style>
-#chartModal {
-    transition: opacity 0.3s ease-in-out;
-}
-
-#chartModal.hidden {
-    opacity: 0;
-    pointer-events: none;
-}
-
-#chartModal:not(.hidden) {
-    opacity: 1;
-    pointer-events: auto;
-}
-
-#chartModalCanvas {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-}
-</style>
-
+@push('scripts')
 <script>
-// Chart data untuk setiap CPMK
-const chartData = @json($cpmkData);
+window.__chartReadyQueue = window.__chartReadyQueue || [];
 
-// Global array untuk menyimpan referensi chart
-window.chartInstances = {};
+const chartData = @json($chartPayload);
 
-// Inisialisasi chart untuk setiap CPMK
-chartData.forEach((data, index) => {
-    // Pie Chart
-    const pieCtx = document.getElementById(`pie-chart-${index}`);
-    if (pieCtx) {
-        const pieChart = new Chart(pieCtx, {
-            type: 'pie',
-            data: {
-                labels: ['U', 'C', 'E', 'X'],
-                datasets: [{
-                    data: [
-                        data.distribution.U.percentage,
-                        data.distribution.C.percentage,
-                        data.distribution.E.percentage,
-                        data.distribution.X.percentage
-                    ],
-                    backgroundColor: [
-                        data.distribution.U.color,
-                        data.distribution.C.color,
-                        data.distribution.E.color,
-                        data.distribution.X.color
-                    ],
-                    borderWidth: 2,
-                    borderColor: '#ffffff'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'right',
-                        labels: {
-                            padding: 20,
-                            usePointStyle: true
-                        }
-                    }
-                }
-            }
-        });
+function findCategoryLabel(categories, candidates, fallback) {
+    for (const label of candidates) {
+        if (categories.includes(label)) {
+            return label;
+        }
+    }
+    return fallback;
+}
 
-        // Store chart reference in global array
-        window.chartInstances[`pie-chart-${index}`] = pieChart;
-        console.log(`Pie chart ${index} created with ID: pie-chart-${index}`);
+function buildGradeBandAnnotations(categories) {
+    if (!categories.length) {
+        return { xaxis: [] };
     }
 
-    // Histogram
-    const histogramCtx = document.getElementById(`histogram-${index}`);
-    if (histogramCtx) {
-        const histogramChart = new Chart(histogramCtx, {
-            type: 'line',
-            data: {
-                labels: data.histogramData.map(item => item.range),
-                datasets: [
-                    {
-                        label: 'Frekuensi',
-                        data: data.histogramData.map(item => item.count),
-                        borderColor: '#F97316',
-                        borderWidth: 3,
-                        backgroundColor: 'rgba(249, 115, 22, 0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        pointBackgroundColor: '#F97316',
-                        pointBorderColor: '#ffffff',
-                        pointBorderWidth: 2,
-                        pointRadius: 4
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Frekuensi'
-                        },
-                        max: Math.max(...data.histogramData.map(item => item.count)) + 5
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Range Nilai CPMK'
-                        }
-                    }
+    const first = categories[0];
+    const last = categories[categories.length - 1];
+
+    const bands = [
+        {
+            x: findCategoryLabel(categories, ['0-19'], first),
+            x2: findCategoryLabel(categories, ['40-59'], categories[Math.min(2, categories.length - 1)]),
+            fillColor: '#3B82F6',
+            label: 'U (0-59)',
+            color: '#3B82F6',
+        },
+        {
+            x: findCategoryLabel(categories, ['60-69'], categories[Math.min(3, categories.length - 1)]),
+            x2: findCategoryLabel(categories, ['70-79'], categories[Math.min(4, categories.length - 1)]),
+            fillColor: '#EF4444',
+            label: 'C (60-74)',
+            color: '#EF4444',
+        },
+        {
+            x: findCategoryLabel(categories, ['80-89'], categories[Math.min(5, categories.length - 1)]),
+            x2: findCategoryLabel(categories, ['80-89'], categories[Math.min(5, categories.length - 1)]),
+            fillColor: '#10B981',
+            label: 'E (75-89)',
+            color: '#10B981',
+        },
+        {
+            x: findCategoryLabel(categories, ['90-100'], last),
+            x2: findCategoryLabel(categories, ['90-100'], last),
+            fillColor: '#F59E0B',
+            label: 'X (90-100)',
+            color: '#F59E0B',
+        },
+    ];
+
+    return {
+        xaxis: bands.map((band) => ({
+            x: band.x,
+            x2: band.x2,
+            fillColor: band.fillColor,
+            opacity: 0.1,
+            borderColor: band.fillColor,
+            label: {
+                text: band.label,
+                style: {
+                    color: band.color,
+                    background: 'transparent',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
                 },
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    annotation: {
-                        annotations: {
-                            // Background zone untuk U (0-59)
-                            zoneU: {
-                                type: 'box',
-                                xMin: -0.5,
-                                xMax: 2.5, // 0-19, 20-39, 40-59
-                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                                borderColor: 'rgba(59, 130, 246, 0.3)',
-                                borderWidth: 1,
-                                label: {
-                                    content: 'U (0-59)',
-                                    position: 'start',
-                                    yAdjust: -10,
-                                    color: '#3B82F6',
-                                    font: {
-                                        weight: 'bold',
-                                        size: 12
-                                    }
-                                }
-                            },
-                            // Background zone untuk C (60-74)
-                            zoneC: {
-                                type: 'box',
-                                xMin: 2.5,
-                                xMax: 4.5, // 60-69, 70-79
-                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                                borderColor: 'rgba(239, 68, 68, 0.3)',
-                                borderWidth: 1,
-                                label: {
-                                    content: 'C (60-74)',
-                                    position: 'start',
-                                    yAdjust: -10,
-                                    color: '#EF4444',
-                                    font: {
-                                        weight: 'bold',
-                                        size: 12
-                                    }
-                                }
-                            },
-                            // Background zone untuk E (75-89)
-                            zoneE: {
-                                type: 'box',
-                                xMin: 4.5,
-                                xMax: 5.5, // 80-89
-                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                                borderColor: 'rgba(16, 185, 129, 0.3)',
-                                borderWidth: 1,
-                                label: {
-                                    content: 'E (75-89)',
-                                    position: 'start',
-                                    yAdjust: -10,
-                                    color: '#10B981',
-                                    font: {
-                                        weight: 'bold',
-                                        size: 12
-                                    }
-                                }
-                            },
-                            // Background zone untuk X (90-100)
-                            zoneX: {
-                                type: 'box',
-                                xMin: 5.5,
-                                xMax: 6.5, // 90-100
-                                backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                                borderColor: 'rgba(139, 92, 246, 0.3)',
-                                borderWidth: 1,
-                                label: {
-                                    content: 'X (90-100)',
-                                    position: 'start',
-                                    yAdjust: -10,
-                                    color: '#8B5CF6',
-                                    font: {
-                                        weight: 'bold',
-                                        size: 12
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        });
+            },
+        })),
+    };
+}
 
-        // Store chart reference in global array
-        window.chartInstances[`histogram-${index}`] = histogramChart;
-        console.log(`Histogram chart ${index} created with ID: histogram-${index}`);
-    }
-});
-
-// Wait for all charts to be ready before allowing maximize
-setTimeout(() => {
-    console.log('All charts initialized. Available charts:', window.chartInstances);
-    console.log('Chart instances count:', Object.keys(window.chartInstances).length);
-
-    // Enable maximize buttons for all charts
-    chartData.forEach((data, index) => {
-        const pieButton = document.getElementById(`maximize-pie-${index}`);
-        const histogramButton = document.getElementById(`maximize-histogram-${index}`);
-
-        if (pieButton) {
-            pieButton.disabled = false;
-            pieButton.classList.remove('opacity-50', 'cursor-not-allowed');
-        }
-
-        if (histogramButton) {
-            histogramButton.disabled = false;
-            histogramButton.classList.remove('opacity-50', 'cursor-not-allowed');
-        }
-    });
-
-    console.log('All maximize buttons enabled');
-}, 1000); // Increased timeout to ensure charts are fully rendered
-
-// Fungsi untuk maximize chart
-function maximizeChart(chartId, title) {
-    const modal = document.getElementById('chartModal');
-    const modalTitle = document.getElementById('chartModalTitle');
-    const modalCanvas = document.getElementById('chartModalCanvas');
-
-    // Cek apakah element ada
-    if (!modal || !modalTitle || !modalCanvas) {
-        console.error('Modal elements not found');
+window.__chartReadyQueue.push(function () {
+    if (!chartData || !chartData.length) {
+        console.warn('Tidak ada data chart CPMK');
         return;
     }
 
-    modalTitle.textContent = title;
-    modal.classList.remove('hidden');
-
-    // Destroy previous chart if exists
-    if (window.modalChart) {
-        window.modalChart.destroy();
-    }
-
-    // Find the original chart data from our global array
-    let originalChart = window.chartInstances[chartId];
-
-    // If not found in global array, try Chart.getChart as fallback
-    if (!originalChart) {
-        originalChart = Chart.getChart(chartId);
-    }
-
-    // If still not found, try to find by canvas element
-    if (!originalChart) {
-        const canvasElement = document.getElementById(chartId);
-        if (canvasElement) {
-            originalChart = Chart.getChart(canvasElement);
+    chartData.forEach((data, index) => {
+        const pieId = `pie-chart-${index}`;
+        const pieEl = document.getElementById(pieId);
+        if (pieEl) {
+            window.renderApexChart(pieEl, {
+                chart: {
+                    type: 'pie',
+                    height: '100%',
+                    toolbar: { show: false },
+                },
+                series: [
+                    data.distribution.U.percentage,
+                    data.distribution.C.percentage,
+                    data.distribution.E.percentage,
+                    data.distribution.X.percentage,
+                ],
+                labels: ['U', 'C', 'E', 'X'],
+                colors: [
+                    data.distribution.U.color,
+                    data.distribution.C.color,
+                    data.distribution.E.color,
+                    data.distribution.X.color,
+                ],
+                legend: {
+                    position: 'right',
+                },
+                stroke: {
+                    width: 2,
+                    colors: ['#ffffff'],
+                },
+                dataLabels: {
+                    enabled: true,
+                },
+            }, pieId);
         }
-    }
 
-    if (originalChart) {
-        console.log('Original chart found:', originalChart);
-        console.log('Chart data:', originalChart.config.data);
+        const histogramId = `histogram-${index}`;
+        const histogramEl = document.getElementById(histogramId);
+        if (histogramEl) {
+            const histogramRows = data.histogram_data || [];
+            const categories = histogramRows.map((item) => item.range);
+            const counts = histogramRows.map((item) => item.count);
+            const maxCount = counts.length ? Math.max(...counts) : 0;
 
-        // Wait a bit for modal to be visible and canvas to be properly sized
-        setTimeout(() => {
-            try {
-                // Ensure modal is fully visible
-                if (modal.classList.contains('hidden')) {
-                    console.log('Modal still hidden, retrying...');
-                    setTimeout(() => maximizeChart(chartId, title), 100);
-                    return;
-                }
-
-                // Reset canvas size
-                modalCanvas.width = modalCanvas.offsetWidth;
-                modalCanvas.height = modalCanvas.offsetHeight;
-
-                // Create new chart in modal with full configuration
-                window.modalChart = new Chart(modalCanvas, {
-                    type: originalChart.config.type,
-                    data: JSON.parse(JSON.stringify(originalChart.config.data)), // Deep copy
-                    options: {
-                        ...JSON.parse(JSON.stringify(originalChart.config.options)), // Deep copy
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            ...originalChart.config.options.plugins,
-                            legend: {
-                                display: true,
-                                position: 'top'
-                            }
-                        }
-                    }
-                });
-                console.log('Modal chart created successfully');
-            } catch (error) {
-                console.error('Error creating modal chart:', error);
-                // Retry once more if failed
-                setTimeout(() => {
-                    try {
-                        window.modalChart = new Chart(modalCanvas, {
-                            type: originalChart.config.type,
-                            data: originalChart.config.data,
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false
-                            }
-                        });
-                    } catch (retryError) {
-                        console.error('Retry failed:', retryError);
-                    }
-                }, 200);
-            }
-        }, 300); // Increased timeout to ensure modal is fully visible
-    } else {
-        console.error('Original chart not found for ID:', chartId);
-        console.log('Available chart IDs:', Object.keys(window.chartInstances));
-
-        // Try to create a simple chart with basic data as fallback
-        try {
-            const fallbackData = {
-                labels: ['Data Not Available'],
-                datasets: [{
-                    data: [100],
-                    backgroundColor: ['#6B7280'],
-                    borderWidth: 2,
-                    borderColor: '#ffffff'
-                }]
-            };
-
-            window.modalChart = new Chart(modalCanvas, {
-                type: 'pie',
-                data: fallbackData,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top'
-                        }
-                    }
-                }
-            });
-            console.log('Fallback chart created');
-        } catch (error) {
-            console.error('Failed to create fallback chart:', error);
+            window.renderApexChart(histogramEl, {
+                chart: {
+                    type: 'area',
+                    height: '100%',
+                    toolbar: { show: false },
+                },
+                series: [{
+                    name: 'Frekuensi',
+                    data: counts,
+                }],
+                colors: ['#F97316'],
+                stroke: {
+                    curve: 'smooth',
+                    width: 3,
+                    colors: ['#F97316'],
+                },
+                fill: {
+                    type: 'solid',
+                    opacity: 0.1,
+                },
+                markers: {
+                    size: 4,
+                    colors: ['#F97316'],
+                    strokeColors: '#ffffff',
+                    strokeWidth: 2,
+                },
+                xaxis: {
+                    categories,
+                    title: { text: 'Range Nilai CPMK' },
+                },
+                yaxis: {
+                    min: 0,
+                    max: maxCount + 5,
+                    title: { text: 'Frekuensi' },
+                },
+                legend: { show: false },
+                dataLabels: { enabled: false },
+                annotations: buildGradeBandAnnotations(categories),
+            }, histogramId);
         }
-    }
-}
-
-// Close modal function
-function closeChartModal() {
-    const modal = document.getElementById('chartModal');
-    if (modal) {
-        modal.classList.add('hidden');
-    }
-
-    if (window.modalChart) {
-        window.modalChart.destroy();
-        window.modalChart = null;
-    }
-}
-
-// Event listener untuk resize window
-window.addEventListener('resize', function() {
-    if (window.modalChart && !document.getElementById('chartModal').classList.contains('hidden')) {
-        // Resize chart when window is resized
-        window.modalChart.resize();
-    }
-});
-
-// Event listener untuk modal visibility change
-document.addEventListener('visibilitychange', function() {
-    if (document.hidden && window.modalChart) {
-        // Pause chart animation when tab is not visible
-        window.modalChart.stop();
-    } else if (!document.hidden && window.modalChart) {
-        // Resume chart animation when tab becomes visible
-        window.modalChart.play();
-    }
+    });
 });
 </script>
-@endsection
+@endpush

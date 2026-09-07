@@ -180,6 +180,14 @@ class KHSController extends Controller
                     else $grade = 'E';
                 }
 
+                $nilaiMutu = null;
+                if ($nilaiAkhir !== null) {
+                    if ($nilaiAkhir < 60) $nilaiMutu = 'U';
+                    elseif ($nilaiAkhir < 75) $nilaiMutu = 'C';
+                    elseif ($nilaiAkhir < 90) $nilaiMutu = 'E';
+                    else $nilaiMutu = 'X';
+                }
+
                 // Calculate GPA
                 if ($grade && $grade !== '-') {
                     $bobot = 0;
@@ -208,6 +216,7 @@ class KHSController extends Controller
                     'semester' => $km->tahunAjaranMatkul->tahunAjaran->tahun . ' - ' . $km->tahunAjaranMatkul->tahunAjaran->periode,
                     'nilai_akhir' => $nilaiAkhir,
                     'grade' => $grade,
+                    'nilai_mutu' => $nilaiMutu,
                 ];
             }
 

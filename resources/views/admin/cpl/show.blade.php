@@ -3,16 +3,16 @@
 @section('title', 'Detail CPL')
 
 @section('content')
-<div class="p-6">
+<div class="p-4 md:p-6 space-y-4">
     <div class="max-w-4xl mx-auto">
-        <div class="bg-white rounded-lg shadow-md">
+        <div class="bg-white border border-gray-200 rounded-xl">
             <div class="p-6 border-b border-gray-200">
                 <div class="flex items-center justify-between">
                     <h2 class="text-lg font-semibold text-gray-900">Detail Capaian Pembelajaran Lulusan (CPL)</h2>
                     <div class="flex items-center space-x-2">
                         <a href="{{ route('admin.cpl.edit', $cpl->id) }}" 
-                           class="px-4 py-2 text-sm font-medium text-amber-700 bg-amber-100 border border-amber-300 rounded-lg hover:bg-amber-200 focus:ring-4 focus:ring-amber-300 transition-colors">
-                            <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                             </svg>
                             Edit
@@ -69,20 +69,13 @@
                     <!-- Statistik dan Relasi -->
                     <div class="space-y-6">
                         <!-- Statistik -->
-                        <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-6 text-white">
-                            <div class="flex items-center">
-                                <svg class="w-8 h-8 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                                </svg>
-                                <div>
-                                    <p class="text-2xl font-bold">{{ $cpl->cpmk->count() }}</p>
-                                    <p class="text-blue-100">CPMK Terkait</p>
-                                </div>
-                            </div>
+                        <div class="bg-white border border-gray-200 rounded-xl px-4 py-3">
+                            <p class="text-[11px] uppercase tracking-wide text-gray-500">CPMK Terkait</p>
+                            <p class="text-2xl font-semibold text-gray-900 mt-0.5">{{ $cpl->cpmk->count() }}</p>
                         </div>
 
                         <!-- Aksi -->
-                        <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="bg-white border border-gray-200 rounded-xl p-4">
                             <h3 class="text-sm font-medium text-gray-700 mb-3">Aksi Cepat</h3>
                             <div class="space-y-2">
                                 <a href="{{ route('admin.cpl.edit', $cpl->id) }}" 

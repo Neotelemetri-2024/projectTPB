@@ -3,10 +3,10 @@
 @section('title', 'Tambah Mahasiswa')
 
 @section('content')
-<div class="p-6">
+<div class="p-4 md:p-6 space-y-4">
 
 
-    <div class="bg-white rounded-lg shadow-md">
+    <div class="bg-white border border-gray-200 rounded-xl">
         <div class="p-6 border-b border-gray-200">
             <h2 class="text-lg font-semibold text-gray-900">Form Tambah Mahasiswa</h2>
         </div>
@@ -70,16 +70,16 @@
                     </div>
                     
                     <div class="md:col-span-2">
-                        <div class="bg-blue-50 border border-blue-200 rounded-md p-4">
+                        <div class="bg-gray-50 border border-gray-200 rounded-md p-4">
                             <div class="flex">
                                 <div class="flex-shrink-0">
-                                    <svg class="h-5 w-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                     </svg>
                                 </div>
                                 <div class="ml-3">
-                                    <h3 class="text-sm font-medium text-blue-800">Informasi Password</h3>
-                                    <div class="mt-2 text-sm text-blue-700">
+                                    <h3 class="text-sm font-medium text-gray-700">Informasi Password</h3>
+                                    <div class="mt-2 text-sm text-gray-600">
                                         <p>Password akan otomatis disamakan dengan NIM yang diinput.</p>
                                     </div>
                                 </div>
@@ -90,7 +90,7 @@
                 
                 <div class="flex justify-between items-center mt-8">
                     <a href="{{ route('admin.mahasiswa.index') }}" 
-                       class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg flex items-center">
+                       class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                         </svg>

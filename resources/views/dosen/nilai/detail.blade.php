@@ -2,7 +2,7 @@
     <h4 class="text-lg font-semibold text-gray-900">Detail Nilai Per CPMK</h4>
 
     <!-- Info Mahasiswa dan Grade -->
-    <div class="bg-blue-50 rounded-lg p-4 border border-blue-200 mb-4">
+    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 mb-4">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
                 <p class="text-sm text-gray-700"><strong>NIM:</strong> {{ $mahasiswa->nim }}</p>
@@ -10,15 +10,15 @@
             </div>
             <div class="text-center">
                 <p class="text-sm text-gray-700"><strong>Nilai Akhir:</strong></p>
-                <p class="text-lg font-bold text-blue-600">{{ number_format($totalNilaiAkhir, 2) }}</p>
+                <p class="text-lg font-bold text-gray-900">{{ number_format($totalNilaiAkhir, 2) }}</p>
             </div>
             <div class="text-center">
                 <p class="text-sm text-gray-700"><strong>Grade:</strong></p>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium
-                    {{ $grade == 'A' || $grade == 'A-' ? 'bg-green-100 text-green-800' :
-                       ($grade == 'B+' || $grade == 'B' || $grade == 'B-' ? 'bg-blue-100 text-blue-800' :
-                       ($grade == 'C+' || $grade == 'C' ? 'bg-yellow-100 text-yellow-800' :
-                       ($grade == 'D' ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800'))) }}">
+                <span class="text-sm font-semibold
+                    {{ $grade == 'A' || $grade == 'A-' ? 'text-emerald-700' :
+                       ($grade == 'B+' || $grade == 'B' || $grade == 'B-' ? 'text-gray-900' :
+                       ($grade == 'C+' || $grade == 'C' ? 'text-amber-700' :
+                       ($grade == 'D' ? 'text-orange-700' : 'text-red-700'))) }}">
                     {{ $grade ?: '-' }}
                 </span>
             </div>
@@ -60,7 +60,7 @@
                     <td class="px-6 py-4 whitespace-nowrap text-center">
                         @if($nilaiKomponen !== null)
                         <div class="text-xs text-gray-500">{{ number_format($bobotKomponen, 2) }}%</div>
-                        <div class="text-sm font-medium text-blue-600">{{ number_format($kontribusi, 2) }}</div>
+                        <div class="text-sm font-medium text-amber-700">{{ number_format($kontribusi, 2) }}</div>
                         @else
                         <div class="text-xs text-gray-400">{{ number_format($bobotKomponen, 2) }}%</div>
                         <div class="text-sm text-gray-400">-</div>
@@ -99,13 +99,13 @@
                     @endphp
                     <td class="px-6 py-3 whitespace-nowrap text-center">
                         <div class="text-xs text-gray-500">{{ number_format($totalBobotKomponen[$komponen->id] ?? 0, 2) }}%</div>
-                        <div class="text-sm font-semibold text-blue-600">{{ number_format($totalKontribusiKomponen, 2) }}</div>
+                        <div class="text-sm font-semibold text-amber-700">{{ number_format($totalKontribusiKomponen, 2) }}</div>
                     </td>
                     @endif
                     @endforeach
                     <td class="px-6 py-3 whitespace-nowrap text-center">
                         <div class="text-xs text-gray-500">100%</div>
-                        <div class="text-lg font-bold text-blue-600">{{ number_format($totalNilaiAkhir, 2) }}</div>
+                        <div class="text-lg font-bold text-gray-900">{{ number_format($totalNilaiAkhir, 2) }}</div>
                     </td>
                 </tr>
             </tfoot>

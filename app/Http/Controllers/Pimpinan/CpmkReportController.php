@@ -24,10 +24,16 @@ class CpmkReportController extends Controller
             $selectedTahunAjaranId = $tahunAjaranList->first() ? $tahunAjaranList->first()->id : null;
         }
 
-        // Semua mata kuliah (tahun ajaran terpilih) - pimpinan bisa lihat semua
+        // Semua mata kuliah (tahun ajaran terpilih) — paginated
         $mataKuliahList = TahunAjaranMatkul::where('tahunAjaranId', $selectedTahunAjaranId)
-            ->with(['mataKuliah', 'kelas.kelasMahasiswa.mahasiswa', 'cpmkMatKul.cpmk.nilai'])
-            ->get();
+            ->with([
+                'mataKuliah',
+                'cpmkMatKul.cpmk',
+                'kelas' => fn ($q) => $q->withCount('kelasMahasiswa'),
+            ])
+            ->orderBy('id')
+            ->paginate(12)
+            ->withQueryString();
 
         return view('pimpinan.cpmk-report.index', compact(
             'mataKuliahList',
@@ -40,7 +46,7 @@ class CpmkReportController extends Controller
     {
         // Pimpinan bisa lihat semua mata kuliah
         $tahunAjaranMatkul = TahunAjaranMatkul::where('id', $tahunAjaranMatkulId)
-            ->with(['mataKuliah', 'kelas.kelasMahasiswa.mahasiswa', 'cpmkMatKul.cpmk.nilai'])
+            ->with(['mataKuliah', 'kelas.kelasMahasiswa.mahasiswa', 'cpmkMatKul.cpmk'])
             ->first();
 
         if (!$tahunAjaranMatkul) {
@@ -49,32 +55,46 @@ class CpmkReportController extends Controller
 
         // Ambil data CPMK dan nilai
         $cpmkData = $this->getCpmkData($tahunAjaranMatkul);
+        $chartPayload = collect($cpmkData)->map(function ($row) {
+            return [
+                'kode' => $row['cpmk']->kodeCpmk ?? '',
+                'distribution' => $row['distribution'] ?? [],
+                'histogram_data' => $row['histogram_data'] ?? [],
+            ];
+        })->values()->all();
 
         return view('pimpinan.cpmk-report.show', compact(
             'tahunAjaranMatkul',
-            'cpmkData'
+            'cpmkData',
+            'chartPayload'
         ));
     }
 
     private function getCpmkData($tahunAjaranMatkul)
     {
-        // Ambil semua CPMK yang terkait dengan mata kuliah ini
-        $cpmks = Cpmk::whereHas('cpmkMatKul', function($q) use ($tahunAjaranMatkul) {
+        $cpmks = Cpmk::whereHas('cpmkMatKul', function ($q) use ($tahunAjaranMatkul) {
             $q->where('tahunAjaranMatkulId', $tahunAjaranMatkul->id);
-        })
-        ->with(['nilai' => function($q) use ($tahunAjaranMatkul) {
-            $q->whereHas('tahunAjaranMatkul', function($tam) use ($tahunAjaranMatkul) {
-                $tam->where('id', $tahunAjaranMatkul->id);
-            });
-        }])
-        ->get();
+        })->get();
 
-        $data = [];
-
-        // Hitung total mahasiswa yang mengambil mata kuliah ini
-        $totalMahasiswaMatkul = \App\Models\KelasMahasiswa::whereHas('kelas', function($q) use ($tahunAjaranMatkul) {
+        $mahasiswaIds = \App\Models\KelasMahasiswa::whereHas('kelas', function ($q) use ($tahunAjaranMatkul) {
             $q->where('tahunAjaranMatkulId', $tahunAjaranMatkul->id);
-        })->distinct('mahasiswaId')->count();
+        })->pluck('mahasiswaId')->unique()->values()->all();
+
+        $totalMahasiswaMatkul = count($mahasiswaIds);
+        $cpmkIds = $cpmks->pluck('id');
+
+        $nilaiByCpmk = \App\Models\Nilai::query()
+            ->where('tahunAjaranMatkulId', $tahunAjaranMatkul->id)
+            ->when(!empty($mahasiswaIds), fn ($q) => $q->whereIn('mahasiswaId', $mahasiswaIds))
+            ->when($cpmkIds->isNotEmpty(), fn ($q) => $q->whereIn('cpmkId', $cpmkIds))
+            ->get()
+            ->groupBy('cpmkId');
+
+        $bobotByCpmk = \App\Models\Bobot::with('komponen')
+            ->where('tahunAjaranMatkulId', $tahunAjaranMatkul->id)
+            ->when($cpmkIds->isNotEmpty(), fn ($q) => $q->whereIn('cpmkId', $cpmkIds))
+            ->get()
+            ->groupBy('cpmkId');
 
         $nilaiRanges = [
             'U' => ['min' => 0, 'max' => 59, 'label' => 'Uncompetence', 'color' => '#3B82F6'],
@@ -83,105 +103,70 @@ class CpmkReportController extends Controller
             'X' => ['min' => 90, 'max' => 100, 'label' => 'Extraordinary', 'color' => '#8B5CF6']
         ];
 
+        $histogramRanges = [
+            ['min' => 0, 'max' => 19, 'label' => '0-19'],
+            ['min' => 20, 'max' => 39, 'label' => '20-39'],
+            ['min' => 40, 'max' => 59, 'label' => '40-59'],
+            ['min' => 60, 'max' => 69, 'label' => '60-69'],
+            ['min' => 70, 'max' => 79, 'label' => '70-79'],
+            ['min' => 80, 'max' => 89, 'label' => '80-89'],
+            ['min' => 90, 'max' => 100, 'label' => '90-100']
+        ];
+
+        $data = [];
+
         foreach ($cpmks as $cpmk) {
-            // Ambil nilai hanya untuk mahasiswa yang mengambil mata kuliah ini
-            $mahasiswaIds = \App\Models\KelasMahasiswa::whereHas('kelas', function($q) use ($tahunAjaranMatkul) {
-                $q->where('tahunAjaranMatkulId', $tahunAjaranMatkul->id);
-            })->pluck('mahasiswaId')->toArray();
+            $cpmkNilai = $nilaiByCpmk->get($cpmk->id, collect());
+            if ($cpmkNilai->isEmpty()) {
+                continue;
+            }
 
-            // Cek semua nilai untuk CPMK ini (tanpa filter mahasiswa)
-            $allNilai = \App\Models\Nilai::where('cpmkId', $cpmk->id)
-                ->where('tahunAjaranMatkulId', $tahunAjaranMatkul->id)
-                ->get();
-
-            // Ambil nilai untuk mahasiswa yang mengambil mata kuliah ini
-            $nilaiList = \App\Models\Nilai::where('cpmkId', $cpmk->id)
-                ->where('tahunAjaranMatkulId', $tahunAjaranMatkul->id)
-                ->whereIn('mahasiswaId', $mahasiswaIds)
-                ->pluck('nilai')
-                ->filter()
-                ->toArray();
-
-            // Hitung jumlah mahasiswa yang memiliki nilai (bukan jumlah nilai)
-            $mahasiswaDenganNilai = \App\Models\Nilai::where('cpmkId', $cpmk->id)
-                ->where('tahunAjaranMatkulId', $tahunAjaranMatkul->id)
-                ->whereIn('mahasiswaId', $mahasiswaIds)
-                ->distinct('mahasiswaId')
-                ->count();
-
-            if ($mahasiswaDenganNilai == 0) continue;
-
-            // Hitung rata-rata nilai per mahasiswa
-            $nilaiPerMahasiswa = \App\Models\Nilai::where('cpmkId', $cpmk->id)
-                ->where('tahunAjaranMatkulId', $tahunAjaranMatkul->id)
-                ->whereIn('mahasiswaId', $mahasiswaIds)
-                ->selectRaw('mahasiswaId, AVG(nilai) as rata_nilai')
+            $nilaiPerMahasiswa = $cpmkNilai
                 ->groupBy('mahasiswaId')
-                ->pluck('rata_nilai')
-                ->toArray();
+                ->map(fn ($rows) => $rows->avg('nilai'))
+                ->values()
+                ->all();
+
+            $mahasiswaDenganNilai = count($nilaiPerMahasiswa);
+            if ($mahasiswaDenganNilai === 0) {
+                continue;
+            }
+
+            $nilaiList = $cpmkNilai->pluck('nilai')->filter()->values()->all();
 
             $distribution = [];
-            $histogramData = [];
-
-            // Hitung distribusi nilai untuk pie chart berdasarkan rata-rata per mahasiswa
             foreach ($nilaiRanges as $grade => $range) {
-                $count = count(array_filter($nilaiPerMahasiswa, function($nilai) use ($range) {
+                $count = count(array_filter($nilaiPerMahasiswa, function ($nilai) use ($range) {
                     return $nilai >= $range['min'] && $nilai <= $range['max'];
                 }));
-
-                $percentage = count($nilaiPerMahasiswa) > 0 ? round(($count / count($nilaiPerMahasiswa)) * 100, 2) : 0;
-
                 $distribution[$grade] = [
                     'count' => $count,
-                    'percentage' => $percentage,
+                    'percentage' => round(($count / $mahasiswaDenganNilai) * 100, 2),
                     'label' => $range['label'],
                     'color' => $range['color']
                 ];
             }
 
-            // Buat histogram data dengan range yang lebih detail berdasarkan rata-rata per mahasiswa
-            $histogramRanges = [
-                ['min' => 0, 'max' => 19, 'label' => '0-19'],
-                ['min' => 20, 'max' => 39, 'label' => '20-39'],
-                ['min' => 40, 'max' => 59, 'label' => '40-59'],
-                ['min' => 60, 'max' => 69, 'label' => '60-69'],
-                ['min' => 70, 'max' => 79, 'label' => '70-79'],
-                ['min' => 80, 'max' => 89, 'label' => '80-89'],
-                ['min' => 90, 'max' => 100, 'label' => '90-100']
-            ];
-
+            $histogramData = [];
             foreach ($histogramRanges as $range) {
-                $count = count(array_filter($nilaiPerMahasiswa, function($nilai) use ($range) {
+                $count = count(array_filter($nilaiPerMahasiswa, function ($nilai) use ($range) {
                     return $nilai >= $range['min'] && $nilai <= $range['max'];
                 }));
-
                 $histogramData[] = [
                     'range' => $range['label'],
                     'count' => $count,
-                    'percentage' => count($nilaiPerMahasiswa) > 0 ? round(($count / count($nilaiPerMahasiswa)) * 100, 2) : 0
+                    'percentage' => round(($count / $mahasiswaDenganNilai) * 100, 2)
                 ];
             }
 
-            // Hitung rata-rata nilai dari rata-rata per mahasiswa
-            $averageNilai = count($nilaiPerMahasiswa) > 0 ? round(array_sum($nilaiPerMahasiswa) / count($nilaiPerMahasiswa), 2) : 0;
+            $averageNilai = round(array_sum($nilaiPerMahasiswa) / $mahasiswaDenganNilai, 2);
+            $competentCount = count(array_filter($nilaiPerMahasiswa, fn ($nilai) => $nilai >= 60));
+            $notCompetentCount = $mahasiswaDenganNilai - $competentCount;
 
-            // Hitung kompeten vs tidak kompeten berdasarkan rata-rata per mahasiswa
-            $competentCount = count(array_filter($nilaiPerMahasiswa, function($nilai) {
-                return $nilai >= 60;
-            }));
-            $notCompetentCount = count($nilaiPerMahasiswa) - $competentCount;
-
-            $competentPercentage = count($nilaiPerMahasiswa) > 0 ? round(($competentCount / count($nilaiPerMahasiswa)) * 100, 2) : 0;
-            $notCompetentPercentage = count($nilaiPerMahasiswa) > 0 ? round(($notCompetentCount / count($nilaiPerMahasiswa)) * 100, 2) : 0;
-
-            // Ambil bobot komponen untuk CPMK ini
-            $bobotKomponen = \App\Models\Bobot::where('cpmkId', $cpmk->id)
-                ->where('tahunAjaranMatkulId', $tahunAjaranMatkul->id)
-                ->with('komponen')
-                ->get()
-                ->map(function($bobot) {
+            $bobotKomponen = ($bobotByCpmk->get($cpmk->id) ?? collect())
+                ->map(function ($bobot) {
                     return [
-                        'komponen' => $bobot->komponen->namaKomponen,
+                        'komponen' => $bobot->komponen->nama ?? '-',
                         'bobot' => $bobot->bobot,
                     ];
                 });
@@ -197,8 +182,8 @@ class CpmkReportController extends Controller
                 'histogram_data' => $histogramData,
                 'competent_count' => $competentCount,
                 'not_competent_count' => $notCompetentCount,
-                'competent_percentage' => $competentPercentage,
-                'not_competent_percentage' => $notCompetentPercentage,
+                'competent_percentage' => round(($competentCount / $mahasiswaDenganNilai) * 100, 2),
+                'not_competent_percentage' => round(($notCompetentCount / $mahasiswaDenganNilai) * 100, 2),
                 'bobot_komponen' => $bobotKomponen,
                 'nilai_ranges' => $nilaiRanges
             ];
@@ -211,7 +196,7 @@ class CpmkReportController extends Controller
     {
         // Pimpinan bisa lihat semua mata kuliah
         $tahunAjaranMatkul = TahunAjaranMatkul::where('id', $tahunAjaranMatkulId)
-            ->with(['mataKuliah', 'kelas.kelasMahasiswa.mahasiswa', 'cpmkMatKul.cpmk.nilai'])
+            ->with(['mataKuliah', 'kelas.kelasMahasiswa.mahasiswa', 'cpmkMatKul.cpmk'])
             ->first();
 
         if (!$tahunAjaranMatkul) {

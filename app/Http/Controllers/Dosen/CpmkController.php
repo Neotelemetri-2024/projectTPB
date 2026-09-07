@@ -72,54 +72,61 @@ class CpmkController extends Controller
             });
         }
 
-        // Get results with relationships
+        // Get results with relationships (tanpa load semua mahasiswa)
         $mataKuliahData = $query->with([
             'mataKuliah',
             'tahunAjaran',
-            'kelas.dosenPengampuKelas.dosen.user',
-            'kelas.kelasMahasiswa.mahasiswa',
-            'cpmkMatKul.cpmk',
-            'cpmkMatKul' => function($query) {
-                $query->orderBy('updated_at', 'desc');
+            'kelas' => function ($q) {
+                $q->withCount('kelasMahasiswa')
+                    ->with(['dosenPengampuKelas.dosen.user']);
+            },
+            'cpmkMatKul' => function ($query) {
+                $query->orderBy('updated_at', 'desc')->with('cpmk');
             }
         ])
         ->orderBy('created_at', 'desc')
         ->get();
 
         // Group by mata kuliah and tahun ajaran to avoid duplicate cards
-        $mataKuliahDiampu = $mataKuliahData->groupBy(function($item) {
+        $mataKuliahDiampu = $mataKuliahData->groupBy(function ($item) {
             return $item->mataKuliahId . '_' . $item->tahunAjaranId;
-        })->map(function($group) {
-            // Take the first item as representative
+        })->map(function ($group) {
             $representative = $group->first();
 
-            // Aggregate data from all classes
-            $allKelasMahasiswa = collect();
             $allDosenPengampuKelas = collect();
             $allKelas = collect();
             $allCpmkMatKul = collect();
+            $mahasiswaCount = 0;
 
-            foreach($group as $item) {
-                // Collect all kelas mahasiswa from all classes
-                foreach($item->kelas as $kelas) {
-                    $allKelasMahasiswa = $allKelasMahasiswa->merge($kelas->kelasMahasiswa);
+            foreach ($group as $item) {
+                foreach ($item->kelas as $kelas) {
                     $allDosenPengampuKelas = $allDosenPengampuKelas->merge($kelas->dosenPengampuKelas);
+                    $mahasiswaCount += (int) ($kelas->kelas_mahasiswa_count ?? 0);
                 }
                 $allKelas = $allKelas->merge($item->kelas);
                 $allCpmkMatKul = $allCpmkMatKul->merge($item->cpmkMatKul);
             }
 
-            // Set aggregated data to representative
-            $representative->setRelation('kelasMahasiswa', $allKelasMahasiswa->unique('id'));
+            $representative->mahasiswa_count = $mahasiswaCount;
             $representative->setRelation('dosenPengampuKelas', $allDosenPengampuKelas->unique('id'));
             $representative->setRelation('kelas', $allKelas->unique('id'));
-
-            // Make CPMK unique based on cpmkId, not the cpmkMatKul record id
-            $uniqueCpmkMatKul = $allCpmkMatKul->unique('cpmkId');
-            $representative->setRelation('cpmkMatKul', $uniqueCpmkMatKul);
+            $representative->setRelation('cpmkMatKul', $allCpmkMatKul->unique('cpmkId'));
 
             return $representative;
         })->values();
+
+        $perPage = 10;
+        $page = (int) $request->get('page', 1);
+        $mataKuliahDiampu = new \Illuminate\Pagination\LengthAwarePaginator(
+            $mataKuliahDiampu->forPage($page, $perPage)->values(),
+            $mataKuliahDiampu->count(),
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
 
         // Get filter options
         $tahunAjarans = TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->get();

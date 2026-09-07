@@ -199,14 +199,20 @@ class TahunAjaranMatkulController extends Controller
         // Get all unique mahasiswa IDs that are already in any class of this tahun ajaran matkul
         $existingMahasiswaIds = $tahunAjaranMatkul->kelas->flatMap->kelasMahasiswa->pluck('mahasiswaId')->unique();
 
-        // Get available mahasiswas (not in any class of this tahun ajaran matkul)
-        $availableMahasiswas = Mahasiswa::whereNotIn('id', $existingMahasiswaIds)->get();
-
         // Get all unique dosen IDs that are already teaching any class of this tahun ajaran matkul
         $existingDosenIds = $tahunAjaranMatkul->kelas->flatMap->dosenPengampuKelas->pluck('dosenId')->unique();
 
+        // Get available mahasiswas (not in any class of this tahun ajaran matkul)
+        $availableMahasiswas = Mahasiswa::whereNotIn('id', $existingMahasiswaIds)
+            ->orderBy('nama')
+            ->paginate(20, ['*'], 'mahasiswa_page')
+            ->withQueryString();
+
         // Get available dosens (not teaching any class of this tahun ajaran matkul)
-        $availableDosens = Dosen::whereNotIn('id', $existingDosenIds)->get();
+        $availableDosens = Dosen::whereNotIn('id', $existingDosenIds)
+            ->orderBy('nama')
+            ->paginate(20, ['*'], 'dosen_page')
+            ->withQueryString();
 
         return view('admin.tahun-ajaran-matkul.show', compact(
             'tahunAjaranMatkul',

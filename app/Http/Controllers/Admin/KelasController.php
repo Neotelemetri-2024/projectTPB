@@ -77,7 +77,18 @@ class KelasController extends Controller
 
         // Get available dosens (not teaching this kelas)
         $existingDosenIds = $kelas->dosenPengampuKelas->pluck('dosenId');
-        $availableDosens = Dosen::whereNotIn('id', $existingDosenIds)->get();
+        $availableDosens = Dosen::with('user')
+            ->whereNotIn('id', $existingDosenIds)
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $search = $request->search;
+                $q->where(function ($inner) use ($search) {
+                    $inner->where('nama', 'like', "%{$search}%")
+                        ->orWhere('nip', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('nama')
+            ->paginate(20)
+            ->withQueryString();
 
         return view('admin.kelas.manage-dosen', compact('kelas', 'availableDosens'));
     }

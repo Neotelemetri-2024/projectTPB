@@ -3,9 +3,9 @@
 @section('title', 'Detail CPMK - ' . $cpmk->kodeCpmk)
 
 @section('content')
-<div class="p-6">
+<div class="p-4 md:p-6 space-y-4">
     <!-- Breadcrumb -->
-    <nav class="mb-6">
+    <nav>
         <ol class="flex items-center space-x-2 text-sm text-gray-500">
             <li>
                 <a href="{{ route('dosen.cpmk.index') }}" class="hover:text-gray-700">Kelola CPMK</a>
@@ -28,11 +28,11 @@
     </nav>
 
     <!-- Header -->
-    <div class="bg-white rounded-lg shadow-md mb-6">
+    <div class="bg-white border border-gray-200 rounded-xl">
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Detail CPMK - {{ $cpmk->kodeCpmk }}</h1>
+                    <h1 class="text-xl font-semibold text-gray-900">Detail CPMK - {{ $cpmk->kodeCpmk }}</h1>
                     <p class="text-gray-600 mt-1">{{ $tahunAjaranMatkul->mataKuliah->namaMatkul }} • {{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }}-{{ $tahunAjaranMatkul->mataKuliah->kurikulum }}</p>
                 </div>
                 <div class="flex items-center gap-3">
@@ -48,11 +48,11 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <!-- Main Content -->
-        <div class="lg:col-span-2 space-y-6">
+        <div class="lg:col-span-2 space-y-4">
             <!-- CPMK Information -->
-            <div class="bg-white rounded-lg shadow-md">
+            <div class="bg-white border border-gray-200 rounded-xl">
                 <div class="p-6 border-b border-gray-200">
                     <h2 class="text-xl font-semibold text-gray-900">Informasi CPMK</h2>
                 </div>
@@ -64,7 +64,7 @@
                                 <div class="space-y-3">
                                     @foreach($cpmk->cpl as $cpl)
                                         <div class="flex items-start gap-3">
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            <span class="text-xs font-medium text-gray-700">
                                                 {{ $cpl->kodeCpl }}
                                             </span>
                                             <div class="flex-1">
@@ -85,12 +85,12 @@
                                                 <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                             </svg>
                                         </div>
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                                        <span class="text-sm font-medium text-gray-900">
                                             {{ $cpmk->kodeCpmk }}
-                                            <span class="ml-1 text-xs">(Sub-CPMK)</span>
+                                            <span class="ml-1 text-xs text-gray-500">(Sub-CPMK)</span>
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800">
+                                        <span class="text-sm font-medium text-amber-700">
                                             {{ $cpmk->kodeCpmk }}
                                         </span>
                                     @endif
@@ -115,7 +115,7 @@
                                                     <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                                 </svg>
                                             </div>
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                            <span class="text-xs font-medium text-gray-700">
                                                 {{ $child->kodeCpmk }}
                                             </span>
                                             <span class="text-xs text-gray-600">{{ Str::limit($child->deskripsi, 30) }}</span>
@@ -137,7 +137,7 @@
 
             <!-- Bobot Komponen -->
             @if($bobotKomponen->isNotEmpty())
-            <div class="bg-white rounded-lg shadow-md">
+            <div class="bg-white border border-gray-200 rounded-xl">
                 <div class="p-6 border-b border-gray-200">
                     <h2 class="text-xl font-semibold text-gray-900">Bobot Komponen Penilaian</h2>
                 </div>
@@ -164,7 +164,7 @@
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        <span class="text-sm font-medium text-emerald-700">
                                             {{ $bobot->bobot }}%
                                         </span>
                                     </td>
@@ -179,9 +179,9 @@
         </div>
 
         <!-- Sidebar -->
-        <div class="space-y-6">
+        <div class="space-y-4">
             <!-- CPMK Metadata -->
-            <div class="bg-white rounded-lg shadow-md">
+            <div class="bg-white border border-gray-200 rounded-xl">
                 <div class="p-6 border-b border-gray-200">
                     <h3 class="text-lg font-semibold text-gray-900">Informasi Metadata</h3>
                 </div>
@@ -212,7 +212,7 @@
             </div>
 
             <!-- Quick Actions -->
-            <div class="bg-white rounded-lg shadow-md">
+            <div class="bg-white border border-gray-200 rounded-xl">
                 <div class="p-6 border-b border-gray-200">
                     <h3 class="text-lg font-semibold text-gray-900">Aksi Cepat</h3>
                 </div>
@@ -220,7 +220,7 @@
                     <div class="space-y-3">
                         @if(!$cpmk->parents->count())
                         <a href="{{ route('dosen.cpmk.sub-cpmk.create', [$tahunAjaranMatkul->id, $cpmk->id]) }}"
-                           class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center justify-center">
+                           class="w-full bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center justify-center">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                             </svg>
@@ -245,9 +245,9 @@
                         </a>
                         @endif
                         <a href="{{ route('dosen.bobot-komponen.bulk-create', $tahunAjaranMatkul->id) }}"
-                           class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center justify-center">
+                           class="w-full bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center justify-center">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                             </svg>
                             Kelola Bobot Penilaian
                         </a>

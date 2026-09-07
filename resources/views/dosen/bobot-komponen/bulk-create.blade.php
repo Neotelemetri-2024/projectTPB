@@ -3,9 +3,9 @@
 @section('title', 'Atur Bobot Bulk - ' . $tahunAjaranMatkul->mataKuliah->namaMatkul)
 
 @section('content')
-<div class="p-6">
+<div class="p-4 md:p-6 space-y-4">
     <!-- Breadcrumb -->
-    <nav class="mb-6">
+    <nav>
         <ol class="flex items-center space-x-2 text-sm text-gray-500">
             <li>
                 <a href="{{ route('dosen.cpmk.index') }}" class="hover:text-gray-700">Kelola CPMK</a>
@@ -28,11 +28,11 @@
     </nav>
 
     <!-- Header -->
-    <div class="bg-white rounded-lg shadow-md mb-6">
+    <div class="bg-white border border-gray-200 rounded-xl">
         <div class="p-4 sm:p-6 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Atur Bobot Komponen Secara Bulk</h1>
+                    <h1 class="text-xl font-semibold text-gray-900">Atur Bobot Komponen Secara Bulk</h1>
                     <p class="text-gray-600 mt-1">{{ $tahunAjaranMatkul->mataKuliah->namaMatkul }} • {{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }}-{{ $tahunAjaranMatkul->mataKuliah->kurikulum }}</p>
                 </div>
                 <div class="flex items-center gap-3">
@@ -48,14 +48,14 @@
         </div>
 
         <div class="p-4 sm:p-6">
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
                 <div class="flex">
-                    <svg class="w-5 h-5 text-blue-400 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                    <svg class="w-5 h-5 text-gray-400 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
                     </svg>
                     <div>
-                        <h3 class="text-sm font-medium text-blue-800">Pengaturan Bobot Komponen</h3>
-                        <div class="text-sm text-blue-700 mt-1">
+                        <h3 class="text-sm font-medium text-gray-800">Pengaturan Bobot Komponen</h3>
+                        <div class="text-sm text-gray-700 mt-1">
                             <p>• Pilih komponen penilaian yang akan digunakan terlebih dahulu</p>
                             <p>• Atur bobot untuk setiap kombinasi CPMK dan Komponen penilaian</p>
                             <p>• <strong>Parent CPMK dengan sub-CPMK:</strong> Bobot hanya diatur pada sub-CPMK</p>
@@ -100,7 +100,7 @@
                                         </div>
                                         <div class="ml-2">
                                             <!-- Toggle button with + and x icons -->
-                                            <button type="button" class="toggle-komponen-btn w-6 h-6 bg-green-600 hover:bg-green-700 text-white rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200">
+                                            <button type="button" class="toggle-komponen-btn w-6 h-6 bg-amber-600 hover:bg-amber-700 text-white rounded-md flex items-center justify-center text-xs font-bold transition-all duration-200">
                                                 <span class="add-icon">+</span>
                                                 <span class="remove-icon hidden">×</span>
                                             </button>
@@ -146,7 +146,7 @@
                     <!-- Bobot Table -->
                     <div id="bobot-table" class="mt-6">
                         <!-- Table will be rendered by JavaScript -->
-                        <table class="min-w-full bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm" id="bobot-matrix-table">
+                        <table class="min-w-full bg-white border border-gray-200 rounded-xl overflow-hidden" id="bobot-matrix-table">
                             <thead class="bg-gray-50">
                                 <tr id="table-header-row">
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-r border-gray-200">
@@ -193,12 +193,12 @@
             <!-- Action Buttons -->
             <div class="flex flex-col sm:flex-row justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
                 <a href="{{ route('dosen.cpmk.show', $tahunAjaranMatkul->id) }}"
-                   class="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 text-center">
+                   class="w-full sm:w-auto px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 text-center">
                     Batal
                 </a>
                 <button type="submit"
                         id="submit-btn"
-                        class="w-full sm:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-400 cursor-not-allowed"
+                        class="w-full sm:w-auto px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-gray-400 cursor-not-allowed"
                         disabled>
                     Simpan Semua Bobot
                 </button>

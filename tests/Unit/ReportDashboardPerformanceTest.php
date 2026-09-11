@@ -45,13 +45,14 @@ class ReportDashboardPerformanceTest extends TestCase
         $this->assertStringContainsString("->where('kurikulumId', \$kurikulumId)", $controller);
     }
 
-    public function test_assessment_scope_is_based_on_is_asesmen_flag_without_fallback(): void
+    public function test_assessment_scope_is_based_on_explicit_cpl_matkul_pairs(): void
     {
         $scope = $this->source('app/Services/CplAssessmentScope.php');
 
-        $this->assertStringContainsString("where('isAsesmen', true)", $scope);
+        $this->assertStringContainsString('cpl_mata_kuliah_asesmen', $scope);
+        $this->assertStringContainsString('applyAssessedPairConstraint', $scope);
         $this->assertStringContainsString('hasExplicitAssessment', $scope);
-        $this->assertStringNotContainsString('assessedMataKuliahIdsByCpl', $scope);
+        $this->assertStringNotContainsString("where('isAsesmen', true)", $scope);
     }
 
     public function test_aggregate_reports_no_longer_filter_jenis_wajib(): void
@@ -63,13 +64,13 @@ class ReportDashboardPerformanceTest extends TestCase
         $this->assertStringNotContainsString("where('jenis', 'wajib')", $achievement);
     }
 
-    public function test_curriculum_screen_scopes_assessment_to_its_own_mata_kuliah(): void
+    public function test_curriculum_screen_saves_cpl_matkul_pairs_scoped_to_its_own_mata_kuliah(): void
     {
         $controller = $this->source('app/Http/Controllers/Admin/KurikulumController.php');
 
-        $this->assertStringContainsString("update(['isAsesmen' => false])", $controller);
-        $this->assertStringContainsString("update(['isAsesmen' => true])", $controller);
-        $this->assertStringContainsString('mataKuliah()->whereIn(', $controller);
+        $this->assertStringContainsString("cpl_mata_kuliah_asesmen", $controller);
+        $this->assertStringContainsString("whereIn('mataKuliahId', \$mkIds)", $controller);
+        $this->assertStringContainsString('asesmen[', $this->source('resources/views/admin/kurikulum/matkul-asesmen.blade.php'));
     }
 
     public function test_cpmk_distribution_uses_single_classification_pass(): void

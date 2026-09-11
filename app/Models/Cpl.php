@@ -27,4 +27,12 @@ class Cpl extends Model
     {
         return $this->belongsToMany(Cpmk::class, 'cpmk_cpl', 'cplId', 'cpmkId')->withTimestamps();
     }
+
+    /**
+     * Mata kuliah yang diases untuk CPL ini (pasangan CPL x matkul).
+     */
+    public function mataKuliahAsesmen()
+    {
+        return $this->belongsToMany(MataKuliah::class, 'cpl_mata_kuliah_asesmen', 'cplId', 'mataKuliahId')->withTimestamps();
+    }
 }

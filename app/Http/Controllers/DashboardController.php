@@ -264,7 +264,7 @@ class DashboardController extends Controller
             })
             ->join('tahun_ajaran_matkul as tam', 'tam.id', '=', 'n.tahunAjaranMatkulId');
 
-        $scope->applyAssessedMatkulConstraint($query, null, 'tam');
+        $scope->applyAssessedPairConstraint($query, 'cpl.id', 'tam.mataKuliahId', null);
 
         $cplData = $query
             ->groupBy('cpl.id', 'cpl.kodeCpl', 'cpl.deskripsi')
@@ -841,8 +841,8 @@ class DashboardController extends Controller
             },
         ])->get();
 
-        // Matkul asesmen kini global per kurikulum; dashboard mahasiswa memakai semua yang ditandai asesmen.
-        $assessedSet = array_flip($scope->assessedMataKuliahIds()->all());
+        // Asesmen ditetapkan per pasangan CPL x matkul.
+        $assessedPairs = $scope->assessedPairs();
         $allCpmkIds = $cpls->flatMap(fn ($cpl) => $cpl->cpmk->pluck('id'))->unique()->values();
 
         $nilaiByCpmk = collect();
@@ -854,11 +854,11 @@ class DashboardController extends Controller
                 ->groupBy('cpmkId');
         }
 
-        $tamIdsNeeded = $cpls->flatMap(function ($cpl) use ($assessedSet) {
-            return $cpl->cpmk->flatMap(function ($cpmk) use ($assessedSet) {
-                return $cpmk->cpmkMatKul->filter(function ($rel) use ($assessedSet) {
+        $tamIdsNeeded = $cpls->flatMap(function ($cpl) use ($assessedPairs) {
+            return $cpl->cpmk->flatMap(function ($cpmk) use ($cpl, $assessedPairs) {
+                return $cpmk->cpmkMatKul->filter(function ($rel) use ($cpl, $assessedPairs) {
                     $mkId = (int) ($rel->tahunAjaranMatkul->mataKuliahId ?? 0);
-                    return $mkId && isset($assessedSet[$mkId]);
+                    return $mkId && isset($assessedPairs[$cpl->id][$mkId]);
                 })->map(fn ($rel) => $rel->tahunAjaranMatkul->id ?? null);
             });
         })->filter()->unique()->values();
@@ -885,9 +885,9 @@ class DashboardController extends Controller
                 foreach ($cpl->cpmk as $cpmk) {
                     $allNilaiForCpmk = $nilaiByCpmk->get($cpmk->id, collect());
 
-                    $assessedRels = $cpmk->cpmkMatKul->filter(function ($rel) use ($assessedSet) {
+                    $assessedRels = $cpmk->cpmkMatKul->filter(function ($rel) use ($cpl, $assessedPairs) {
                         $mkId = (int) ($rel->tahunAjaranMatkul->mataKuliahId ?? 0);
-                        return $mkId && isset($assessedSet[$mkId]);
+                        return $mkId && isset($assessedPairs[$cpl->id][$mkId]);
                     });
 
                     if ($assessedRels->isEmpty()) {

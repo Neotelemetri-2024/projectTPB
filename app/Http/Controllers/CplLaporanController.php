@@ -85,7 +85,7 @@ class CplLaporanController extends Controller
 
     private function cachedDetailRows($tahunAjaranId = null, $kurikulum = null): array
     {
-        $key = 'cpl-laporan.rows.v1.' . ($tahunAjaranId ?: 'all') . '.' . sha1((string) $kurikulum);
+        $key = 'cpl-laporan.rows.v2.' . ($tahunAjaranId ?: 'all') . '.' . sha1((string) $kurikulum);
 
         return Cache::remember($key, 600, fn () => $this->buildDetailRows($tahunAjaranId, $kurikulum));
     }
@@ -126,7 +126,7 @@ class CplLaporanController extends Controller
             ->orderBy('mk.kodeMatkul')
             ->orderBy('cpmk.kodeCpmk');
 
-        $scope->applyAssessedMatkulConstraint($query, $kurikulumId, 'tam');
+        $scope->applyAssessedPairConstraint($query, 'cpl.id', 'mk.id', $kurikulumId);
 
         if ($tahunAjaranId) {
             $query->where('tam.tahunAjaranId', $tahunAjaranId);

@@ -3,57 +3,57 @@
 namespace App\Services;
 
 use App\Models\Kurikulum;
-use App\Models\MataKuliah;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Menentukan mata kuliah yang dihitung sebagai asesmen CPL.
+ * Menentukan pasangan (CPL, mata kuliah) yang dihitung sebagai asesmen.
  *
- * Model baru: matkul asesmen ditetapkan per kurikulum lewat flag
- * `mata_kuliah.isAsesmen`. Tidak ada fallback — bila sebuah kurikulum
- * belum punya matkul asesmen, tidak ada yang dihitung.
+ * Model: asesmen ditetapkan per pasangan CPL x matkul lewat pivot
+ * `cpl_mata_kuliah_asesmen`. Kurikulum melekat implisit karena satu baris
+ * `mata_kuliah` sudah terikat tepat satu `kurikulumId`. Tidak ada fallback —
+ * bila sebuah kurikulum belum punya pasangan asesmen, tidak ada yang dihitung.
  */
 class CplAssessmentScope
 {
     /**
-     * Mata kuliah IDs yang dihitung, opsional disaring per kurikulum.
+     * Peta pasangan asesmen: [cplId => [mataKuliahId => true]], opsional per kurikulum.
      */
-    public function assessedMataKuliahIds(?int $kurikulumId = null): Collection
+    public function assessedPairs(?int $kurikulumId = null): array
     {
-        return MataKuliah::query()
-            ->where('isAsesmen', true)
-            ->when($kurikulumId, fn ($q) => $q->where('kurikulumId', $kurikulumId))
-            ->orderBy('id')
-            ->pluck('id')
-            ->map(fn ($id) => (int) $id)
-            ->values();
+        $pairs = [];
+
+        $this->basePairQuery($kurikulumId)
+            ->get()
+            ->each(function ($row) use (&$pairs) {
+                $pairs[(int) $row->cplId][(int) $row->mataKuliahId] = true;
+            });
+
+        return $pairs;
     }
 
     /**
-     * Map kurikulumId => Collection of assessed mata kuliah IDs.
-     *
-     * @param  iterable<int>|null  $kurikulumIds
+     * Peta pasangan asesmen dalam bentuk flat ["cplId:mkId" => true].
      */
-    public function assessedMataKuliahIdsByKurikulum(?iterable $kurikulumIds = null): Collection
+    public function assessedPairKeys(?int $kurikulumId = null): array
     {
-        return MataKuliah::query()
-            ->where('isAsesmen', true)
-            ->when($kurikulumIds !== null, fn ($q) => $q->whereIn('kurikulumId', collect($kurikulumIds)->all()))
-            ->get(['id', 'kurikulumId'])
-            ->groupBy('kurikulumId')
-            ->map(fn ($rows) => $rows->pluck('id')->map(fn ($id) => (int) $id)->values());
+        $keys = [];
+
+        $this->basePairQuery($kurikulumId)
+            ->get()
+            ->each(function ($row) use (&$keys) {
+                $keys[(int) $row->cplId . ':' . (int) $row->mataKuliahId] = true;
+            });
+
+        return $keys;
     }
 
     /**
-     * Apakah kurikulum ini (atau kurikulum mana pun bila null) punya matkul asesmen.
+     * Apakah kurikulum ini (atau kurikulum mana pun bila null) punya pasangan asesmen.
      */
     public function hasExplicitAssessment(?int $kurikulumId = null): bool
     {
-        return MataKuliah::query()
-            ->where('isAsesmen', true)
-            ->when($kurikulumId, fn ($q) => $q->where('kurikulumId', $kurikulumId))
-            ->exists();
+        return $this->basePairQuery($kurikulumId)->exists();
     }
 
     /**
@@ -65,20 +65,40 @@ class CplAssessmentScope
     }
 
     /**
-     * SQL constraint: mata kuliah pada TAM yang ditandai asesmen (opsional satu kurikulum).
-     * Expects a joined `tahun_ajaran_matkul` table exposing `mataKuliahId`.
+     * SQL constraint: hanya baris yang pasangan (CPL, matkul)-nya ada di pivot.
+     *
+     * @param  string  $cplColumn  kolom query yang memuat cplId (mis. 'cpl.id')
+     * @param  string  $mkColumn  kolom query yang memuat mataKuliahId (mis. 'mk.id' atau 'tam.mataKuliahId')
      */
-    public function applyAssessedMatkulConstraint($query, ?int $kurikulumId = null, string $tamTable = 'tahun_ajaran_matkul')
+    public function applyAssessedPairConstraint($query, string $cplColumn, string $mkColumn, ?int $kurikulumId = null)
     {
-        return $query->whereExists(function ($sub) use ($kurikulumId, $tamTable) {
+        return $query->whereExists(function ($sub) use ($cplColumn, $mkColumn, $kurikulumId) {
             $sub->select(DB::raw(1))
-                ->from('mata_kuliah as mk_asesmen')
-                ->whereColumn('mk_asesmen.id', "{$tamTable}.mataKuliahId")
-                ->where('mk_asesmen.isAsesmen', true);
+                ->from('cpl_mata_kuliah_asesmen as cma')
+                ->whereColumn('cma.cplId', $cplColumn)
+                ->whereColumn('cma.mataKuliahId', $mkColumn);
 
             if ($kurikulumId) {
-                $sub->where('mk_asesmen.kurikulumId', $kurikulumId);
+                $sub->whereExists(function ($kurikulumSub) use ($kurikulumId) {
+                    $kurikulumSub->select(DB::raw(1))
+                        ->from('mata_kuliah as mk_kur')
+                        ->whereColumn('mk_kur.id', 'cma.mataKuliahId')
+                        ->where('mk_kur.kurikulumId', $kurikulumId);
+                });
             }
         });
+    }
+
+    /**
+     * Query dasar pivot, opsional disaring ke satu kurikulum.
+     */
+    private function basePairQuery(?int $kurikulumId = null)
+    {
+        return DB::table('cpl_mata_kuliah_asesmen as cma')
+            ->join('mata_kuliah as mk', 'mk.id', '=', 'cma.mataKuliahId')
+            ->when($kurikulumId, fn ($q) => $q->where('mk.kurikulumId', $kurikulumId))
+            ->select('cma.cplId', 'cma.mataKuliahId')
+            ->orderBy('cma.cplId')
+            ->orderBy('cma.mataKuliahId');
     }
 }

@@ -122,43 +122,81 @@ class KurikulumController extends Controller
     }
 
     /**
-     * Layar penetapan matkul asesmen untuk satu kurikulum.
+     * Layar penetapan matkul asesmen per pasangan (CPL, matkul) untuk satu kurikulum.
      */
     public function editMatkulAsesmen(Kurikulum $kurikulum)
     {
         $mataKuliah = $kurikulum->mataKuliah()->orderBy('kodeMatkul')->get();
-        $selectedIds = $mataKuliah->where('isAsesmen', true)->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $cpl = \App\Models\Cpl::orderBy('kodeCpl')->get();
 
-        return view('admin.kurikulum.matkul-asesmen', compact('kurikulum', 'mataKuliah', 'selectedIds'));
+        $mkIds = $mataKuliah->pluck('id')->all();
+        $selectedPairs = [];
+        if (!empty($mkIds)) {
+            $pairs = \Illuminate\Support\Facades\DB::table('cpl_mata_kuliah_asesmen')
+                ->whereIn('mataKuliahId', $mkIds)
+                ->get(['cplId', 'mataKuliahId']);
+
+            foreach ($pairs as $pair) {
+                $selectedPairs[(int) $pair->cplId . ':' . (int) $pair->mataKuliahId] = true;
+            }
+        }
+
+        return view('admin.kurikulum.matkul-asesmen', compact('kurikulum', 'mataKuliah', 'cpl', 'selectedPairs'));
     }
 
     public function updateMatkulAsesmen(Request $request, Kurikulum $kurikulum)
     {
         $validator = Validator::make($request->all(), [
-            'mata_kuliah_ids' => 'nullable|array',
-            'mata_kuliah_ids.*' => 'integer|exists:mata_kuliah,id',
+            'asesmen' => 'nullable|array',
+            'asesmen.*' => 'array',
+            'asesmen.*.*' => 'integer|exists:mata_kuliah,id',
         ]);
 
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
-        $selected = collect($request->input('mata_kuliah_ids', []))
-            ->map(fn ($id) => (int) $id)
-            ->unique()
-            ->values()
-            ->all();
-
         // Hanya boleh mengeset matkul yang memang milik kurikulum ini.
-        $kurikulum->mataKuliah()->update(['isAsesmen' => false]);
-        if (!empty($selected)) {
-            $kurikulum->mataKuliah()->whereIn('id', $selected)->update(['isAsesmen' => true]);
+        $mkIds = $kurikulum->mataKuliah()->pluck('id')->map(fn ($id) => (int) $id)->all();
+        $allowed = array_flip($mkIds);
+        $cplIds = \App\Models\Cpl::pluck('id')->map(fn ($id) => (int) $id)->all();
+        $allowedCpl = array_flip($cplIds);
+
+        $rows = [];
+        $now = now();
+        foreach ((array) $request->input('asesmen', []) as $cplId => $mkIdsSelected) {
+            $cplId = (int) $cplId;
+            if (!isset($allowedCpl[$cplId])) {
+                continue;
+            }
+            foreach ((array) $mkIdsSelected as $mkId) {
+                $mkId = (int) $mkId;
+                if (isset($allowed[$mkId])) {
+                    $rows[] = [
+                        'cplId' => $cplId,
+                        'mataKuliahId' => $mkId,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                }
+            }
         }
 
-        \Illuminate\Support\Facades\Cache::forget('pimpinan.cpl-achievement.rows.v5');
+        \Illuminate\Support\Facades\DB::transaction(function () use ($mkIds, $rows) {
+            \Illuminate\Support\Facades\DB::table('cpl_mata_kuliah_asesmen')
+                ->whereIn('mataKuliahId', $mkIds)
+                ->delete();
+
+            if (!empty($rows)) {
+                \Illuminate\Support\Facades\DB::table('cpl_mata_kuliah_asesmen')->insert($rows);
+            }
+        });
+
+        \Illuminate\Support\Facades\Cache::forget('pimpinan.cpl-achievement.rows.v6');
+        \Illuminate\Support\Facades\Cache::forget('cpl-laporan.rows.v2');
         \Illuminate\Support\Facades\Cache::forget('dashboard.cpl-achievement.v2');
 
         return redirect()->route('admin.kurikulum.matkul-asesmen.edit', $kurikulum)
-            ->with('success', 'Matkul asesmen kurikulum berhasil disimpan.');
+            ->with('success', 'Asesmen CPL per matkul berhasil disimpan.');
     }
 }

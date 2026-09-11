@@ -50,11 +50,6 @@
                             <option value="{{ $kur->id }}" @selected((string) request('kurikulumId') === (string) $kur->id)>{{ $kur->nama }}</option>
                         @endforeach
                     </select>
-                    <select name="isAsesmen" class="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-amber-500 focus:border-amber-500 text-sm bg-gray-50 focus:bg-white transition-colors">
-                        <option value="">Semua Status Asesmen</option>
-                        <option value="1" @selected(request('isAsesmen') === '1')>Asesmen</option>
-                        <option value="0" @selected(request('isAsesmen') === '0')>Non-asesmen</option>
-                    </select>
                     <button type="submit" class="px-6 py-2.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 focus:ring-4 focus:ring-amber-300 text-sm font-medium transition-colors">
                         <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
@@ -62,7 +57,7 @@
                         Cari
                     </button>
                 </form>
-                @if(request('q') || request('kurikulumId') || request('isAsesmen') !== null)
+                @if(request('q') || request('kurikulumId'))
                     <a href="{{ route('admin.mata-kuliah.index') }}" class="px-4 py-2.5 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 whitespace-nowrap font-medium transition-colors">
                         <svg class="w-4 h-4 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -85,7 +80,6 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kurikulum</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Mata Kuliah</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jenis</th>
-                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Asesmen</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKS</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                     </tr>
@@ -104,13 +98,6 @@
                             <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
                                 {{ ucfirst($mk->jenis) }}
                             </span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                            @if($mk->isAsesmen)
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700">Asesmen</span>
-                            @else
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">—</span>
-                            @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $mk->sks }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -132,7 +119,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="9" class="px-6 py-8 text-center text-sm text-gray-500">
+                        <td colspan="8" class="px-6 py-8 text-center text-sm text-gray-500">
                             <div class="flex flex-col items-center">
                                 <svg class="w-12 h-12 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -244,13 +231,6 @@
                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
             @enderror
         </div>
-        <div class="col-span-2">
-            <label class="inline-flex items-center gap-2 text-sm font-medium text-gray-900">
-                <input type="checkbox" name="isAsesmen" value="1" {{ old('isAsesmen') ? 'checked' : '' }} class="w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500">
-                Mata kuliah asesmen CPL
-            </label>
-            <p class="mt-1 text-xs text-gray-500">Matkul asesmen dihitung di laporan CPL untuk kurikulum ini.</p>
-        </div>
     </div>
 </x-form-modal>
 
@@ -292,12 +272,6 @@
             <div class="col-span-2">
                 <label for="sks_{{ $mk->id }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">SKS</label>
                 <input type="number" name="sks" id="sks_{{ $mk->id }}" value="{{ $mk->sks }}" min="0" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="3" required>
-            </div>
-            <div class="col-span-2">
-                <label class="inline-flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
-                    <input type="checkbox" name="isAsesmen" value="1" {{ old('isAsesmen', $mk->isAsesmen) ? 'checked' : '' }} class="w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500">
-                    Mata kuliah asesmen CPL
-                </label>
             </div>
         </div>
     </x-form-modal>

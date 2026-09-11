@@ -198,7 +198,7 @@ class CapaianController extends Controller
 
     /**
      * Build CPL/CPMK achievement data with batched queries (no per-CPMK N+1).
-     * Hanya mata kuliah ber-flag isAsesmen (opsional satu kurikulum) yang dihitung.
+     * Hanya pasangan (CPL, matkul) yang ditandai asesmen (opsional satu kurikulum) yang dihitung.
      */
     private function buildCplData(int $mahasiswaId, $tahunAjaranId, $cplIdTerpilih, bool $trackMissing, $kurikulumId = null): array
     {
@@ -215,7 +215,7 @@ class CapaianController extends Controller
 
         $cplList = $cplQuery->get();
         $allCpmkIds = $cplList->flatMap(fn ($cpl) => $cpl->cpmk->pluck('id'))->unique()->values();
-        $assessedSet = array_flip($scope->assessedMataKuliahIds($kurikulumId)->all());
+        $assessedPairs = $scope->assessedPairs($kurikulumId);
 
         $bobotByCpmk = Bobot::query()
             ->when($tahunAjaranId, fn ($q) => $q->where('tahunAjaranId', $tahunAjaranId))
@@ -242,11 +242,11 @@ class CapaianController extends Controller
 
             foreach ($cpl->cpmk as $cpmk) {
                 $bobotIds = ($bobotByCpmk->get($cpmk->id) ?? collect())->pluck('id');
-                $assessedLinks = $cpmk->cpmkMatKul->filter(function ($matkulRel) use ($assessedSet) {
+                $assessedLinks = $cpmk->cpmkMatKul->filter(function ($matkulRel) use ($cpl, $assessedPairs) {
                     $mkId = $matkulRel->mataKuliah->id
                         ?? $matkulRel->tahunAjaranMatkul->mataKuliahId
                         ?? null;
-                    return $mkId && isset($assessedSet[(int) $mkId]);
+                    return $mkId && isset($assessedPairs[$cpl->id][(int) $mkId]);
                 });
 
                 if ($assessedLinks->isEmpty()) {

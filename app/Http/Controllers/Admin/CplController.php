@@ -82,7 +82,8 @@ class CplController extends Controller
                 'targetPersen' => (int) $request->targetPersen,
             ]);
 
-            Cache::forget('pimpinan.cpl-achievement.rows.v5');
+            Cache::forget('pimpinan.cpl-achievement.rows.v6');
+            Cache::forget('cpl-laporan.rows.v2');
             Cache::forget('dashboard.cpl-achievement.v2');
 
             return redirect()->route('admin.cpl.index')
@@ -135,7 +136,8 @@ class CplController extends Controller
                 'targetPersen' => (int) $request->targetPersen,
             ]);
 
-            Cache::forget('pimpinan.cpl-achievement.rows.v5');
+            Cache::forget('pimpinan.cpl-achievement.rows.v6');
+            Cache::forget('cpl-laporan.rows.v2');
             Cache::forget('dashboard.cpl-achievement.v2');
 
             return redirect()->route('admin.cpl.index')
@@ -156,7 +158,8 @@ class CplController extends Controller
             }
 
             $cpl->delete();
-            Cache::forget('pimpinan.cpl-achievement.rows.v5');
+            Cache::forget('pimpinan.cpl-achievement.rows.v6');
+            Cache::forget('cpl-laporan.rows.v2');
             Cache::forget('dashboard.cpl-achievement.v2');
 
             return redirect()->route('admin.cpl.index')

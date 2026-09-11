@@ -17,12 +17,10 @@ class MataKuliah extends Model
         'namaMatkul',
         'jenis',
         'sks',
-        'isAsesmen',
     ];
 
     protected $casts = [
         'sks' => 'integer',
-        'isAsesmen' => 'boolean',
     ];
 
     public function tahunAjaranMatkul()
@@ -33,6 +31,14 @@ class MataKuliah extends Model
     public function kurikulumRef()
     {
         return $this->belongsTo(Kurikulum::class, 'kurikulumId');
+    }
+
+    /**
+     * CPL yang mengases mata kuliah ini (pasangan CPL x matkul).
+     */
+    public function cplAsesmen()
+    {
+        return $this->belongsToMany(Cpl::class, 'cpl_mata_kuliah_asesmen', 'mataKuliahId', 'cplId')->withTimestamps();
     }
 
     /**

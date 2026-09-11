@@ -171,7 +171,7 @@ class CplAchievementController extends Controller
 
     private function cachedAchievementRows($tahunAjaranId = null, $kurikulum = null): array
     {
-        $key = 'pimpinan.cpl-achievement.rows.v5.' . ($tahunAjaranId ?: 'all') . '.' . sha1((string) $kurikulum);
+        $key = 'pimpinan.cpl-achievement.rows.v6.' . ($tahunAjaranId ?: 'all') . '.' . sha1((string) $kurikulum);
 
         return Cache::remember($key, 600, fn () => $this->buildAchievementRows($tahunAjaranId, $kurikulum));
     }
@@ -197,8 +197,8 @@ class CplAchievementController extends Controller
             return [];
         }
 
-        // Matkul asesmen berlaku sama untuk semua CPL (scope per kurikulum).
-        $assessedSet = array_flip($scope->assessedMataKuliahIds($kurikulumId)->all());
+        // Asesmen ditetapkan per pasangan CPL x matkul.
+        $assessedPairs = $scope->assessedPairs($kurikulumId);
 
         $tamIds = $tamList->pluck('id');
         $allCpmkIds = $cplList->flatMap(fn ($cpl) => $cpl->cpmk->pluck('id'))->unique()->values();
@@ -224,7 +224,7 @@ class CplAchievementController extends Controller
                 ->whereIn('cc.cpmkId', $allCpmkIds)
                 ->where('b.bobot', '>', 0);
 
-            $scope->applyAssessedMatkulConstraint($avgQuery, $kurikulumId, 'tam');
+            $scope->applyAssessedPairConstraint($avgQuery, 'cpl.id', 'tam.mataKuliahId', $kurikulumId);
 
             $weightedAvgs = $avgQuery
                 ->groupBy('cc.cplId', 'n.tahunAjaranMatkulId', 'n.mahasiswaId')
@@ -243,7 +243,7 @@ class CplAchievementController extends Controller
 
             foreach ($tamList as $tam) {
                 $mkId = (int) ($tam->mataKuliahId ?? $tam->mataKuliah->id ?? 0);
-                if (!$mkId || !isset($assessedSet[$mkId])) {
+                if (!$mkId || !isset($assessedPairs[$cpl->id][$mkId])) {
                     continue;
                 }
 

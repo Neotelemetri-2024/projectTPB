@@ -29,8 +29,11 @@ class Kurikulum extends Model
         return $this->hasMany(MataKuliah::class, 'kurikulumId');
     }
 
+    /**
+     * Mata kuliah kurikulum ini yang punya minimal satu pasangan asesmen CPL.
+     */
     public function mataKuliahAsesmen()
     {
-        return $this->hasMany(MataKuliah::class, 'kurikulumId')->where('isAsesmen', true);
+        return $this->mataKuliah()->whereHas('cplAsesmen');
     }
 }

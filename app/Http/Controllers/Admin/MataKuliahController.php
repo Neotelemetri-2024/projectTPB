@@ -40,11 +40,6 @@ class MataKuliahController extends Controller
             $query->where('kurikulumId', $request->kurikulumId);
         }
 
-        // Filter by asesmen
-        if ($request->filled('isAsesmen') && in_array($request->isAsesmen, ['0', '1'], true)) {
-            $query->where('isAsesmen', $request->isAsesmen === '1');
-        }
-
         // Filter by SKS
         if ($request->filled('sks')) {
             $query->where('sks', $request->sks);
@@ -111,7 +106,6 @@ class MataKuliahController extends Controller
                 'namaMatkul' => $request->namaMatkul,
                 'jenis' => $request->jenis,
                 'sks' => $request->sks,
-                'isAsesmen' => $request->boolean('isAsesmen'),
             ]);
 
             return redirect()->route('admin.mata-kuliah.index')
@@ -177,7 +171,6 @@ class MataKuliahController extends Controller
                 'namaMatkul' => $request->namaMatkul,
                 'jenis' => $request->jenis,
                 'sks' => $request->sks,
-                'isAsesmen' => $request->boolean('isAsesmen'),
             ]);
 
             return redirect()->route('admin.mata-kuliah.index')

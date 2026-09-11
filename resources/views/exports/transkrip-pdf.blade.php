@@ -262,10 +262,12 @@
 
     <div class="signature-section">
         <div style="text-align: right; margin-top: 40px;">
-            <p>Padang, {{ date('d') }} {{ \Carbon\Carbon::now()->locale('id')->translatedFormat('F') }} {{ date('Y') }}</p>
+            <p>{{ config('institution.kota') }}, {{ date('d') }} {{ \Carbon\Carbon::now()->locale('id')->translatedFormat('F') }} {{ date('Y') }}</p>
+            <p style="margin-top: 4px;">Ketua Departemen</p>
             <div class="signature-box">
                 <div style="margin-top: 80px; border-top: 1px solid #000; padding-top: 5px;">
-                    <strong>NIP. ................................</strong>
+                    <strong>{{ config('institution.ketua_nama') }}</strong><br>
+                    <strong>NIP. {{ config('institution.ketua_nip') }}</strong>
                 </div>
             </div>
         </div>

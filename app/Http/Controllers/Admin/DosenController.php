@@ -33,7 +33,7 @@ class DosenController extends Controller
 
         
         // Pagination
-        $dosen = $query->orderBy('nama')->paginate(10)->withQueryString();
+        $dosen = $query->orderBy('nama')->paginate($this->perPage($request))->withQueryString();
         
         return view('admin.dosen.index', compact('dosen'));
     }

@@ -190,17 +190,25 @@ window.showToast = function(message, type = 'success') {
     }).showToast();
 };
 
-// Queue chart callbacks until charts.js loads (module scripts are deferred)
+// Load the chart bundle only on pages that request it.
 window.__chartReadyQueue = window.__chartReadyQueue || [];
+let chartModulePromise = null;
 window.whenChartReady = function (callback) {
+    const run = () => callback(window.ApexCharts);
     if (window.ApexCharts) {
-        const run = () => callback(window.ApexCharts);
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', run);
+            document.addEventListener('DOMContentLoaded', run, { once: true });
         } else {
             run();
         }
         return;
     }
+
     window.__chartReadyQueue.push(callback);
+    if (!chartModulePromise) {
+        chartModulePromise = import('./charts.js').catch((error) => {
+            chartModulePromise = null;
+            console.error('Unable to load chart module', error);
+        });
+    }
 };

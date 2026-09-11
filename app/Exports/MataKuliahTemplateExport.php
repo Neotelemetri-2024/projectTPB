@@ -139,14 +139,14 @@ class InstruksiMataKuliahSheet implements FromCollection, WithHeadings, WithTitl
             ['2. Kolom yang Harus Diisi:', ''],
             ['   - NAMA_MATA_KULIAH', 'Nama lengkap mata kuliah'],
             ['   - KODE', 'Kode mata kuliah'],
-            ['   - KURIKULUM', 'Kurikulum mata kuliah'],
+            ['   - KURIKULUM', 'Kode kurikulum (mis. 2020). Dibuat otomatis bila belum ada'],
             ['   - SKS', 'Jumlah SKS (1-6)'],
             ['   - JENIS', 'Jenis mata kuliah (wajib/pilihan)'],
             [''],
             ['3. Aturan Pengisian:', ''],
             ['   - NAMA_MATA_KULIAH', 'Wajib diisi, maksimal 255 karakter'],
             ['   - KODE', 'Wajib diisi, maksimal 20 karakter'],
-            ['   - KURIKULUM', 'Wajib diisi, maksimal 50 karakter'],
+            ['   - KURIKULUM', 'Wajib diisi, kode kurikulum yang terdaftar di menu Kurikulum'],
             ['   - SKS', 'Wajib diisi, angka positif'],
             ['   - JENIS', 'Wajib diisi, pilih: wajib atau pilihan'],
             [''],
@@ -160,7 +160,7 @@ class InstruksiMataKuliahSheet implements FromCollection, WithHeadings, WithTitl
             ['5. Catatan:', ''],
             ['   - Jika mata kuliah sudah ada (berdasarkan kode dan kurikulum), data akan diupdate'],
             ['   - Jika mata kuliah belum ada, akan dibuat baru'],
-            ['   - Pastikan kombinasi kode mata kuliah dan kurikulum tidak duplikat'],
+            ['   - Mata kuliah baru tidak otomatis menjadi matkul asesmen; atur di menu Kurikulum'],
             [''],
             ['6. Error yang Mungkin Terjadi:', ''],
             ['   - Kode sudah digunakan', 'Gunakan kode yang berbeda atau kurikulum yang berbeda'],
@@ -168,6 +168,7 @@ class InstruksiMataKuliahSheet implements FromCollection, WithHeadings, WithTitl
             ['   - Jenis tidak valid', 'Gunakan: wajib atau pilihan'],
             ['   - Nama kosong', 'Nama mata kuliah wajib diisi'],
             ['   - Kode kosong', 'Kode mata kuliah wajib diisi'],
+            ['   - Kurikulum kosong', 'Kode kurikulum wajib diisi'],
         ]);
     }
 

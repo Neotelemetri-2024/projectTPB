@@ -19,7 +19,7 @@ class MataKuliahController extends Controller
     
     public function index(Request $request)
     {
-        $query = MataKuliah::query();
+        $query = MataKuliah::query()->with('kurikulumRef');
 
         // Search by name or code
         if ($request->filled('q')) {
@@ -33,6 +33,16 @@ class MataKuliahController extends Controller
         // Filter by type
         if ($request->filled('jenis') && in_array($request->jenis, ['wajib', 'pilihan'])) {
             $query->where('jenis', $request->jenis);
+        }
+
+        // Filter by kurikulum
+        if ($request->filled('kurikulumId')) {
+            $query->where('kurikulumId', $request->kurikulumId);
+        }
+
+        // Filter by asesmen
+        if ($request->filled('isAsesmen') && in_array($request->isAsesmen, ['0', '1'], true)) {
+            $query->where('isAsesmen', $request->isAsesmen === '1');
         }
 
         // Filter by SKS
@@ -50,24 +60,25 @@ class MataKuliahController extends Controller
         
         $query->orderBy($sortField, $sortDir);
 
-        $mataKuliah = $query->paginate(10)->withQueryString();
+        $mataKuliah = $query->paginate($this->perPage($request))->withQueryString();
+        $kurikulumList = \App\Models\Kurikulum::orderBy('kode')->get();
         
-        return view('admin.mata-kuliah.index', compact('mataKuliah'));
+        return view('admin.mata-kuliah.index', compact('mataKuliah', 'kurikulumList'));
     }
 
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'kodeMatkul' => 'required|string|max:20',
-            'kurikulum' => 'required|string|max:50',
+            'kurikulumId' => 'required|exists:kurikulum,id',
             'namaMatkul' => 'required|string|max:255',
             'jenis' => 'required|string|max:50',
             'sks' => 'required|integer|min:0',
         ], [
             'kodeMatkul.required' => 'Kode mata kuliah wajib diisi',
             'kodeMatkul.max' => 'Kode mata kuliah maksimal 20 karakter',
-            'kurikulum.required' => 'Kurikulum wajib diisi',
-            'kurikulum.max' => 'Kurikulum maksimal 50 karakter',
+            'kurikulumId.required' => 'Kurikulum wajib dipilih',
+            'kurikulumId.exists' => 'Kurikulum tidak valid',
             'namaMatkul.required' => 'Nama mata kuliah wajib diisi',
             'namaMatkul.max' => 'Nama mata kuliah maksimal 255 karakter',
             'jenis.required' => 'Jenis mata kuliah wajib diisi',
@@ -79,7 +90,7 @@ class MataKuliahController extends Controller
 
         $validator->after(function ($validator) use ($request) {
             $exists = MataKuliah::where('kodeMatkul', $request->kodeMatkul)
-                ->where('kurikulum', $request->kurikulum)
+                ->where('kurikulumId', $request->kurikulumId)
                 ->exists();
             
             if ($exists) {
@@ -96,10 +107,11 @@ class MataKuliahController extends Controller
         try {
             MataKuliah::create([
                 'kodeMatkul' => $request->kodeMatkul,
-                'kurikulum' => $request->kurikulum,
+                'kurikulumId' => $request->kurikulumId,
                 'namaMatkul' => $request->namaMatkul,
                 'jenis' => $request->jenis,
                 'sks' => $request->sks,
+                'isAsesmen' => $request->boolean('isAsesmen'),
             ]);
 
             return redirect()->route('admin.mata-kuliah.index')
@@ -123,15 +135,15 @@ class MataKuliahController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'kodeMatkul' => 'required|string|max:20',
-            'kurikulum' => 'required|string|max:50',
+            'kurikulumId' => 'required|exists:kurikulum,id',
             'namaMatkul' => 'required|string|max:255',
             'jenis' => 'required|string|max:50',
             'sks' => 'required|integer|min:0',
         ], [
             'kodeMatkul.required' => 'Kode mata kuliah wajib diisi',
             'kodeMatkul.max' => 'Kode mata kuliah maksimal 20 karakter',
-            'kurikulum.required' => 'Kurikulum wajib diisi',
-            'kurikulum.max' => 'Kurikulum maksimal 50 karakter',
+            'kurikulumId.required' => 'Kurikulum wajib dipilih',
+            'kurikulumId.exists' => 'Kurikulum tidak valid',
             'namaMatkul.required' => 'Nama mata kuliah wajib diisi',
             'namaMatkul.max' => 'Nama mata kuliah maksimal 255 karakter',
             'jenis.required' => 'Jenis mata kuliah wajib diisi',
@@ -143,7 +155,7 @@ class MataKuliahController extends Controller
 
         $validator->after(function ($validator) use ($request, $mataKuliah) {
             $exists = MataKuliah::where('kodeMatkul', $request->kodeMatkul)
-                ->where('kurikulum', $request->kurikulum)
+                ->where('kurikulumId', $request->kurikulumId)
                 ->where('id', '!=', $mataKuliah->id)
                 ->exists();
             
@@ -161,10 +173,11 @@ class MataKuliahController extends Controller
         try {
             $mataKuliah->update([
                 'kodeMatkul' => $request->kodeMatkul,
-                'kurikulum' => $request->kurikulum,
+                'kurikulumId' => $request->kurikulumId,
                 'namaMatkul' => $request->namaMatkul,
                 'jenis' => $request->jenis,
                 'sks' => $request->sks,
+                'isAsesmen' => $request->boolean('isAsesmen'),
             ]);
 
             return redirect()->route('admin.mata-kuliah.index')

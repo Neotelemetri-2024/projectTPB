@@ -1,9 +1,5 @@
 @extends('layouts.main')
 
-@push('head')
-    @vite('resources/js/charts.js')
-@endpush
-
 @section('content')
 <div class="p-4 md:p-6 space-y-4">
     <!-- Header with Filter -->
@@ -131,74 +127,64 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    initializeCharts();
-});
-
-// Chart data from backend
-const chartData = @json($chartData);
-const chartDataGanjil = @json($chartDataGanjil ?? []);
-const chartDataGenap = @json($chartDataGenap ?? []);
-const cplAchievementData = @json($cplAchievementData);
-const matkulPerformanceData = @json($matkulPerformanceData);
-const courseCompletionData = @json($courseCompletionData);
-const courseTypeData = @json($courseTypeData);
-const topStudentsData = @json($topStudentsData);
-
-// Debug: Log data untuk troubleshooting
-console.log('Chart Data Ganjil:', chartDataGanjil);
-console.log('Chart Data Genap:', chartDataGenap);
-console.log('Chart Data All:', chartData);
-
-// Fallback data sementara jika backend belum menyediakan data terpisah
-// TODO: Hapus ini setelah backend menyediakan data terpisah
+const dashboardChartDataUrl = @json(route('pimpinan.dashboard.chart-data'));
+let chartData = null;
+let chartDataGanjil = [];
+let chartDataGenap = [];
 let fallbackGanjilData = null;
 let fallbackGenapData = null;
+let cplAchievementData = null;
+let matkulPerformanceData = null;
+let courseCompletionData = null;
+let courseTypeData = null;
+let topStudentsData = null;
 
-if (chartDataGanjil.length === 0 && chartDataGenap.length === 0 && chartData && chartData.labels) {
-    // Buat data terpisah dari chartData yang ada
-    const allLabels = chartData.labels || [];
-    const allDatasets = chartData.datasets || [];
-
-    // Filter untuk semester ganjil (asumsi label mengandung "Ganjil")
-    const ganjilLabels = allLabels.filter(label => label.toLowerCase().includes('ganjil'));
-    const genapLabels = allLabels.filter(label => label.toLowerCase().includes('genap'));
-
-    if (ganjilLabels.length > 0) {
-        fallbackGanjilData = {
-            labels: ganjilLabels,
-            datasets: allDatasets.map(dataset => ({
-                ...dataset,
-                data: dataset.data.slice(0, ganjilLabels.length)
-            }))
-        };
-    }
-
-    if (genapLabels.length > 0) {
-        fallbackGenapData = {
-            labels: genapLabels,
-            datasets: allDatasets.map(dataset => ({
-                ...dataset,
-                data: dataset.data.slice(ganjilLabels.length, ganjilLabels.length + genapLabels.length)
-            }))
-        };
-    }
-
-    console.log('Fallback Ganjil Data:', fallbackGanjilData);
-    console.log('Fallback Genap Data:', fallbackGenapData);
+function prepareHistoryFallbacks() {
+    if (!chartData || !chartData.labels) return;
+    const indexes = { ganjil: [], genap: [] };
+    chartData.labels.forEach((label, index) => {
+        const normalized = String(label).toLowerCase();
+        if (normalized.includes('ganjil')) indexes.ganjil.push(index);
+        if (normalized.includes('genap')) indexes.genap.push(index);
+    });
+    const subset = (selected) => ({
+        labels: selected.map((index) => chartData.labels[index]),
+        datasets: (chartData.datasets || []).map((dataset) => ({
+            ...dataset,
+            data: selected.map((index) => (dataset.data || [])[index])
+        }))
+    });
+    if (indexes.ganjil.length) fallbackGanjilData = subset(indexes.ganjil);
+    if (indexes.genap.length) fallbackGenapData = subset(indexes.genap);
 }
 
-// Make chart data globally accessible for maximize function
-window.chartData = chartData;
-window.chartDataGanjil = chartDataGanjil;
-window.chartDataGenap = chartDataGenap;
-window.fallbackGanjilData = fallbackGanjilData;
-window.fallbackGenapData = fallbackGenapData;
-window.cplAchievementData = cplAchievementData;
-window.matkulPerformanceData = matkulPerformanceData;
-window.courseCompletionData = courseCompletionData;
-window.courseTypeData = courseTypeData;
-window.topStudentsData = topStudentsData;
+async function loadDashboardCharts() {
+    const url = new URL(dashboardChartDataUrl, window.location.origin);
+    const selected = document.getElementById('tahun-ajaran-filter')?.value || '';
+    if (selected) url.searchParams.set('tahun_ajaran_filter', selected);
+
+    try {
+        const response = await fetch(url, {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const payload = await response.json();
+        chartData = payload.chartData;
+        cplAchievementData = payload.cplAchievementData;
+        matkulPerformanceData = payload.matkulPerformanceData;
+        courseCompletionData = payload.courseCompletionData;
+        courseTypeData = payload.courseTypeData;
+        topStudentsData = payload.topStudentsData;
+        prepareHistoryFallbacks();
+        Object.assign(window, payload, { fallbackGanjilData, fallbackGenapData });
+        initializeCharts();
+    } catch (error) {
+        console.error('Gagal memuat data dashboard:', error);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', loadDashboardCharts);
 
 // Global variables untuk chart instances
 let historyChartGanjilInstance = null;

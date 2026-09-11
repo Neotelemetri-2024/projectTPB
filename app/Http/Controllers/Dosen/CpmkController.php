@@ -115,7 +115,7 @@ class CpmkController extends Controller
             return $representative;
         })->values();
 
-        $perPage = 10;
+        $perPage = $this->perPage($request);
         $page = (int) $request->get('page', 1);
         $mataKuliahDiampu = new \Illuminate\Pagination\LengthAwarePaginator(
             $mataKuliahDiampu->forPage($page, $perPage)->values(),
@@ -181,7 +181,9 @@ class CpmkController extends Controller
             });
         }
 
-        $cpmkList = $query->orderBy('kodeCpmk', 'asc')->paginate(10);
+        $cpmkList = $query->orderBy('kodeCpmk', 'asc')
+            ->paginate($this->perPage($request))
+            ->withQueryString();
 
         // Separate main CPMK and sub-CPMK
         $mainCpmkList = $cpmkList->getCollection()->filter(function($cpmk) {
@@ -192,64 +194,34 @@ class CpmkController extends Controller
             return $cpmk->parents->count() > 0;
         });
 
-        // Load bobot data separately and group by component to avoid duplicates
-        foreach ($cpmkList as $cpmk) {
-            $bobotData = \App\Models\Bobot::where('cpmkId', $cpmk->id)
-                ->whereHas('tahunAjaranMatkul', function($q) use ($allTahunAjaranMatkulIds) {
-                    $q->whereIn('id', $allTahunAjaranMatkulIds);
-                })
-                ->with('komponen')
-                ->get()
-                ->groupBy('komponenId')
-                ->map(function($group) {
-                    // Take the first bobot value for each component (they should be the same across classes)
-                    return $group->first();
-                });
-
-            $cpmk->setRelation('bobot', $bobotData->values());
-
-            // Calculate last modified time from CPMK, Bobot, and CpmkMatKul tables
-            $cpmkLastUpdate = $cpmk->updated_at;
-            $bobotLastUpdate = Bobot::where('cpmkId', $cpmk->id)
-                ->whereHas('tahunAjaranMatkul', function($q) use ($allTahunAjaranMatkulIds) {
-                    $q->whereIn('id', $allTahunAjaranMatkulIds);
-                })
-                ->max('updated_at');
-            $cpmkMatKulLastUpdate = CpmkMatKul::where('cpmkId', $cpmk->id)
+        $displayedCpmkIds = $cpmkList->getCollection()->pluck('id');
+        $bobotByCpmk = $displayedCpmkIds->isEmpty()
+            ? collect()
+            : Bobot::with('komponen')
+                ->whereIn('cpmkId', $displayedCpmkIds)
                 ->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds)
-                ->max('updated_at');
+                ->get()
+                ->groupBy('cpmkId');
+        $cpmkMatKulLastUpdates = $displayedCpmkIds->isEmpty()
+            ? collect()
+            : CpmkMatKul::whereIn('cpmkId', $displayedCpmkIds)
+                ->whereIn('tahunAjaranMatkulId', $allTahunAjaranMatkulIds)
+                ->select('cpmkId', DB::raw('MAX(updated_at) as last_updated_at'))
+                ->groupBy('cpmkId')
+                ->pluck('last_updated_at', 'cpmkId');
 
-            // Get the latest between CPMK, Bobot, and CpmkMatKul updates
-            $lastModified = $cpmkLastUpdate; // Default to CPMK update time
-
-            if ($bobotLastUpdate && (!$lastModified || $bobotLastUpdate > $lastModified)) {
-                $lastModified = $bobotLastUpdate;
-            }
-
-            if ($cpmkMatKulLastUpdate && (!$lastModified || $cpmkMatKulLastUpdate > $lastModified)) {
-                $lastModified = $cpmkMatKulLastUpdate;
-            }
-
-            $cpmk->lastModified = $lastModified;
-        }
-
-        // Ensure CPL synchronization for sub-CPMKs
         foreach ($cpmkList as $cpmk) {
-            if ($cpmk->parents->count() > 0) {
-                // This is a sub-CPMK, ensure CPL matches all parents
-                foreach ($cpmk->parents as $parent) {
-                    $parentCplIds = $parent->cpl->pluck('id')->toArray();
-                    $currentCplIds = $cpmk->cpl->pluck('id')->toArray();
+            $cpmkBobot = ($bobotByCpmk->get($cpmk->id) ?? collect())
+                ->unique('komponenId')
+                ->values();
+            $cpmk->setRelation('bobot', $cpmkBobot);
 
-                    // If CPL doesn't match, sync it
-                    if (sort($parentCplIds) !== sort($currentCplIds)) {
-                        $cpmk->cpl()->sync($parentCplIds);
-                        // Reload the CPL relationship
-                        $cpmk->load('cpl');
-                        break; // Sync with first parent only
-                    }
-                }
-            }
+            $lastModifiedCandidates = collect([
+                $cpmk->updated_at,
+                $cpmkBobot->max('updated_at'),
+                $cpmkMatKulLastUpdates->get($cpmk->id),
+            ])->filter();
+            $cpmk->lastModified = $lastModifiedCandidates->max();
         }
 
         // Get CPL list for filter

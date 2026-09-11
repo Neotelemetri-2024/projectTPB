@@ -467,11 +467,24 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function pollImportStatus(jobId) {
         let pollCount = 0;
+        let retryCount = 0;
+        let pollTimer = null;
+        let stopped = false;
         const statusUrl = `{{ route('admin.tahun-ajaran-matkul.import-status') }}?job_id=${jobId}`;
-        
-        const interval = setInterval(() => {
+
+        const schedulePoll = (delay = 1500) => {
+            clearTimeout(pollTimer);
+            if (!stopped) pollTimer = setTimeout(poll, delay);
+        };
+
+        const poll = () => {
+            if (stopped) return;
+            if (document.hidden) {
+                schedulePoll(3000);
+                return;
+            }
+
             pollCount++;
-            
             fetch(statusUrl, {
                 credentials: 'same-origin',
                 headers: {
@@ -492,8 +505,9 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(data => {
                 
+                retryCount = 0;
                 if (data.error) {
-                    clearInterval(interval);
+                    stopped = true;
                     progressDetail.innerText = 'Error: ' + data.error;
                     return;
                 }
@@ -507,7 +521,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 if (data.finished) {
-                    clearInterval(interval);
+                    stopped = true;
                     progressBar.classList.replace('bg-amber-600', 'bg-green-600');
                     progressText.classList.replace('text-amber-800', 'text-green-700');
                     progressDetail.classList.replace('text-amber-700', 'text-green-600');
@@ -520,15 +534,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Safety: stop polling after 200 attempts (5 minutes)
                 if (pollCount >= 200) {
-                    clearInterval(interval);
+                    stopped = true;
                     progressDetail.innerText = 'Polling dihentikan. Silakan reload halaman manual.';
+                    return;
                 }
+
+                schedulePoll(1500);
             })
             .catch(err => {
-                // Don't stop polling on error, but show it
+                retryCount++;
                 progressDetail.innerText = 'Error polling: ' + err.message;
+                schedulePoll(Math.min(30000, 1500 * (2 ** Math.min(retryCount, 5))));
             });
-        }, 1500);
+        };
+
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && !stopped) schedulePoll(0);
+        });
+        schedulePoll(0);
     }
 });
 </script>

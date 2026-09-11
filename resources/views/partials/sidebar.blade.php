@@ -45,7 +45,7 @@
                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
                 </svg>
              </button>
-             <ul id="dropdown-master" class="py-2 space-y-1 {{ request()->routeIs('admin.tahun-ajaran.*', 'admin.mata-kuliah.*', 'admin.cpl.index', 'admin.cpl.create', 'admin.cpl.edit', 'admin.komponen.*') ? '' : 'hidden' }}">
+               <ul id="dropdown-master" class="py-2 space-y-1 {{ request()->routeIs('admin.tahun-ajaran.*', 'admin.mata-kuliah.*', 'admin.kurikulum.*', 'admin.cpl.index', 'admin.cpl.create', 'admin.cpl.edit', 'admin.komponen.*') ? '' : 'hidden' }}">
                 <li>
                    <a href="{{ route('admin.tahun-ajaran.index') }}" class="flex items-center w-full p-2 rounded-lg pl-11 transition duration-75 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('admin.tahun-ajaran.*') ? 'bg-amber-100 text-amber-700' : '' }}">
 
@@ -56,6 +56,12 @@
                    <a href="{{ route('admin.mata-kuliah.index') }}" class="flex items-center w-full p-2 rounded-lg pl-11 transition duration-75 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('admin.mata-kuliah.*') ? 'bg-amber-100 text-amber-700' : '' }}">
 
                       Mata Kuliah
+                   </a>
+                </li>
+                <li>
+                   <a href="{{ route('admin.kurikulum.index') }}" class="flex items-center w-full p-2 rounded-lg pl-11 transition duration-75 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('admin.kurikulum.*') ? 'bg-amber-100 text-amber-700' : '' }}">
+
+                      Kurikulum
                    </a>
                 </li>
                 <li>

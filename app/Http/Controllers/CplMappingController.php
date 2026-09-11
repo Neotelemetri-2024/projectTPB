@@ -11,20 +11,18 @@ class CplMappingController extends Controller
 {
     public function index(Request $request)
     {
-        $kurikulumList = MataKuliah::query()
-            ->whereNotNull('kurikulum')
-            ->where('kurikulum', '!=', '')
-            ->distinct()
-            ->orderBy('kurikulum')
-            ->pluck('kurikulum');
+        $scope = app(\App\Services\CplAssessmentScope::class);
+
+        $kurikulumList = $scope->kurikulumList();
 
         $selectedKurikulum = $request->get('kurikulum');
+        $kurikulumId = $selectedKurikulum ? (int) $selectedKurikulum : null;
 
         $cpls = Cpl::orderBy('kodeCpl')->get();
 
         $mataKuliahQuery = MataKuliah::query()->orderBy('kodeMatkul');
-        if ($selectedKurikulum) {
-            $mataKuliahQuery->where('kurikulum', $selectedKurikulum);
+        if ($kurikulumId) {
+            $mataKuliahQuery->where('kurikulumId', $kurikulumId);
         }
         $mataKuliahList = $mataKuliahQuery->get();
 

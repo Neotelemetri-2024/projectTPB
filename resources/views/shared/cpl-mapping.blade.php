@@ -28,7 +28,7 @@
                     <select name="kurikulum" id="kurikulum" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2 min-w-[200px] shadow-sm">
                         <option value="">Semua</option>
                         @foreach($kurikulumList as $kur)
-                            <option value="{{ $kur }}" @selected($selectedKurikulum === $kur)>{{ $kur }}</option>
+                            <option value="{{ $kur->id }}" @selected((string) $selectedKurikulum === (string) $kur->id)>{{ $kur->nama }}</option>
                         @endforeach
                     </select>
                 </div>

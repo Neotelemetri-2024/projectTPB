@@ -32,7 +32,7 @@ class CpmkReportController extends Controller
                 'kelas' => fn ($q) => $q->withCount('kelasMahasiswa'),
             ])
             ->orderBy('id')
-            ->paginate(12)
+            ->paginate($this->perPage($request))
             ->withQueryString();
 
         return view('pimpinan.cpmk-report.index', compact(
@@ -46,7 +46,7 @@ class CpmkReportController extends Controller
     {
         // Pimpinan bisa lihat semua mata kuliah
         $tahunAjaranMatkul = TahunAjaranMatkul::where('id', $tahunAjaranMatkulId)
-            ->with(['mataKuliah', 'kelas.kelasMahasiswa.mahasiswa', 'cpmkMatKul.cpmk'])
+            ->with(['mataKuliah.kurikulumRef', 'kelas.kelasMahasiswa.mahasiswa', 'cpmkMatKul.cpmk'])
             ->first();
 
         if (!$tahunAjaranMatkul) {
@@ -134,11 +134,34 @@ class CpmkReportController extends Controller
 
             $nilaiList = $cpmkNilai->pluck('nilai')->filter()->values()->all();
 
+            $distributionCounts = array_fill_keys(array_keys($nilaiRanges), 0);
+            $histogramCounts = array_fill(0, count($histogramRanges), 0);
+            $nilaiSum = 0.0;
+            $competentCount = 0;
+
+            // Classify each student's average once instead of rescanning the list per bucket.
+            foreach ($nilaiPerMahasiswa as $nilai) {
+                $nilaiSum += $nilai;
+                if ($nilai >= 60) {
+                    $competentCount++;
+                }
+                foreach ($nilaiRanges as $grade => $range) {
+                    if ($nilai >= $range['min'] && $nilai <= $range['max']) {
+                        $distributionCounts[$grade]++;
+                        break;
+                    }
+                }
+                foreach ($histogramRanges as $index => $range) {
+                    if ($nilai >= $range['min'] && $nilai <= $range['max']) {
+                        $histogramCounts[$index]++;
+                        break;
+                    }
+                }
+            }
+
             $distribution = [];
             foreach ($nilaiRanges as $grade => $range) {
-                $count = count(array_filter($nilaiPerMahasiswa, function ($nilai) use ($range) {
-                    return $nilai >= $range['min'] && $nilai <= $range['max'];
-                }));
+                $count = $distributionCounts[$grade];
                 $distribution[$grade] = [
                     'count' => $count,
                     'percentage' => round(($count / $mahasiswaDenganNilai) * 100, 2),
@@ -148,10 +171,8 @@ class CpmkReportController extends Controller
             }
 
             $histogramData = [];
-            foreach ($histogramRanges as $range) {
-                $count = count(array_filter($nilaiPerMahasiswa, function ($nilai) use ($range) {
-                    return $nilai >= $range['min'] && $nilai <= $range['max'];
-                }));
+            foreach ($histogramRanges as $index => $range) {
+                $count = $histogramCounts[$index];
                 $histogramData[] = [
                     'range' => $range['label'],
                     'count' => $count,
@@ -159,8 +180,7 @@ class CpmkReportController extends Controller
                 ];
             }
 
-            $averageNilai = round(array_sum($nilaiPerMahasiswa) / $mahasiswaDenganNilai, 2);
-            $competentCount = count(array_filter($nilaiPerMahasiswa, fn ($nilai) => $nilai >= 60));
+            $averageNilai = round($nilaiSum / $mahasiswaDenganNilai, 2);
             $notCompetentCount = $mahasiswaDenganNilai - $competentCount;
 
             $bobotKomponen = ($bobotByCpmk->get($cpmk->id) ?? collect())
@@ -196,7 +216,7 @@ class CpmkReportController extends Controller
     {
         // Pimpinan bisa lihat semua mata kuliah
         $tahunAjaranMatkul = TahunAjaranMatkul::where('id', $tahunAjaranMatkulId)
-            ->with(['mataKuliah', 'kelas.kelasMahasiswa.mahasiswa', 'cpmkMatKul.cpmk'])
+            ->with(['mataKuliah.kurikulumRef', 'kelas.kelasMahasiswa.mahasiswa', 'cpmkMatKul.cpmk'])
             ->first();
 
         if (!$tahunAjaranMatkul) {

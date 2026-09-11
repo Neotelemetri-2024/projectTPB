@@ -19,6 +19,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Guard: jangan pernah jalankan test/migrate:fresh di database non-testing (mis. `tpb`).
+        if ($this->app->environment('testing')) {
+            $database = (string) config('database.connections.' . config('database.default') . '.database');
+
+            if (!str_contains(strtolower($database), 'test')) {
+                throw new \RuntimeException(
+                    'Refusing to run testing against non-testing database "' . $database . '". '
+                    . 'Set DB_DATABASE di .env.testing ke database khusus testing (nama harus memuat "test").'
+                );
+            }
+        }
     }
 }

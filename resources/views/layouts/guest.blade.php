@@ -7,13 +7,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>Login - Portal TPB</title>
-
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-
     <!-- Favicon -->
-    <link href="/images/favicon.png" rel="shortcut icon" type="image/png">
+    <link href="/images/logo-unand.png" rel="shortcut icon" type="image/png">
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])

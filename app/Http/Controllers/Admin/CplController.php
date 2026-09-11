@@ -36,7 +36,7 @@ class CplController extends Controller
 
         $query->orderBy($sortField, $sortDir);
 
-        $cpl = $query->paginate(10)->appends(request()->query());
+        $cpl = $query->paginate($this->perPage($request))->withQueryString();
 
         return view('admin.cpl.index', compact('cpl'));
     }
@@ -82,7 +82,8 @@ class CplController extends Controller
                 'targetPersen' => (int) $request->targetPersen,
             ]);
 
-            Cache::forget('pimpinan.cpl-achievement.rows.v3');
+            Cache::forget('pimpinan.cpl-achievement.rows.v5');
+            Cache::forget('dashboard.cpl-achievement.v2');
 
             return redirect()->route('admin.cpl.index')
                 ->with('success', 'CPL berhasil ditambahkan');
@@ -134,7 +135,8 @@ class CplController extends Controller
                 'targetPersen' => (int) $request->targetPersen,
             ]);
 
-            Cache::forget('pimpinan.cpl-achievement.rows.v3');
+            Cache::forget('pimpinan.cpl-achievement.rows.v5');
+            Cache::forget('dashboard.cpl-achievement.v2');
 
             return redirect()->route('admin.cpl.index')
                 ->with('success', 'CPL berhasil diperbarui');
@@ -154,7 +156,8 @@ class CplController extends Controller
             }
 
             $cpl->delete();
-            Cache::forget('pimpinan.cpl-achievement.rows.v3');
+            Cache::forget('pimpinan.cpl-achievement.rows.v5');
+            Cache::forget('dashboard.cpl-achievement.v2');
 
             return redirect()->route('admin.cpl.index')
                 ->with('success', 'CPL berhasil dihapus');

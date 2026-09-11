@@ -50,37 +50,54 @@ class DashboardController extends Controller
             ->orderByRaw("FIELD(periode, 'ganjil', 'genap') DESC")
             ->get();
 
-        // Load chart data efficiently (cached 10 minutes)
-        $chartData = Cache::remember('dashboard.avg-score-history', 600, fn () => $this->getAverageScoreHistoryData());
-        $cplAchievementData = Cache::remember('dashboard.cpl-achievement.v2', 600, fn () => $this->getCPLAchievementData());
-        $matkulPerformanceData = Cache::remember(
-            'dashboard.matkul-performance.' . ($selectedTahunAjaranId ?? 'all'),
-            600,
-            fn () => $this->getMatkulPerformanceData($selectedTahunAjaranId)
-        );
-        $courseCompletionData = Cache::remember(
-            'dashboard.course-completion.' . ($selectedTahunAjaranId ?? 'all'),
-            600,
-            fn () => $this->getCourseCompletionData($selectedTahunAjaranId)
-        );
-        $courseTypeData = Cache::remember('dashboard.course-type', 600, fn () => $this->getCourseTypeDistribution());
-        $topStudentsData = Cache::remember(
-            'dashboard.top-students.' . ($selectedTahunAjaranId ?? 'all'),
-            600,
-            fn () => $this->getTopStudentsData($selectedTahunAjaranId)
-        );
-
+        // Render shell dashboard immediately. Chart-heavy queries are loaded
+        // asynchronously through adminDashboardChartData().
         return view('admin.dashboard', compact(
             'statistics',
             'tahunAjaranList',
-            'selectedTahunAjaranId',
-            'chartData',
-            'cplAchievementData',
-            'matkulPerformanceData',
-            'courseCompletionData',
-            'courseTypeData',
-            'topStudentsData'
+            'selectedTahunAjaranId'
         ));
+    }
+
+    /**
+     * Return cached chart payloads without blocking the initial dashboard HTML.
+     */
+    public function adminDashboardChartData(Request $request)
+    {
+        $selectedTahunAjaranId = $request->get('tahun_ajaran_filter');
+
+        return response()->json([
+            'chartData' => Cache::remember(
+                'dashboard.avg-score-history',
+                600,
+                fn () => $this->getAverageScoreHistoryData()
+            ),
+            'cplAchievementData' => Cache::remember(
+                'dashboard.cpl-achievement.v2',
+                600,
+                fn () => $this->getCPLAchievementData()
+            ),
+            'matkulPerformanceData' => Cache::remember(
+                'dashboard.matkul-performance.' . ($selectedTahunAjaranId ?? 'all'),
+                600,
+                fn () => $this->getMatkulPerformanceData($selectedTahunAjaranId)
+            ),
+            'courseCompletionData' => Cache::remember(
+                'dashboard.course-completion.' . ($selectedTahunAjaranId ?? 'all'),
+                600,
+                fn () => $this->getCourseCompletionData($selectedTahunAjaranId)
+            ),
+            'courseTypeData' => Cache::remember(
+                'dashboard.course-type',
+                600,
+                fn () => $this->getCourseTypeDistribution()
+            ),
+            'topStudentsData' => Cache::remember(
+                'dashboard.top-students.' . ($selectedTahunAjaranId ?? 'all'),
+                600,
+                fn () => $this->getTopStudentsData($selectedTahunAjaranId)
+            ),
+        ]);
     }
 
     /**
@@ -88,25 +105,13 @@ class DashboardController extends Controller
      */
     private function getDashboardStatistics($selectedTahunAjaranId = null)
     {
-        // OPTIMIZED: Single query for all statistics
-        $stats = DB::table('mahasiswa')
-            ->selectRaw('COUNT(*) as total_mahasiswa')
-            ->first();
-
-        $dosenStats = DB::table('dosen')
-            ->selectRaw('COUNT(*) as total_dosen')
-            ->first();
-
-        $matkulStats = DB::table('mata_kuliah')
-            ->selectRaw('COUNT(*) as total_mata_kuliah')
-            ->first();
-
-        $cplStats = DB::table('cpl')
-            ->selectRaw('COUNT(*) as total_cpl')
-            ->first();
-
-        $cpmkStats = DB::table('cpmk')
-            ->selectRaw('COUNT(*) as total_cpmk')
+        // Fetch the five independent master-data counts in one database round trip.
+        $masterStats = DB::query()
+            ->selectSub(DB::table('mahasiswa')->selectRaw('COUNT(*)'), 'total_mahasiswa')
+            ->selectSub(DB::table('dosen')->selectRaw('COUNT(*)'), 'total_dosen')
+            ->selectSub(DB::table('mata_kuliah')->selectRaw('COUNT(*)'), 'total_mata_kuliah')
+            ->selectSub(DB::table('cpl')->selectRaw('COUNT(*)'), 'total_cpl')
+            ->selectSub(DB::table('cpmk')->selectRaw('COUNT(*)'), 'total_cpmk')
             ->first();
 
         // OPTIMIZED: Active courses count
@@ -122,11 +127,11 @@ class DashboardController extends Controller
         $activeCoursesStats = $activeCoursesQuery->first();
 
         return [
-            'totalMahasiswa' => $stats->total_mahasiswa ?? 0,
-            'totalDosen' => $dosenStats->total_dosen ?? 0,
-            'totalMataKuliah' => $matkulStats->total_mata_kuliah ?? 0,
-            'totalCPL' => $cplStats->total_cpl ?? 0,
-            'totalCPMK' => $cpmkStats->total_cpmk ?? 0,
+            'totalMahasiswa' => $masterStats->total_mahasiswa ?? 0,
+            'totalDosen' => $masterStats->total_dosen ?? 0,
+            'totalMataKuliah' => $masterStats->total_mata_kuliah ?? 0,
+            'totalCPL' => $masterStats->total_cpl ?? 0,
+            'totalCPMK' => $masterStats->total_cpmk ?? 0,
             'activeCourses' => $activeCoursesStats->active_courses ?? 0
         ];
     }
@@ -247,8 +252,9 @@ class DashboardController extends Controller
      */
     private function getCPLAchievementData()
     {
-        // Aggregate via pivot only (skip unused cpmk table join) — formula unchanged (AVG nilai)
-        $cplData = DB::table('cpl')
+        $scope = app(\App\Services\CplAssessmentScope::class);
+
+        $query = DB::table('cpl')
             ->select('cpl.id', 'cpl.kodeCpl', 'cpl.deskripsi')
             ->selectRaw('AVG(n.nilai) as avg_score')
             ->join('cpmk_cpl', 'cpl.id', '=', 'cpmk_cpl.cplId')
@@ -256,6 +262,11 @@ class DashboardController extends Controller
                 $join->on('cpmk_cpl.cpmkId', '=', 'n.cpmkId')
                     ->where('n.nilai', '>', 0);
             })
+            ->join('tahun_ajaran_matkul as tam', 'tam.id', '=', 'n.tahunAjaranMatkulId');
+
+        $scope->applyAssessedMatkulConstraint($query, null, 'tam');
+
+        $cplData = $query
             ->groupBy('cpl.id', 'cpl.kodeCpl', 'cpl.deskripsi')
             ->orderBy('cpl.kodeCpl')
             ->get();
@@ -645,7 +656,7 @@ class DashboardController extends Controller
             $q->where('dosenId', $dosen->id);
         })
         ->where('tahunAjaranId', $selectedTahunAjaranId)
-        ->with(['mataKuliah', 'kelas.kelasMahasiswa'])
+        ->with(['mataKuliah.kurikulumRef', 'kelas.kelasMahasiswa'])
         ->get();
 
         // Jumlah MK, kelas, mahasiswa
@@ -820,6 +831,7 @@ class DashboardController extends Controller
         $user = Auth::user();
         $mahasiswa = $user->mahasiswa;
         $mahasiswaId = $mahasiswa->id;
+        $scope = app(\App\Services\CplAssessmentScope::class);
 
         $cpls = \App\Models\Cpl::with([
             'cpmk' => function ($q) use ($mahasiswaId) {
@@ -829,20 +841,25 @@ class DashboardController extends Controller
             },
         ])->get();
 
+        // Matkul asesmen kini global per kurikulum; dashboard mahasiswa memakai semua yang ditandai asesmen.
+        $assessedSet = array_flip($scope->assessedMataKuliahIds()->all());
         $allCpmkIds = $cpls->flatMap(fn ($cpl) => $cpl->cpmk->pluck('id'))->unique()->values();
 
         $nilaiByCpmk = collect();
         if ($allCpmkIds->isNotEmpty()) {
             $nilaiByCpmk = \App\Models\Nilai::where('mahasiswaId', $mahasiswaId)
                 ->whereIn('cpmkId', $allCpmkIds)
-                ->with(['bobot.komponen'])
+                ->with(['bobot.komponen', 'tahunAjaranMatkul'])
                 ->get()
                 ->groupBy('cpmkId');
         }
 
-        $tamIdsNeeded = $cpls->flatMap(function ($cpl) {
-            return $cpl->cpmk->map(function ($cpmk) {
-                return optional($cpmk->cpmkMatKul->first())->tahunAjaranMatkul->id ?? null;
+        $tamIdsNeeded = $cpls->flatMap(function ($cpl) use ($assessedSet) {
+            return $cpl->cpmk->flatMap(function ($cpmk) use ($assessedSet) {
+                return $cpmk->cpmkMatKul->filter(function ($rel) use ($assessedSet) {
+                    $mkId = (int) ($rel->tahunAjaranMatkul->mataKuliahId ?? 0);
+                    return $mkId && isset($assessedSet[$mkId]);
+                })->map(fn ($rel) => $rel->tahunAjaranMatkul->id ?? null);
             });
         })->filter()->unique()->values();
 
@@ -868,56 +885,72 @@ class DashboardController extends Controller
                 foreach ($cpl->cpmk as $cpmk) {
                     $allNilaiForCpmk = $nilaiByCpmk->get($cpmk->id, collect());
 
-                    $nilaiPerKomponenRaw = [];
-                    $komponenInfo = [];
+                    $assessedRels = $cpmk->cpmkMatKul->filter(function ($rel) use ($assessedSet) {
+                        $mkId = (int) ($rel->tahunAjaranMatkul->mataKuliahId ?? 0);
+                        return $mkId && isset($assessedSet[$mkId]);
+                    });
 
-                    foreach ($allNilaiForCpmk as $nilaiRecord) {
-                        if (!$nilaiRecord->bobot) {
-                            continue;
+                    if ($assessedRels->isEmpty()) {
+                        continue;
+                    }
+
+                    foreach ($assessedRels as $cpmkMatKul) {
+                        $tam = $cpmkMatKul->tahunAjaranMatkul;
+                        $mkId = (int) ($tam->mataKuliahId ?? 0);
+                        $tahunAjaranMatkulId = $tam->id ?? null;
+
+                        $nilaiPerKomponenRaw = [];
+                        $komponenInfo = [];
+
+                        foreach ($allNilaiForCpmk as $nilaiRecord) {
+                            if (!$nilaiRecord->bobot) {
+                                continue;
+                            }
+                            if ((int) ($nilaiRecord->tahunAjaranMatkul->mataKuliahId ?? 0) !== $mkId) {
+                                continue;
+                            }
+
+                            $nilaiMentah = $nilaiRecord->nilai;
+                            $bobotPengali = $nilaiRecord->bobot->bobot;
+                            $komponenId = $nilaiRecord->bobot->komponenId;
+                            $namaKomponen = $nilaiRecord->bobot->komponen->nama ?? 'Unknown';
+
+                            if (!isset($nilaiPerKomponenRaw[$komponenId])) {
+                                $nilaiPerKomponenRaw[$komponenId] = 0;
+                            }
+                            $nilaiPerKomponenRaw[$komponenId] += $nilaiMentah * ($bobotPengali / 100);
+
+                            $komponenInfo[$komponenId] = [
+                                'nama' => $namaKomponen,
+                                'bobot' => $bobotPengali,
+                            ];
                         }
-                        $nilaiMentah = $nilaiRecord->nilai;
-                        $bobotPengali = $nilaiRecord->bobot->bobot;
-                        $komponenId = $nilaiRecord->bobot->komponenId;
-                        $namaKomponen = $nilaiRecord->bobot->komponen->nama ?? 'Unknown';
 
-                        if (!isset($nilaiPerKomponenRaw[$komponenId])) {
-                            $nilaiPerKomponenRaw[$komponenId] = 0;
+                        $bobotKey = $cpmk->id . ':' . $tahunAjaranMatkulId;
+                        $totalBobotCpmk = (float) ($bobotSumByCpmkTam->get($bobotKey)?->first()->total_bobot ?? 0);
+
+                        $nilaiPerKomponen = [];
+                        foreach ($nilaiPerKomponenRaw as $kompId => $nilaiKomp) {
+                            $nilaiPerKomponen[$kompId] = $totalBobotCpmk > 0
+                                ? round(($nilaiKomp / $totalBobotCpmk) * 100, 2)
+                                : 0;
                         }
-                        $nilaiPerKomponenRaw[$komponenId] += $nilaiMentah * ($bobotPengali / 100);
 
-                        $komponenInfo[$komponenId] = [
-                            'nama' => $namaKomponen,
-                            'bobot' => $bobotPengali,
+                        $namaMataKuliah = $tam->mataKuliah->namaMatkul ?? '';
+                        $label = $cpmk->kodeCpmk . ' - ' . $namaMataKuliah;
+                        $nilaiNormal = round(array_sum($nilaiPerKomponen), 2);
+
+                        $cpmk_data[] = [
+                            'label' => $label,
+                            'komponen_nilai' => $nilaiPerKomponen,
+                            'komponen_info' => $komponenInfo,
+                            'total_nilai' => $nilaiNormal,
+                            'total_bobot' => $totalBobotCpmk,
+                            'nilai_normal' => $nilaiNormal,
                         ];
+                        $totalBobotCpl += $totalBobotCpmk;
+                        $totalNilaiCpl += $nilaiNormal;
                     }
-
-                    $cpmkMatKul = $cpmk->cpmkMatKul->first();
-                    $tahunAjaranMatkulId = $cpmkMatKul->tahunAjaranMatkul->id ?? null;
-                    $bobotKey = $cpmk->id . ':' . $tahunAjaranMatkulId;
-                    $totalBobotCpmk = (float) ($bobotSumByCpmkTam->get($bobotKey)?->first()->total_bobot ?? 0);
-
-                    $nilaiPerKomponen = [];
-                    foreach ($nilaiPerKomponenRaw as $kompId => $nilaiKomp) {
-                        $nilaiPerKomponen[$kompId] = $totalBobotCpmk > 0
-                            ? round(($nilaiKomp / $totalBobotCpmk) * 100, 2)
-                            : 0;
-                    }
-
-                    $kodeMataKuliah = $cpmkMatKul->tahunAjaranMatkul->mataKuliah->kodeMatkul ?? '';
-                    $namaMataKuliah = $cpmkMatKul->tahunAjaranMatkul->mataKuliah->namaMatkul ?? '';
-                    $label = $cpmk->kodeCpmk . ' - ' . $namaMataKuliah;
-                    $nilaiNormal = round(array_sum($nilaiPerKomponen), 2);
-
-                    $cpmk_data[] = [
-                        'label' => $label,
-                        'komponen_nilai' => $nilaiPerKomponen,
-                        'komponen_info' => $komponenInfo,
-                        'total_nilai' => $nilaiNormal,
-                        'total_bobot' => $totalBobotCpmk,
-                        'nilai_normal' => $nilaiNormal,
-                    ];
-                    $totalBobotCpl += $totalBobotCpmk;
-                    $totalNilaiCpl += $nilaiNormal;
                 }
 
                 $nilaiCpmkRataRata = 0;
@@ -1015,36 +1048,19 @@ class DashboardController extends Controller
             ->orderByRaw("FIELD(periode, 'ganjil', 'genap') DESC")
             ->get();
 
-        // Load chart data efficiently (cached 10 minutes)
-        $chartData = Cache::remember('dashboard.avg-score-history', 600, fn () => $this->getAverageScoreHistoryData());
-        $cplAchievementData = Cache::remember('dashboard.cpl-achievement.v2', 600, fn () => $this->getCPLAchievementData());
-        $matkulPerformanceData = Cache::remember(
-            'dashboard.matkul-performance.' . ($selectedTahunAjaranId ?? 'all'),
-            600,
-            fn () => $this->getMatkulPerformanceData($selectedTahunAjaranId)
-        );
-        $courseCompletionData = Cache::remember(
-            'dashboard.course-completion.' . ($selectedTahunAjaranId ?? 'all'),
-            600,
-            fn () => $this->getCourseCompletionData($selectedTahunAjaranId)
-        );
-        $courseTypeData = Cache::remember('dashboard.course-type', 600, fn () => $this->getCourseTypeDistribution());
-        $topStudentsData = Cache::remember(
-            'dashboard.top-students.' . ($selectedTahunAjaranId ?? 'all'),
-            600,
-            fn () => $this->getTopStudentsData($selectedTahunAjaranId)
-        );
-
+        // Render the shell immediately; chart-heavy aggregates are fetched lazily.
         return view('pimpinan.dashboard', compact(
             'statistics',
             'tahunAjaranList',
-            'selectedTahunAjaranId',
-            'chartData',
-            'cplAchievementData',
-            'matkulPerformanceData',
-            'courseCompletionData',
-            'courseTypeData',
-            'topStudentsData'
+            'selectedTahunAjaranId'
         ));
+    }
+
+    /**
+     * Return the same cached chart payload used by the admin dashboard.
+     */
+    public function pimpinanDashboardChartData(Request $request)
+    {
+        return $this->adminDashboardChartData($request);
     }
 }

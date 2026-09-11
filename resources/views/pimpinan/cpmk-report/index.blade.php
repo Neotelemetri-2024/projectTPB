@@ -102,7 +102,7 @@
                     </tbody>
                 </table>
             </div>
-            @if(method_exists($mataKuliahList, 'hasPages') && $mataKuliahList->hasPages())
+            @if($mataKuliahList->total() > 0)
                 <div class="px-4 py-3 border-t border-gray-200 flex justify-center">
                     {{ $mataKuliahList->links() }}
                 </div>

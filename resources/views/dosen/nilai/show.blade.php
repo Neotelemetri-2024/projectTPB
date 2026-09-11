@@ -82,11 +82,6 @@
         </div>
 
         <div class="bg-white border border-gray-200 rounded-xl px-4 py-3">
-            @php
-            // Get all related class IDs for this mata kuliah that are taught by this dosen
-            $relatedTahunAjaranMatkulIds = $mataKuliahClasses->pluck('id');
-            $lastNilaiUpdate = \App\Models\Nilai::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)->max('updated_at');
-            @endphp
             <p class="text-[11px] uppercase tracking-wide text-gray-500">
                 Last Modified
                 @if($lastNilaiUpdate)
@@ -291,36 +286,17 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach($mahasiswa as $mhs)
-                            @php
-                            $kelasNama = 'Tidak Ada Kelas';
-                            $studentClassId = null;
-
-                            $km = $kelasMahasiswaMap[$mhs->id] ?? null;
-                            if ($km && $km->kelas) {
-                                $kelasNama = $km->kelas->namaKelas;
-                                $studentClassId = $km->kelas->tahunAjaranMatkulId;
-                            }
-
-                            // Fallback: Jika tidak ada kelas, gunakan tahunAjaranMatkul->id
-                            if (!$studentClassId) {
-                                $studentClassId = $tahunAjaranMatkul->id;
-                                $kelasNama = 'Default';
-                            }
-                            @endphp
+                            @php($studentSummary = $studentSummaries[$mhs->id])
                             <tr data-mahasiswa-id="{{ $mhs->id }}">
                                 <td class="px-6 py-4 whitespace-nowrap">{{ $mhs->nim }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">{{ $mhs->nama }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="text-sm text-gray-700">Kelas {{ $kelasNama }}</span>
+                                    <span class="text-sm text-gray-700">Kelas {{ $studentSummary['kelasNama'] }}</span>
                                 </td>
                                 @foreach($allKomponen as $komponen)
                                 <td class="px-4 py-4 whitespace-nowrap text-center">
                                     @php
-                                    $existingNilai = $nilaiData->where('mahasiswaId', $mhs->id)
-                                    ->filter(function($nilai) use ($komponen) {
-                                    return $nilai->bobot && $nilai->bobot->komponenId == $komponen->id;
-                                    })
-                                    ->first();
+                                    $existingNilai = optional($nilaiLookup->get($mhs->id))->get($komponen->id);
                                     $nilaiValue = $existingNilai ? $existingNilai->nilai : '';
                                     @endphp
                                     <span class="nilai-plain" data-mahasiswa-id="{{ $mhs->id }}" data-komponen-id="{{ $komponen->id }}">{{ $nilaiValue !== '' ? $nilaiValue : '-' }}</span>
@@ -339,48 +315,18 @@
                                 @endforeach
                                 <!-- Kolom Total Nilai -->
                                 <td class="px-4 py-4 whitespace-nowrap text-center">
-                                    @php
-                                    // Ambil grade dan total nilai yang sudah dihitung dari kelas_mahasiswa
-                                    $kelasMahasiswa = $mhs->kelasMahasiswa->where('tahunAjaranMatkulId', $tahunAjaranMatkul->id)->first();
-                                    $totalNilai = $kelasMahasiswa ? $kelasMahasiswa->totalNilai : null;
-                                    $grade = $kelasMahasiswa ? $kelasMahasiswa->grade : null;
-
-                                    // Jika belum ada nilai yang tersimpan, hitung dari bobot dan nilai yang ada
-                                    if ($totalNilai === null || $grade === null) {
-                                    // Hitung total nilai langsung dari semua nilai yang sudah dikalikan bobot
-                                    $allNilaiMahasiswa = $nilaiData->where('mahasiswaId', $mhs->id);
-                                    $totalNilai = 0;
-
-                                    foreach ($allNilaiMahasiswa as $nilai) {
-                                    if ($nilai->bobot && $nilai->bobot->bobot > 0) {
-                                    $totalNilai += ($nilai->nilai * $nilai->bobot->bobot / 100);
-                                    }
-                                    }
-
-                                    // Hitung grade berdasarkan total nilai terbobot
-                                    if ($totalNilai >= 80) $grade = 'A';
-                                    elseif ($totalNilai >= 75) $grade = 'A-';
-                                    elseif ($totalNilai >= 70) $grade = 'B+';
-                                    elseif ($totalNilai >= 65) $grade = 'B';
-                                    elseif ($totalNilai >= 60) $grade = 'B-';
-                                    elseif ($totalNilai >= 55) $grade = 'C+';
-                                    elseif ($totalNilai >= 50) $grade = 'C';
-                                    elseif ($totalNilai >= 45) $grade = 'D';
-                                    else $grade = 'E';
-                                    }
-                                    @endphp
                                     <span class="text-sm font-bold text-black">
-                                        {{ $totalNilai !== null ? number_format($totalNilai, 2) : '-' }}
+                                        {{ $studentSummary['totalNilai'] !== null ? number_format($studentSummary['totalNilai'], 2) : '-' }}
                                     </span>
                                 </td>
                                 <!-- Kolom Grade -->
                                 <td class="px-4 py-4 whitespace-nowrap text-center grade-column">
                                     <span class="text-sm font-semibold
-                                            {{ $grade == 'A' || $grade == 'A-' ? 'text-emerald-700' :
-                                               ($grade == 'B+' || $grade == 'B' || $grade == 'B-' ? 'text-gray-900' :
-                                               ($grade == 'C+' || $grade == 'C' ? 'text-amber-700' :
-                                               ($grade == 'D' ? 'text-orange-700' : 'text-red-700'))) }}">
-                                        {{ $grade ?: '-' }}
+                                            {{ $studentSummary['grade'] == 'A' || $studentSummary['grade'] == 'A-' ? 'text-emerald-700' :
+                                               ($studentSummary['grade'] == 'B+' || $studentSummary['grade'] == 'B' || $studentSummary['grade'] == 'B-' ? 'text-gray-900' :
+                                               ($studentSummary['grade'] == 'C+' || $studentSummary['grade'] == 'C' ? 'text-amber-700' :
+                                               ($studentSummary['grade'] == 'D' ? 'text-orange-700' : 'text-red-700'))) }}">
+                                        {{ $studentSummary['grade'] ?: '-' }}
                                     </span>
                                 </td>
                                 <!-- Kolom Aksi -->
@@ -415,7 +361,7 @@
                                     </div>
 
                                     <!-- Input hidden untuk student class ID -->
-                                    <input type="hidden" name="student_class_id[{{ $mhs->id }}]" value="{{ $studentClassId }}">
+                                    <input type="hidden" name="student_class_id[{{ $mhs->id }}]" value="{{ $studentSummary['studentClassId'] }}">
                                 </td>
                             </tr>
                             @endforeach
@@ -1751,11 +1697,24 @@
 
         function pollImportStatus(jobId) {
             let pollCount = 0;
+            let retryCount = 0;
+            let pollTimer = null;
+            let stopped = false;
             const statusUrl = `{{ route('dosen.nilai.import-status', $tahunAjaranMatkul->id) }}?job_id=${jobId}`;
-            
-            const interval = setInterval(() => {
+
+            const schedulePoll = (delay = 1500) => {
+                clearTimeout(pollTimer);
+                if (!stopped) pollTimer = setTimeout(poll, delay);
+            };
+
+            const poll = () => {
+                if (stopped) return;
+                if (document.hidden) {
+                    schedulePoll(3000);
+                    return;
+                }
+
                 pollCount++;
-                
                 fetch(statusUrl, {
                     credentials: 'same-origin',
                     headers: {
@@ -1773,14 +1732,15 @@
                     return res.json();
                 })
                 .then(data => {
+                    retryCount = 0;
                     if (data.error) {
-                        clearInterval(interval);
+                        stopped = true;
                         progressDetail.innerText = 'Error: ' + data.error;
                         return;
                     }
                     
                     if (data.finished) {
-                        clearInterval(interval);
+                        stopped = true;
                         progressBar.style.width = '100%';
                         progressText.innerText = '100%';
                         progressBar.classList.replace('bg-amber-600', 'bg-green-600');
@@ -1803,15 +1763,24 @@
                     
                     // Safety: stop polling after 300 attempts (7.5 minutes)
                     if (pollCount >= 300) {
-                        clearInterval(interval);
+                        stopped = true;
                         progressDetail.innerText = 'Polling dihentikan. Silakan reload halaman manual.';
+                        return;
                     }
+
+                    schedulePoll(1500);
                 })
                 .catch(err => {
-                    // Don't stop polling on error, but show it
+                    retryCount++;
                     progressDetail.innerText = 'Error polling: ' + err.message;
+                    schedulePoll(Math.min(30000, 1500 * (2 ** Math.min(retryCount, 5))));
                 });
-            }, 1500);
+            };
+
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden && !stopped) schedulePoll(0);
+            });
+            schedulePoll(0);
         }
 
         // Restore edit mode state from localStorage

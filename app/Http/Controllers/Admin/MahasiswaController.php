@@ -53,7 +53,7 @@ class MahasiswaController extends Controller
         $tahunMasukList = Mahasiswa::distinct()->pluck('tahunMasuk')->sort()->values();
 
         // Pagination
-        $mahasiswa = $query->orderBy('nama')->paginate(10)->withQueryString();
+        $mahasiswa = $query->orderBy('nama')->paginate($this->perPage($request))->withQueryString();
 
         return view('admin.mahasiswa.index', compact('mahasiswa', 'tahunMasukList', 'selectedTahunMasuk'));
     }

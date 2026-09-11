@@ -2,10 +2,6 @@
 
 @section('title', 'Laporan Detail CPMK - ' . $tahunAjaranMatkul->mataKuliah->namaMatkul)
 
-@push('head')
-    @vite('resources/js/charts.js')
-@endpush
-
 @section('content')
 <div class="p-4 md:p-6 space-y-4">
     <nav class="text-sm text-gray-500">

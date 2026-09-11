@@ -37,7 +37,7 @@ class CpmkLaporanController extends Controller
             'kelas' => fn ($q) => $q->withCount('kelasMahasiswa'),
         ])
         ->orderBy('id')
-        ->paginate(12)
+        ->paginate($this->perPage($request))
         ->withQueryString();
 
         return view('dosen.cpmk-laporan.index', compact(
@@ -61,7 +61,7 @@ class CpmkLaporanController extends Controller
             $q->where('dosenId', $dosen->id);
         })
         ->where('id', $tahunAjaranMatkulId)
-        ->with(['mataKuliah', 'kelas.kelasMahasiswa.mahasiswa', 'cpmkMatKul.cpmk'])
+        ->with(['mataKuliah.kurikulumRef', 'kelas.kelasMahasiswa.mahasiswa', 'cpmkMatKul.cpmk'])
         ->first();
 
         if (!$tahunAjaranMatkul) {

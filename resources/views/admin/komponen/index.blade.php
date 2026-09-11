@@ -59,7 +59,7 @@
                 </tbody>
             </table>
         </div>
-        @if(method_exists($komponen, 'hasPages') && $komponen->hasPages())
+        @if($komponen->total() > 0)
         <div class="p-4 border-t border-gray-200">
             {{ $komponen->links() }}
         </div>

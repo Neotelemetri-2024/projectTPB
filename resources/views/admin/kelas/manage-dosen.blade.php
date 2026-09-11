@@ -96,7 +96,7 @@
                                     Tambahkan yang Dipilih
                                 </button>
                             </div>
-                            @if($availableDosens->hasPages())
+                            @if($availableDosens->total() > 0)
                             <div class="mt-3">{{ $availableDosens->links() }}</div>
                             @endif
                         </form>

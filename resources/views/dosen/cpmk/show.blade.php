@@ -381,7 +381,7 @@
         </div>
 
         <!-- Pagination -->
-        @if($cpmkList->hasPages())
+        @if($cpmkList->total() > 0)
         <div class="mt-6 flex justify-center">
             {{ $cpmkList->links() }}
         </div>

@@ -2,10 +2,6 @@
 
 @section('title', 'Ketercapaian CPL')
 
-@push('head')
-    @vite('resources/js/charts.js')
-@endpush
-
 @section('content')
 <div class="p-4 md:p-6 space-y-4">
     <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
@@ -32,7 +28,7 @@
                         <select name="kurikulum" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2 min-w-[160px] shadow-sm">
                             <option value="">Semua</option>
                             @foreach($kurikulumList as $kur)
-                                <option value="{{ $kur }}" @selected($selectedKurikulum === $kur)>{{ $kur }}</option>
+                                <option value="{{ $kur->id }}" @selected((string) $selectedKurikulum === (string) $kur->id)>{{ $kur->nama }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -46,6 +42,13 @@
             </div>
         </div>
     </div>
+
+    @if(!($hasAssessedMatkul ?? true))
+    <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        Belum ada matkul asesmen yang ditetapkan untuk filter ini.
+        Tetapkan matkul asesmen di menu <strong>Kurikulum</strong> agar laporan menghitung nilai.
+    </div>
+    @endif
 
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div class="bg-white border border-gray-200 rounded-xl px-4 py-3">

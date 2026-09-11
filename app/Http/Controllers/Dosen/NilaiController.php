@@ -109,7 +109,7 @@ class NilaiController extends Controller
             return $representative;
         })->values();
 
-        $perPage = 10;
+        $perPage = $this->perPage($request);
         $page = (int) $request->get('page', 1);
         $mataKuliahDiampu = new \Illuminate\Pagination\LengthAwarePaginator(
             $mataKuliahDiampu->forPage($page, $perPage)->values(),
@@ -205,7 +205,7 @@ class NilaiController extends Controller
         $isPenilaianSiap = $totalBobotKeseluruhan == 100;
         $adaCpmk = $cpmkList->count() > 0;
 
-        $perPage = 10;
+        $perPage = $this->perPage($request);
         $isBulkMode = (bool) $request->get('bulk', false);
         $activeTab = $request->get('tab', 'all');
         $sortBy = $request->get('sort', 'nim');
@@ -259,13 +259,11 @@ class NilaiController extends Controller
         $sortColumn = $sortBy === 'nama' ? 'mahasiswa.nama' : 'mahasiswa.nim';
         $mahasiswaQuery->orderBy($sortColumn, $sortDirection);
 
-        $mahasiswaPaginated = null;
-        if ($isBulkMode) {
-            $mahasiswa = $mahasiswaQuery->get();
-        } else {
-            $mahasiswaPaginated = $mahasiswaQuery->paginate($perPage)->withQueryString();
-            $mahasiswa = collect($mahasiswaPaginated->items());
-        }
+        // Bulk mode still uses a bounded page size so a large cohort cannot exhaust memory.
+        // Use the largest allowed page while preserving any explicitly requested safe page size.
+        $displayPerPage = $isBulkMode && !$request->has('per_page') ? 100 : $perPage;
+        $mahasiswaPaginated = $mahasiswaQuery->paginate($displayPerPage)->withQueryString();
+        $mahasiswa = collect($mahasiswaPaginated->items());
 
         $kelasNumbers = $mataKuliahClasses->flatMap->kelas->pluck('namaKelas')->unique()->sort()->values();
 
@@ -296,16 +294,43 @@ class NilaiController extends Controller
                 ->whereIn('mahasiswaId', $displayedMahasiswaIds)
                 ->get();
 
-        $existingNilai = $nilaiData
-            ->where('tahunAjaranMatkulId', (int) $id)
-            ->groupBy('mahasiswaId');
+        $nilaiLookup = $nilaiData
+            ->groupBy('mahasiswaId')
+            ->map(function ($nilaiMahasiswa) {
+                return $nilaiMahasiswa
+                    ->filter(fn ($nilai) => $nilai->bobot)
+                    ->keyBy(fn ($nilai) => $nilai->bobot->komponenId);
+            });
 
-        $nilaiMahasiswa = $displayedMahasiswaIds->isEmpty()
+        $kelasMahasiswaData = $displayedMahasiswaIds->isEmpty()
             ? collect()
             : KelasMahasiswa::whereIn('mahasiswaId', $displayedMahasiswaIds)
                 ->whereIn('kelasId', $allowedKelasIds)
                 ->get()
                 ->keyBy('mahasiswaId');
+
+        $studentSummaries = $mahasiswa->mapWithKeys(function ($student) use ($kelasMahasiswaMap, $kelasMahasiswaData, $nilaiData, $tahunAjaranMatkul) {
+            $kelasMahasiswa = $kelasMahasiswaData->get($student->id);
+            $kelas = optional($kelasMahasiswaMap->get($student->id))->kelas;
+            $totalNilai = $kelasMahasiswa ? $kelasMahasiswa->getRawOriginal('totalNilai') : null;
+            $grade = $kelasMahasiswa ? $kelasMahasiswa->getRawOriginal('grade') : null;
+
+            if ($totalNilai === null || $grade === null) {
+                $totalNilai = $nilaiData->where('mahasiswaId', $student->id)->sum(function ($nilai) {
+                    return $nilai->bobot && $nilai->bobot->bobot > 0
+                        ? $nilai->nilai * $nilai->bobot->bobot / 100
+                        : 0;
+                });
+                $grade = $this->gradeForTotal($totalNilai);
+            }
+
+            return [$student->id => [
+                'kelasNama' => $kelas->namaKelas ?? 'Default',
+                'studentClassId' => $kelas->tahunAjaranMatkulId ?? $tahunAjaranMatkul->id,
+                'totalNilai' => $totalNilai,
+                'grade' => $grade,
+            ]];
+        });
 
         $totalBobotKomponen = [];
         $allBobotGrouped = $bobotData->groupBy('tahunAjaranMatkulId');
@@ -317,8 +342,8 @@ class NilaiController extends Controller
 
         $cpmkValidation = $this->validateCpmkAndBobot($id, $dosen);
 
-        $bulkUrl = request()->fullUrl();
-        $bulkUrl .= (strpos($bulkUrl, '?') !== false ? '&' : '?') . 'bulk=1';
+        $lastNilaiUpdate = Nilai::whereIn('tahunAjaranMatkulId', $relatedTahunAjaranMatkulIds)->max('updated_at');
+        $bulkUrl = $request->fullUrlWithQuery(['bulk' => 1, 'page' => 1]);
 
         return view('dosen.nilai.show', compact(
             'tahunAjaranMatkul',
@@ -343,11 +368,26 @@ class NilaiController extends Controller
             'adaCpmk',
             'cpmkList',
             'bobotData',
-            'nilaiData',
-            'nilaiMahasiswa',
+            'nilaiLookup',
+            'studentSummaries',
+            'lastNilaiUpdate',
             'bulkUrl',
             'cpmkValidation'
         ));
+    }
+
+    private function gradeForTotal(float $totalNilai): string
+    {
+        if ($totalNilai >= 80) return 'A';
+        if ($totalNilai >= 75) return 'A-';
+        if ($totalNilai >= 70) return 'B+';
+        if ($totalNilai >= 65) return 'B';
+        if ($totalNilai >= 60) return 'B-';
+        if ($totalNilai >= 55) return 'C+';
+        if ($totalNilai >= 50) return 'C';
+        if ($totalNilai >= 45) return 'D';
+
+        return 'E';
     }
 
     /**

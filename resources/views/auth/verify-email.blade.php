@@ -8,7 +8,7 @@
     <title>Verifikasi Email - Portal TPB</title>
 
     <!-- Favicon -->
-    <link href="/images/favicon.png" rel="shortcut icon" type="image/png">
+    <link href="/images/logo-unand.png" rel="shortcut icon" type="image/png">
 
     <!-- Vite CSS & JS -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])

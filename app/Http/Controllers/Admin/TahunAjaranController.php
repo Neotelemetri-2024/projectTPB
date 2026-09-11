@@ -14,9 +14,11 @@ class TahunAjaranController extends Controller
         $this->middleware('admin');
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $tahunAjaran = TahunAjaran::orderBy('tahun', 'desc')->paginate(10);
+        $tahunAjaran = TahunAjaran::orderBy('tahun', 'desc')
+            ->paginate($this->perPage($request))
+            ->withQueryString();
         return view('admin.tahun-ajaran.index', compact('tahunAjaran'));
     }
 

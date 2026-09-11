@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     @vite(['resources/css/app.css','resources/js/app.js'])
     <title>Portal TPB</title>
-    <link href="/images/favicon.png" rel="shortcut icon" type="image/png">
+    <link href="/images/logo-unand.png" rel="shortcut icon" type="image/png">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @stack('head')
     @stack('styles')

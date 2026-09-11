@@ -101,14 +101,14 @@ function maximizeChart(chartId, title) {
         return;
     }
 
-    document.getElementById('modal-title').textContent = title;
-    modal.classList.remove('hidden');
+        document.getElementById('modal-title').textContent = title;
+        modal.classList.remove('hidden');
     modal.dataset.originalChartId = chartId;
 
-    setTimeout(() => {
-        modalContent.classList.remove('scale-95', 'opacity-0');
-        modalContent.classList.add('scale-100', 'opacity-100');
-    }, 10);
+        setTimeout(() => {
+            modalContent.classList.remove('scale-95', 'opacity-0');
+            modalContent.classList.add('scale-100', 'opacity-100');
+        }, 10);
 
     // Keep original chart visible; modal shows a clone
     if (modalChartInstance) {
@@ -126,7 +126,7 @@ function maximizeChart(chartId, title) {
         return;
     }
 
-    setTimeout(() => {
+            setTimeout(() => {
         try {
             const options = pickApexConfig(sourceChart);
             if (!options || !options.series || (Array.isArray(options.series) && options.series.length === 0)) {
@@ -150,27 +150,27 @@ function closeChartModal() {
 
     if (!modal || !modalContent) return;
 
-    modalContent.classList.remove('scale-100', 'opacity-100');
-    modalContent.classList.add('scale-95', 'opacity-0');
+        modalContent.classList.remove('scale-100', 'opacity-100');
+        modalContent.classList.add('scale-95', 'opacity-0');
 
-    setTimeout(() => {
-        modal.classList.add('hidden');
+        setTimeout(() => {
+            modal.classList.add('hidden');
 
-        if (modalChartInstance) {
+            if (modalChartInstance) {
             try { modalChartInstance.destroy(); } catch (e) { /* ignore */ }
-            modalChartInstance = null;
-        }
+                modalChartInstance = null;
+            }
 
         const modalChartEl = document.getElementById('modal-chart');
         if (modalChartEl) modalChartEl.innerHTML = '';
-    }, 300);
+        }, 300);
 }
 
 document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') {
         const modal = document.getElementById('chart-modal');
         if (modal && !modal.classList.contains('hidden')) {
-            closeChartModal();
+        closeChartModal();
         }
     }
 });

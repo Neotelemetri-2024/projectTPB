@@ -142,6 +142,13 @@
                 </a>
             </li>
 
+            <li class="menu-item {{ request()->routeIs('admin.kurikulum.*') ? 'active' : '' }}">
+                <a href="{{ route('admin.kurikulum.index') }}" class="menu-link">
+                    <i class="menu-icon tf-icons bx bx-layer"></i>
+                    <div>Kurikulum</div>
+                </a>
+            </li>
+
             <li class="menu-item {{ request()->routeIs('admin.mata-kuliah.*') ? 'active' : '' }}">
                 <a href="{{ route('admin.mata-kuliah.index') }}" class="menu-link">
                     <i class="menu-icon tf-icons bx bx-book"></i>

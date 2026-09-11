@@ -58,7 +58,7 @@ class TahunAjaranMatkulController extends Controller
             });
         }
 
-        $tahunAjaranMatkuls = $query->orderBy('created_at', 'desc')->paginate(10);
+        $tahunAjaranMatkuls = $query->orderBy('created_at', 'desc')->paginate($this->perPage($request));
 
         // Append query parameters to pagination links
         $tahunAjaranMatkuls->appends($request->query());
@@ -193,8 +193,9 @@ class TahunAjaranMatkulController extends Controller
             });
         }
 
-        $kelasMahasiswa = $query->paginate(10);
-        $kelasMahasiswa->appends($request->query());
+        $kelasMahasiswa = $query
+            ->paginate($this->perPage($request))
+            ->withQueryString();
 
         // Get all unique mahasiswa IDs that are already in any class of this tahun ajaran matkul
         $existingMahasiswaIds = $tahunAjaranMatkul->kelas->flatMap->kelasMahasiswa->pluck('mahasiswaId')->unique();
@@ -205,13 +206,13 @@ class TahunAjaranMatkulController extends Controller
         // Get available mahasiswas (not in any class of this tahun ajaran matkul)
         $availableMahasiswas = Mahasiswa::whereNotIn('id', $existingMahasiswaIds)
             ->orderBy('nama')
-            ->paginate(20, ['*'], 'mahasiswa_page')
+            ->paginate($this->perPage($request, 25), ['*'], 'mahasiswa_page')
             ->withQueryString();
 
         // Get available dosens (not teaching any class of this tahun ajaran matkul)
         $availableDosens = Dosen::whereNotIn('id', $existingDosenIds)
             ->orderBy('nama')
-            ->paginate(20, ['*'], 'dosen_page')
+            ->paginate($this->perPage($request, 25), ['*'], 'dosen_page')
             ->withQueryString();
 
         return view('admin.tahun-ajaran-matkul.show', compact(
@@ -512,7 +513,7 @@ class TahunAjaranMatkulController extends Controller
             });
         }
 
-        $availableMahasiswas = $query->orderBy('nama')->paginate(20);
+        $availableMahasiswas = $query->orderBy('nama')->paginate($this->perPage($request, 25));
         $availableMahasiswas->appends($request->query());
 
         // Get unique tahun masuk untuk filter
@@ -742,7 +743,7 @@ class TahunAjaranMatkulController extends Controller
             DB::beginTransaction();
 
             $sourceMatkuls = TahunAjaranMatkul::where('tahunAjaranId', $request->source_tahun_ajaran_id)
-                ->with(['mataKuliah', 'kelas'])
+                ->with(['mataKuliah.kurikulumRef', 'kelas'])
                 ->get();
 
             $duplicatedCount = 0;

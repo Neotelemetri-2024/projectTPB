@@ -1,9 +1,5 @@
 @extends('layouts.main')
 
-@push('head')
-    @vite('resources/js/charts.js')
-@endpush
-
 @section('content')
 <div class="p-4 md:p-6 space-y-4">
     <!-- Header with Filter -->
@@ -142,74 +138,127 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    initializeCharts();
-});
-
-// Chart data from backend
-const chartData = @json($chartData);
-const chartDataGanjil = @json($chartDataGanjil ?? []);
-const chartDataGenap = @json($chartDataGenap ?? []);
-
-// Debug: Log data untuk troubleshooting
-console.log('Chart Data Ganjil:', chartDataGanjil);
-console.log('Chart Data Genap:', chartDataGenap);
-console.log('Chart Data All:', chartData);
-
-// Fallback data sementara jika backend belum menyediakan data terpisah
-// TODO: Hapus ini setelah backend menyediakan data terpisah
+const dashboardChartDataUrl = @json(route('admin.dashboard.chart-data'));
+let chartData = null;
+let chartDataGanjil = [];
+let chartDataGenap = [];
 let fallbackGanjilData = null;
 let fallbackGenapData = null;
+let cplAchievementData = null;
+let matkulPerformanceData = null;
+let courseCompletionData = null;
+let courseTypeData = null;
+let topStudentsData = null;
 
-if (chartDataGanjil.length === 0 && chartDataGenap.length === 0 && chartData && chartData.labels) {
-    // Buat data terpisah dari chartData yang ada
+const dashboardChartIds = [
+    'historyChartGanjil', 'historyChartGenap', 'cplChart', 'gradeChart',
+    'courseTypeChart', 'completionChart', 'topStudentsChart'
+];
+
+function ensureChartLoadingStates() {
+    dashboardChartIds.forEach((id) => {
+        const chart = document.getElementById(id);
+        if (!chart || chart.parentElement.querySelector('[data-chart-loading]')) return;
+
+        const loading = document.createElement('button');
+        loading.type = 'button';
+        loading.setAttribute('data-chart-loading', '');
+        loading.className = 'absolute inset-0 z-10 flex items-center justify-center bg-white text-sm text-gray-500';
+        loading.innerHTML = '<span>Memuat data grafik...</span>';
+        chart.parentElement.appendChild(loading);
+    });
+}
+
+function setChartLoading(message = 'Memuat data grafik...') {
+    ensureChartLoadingStates();
+    document.querySelectorAll('[data-chart-loading]').forEach((el) => {
+        el.classList.remove('hidden', 'cursor-pointer', 'text-red-600');
+        el.onclick = null;
+        el.querySelector('span').textContent = message;
+    });
+}
+
+function hideChartLoading() {
+    document.querySelectorAll('[data-chart-loading]').forEach((el) => el.classList.add('hidden'));
+}
+
+function prepareHistoryFallbacks() {
+    fallbackGanjilData = null;
+    fallbackGenapData = null;
+    if (!chartData || !chartData.labels) return;
+
     const allLabels = chartData.labels || [];
     const allDatasets = chartData.datasets || [];
+    const ganjilIndexes = [];
+    const genapIndexes = [];
+    allLabels.forEach((label, index) => {
+        const normalized = String(label).toLowerCase();
+        if (normalized.includes('ganjil')) ganjilIndexes.push(index);
+        if (normalized.includes('genap')) genapIndexes.push(index);
+    });
 
-    // Filter untuk semester ganjil (asumsi label mengandung "Ganjil")
-    const ganjilLabels = allLabels.filter(label => label.toLowerCase().includes('ganjil'));
-    const genapLabels = allLabels.filter(label => label.toLowerCase().includes('genap'));
+    const subset = (indexes) => ({
+        labels: indexes.map((index) => allLabels[index]),
+        datasets: allDatasets.map((dataset) => ({
+            ...dataset,
+            data: indexes.map((index) => (dataset.data || [])[index])
+        }))
+    });
 
-    if (ganjilLabels.length > 0) {
-        fallbackGanjilData = {
-            labels: ganjilLabels,
-            datasets: allDatasets.map(dataset => ({
-                ...dataset,
-                data: dataset.data.slice(0, ganjilLabels.length)
-            }))
-        };
-    }
-
-    if (genapLabels.length > 0) {
-        fallbackGenapData = {
-            labels: genapLabels,
-            datasets: allDatasets.map(dataset => ({
-                ...dataset,
-                data: dataset.data.slice(ganjilLabels.length, ganjilLabels.length + genapLabels.length)
-            }))
-        };
-    }
-
-    console.log('Fallback Ganjil Data:', fallbackGanjilData);
-    console.log('Fallback Genap Data:', fallbackGenapData);
+    if (ganjilIndexes.length) fallbackGanjilData = subset(ganjilIndexes);
+    if (genapIndexes.length) fallbackGenapData = subset(genapIndexes);
 }
-const cplAchievementData = @json($cplAchievementData);
-const matkulPerformanceData = @json($matkulPerformanceData);
-const courseCompletionData = @json($courseCompletionData);
-const courseTypeData = @json($courseTypeData);
-const topStudentsData = @json($topStudentsData);
 
-// Make chart data globally accessible for maximize function
-window.chartData = chartData;
-window.chartDataGanjil = chartDataGanjil;
-window.chartDataGenap = chartDataGenap;
-window.fallbackGanjilData = fallbackGanjilData;
-window.fallbackGenapData = fallbackGenapData;
-window.cplAchievementData = cplAchievementData;
-window.matkulPerformanceData = matkulPerformanceData;
-window.courseCompletionData = courseCompletionData;
-window.courseTypeData = courseTypeData;
-window.topStudentsData = topStudentsData;
+function exposeChartData() {
+    Object.assign(window, {
+        chartData,
+        chartDataGanjil,
+        chartDataGenap,
+        fallbackGanjilData,
+        fallbackGenapData,
+        cplAchievementData,
+        matkulPerformanceData,
+        courseCompletionData,
+        courseTypeData,
+        topStudentsData
+    });
+}
+
+async function loadDashboardCharts() {
+    setChartLoading();
+    const selectedValue = document.getElementById('tahun-ajaran-filter')?.value || '';
+    const url = new URL(dashboardChartDataUrl, window.location.origin);
+    if (selectedValue) url.searchParams.set('tahun_ajaran_filter', selectedValue);
+
+    try {
+        const response = await fetch(url, {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const payload = await response.json();
+        chartData = payload.chartData;
+        cplAchievementData = payload.cplAchievementData;
+        matkulPerformanceData = payload.matkulPerformanceData;
+        courseCompletionData = payload.courseCompletionData;
+        courseTypeData = payload.courseTypeData;
+        topStudentsData = payload.topStudentsData;
+        prepareHistoryFallbacks();
+        exposeChartData();
+        hideChartLoading();
+        initializeCharts();
+    } catch (error) {
+        console.error('Gagal memuat data dashboard:', error);
+        setChartLoading('Data grafik gagal dimuat. Klik untuk mencoba lagi.');
+        document.querySelectorAll('[data-chart-loading]').forEach((el) => {
+            el.classList.add('cursor-pointer', 'text-red-600');
+            el.onclick = loadDashboardCharts;
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', loadDashboardCharts);
 
 // Global variables untuk chart instances
 let historyChartGanjilInstance = null;

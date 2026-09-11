@@ -1,9 +1,5 @@
 @extends('layouts.main')
 
-@push('head')
-    @vite('resources/js/charts.js')
-@endpush
-
 @section('content')
 <div class="p-4 md:p-6 space-y-4">
     <!-- Header with Filter -->

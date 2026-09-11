@@ -18,26 +18,20 @@ class CplAchievementController extends Controller
 {
     public function index(Request $request)
     {
-        $allRows = Cache::remember('pimpinan.cpl-achievement.rows.v3', 600, function () {
-            return $this->buildAchievementRows();
-        });
-
-        $tahunAjaranList = TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->get();
-        $kurikulumList = MataKuliah::query()
-            ->whereNotNull('kurikulum')
-            ->where('kurikulum', '!=', '')
-            ->distinct()
-            ->orderBy('kurikulum')
-            ->pluck('kurikulum');
+        $scope = app(\App\Services\CplAssessmentScope::class);
 
         $selectedTahunAjaranId = $request->get('tahun_ajaran_id');
         $selectedKurikulum = $request->get('kurikulum');
+        $rows = $this->cachedAchievementRows($selectedTahunAjaranId, $selectedKurikulum);
 
-        $rows = $this->filterRows($allRows, $selectedTahunAjaranId, $selectedKurikulum);
+        $tahunAjaranList = TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->get();
+        $kurikulumList = $scope->kurikulumList();
+
         $grouped = $this->groupRows($rows);
         $summary = $this->buildSummary($grouped);
         $chartData = $this->buildChartData($grouped);
         $cplList = Cpl::orderBy('kodeCpl')->get();
+        $hasAssessedMatkul = $scope->hasExplicitAssessment($selectedKurikulum ? (int) $selectedKurikulum : null);
         $rolePrefix = auth()->user()->role === 'admin' ? 'admin' : 'pimpinan';
 
         return view('pimpinan.cpl-achievement.index', compact(
@@ -50,20 +44,17 @@ class CplAchievementController extends Controller
             'kurikulumList',
             'selectedTahunAjaranId',
             'selectedKurikulum',
+            'hasAssessedMatkul',
             'rolePrefix'
         ));
     }
 
     public function exportPdf(Request $request)
     {
-        $allRows = Cache::remember('pimpinan.cpl-achievement.rows.v3', 600, function () {
-            return $this->buildAchievementRows();
-        });
-
         $selectedTahunAjaranId = $request->get('tahun_ajaran_id');
         $selectedKurikulum = $request->get('kurikulum');
+        $rows = $this->cachedAchievementRows($selectedTahunAjaranId, $selectedKurikulum);
 
-        $rows = $this->filterRows($allRows, $selectedTahunAjaranId, $selectedKurikulum);
         $grouped = $this->groupRows($rows);
         $summary = $this->buildSummary($grouped);
 
@@ -75,7 +66,10 @@ class CplAchievementController extends Controller
             }
         }
 
-        $kurikulumLabel = $selectedKurikulum ?: 'Semua Kurikulum';
+        $kurikulumLabel = 'Semua Kurikulum';
+        if ($selectedKurikulum) {
+            $kurikulumLabel = \App\Models\Kurikulum::find($selectedKurikulum)?->nama ?? $selectedKurikulum;
+        }
 
         $options = new Options();
         $options->set('isHtml5ParserEnabled', true);
@@ -95,25 +89,6 @@ class CplAchievementController extends Controller
         $filename = 'Laporan_Ketercapaian_CPL_' . date('Y-m-d_H-i-s') . '.pdf';
 
         return $dompdf->stream($filename);
-    }
-
-    /**
-     * Display-only filter — does not change per-row achievement formula.
-     */
-    private function filterRows(array $rows, $tahunAjaranId = null, $kurikulum = null): array
-    {
-        return collect($rows)
-            ->filter(function ($row) use ($tahunAjaranId, $kurikulum) {
-                if ($tahunAjaranId && (string) ($row['tahun_ajaran_id'] ?? '') !== (string) $tahunAjaranId) {
-                    return false;
-                }
-                if ($kurikulum !== null && $kurikulum !== '' && ($row['kurikulum'] ?? '') !== $kurikulum) {
-                    return false;
-                }
-                return true;
-            })
-            ->values()
-            ->all();
     }
 
     private function groupRows(array $rows): array
@@ -194,19 +169,36 @@ class CplAchievementController extends Controller
         ];
     }
 
-    private function buildAchievementRows(): array
+    private function cachedAchievementRows($tahunAjaranId = null, $kurikulum = null): array
     {
+        $key = 'pimpinan.cpl-achievement.rows.v5.' . ($tahunAjaranId ?: 'all') . '.' . sha1((string) $kurikulum);
+
+        return Cache::remember($key, 600, fn () => $this->buildAchievementRows($tahunAjaranId, $kurikulum));
+    }
+
+    private function buildAchievementRows($tahunAjaranId = null, $kurikulum = null): array
+    {
+        $scope = app(\App\Services\CplAssessmentScope::class);
+
+        $kurikulumId = $kurikulum !== null && $kurikulum !== '' ? (int) $kurikulum : null;
+
         $cplList = Cpl::with(['cpmk' => fn ($q) => $q->orderBy('kodeCpmk')])
             ->orderBy('kodeCpl')
             ->get();
 
-        $tamList = TahunAjaranMatkul::with(['mataKuliah', 'tahunAjaran'])
-            ->whereHas('mataKuliah', fn ($q) => $q->where('jenis', 'wajib'))
+        $tamList = TahunAjaranMatkul::with(['mataKuliah.kurikulumRef', 'tahunAjaran'])
+            ->whereHas('mataKuliah', function ($query) use ($kurikulumId) {
+                $query->when($kurikulumId, fn ($q) => $q->where('kurikulumId', $kurikulumId));
+            })
+            ->when($tahunAjaranId, fn ($query) => $query->where('tahunAjaranId', $tahunAjaranId))
             ->get();
 
         if ($cplList->isEmpty() || $tamList->isEmpty()) {
             return [];
         }
+
+        // Matkul asesmen berlaku sama untuk semua CPL (scope per kurikulum).
+        $assessedSet = array_flip($scope->assessedMataKuliahIds($kurikulumId)->all());
 
         $tamIds = $tamList->pluck('id');
         $allCpmkIds = $cplList->flatMap(fn ($cpl) => $cpl->cpmk->pluck('id'))->unique()->values();
@@ -221,14 +213,20 @@ class CplAchievementController extends Controller
         // Weighted avg per (cplId, tahunAjaranMatkulId, mahasiswaId) — aggregate in SQL
         $weightedAvgs = collect();
         if ($allCpmkIds->isNotEmpty()) {
-            $weightedAvgs = DB::table('nilai as n')
+            $avgQuery = DB::table('nilai as n')
                 ->join('bobot as b', 'n.bobotId', '=', 'b.id')
                 ->join('cpmk_cpl as cc', 'n.cpmkId', '=', 'cc.cpmkId')
+                ->join('cpl', 'cpl.id', '=', 'cc.cplId')
+                ->join('tahun_ajaran_matkul as tam', 'tam.id', '=', 'n.tahunAjaranMatkulId')
                 ->select('cc.cplId', 'n.tahunAjaranMatkulId', 'n.mahasiswaId')
                 ->selectRaw('SUM(n.nilai * b.bobot) / SUM(b.bobot) as weighted_avg')
                 ->whereIn('n.tahunAjaranMatkulId', $tamIds)
                 ->whereIn('cc.cpmkId', $allCpmkIds)
-                ->where('b.bobot', '>', 0)
+                ->where('b.bobot', '>', 0);
+
+            $scope->applyAssessedMatkulConstraint($avgQuery, $kurikulumId, 'tam');
+
+            $weightedAvgs = $avgQuery
                 ->groupBy('cc.cplId', 'n.tahunAjaranMatkulId', 'n.mahasiswaId')
                 ->get()
                 ->groupBy(fn ($row) => $row->cplId . ':' . $row->tahunAjaranMatkulId);
@@ -244,6 +242,11 @@ class CplAchievementController extends Controller
             $targetPersen = (int) ($cpl->targetPersen ?? 60);
 
             foreach ($tamList as $tam) {
+                $mkId = (int) ($tam->mataKuliahId ?? $tam->mataKuliah->id ?? 0);
+                if (!$mkId || !isset($assessedSet[$mkId])) {
+                    continue;
+                }
+
                 $mahasiswaIds = ($kelasMahasiswa->get($tam->id) ?? collect())
                     ->pluck('mahasiswaId')
                     ->unique()

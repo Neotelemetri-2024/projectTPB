@@ -27,6 +27,7 @@ class MataKuliahImport implements ToModel, WithHeadingRow, WithValidation, Skips
             // Ambil data dari row dengan case insensitive
             $namaMataKuliah = trim($row['nama_mata_kuliah'] ?? $row['NAMA_MATA_KULIAH'] ?? $row['Nama_Mata_Kuliah'] ?? '');
             $kode = trim($row['kode'] ?? $row['KODE'] ?? $row['Kode'] ?? '');
+            $kurikulumKode = trim($row['kurikulum'] ?? $row['KURIKULUM'] ?? $row['Kurikulum'] ?? '');
             $sks = trim($row['sks'] ?? $row['SKS'] ?? $row['Sks'] ?? '');
             $jenis = trim($row['jenis'] ?? $row['JENIS'] ?? $row['Jenis'] ?? '');
 
@@ -43,6 +44,11 @@ class MataKuliahImport implements ToModel, WithHeadingRow, WithValidation, Skips
 
             if (empty($kode)) {
                 $this->results['errors'][] = "Kode mata kuliah wajib diisi";
+                return null;
+            }
+
+            if (empty($kurikulumKode)) {
+                $this->results['errors'][] = "Kurikulum '{$namaMataKuliah}' wajib diisi";
                 return null;
             }
 
@@ -69,8 +75,16 @@ class MataKuliahImport implements ToModel, WithHeadingRow, WithValidation, Skips
                 return null;
             }
 
-            // Cek apakah mata kuliah sudah ada berdasarkan kode
-            $existingMataKuliah = MataKuliah::where('kodeMatkul', $kode)->first();
+            // Resolve kurikulum (buat bila kode belum ada)
+            $kurikulum = \App\Models\Kurikulum::firstOrCreate(
+                ['kode' => $kurikulumKode],
+                ['nama' => 'Kurikulum ' . $kurikulumKode, 'tahun' => is_numeric($kurikulumKode) ? (int) $kurikulumKode : null, 'isAktif' => true]
+            );
+
+            // Cek apakah mata kuliah sudah ada berdasarkan kode + kurikulum
+            $existingMataKuliah = MataKuliah::where('kodeMatkul', $kode)
+                ->where('kurikulumId', $kurikulum->id)
+                ->first();
 
             if ($existingMataKuliah) {
                 // Update mata kuliah yang sudah ada
@@ -92,9 +106,9 @@ class MataKuliahImport implements ToModel, WithHeadingRow, WithValidation, Skips
             $mataKuliah = MataKuliah::create([
                 'namaMatkul' => $namaMataKuliah,
                 'kodeMatkul' => $kode,
+                'kurikulumId' => $kurikulum->id,
                 'sks' => $sks,
                 'jenis' => $jenis,
-                'semester' => 1, // Default semester
             ]);
 
             $this->results['created']++;
@@ -116,10 +130,12 @@ class MataKuliahImport implements ToModel, WithHeadingRow, WithValidation, Skips
         return [
             'nama_mata_kuliah' => 'nullable|string|max:255',
             'kode' => 'nullable|max:20',
+            'kurikulum' => 'nullable|max:50',
             'sks' => 'nullable|max:10',
             'jenis' => 'nullable|max:20',
             'NAMA_MATA_KULIAH' => 'nullable|string|max:255',
             'KODE' => 'nullable|max:20',
+            'KURIKULUM' => 'nullable|max:50',
             'SKS' => 'nullable|max:10',
             'JENIS' => 'nullable|max:20',
         ];

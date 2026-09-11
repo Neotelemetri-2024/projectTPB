@@ -51,7 +51,7 @@ class KelasController extends Controller
             });
         }
 
-        $availableMahasiswas = $query->orderBy('nama')->paginate(20);
+        $availableMahasiswas = $query->orderBy('nama')->paginate($this->perPage($request, 25));
         $availableMahasiswas->appends($request->query());
 
         // Get unique tahun masuk untuk filter
@@ -87,7 +87,7 @@ class KelasController extends Controller
                 });
             })
             ->orderBy('nama')
-            ->paginate(20)
+            ->paginate($this->perPage($request, 25))
             ->withQueryString();
 
         return view('admin.kelas.manage-dosen', compact('kelas', 'availableDosens'));

@@ -6,6 +6,7 @@ use App\Models\Cpl;
 use App\Models\MataKuliah;
 use App\Models\TahunAjaran;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -18,20 +19,18 @@ class CplLaporanController extends Controller
 {
     public function index(Request $request)
     {
+        $scope = app(\App\Services\CplAssessmentScope::class);
+
         $tahunAjaranList = TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->get();
-        $kurikulumList = MataKuliah::query()
-            ->whereNotNull('kurikulum')
-            ->where('kurikulum', '!=', '')
-            ->distinct()
-            ->orderBy('kurikulum')
-            ->pluck('kurikulum');
+        $kurikulumList = $scope->kurikulumList();
 
         $selectedTahunAjaranId = $request->get('tahun_ajaran_id');
         $selectedKurikulum = $request->get('kurikulum');
 
-        $detailRows = $this->buildDetailRows($selectedTahunAjaranId, $selectedKurikulum);
+        $detailRows = $this->cachedDetailRows($selectedTahunAjaranId, $selectedKurikulum);
         $chartData = $this->buildChartFromDetails($detailRows);
         $summary = $this->buildSummary($detailRows, $chartData);
+        $hasAssessedMatkul = $scope->hasExplicitAssessment($selectedKurikulum ? (int) $selectedKurikulum : null);
 
         $rolePrefix = auth()->user()->role === 'admin' ? 'admin' : 'pimpinan';
 
@@ -43,6 +42,7 @@ class CplLaporanController extends Controller
             'kurikulumList',
             'selectedTahunAjaranId',
             'selectedKurikulum',
+            'hasAssessedMatkul',
             'rolePrefix'
         ));
     }
@@ -52,7 +52,7 @@ class CplLaporanController extends Controller
         $selectedTahunAjaranId = $request->get('tahun_ajaran_id');
         $selectedKurikulum = $request->get('kurikulum');
 
-        $detailRows = $this->buildDetailRows($selectedTahunAjaranId, $selectedKurikulum);
+        $detailRows = $this->cachedDetailRows($selectedTahunAjaranId, $selectedKurikulum);
         $chartData = $this->buildChartFromDetails($detailRows);
         $summary = $this->buildSummary($detailRows, $chartData);
 
@@ -83,14 +83,26 @@ class CplLaporanController extends Controller
         return $dompdf->stream('Laporan_CPL_' . date('Y-m-d_H-i-s') . '.pdf');
     }
 
+    private function cachedDetailRows($tahunAjaranId = null, $kurikulum = null): array
+    {
+        $key = 'cpl-laporan.rows.v1.' . ($tahunAjaranId ?: 'all') . '.' . sha1((string) $kurikulum);
+
+        return Cache::remember($key, 600, fn () => $this->buildDetailRows($tahunAjaranId, $kurikulum));
+    }
+
     private function buildDetailRows($tahunAjaranId = null, $kurikulum = null): array
     {
+        $scope = app(\App\Services\CplAssessmentScope::class);
+
+        $kurikulumId = $kurikulum ? (int) $kurikulum : null;
+
         $query = DB::table('cpmk')
             ->join('cpmk_cpl as cc', 'cc.cpmkId', '=', 'cpmk.id')
             ->join('cpl', 'cpl.id', '=', 'cc.cplId')
             ->join('cpmk_mat_kul as cmk', 'cmk.cpmkId', '=', 'cpmk.id')
             ->join('tahun_ajaran_matkul as tam', 'tam.id', '=', 'cmk.tahunAjaranMatkulId')
             ->join('mata_kuliah as mk', 'mk.id', '=', 'tam.mataKuliahId')
+            ->join('kurikulum as k', 'k.id', '=', 'mk.kurikulumId')
             ->join('tahun_ajaran as ta', 'ta.id', '=', 'tam.tahunAjaranId')
             ->select(
                 'cpl.id as cpl_id',
@@ -104,7 +116,7 @@ class CplLaporanController extends Controller
                 'mk.id as mk_id',
                 'mk.kodeMatkul',
                 'mk.namaMatkul',
-                'mk.kurikulum',
+                'k.kode as kurikulum',
                 'tam.id as tahun_ajaran_matkul_id',
                 'ta.id as tahun_ajaran_id',
                 'ta.tahun',
@@ -114,11 +126,13 @@ class CplLaporanController extends Controller
             ->orderBy('mk.kodeMatkul')
             ->orderBy('cpmk.kodeCpmk');
 
+        $scope->applyAssessedMatkulConstraint($query, $kurikulumId, 'tam');
+
         if ($tahunAjaranId) {
             $query->where('tam.tahunAjaranId', $tahunAjaranId);
         }
-        if ($kurikulum) {
-            $query->where('mk.kurikulum', $kurikulum);
+        if ($kurikulumId) {
+            $query->where('mk.kurikulumId', $kurikulumId);
         }
 
         $baseRows = $query->get();

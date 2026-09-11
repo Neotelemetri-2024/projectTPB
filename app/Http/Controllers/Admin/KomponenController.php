@@ -8,9 +8,11 @@ use App\Models\Komponen;
 
 class KomponenController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $komponen = Komponen::orderBy('id', 'asc')->paginate(20)->withQueryString();
+        $komponen = Komponen::orderBy('id', 'asc')
+            ->paginate($this->perPage($request, 25))
+            ->withQueryString();
         return view('admin.komponen.index', compact('komponen'));
     }
 

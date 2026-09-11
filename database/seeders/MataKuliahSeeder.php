@@ -252,8 +252,16 @@ class MataKuliahSeeder extends Seeder
             ]
         ];
 
+        $kurikulumId = \App\Models\Kurikulum::query()->value('id')
+            ?? \App\Models\Kurikulum::create([
+                'kode' => '2020',
+                'nama' => 'Kurikulum 2020',
+                'tahun' => 2020,
+                'isAktif' => true,
+            ])->id;
+
         foreach ($mataKuliahs as $mk) {
-            MataKuliah::create($mk);
+            MataKuliah::create(array_merge($mk, ['kurikulumId' => $kurikulumId]));
         }
     }
 }

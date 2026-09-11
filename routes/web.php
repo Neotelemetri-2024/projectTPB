@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\TahunAjaranController;
 use App\Http\Controllers\Admin\MataKuliahController;
 use App\Http\Controllers\Admin\CplController;
 use App\Http\Controllers\Admin\KomponenController;
+use App\Http\Controllers\Admin\KurikulumController;
 use App\Http\Controllers\Admin\TahunAjaranMatkulController;
 use App\Http\Controllers\Admin\KelasController;
 use App\Http\Controllers\Dosen\MataKuliahController as DosenMataKuliahController;
@@ -59,6 +60,7 @@ Route::middleware('auth')->group(function () {
     // Admin Dashboard
     Route::middleware('admin')->group(function () {
         Route::get('/admin/dashboard', [DashboardController::class, 'adminDashboard'])->name('admin.dashboard');
+        Route::get('/admin/dashboard/chart-data', [DashboardController::class, 'adminDashboardChartData'])->name('admin.dashboard.chart-data');
 
         // Mahasiswa CRUD Routes
         Route::delete('/admin/mahasiswa/bulk-destroy', [MahasiswaController::class, 'bulkDestroy'])->name('admin.mahasiswa.bulk-destroy');
@@ -109,6 +111,18 @@ Route::middleware('auth')->group(function () {
         // Import/Export routes for mata kuliah
         Route::get('/admin/mata-kuliah/export/template', [MataKuliahController::class, 'exportTemplate'])->name('admin.mata-kuliah.export-template');
         Route::post('/admin/mata-kuliah/import', [MataKuliahController::class, 'import'])->name('admin.mata-kuliah.import');
+
+        // Kurikulum + matkul asesmen per kurikulum
+        Route::get('/admin/kurikulum/{kurikulum}/matkul-asesmen', [KurikulumController::class, 'editMatkulAsesmen'])->name('admin.kurikulum.matkul-asesmen.edit');
+        Route::put('/admin/kurikulum/{kurikulum}/matkul-asesmen', [KurikulumController::class, 'updateMatkulAsesmen'])->name('admin.kurikulum.matkul-asesmen.update');
+        Route::resource('admin/kurikulum', KurikulumController::class)->except(['show'])->names([
+            'index' => 'admin.kurikulum.index',
+            'create' => 'admin.kurikulum.create',
+            'store' => 'admin.kurikulum.store',
+            'edit' => 'admin.kurikulum.edit',
+            'update' => 'admin.kurikulum.update',
+            'destroy' => 'admin.kurikulum.destroy',
+        ]);
 
         Route::resource('admin/cpl', CplController::class)->except(['show'])->names([
             'index' => 'admin.cpl.index',
@@ -229,6 +243,7 @@ Route::middleware('auth')->group(function () {
     // Pimpinan Dashboard
     Route::middleware('pimpinan')->group(function () {
         Route::get('/pimpinan/dashboard', [DashboardController::class, 'pimpinanDashboard'])->name('pimpinan.dashboard');
+        Route::get('/pimpinan/dashboard/chart-data', [DashboardController::class, 'pimpinanDashboardChartData'])->name('pimpinan.dashboard.chart-data');
 
         // Laporan CPMK Pimpinan
         Route::get('/pimpinan/cpmk-report', [\App\Http\Controllers\Pimpinan\CpmkReportController::class, 'index'])->name('pimpinan.cpmk-report.index');

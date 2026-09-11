@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Cpl;
 use App\Models\Bobot;
 use App\Models\Nilai;
+use App\Services\CplAssessmentScope;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 
@@ -16,11 +17,16 @@ class CapaianController extends Controller
         $user = auth()->user();
         $mahasiswa = $user->mahasiswa;
         $tahunAjaranId = $request->input('tahun_ajaran_id');
+        $kurikulumId = $request->input('kurikulum_id');
         $cplIdTerpilih = $request->input('cpl_id');
 
         $cplList = Cpl::orderBy('kodeCpl')->get();
-        $cplData = $this->buildCplData($mahasiswa->id, $tahunAjaranId, $cplIdTerpilih, true);
+        $cplData = $this->buildCplData($mahasiswa->id, $tahunAjaranId, $cplIdTerpilih, true, $kurikulumId);
         $akademik = $this->buildAcademicSummary($mahasiswa);
+
+        $scope = app(CplAssessmentScope::class);
+        $kurikulumList = $scope->kurikulumList();
+        $hasAssessedMatkul = $scope->hasExplicitAssessment($kurikulumId ? (int) $kurikulumId : null);
 
         return view('mahasiswa.capaian', [
             'mahasiswa' => $mahasiswa,
@@ -29,6 +35,9 @@ class CapaianController extends Controller
             'cplIdTerpilih' => $cplIdTerpilih,
             'akademik' => $akademik,
             'institution' => config('institution'),
+            'kurikulumList' => $kurikulumList,
+            'kurikulumId' => $kurikulumId,
+            'hasAssessedMatkul' => $hasAssessedMatkul,
         ]);
     }
 
@@ -36,11 +45,16 @@ class CapaianController extends Controller
     {
         $user = auth()->user();
         $mahasiswa = $user->mahasiswa;
+        $kurikulumId = $request->input('kurikulum_id');
 
-        // Surat keterangan selalu menampilkan seluruh CPL (tanpa filter)
-        $cplData = $this->buildCplData($mahasiswa->id, null, null, false);
+        $cplData = $this->buildCplData($mahasiswa->id, null, null, false, $kurikulumId);
         $akademik = $this->buildAcademicSummary($mahasiswa);
         $institution = config('institution');
+
+        $kurikulumLabel = 'Semua Kurikulum';
+        if ($kurikulumId) {
+            $kurikulumLabel = \App\Models\Kurikulum::find($kurikulumId)?->nama ?? $kurikulumLabel;
+        }
 
         $logoPath = public_path('images/logo-unand.png');
         $logoBase64 = is_file($logoPath)
@@ -54,14 +68,37 @@ class CapaianController extends Controller
             'institution' => $institution,
             'logoBase64' => $logoBase64,
             'tanggalCetak' => $this->formatTanggalIndonesia(now()),
+            'kurikulumLabel' => $kurikulumLabel,
         ])->render();
 
         $options = new Options();
-        $options->set('defaultFont', 'DejaVu Sans');
+        $options->set('defaultFont', 'Times-Roman');
         $options->set('isRemoteEnabled', true);
         $options->set('isHtml5ParserEnabled', true);
+        $options->set('isFontSubsettingEnabled', true);
 
         $dompdf = new Dompdf($options);
+
+        // Pakai Times New Roman dari Windows jika tersedia
+        $timesFonts = [
+            ['family' => 'Times New Roman', 'style' => 'normal', 'weight' => 'normal', 'path' => 'C:/Windows/Fonts/times.ttf'],
+            ['family' => 'Times New Roman', 'style' => 'normal', 'weight' => 'bold', 'path' => 'C:/Windows/Fonts/timesbd.ttf'],
+            ['family' => 'Times New Roman', 'style' => 'italic', 'weight' => 'normal', 'path' => 'C:/Windows/Fonts/timesi.ttf'],
+            ['family' => 'Times New Roman', 'style' => 'italic', 'weight' => 'bold', 'path' => 'C:/Windows/Fonts/timesbi.ttf'],
+        ];
+        foreach ($timesFonts as $font) {
+            if (is_file($font['path'])) {
+                $dompdf->getFontMetrics()->registerFont(
+                    [
+                        'family' => $font['family'],
+                        'style' => $font['style'],
+                        'weight' => $font['weight'],
+                    ],
+                    $font['path']
+                );
+            }
+        }
+
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
@@ -120,7 +157,7 @@ class CapaianController extends Controller
             'ipk' => $ipk,
             'total_sks' => $sksLulus > 0 ? $sksLulus : $totalSks,
             'predikat' => $this->predikatFromIpk($ipk),
-            'gelar' => config('institution.gelar', 'S.TP'),
+            'gelar' => config('institution.gelar', 'S.T'),
         ];
     }
 
@@ -161,11 +198,15 @@ class CapaianController extends Controller
 
     /**
      * Build CPL/CPMK achievement data with batched queries (no per-CPMK N+1).
+     * Hanya mata kuliah ber-flag isAsesmen (opsional satu kurikulum) yang dihitung.
      */
-    private function buildCplData(int $mahasiswaId, $tahunAjaranId, $cplIdTerpilih, bool $trackMissing): array
+    private function buildCplData(int $mahasiswaId, $tahunAjaranId, $cplIdTerpilih, bool $trackMissing, $kurikulumId = null): array
     {
+        $scope = app(CplAssessmentScope::class);
+        $kurikulumId = $kurikulumId ? (int) $kurikulumId : null;
+
         $cplQuery = Cpl::with([
-            'cpmk' => fn ($q) => $q->orderBy('kodeCpmk')->with(['cpmkMatKul.mataKuliah']),
+            'cpmk' => fn ($q) => $q->orderBy('kodeCpmk')->with(['cpmkMatKul.mataKuliah', 'cpmkMatKul.tahunAjaranMatkul']),
         ])->orderBy('kodeCpl');
 
         if ($cplIdTerpilih) {
@@ -174,6 +215,7 @@ class CapaianController extends Controller
 
         $cplList = $cplQuery->get();
         $allCpmkIds = $cplList->flatMap(fn ($cpl) => $cpl->cpmk->pluck('id'))->unique()->values();
+        $assessedSet = array_flip($scope->assessedMataKuliahIds($kurikulumId)->all());
 
         $bobotByCpmk = Bobot::query()
             ->when($tahunAjaranId, fn ($q) => $q->where('tahunAjaranId', $tahunAjaranId))
@@ -183,7 +225,7 @@ class CapaianController extends Controller
 
         $allBobotIds = $bobotByCpmk->flatten()->pluck('id')->unique()->values();
 
-        $nilaiByBobot = Nilai::with('bobot')
+        $nilaiByBobot = Nilai::with(['bobot', 'tahunAjaranMatkul'])
             ->where('mahasiswaId', $mahasiswaId)
             ->when($allBobotIds->isNotEmpty(), fn ($q) => $q->whereIn('bobotId', $allBobotIds))
             ->get()
@@ -192,39 +234,58 @@ class CapaianController extends Controller
         $cplData = [];
 
         foreach ($cplList as $cpl) {
+            $nilaiMinimal = (float) ($cpl->nilaiMinimal ?? 55);
+
             $cpmkData = [];
             $totalCpmkArr = [];
-            $hasMissingCpmk = false;
             $missingCpmkCount = 0;
 
             foreach ($cpl->cpmk as $cpmk) {
                 $bobotIds = ($bobotByCpmk->get($cpmk->id) ?? collect())->pluck('id');
-                $nilaiCpmkTotal = 0;
-                $bobotCpmkTotal = 0;
+                $assessedLinks = $cpmk->cpmkMatKul->filter(function ($matkulRel) use ($assessedSet) {
+                    $mkId = $matkulRel->mataKuliah->id
+                        ?? $matkulRel->tahunAjaranMatkul->mataKuliahId
+                        ?? null;
+                    return $mkId && isset($assessedSet[(int) $mkId]);
+                });
 
-                foreach ($bobotIds as $bobotId) {
-                    foreach ($nilaiByBobot->get($bobotId, collect()) as $nilai) {
-                        if ($nilai->bobot && $nilai->bobot->bobot > 0) {
-                            $nilaiCpmkTotal += ($nilai->nilai * $nilai->bobot->bobot);
-                            $bobotCpmkTotal += $nilai->bobot->bobot;
+                if ($assessedLinks->isEmpty()) {
+                    continue;
+                }
+
+                $cpmkHasAnyScore = false;
+
+                foreach ($assessedLinks as $matkulRel) {
+                    $matkul = $matkulRel->mataKuliah;
+                    $mkId = (int) ($matkul->id ?? $matkulRel->tahunAjaranMatkul->mataKuliahId ?? 0);
+
+                    $nilaiCpmkTotal = 0;
+                    $bobotCpmkTotal = 0;
+
+                    foreach ($bobotIds as $bobotId) {
+                        foreach ($nilaiByBobot->get($bobotId, collect()) as $nilai) {
+                            $nilaiMkId = (int) ($nilai->tahunAjaranMatkul->mataKuliahId ?? 0);
+                            if ($nilaiMkId !== $mkId) {
+                                continue;
+                            }
+                            if ($nilai->bobot && $nilai->bobot->bobot > 0) {
+                                $nilaiCpmkTotal += ($nilai->nilai * $nilai->bobot->bobot);
+                                $bobotCpmkTotal += $nilai->bobot->bobot;
+                            }
                         }
                     }
-                }
 
-                $nilaiCpmk = $bobotCpmkTotal > 0 ? $nilaiCpmkTotal / $bobotCpmkTotal : null;
+                    $nilaiCpmk = $bobotCpmkTotal > 0 ? $nilaiCpmkTotal / $bobotCpmkTotal : null;
+                    if ($nilaiCpmk !== null) {
+                        $cpmkHasAnyScore = true;
+                    }
 
-                if ($trackMissing && $nilaiCpmk === null) {
-                    $hasMissingCpmk = true;
-                    $missingCpmkCount++;
-                }
-
-                foreach ($cpmk->cpmkMatKul as $matkulRel) {
-                    $matkul = $matkulRel->mataKuliah;
                     $total = $nilaiCpmk !== null ? round($nilaiCpmk, 2) : null;
                     if ($total !== null && is_numeric($total)) {
                         $totalCpmkArr[] = $total;
                     }
-                    $status_capaian = ($total !== null && $total > 55) ? 'Tercapai' : 'Belum Tercapai';
+
+                    $status_capaian = ($total !== null && $total >= $nilaiMinimal) ? 'Tercapai' : 'Belum Tercapai';
                     $cpmkData[] = [
                         'id' => $cpmk->id,
                         'kode' => $cpmk->kodeCpmk,
@@ -234,35 +295,35 @@ class CapaianController extends Controller
                         'nilai' => $nilaiCpmk !== null ? round($nilaiCpmk, 2) : '-',
                         'total' => $total !== null ? $total : '-',
                         'status_capaian' => $total !== null ? $status_capaian : '-',
+                        'diases' => true,
                     ];
+                }
+
+                if (!$cpmkHasAnyScore) {
+                    $missingCpmkCount++;
                 }
             }
 
             $total_cpl = count($totalCpmkArr) > 0 ? max($totalCpmkArr) : '-';
 
-            if ($trackMissing) {
-                $status_cpl = (!$hasMissingCpmk && $total_cpl !== '-' && $total_cpl > 55)
-                    ? 'Tercapai'
-                    : 'Belum Tercapai';
-            } else {
-                $status_cpl = ($total_cpl !== '-' && $total_cpl > 55) ? 'Tercapai' : 'Belum Tercapai';
-            }
+            // Status mengikuti nilai CPL yang ditampilkan (CPMK pendukung tertinggi).
+            // Kelengkapan nilai dilacak terpisah lewat nilai_lengkap / missing_cpmk_count.
+            $status_cpl = ($total_cpl !== '-' && is_numeric($total_cpl) && (float) $total_cpl >= $nilaiMinimal)
+                ? 'Tercapai'
+                : 'Belum Tercapai';
 
-            $entry = [
+            $cplData[] = [
                 'id' => $cpl->id,
                 'kode' => $cpl->kodeCpl,
                 'deskripsi' => $cpl->deskripsi,
                 'cpmk' => $cpmkData,
                 'total_cpl' => $total_cpl,
+                'nilai_minimal' => $nilaiMinimal,
                 'nilai_surat' => is_numeric($total_cpl) ? (int) round($total_cpl) : '-',
                 'status_cpl' => $status_cpl,
+                'missing_cpmk_count' => $missingCpmkCount,
+                'nilai_lengkap' => $missingCpmkCount === 0,
             ];
-
-            if ($trackMissing) {
-                $entry['missing_cpmk_count'] = $missingCpmkCount;
-            }
-
-            $cplData[] = $entry;
         }
 
         return $cplData;

@@ -11,7 +11,7 @@
         * { box-sizing: border-box; }
 
         body {
-            font-family: DejaVu Sans, Arial, sans-serif;
+            font-family: "Times New Roman", Times-Roman, Times, serif;
             font-size: 10px;
             color: #111;
             line-height: 1.35;
@@ -28,46 +28,51 @@
         .kop {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
         .kop td { vertical-align: middle; }
-        .kop-logo { width: 72px; }
-        .kop-logo img { width: 64px; height: auto; }
-        .kop-text { text-align: center; padding: 0 8px; }
+        .kop-logo { width: 96px; }
+        .kop-logo img { width: 88px; height: auto; }
+        .kop-text { text-align: center; padding: 0 6px; line-height: 1.08; }
         .kop-text .line1 {
-            font-size: 11px;
+            font-size: 13px;
             font-weight: bold;
             letter-spacing: 0.2px;
             margin: 0;
+            line-height: 1.08;
         }
         .kop-text .line2 {
-            font-size: 13px;
+            font-size: 16px;
             font-weight: bold;
-            margin: 1px 0;
+            margin: 0;
+            line-height: 1.08;
         }
         .kop-text .line3 {
-            font-size: 12px;
+            font-size: 14px;
             font-weight: bold;
-            margin: 1px 0;
+            margin: 0;
+            line-height: 1.08;
         }
         .kop-text .line4 {
-            font-size: 15px;
+            font-size: 18px;
             font-weight: bold;
             color: #0B3D91;
-            margin: 2px 0 3px;
+            margin: 0 0 2px;
             text-transform: uppercase;
+            line-height: 1.08;
         }
         .kop-text .meta {
-            font-size: 8px;
+            font-size: 10px;
             color: #333;
             margin: 0;
+            line-height: 1.15;
         }
 
         .kop-line {
             border-top: 2.5px solid #111;
             border-bottom: 0.8px solid #111;
             height: 4px;
-            margin: 6px 0 14px;
+            margin: 4px 0 12px;
         }
 
         .doc-title {
@@ -87,11 +92,13 @@
 
         .watermark {
             position: absolute;
-            top: 90px;
+            top: 85px;
             left: 50%;
-            margin-left: -110px;
-            width: 220px;
-            opacity: 0.07;
+            width: 380px;
+            height: auto;
+            margin-left: -190px;
+            margin-top: 0;
+            opacity: 0.08;
             z-index: 0;
         }
 
@@ -228,14 +235,15 @@
         }
         .ttd-inner {
             width: 270px;
-            text-align: left;
+            text-align: right;
             font-size: 10px;
+            margin-left: auto;
         }
         .ttd .jabatan {
             font-size: 9.5px;
             margin: 2px 0 42px;
             line-height: 1.35;
-            text-align: left;
+            text-align: right;
         }
         .ttd .nama {
             font-size: 11px;
@@ -243,12 +251,12 @@
             color: #0B3D91;
             text-decoration: underline;
             margin: 0;
-            text-align: left;
+            text-align: right;
         }
         .ttd .nip {
             font-size: 9px;
             margin: 2px 0 0;
-            text-align: left;
+            text-align: right;
         }
     </style>
 </head>
@@ -294,6 +302,11 @@
 
                     <p class="capai-label">dengan capaian:</p>
                     <table class="metric">
+                        <tr>
+                            <td class="k">Kurikulum</td>
+                            <td class="s">:</td>
+                            <td class="v">{{ $kurikulumLabel ?? 'Semua Kurikulum' }}</td>
+                        </tr>
                         <tr>
                             <td class="k">IPK</td>
                             <td class="s">:</td>
@@ -360,7 +373,7 @@
             <td class="ttd" align="right">
                 <table class="ttd-inner" align="right" cellpadding="0" cellspacing="0">
                     <tr>
-                        <td style="text-align: left; width: 270px;">
+                        <td style="text-align: right; width: 270px;">
                             <div>{{ $institution['kota'] }}, {{ $tanggalCetak }}</div>
                             <div class="jabatan">
                                 Ketua Departemen Teknik Pertanian dan Biosistem,<br>

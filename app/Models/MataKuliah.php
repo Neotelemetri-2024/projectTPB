@@ -13,18 +13,37 @@ class MataKuliah extends Model
 
     protected $fillable = [
         'kodeMatkul',
-        'kurikulum',
+        'kurikulumId',
         'namaMatkul',
         'jenis',
-        'sks'
+        'sks',
+        'isAsesmen',
     ];
 
     protected $casts = [
-        'sks' => 'integer'
+        'sks' => 'integer',
+        'isAsesmen' => 'boolean',
     ];
 
     public function tahunAjaranMatkul()
     {
         return $this->hasMany(TahunAjaranMatkul::class, 'mataKuliahId');
+    }
+
+    public function kurikulumRef()
+    {
+        return $this->belongsTo(Kurikulum::class, 'kurikulumId');
+    }
+
+    /**
+     * Accessor kompatibilitas: view lama memakai $mk->kurikulum (kode kurikulum).
+     */
+    public function getKurikulumAttribute(): ?string
+    {
+        if ($this->relationLoaded('kurikulumRef')) {
+            return $this->kurikulumRef?->kode;
+        }
+
+        return $this->kurikulumRef()->value('kode');
     }
 }

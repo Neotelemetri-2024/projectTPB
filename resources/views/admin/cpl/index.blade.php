@@ -107,7 +107,7 @@
         </div>
 
         <!-- Pagination -->
-        @if($cpl->hasPages())
+        @if($cpl->total() > 0)
         <div class="px-6 py-4 border-t border-gray-200">
             {{ $cpl->links() }}
         </div>

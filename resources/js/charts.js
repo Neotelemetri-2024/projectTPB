@@ -252,17 +252,34 @@ function renderCplRadarChartDistribusi() {
 }
 
 function renderCplCharts() {
-    renderAllCharts();
     renderCplDistribusiBarChart();
     renderCplRadarChartDistribusi();
+
+    const chartElements = Array.from(document.querySelectorAll('[id^="cplBarChart"]'));
+    if (!('IntersectionObserver' in window)) {
+        renderAllCharts();
+        return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            const idx = Number(entry.target.id.replace('cplBarChart', ''));
+            const cpl = (window.cplCpmkData || [])[idx];
+            if (cpl) {
+                const originalData = window.cplCpmkData;
+                window.cplCpmkData = originalData.map((item, itemIdx) => itemIdx === idx ? item : {});
+                renderAllCharts();
+                window.cplCpmkData = originalData;
+            }
+            observer.unobserve(entry.target);
+        });
+    }, { rootMargin: '200px 0px' });
+
+    chartElements.forEach((element) => observer.observe(element));
 }
 
-let resizeTimer = null;
-document.addEventListener('DOMContentLoaded', renderCplCharts);
-window.addEventListener('resize', function () {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(renderCplCharts, 250);
-});
+document.addEventListener('DOMContentLoaded', renderCplCharts, { once: true });
 
 // Flush queued chart callbacks only after helpers (renderApexChart, etc.) exist.
 const pendingChartReady = Array.isArray(window.__chartReadyQueue)

@@ -286,7 +286,9 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @foreach($mahasiswa as $mhs)
-                            @php($studentSummary = $studentSummaries[$mhs->id])
+                            @php
+                                $studentSummary = $studentSummaries[$mhs->id];
+                            @endphp
                             <tr data-mahasiswa-id="{{ $mhs->id }}">
                                 <td class="px-6 py-4 whitespace-nowrap">{{ $mhs->nim }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">{{ $mhs->nama }}</td>

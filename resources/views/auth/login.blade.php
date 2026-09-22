@@ -29,7 +29,7 @@
             min-height: 100vh;
             min-height: 100dvh;
             display: grid;
-            grid-template-columns: 1.15fr 0.85fr;
+            grid-template-columns: 1fr 1fr;
             background: var(--login-panel);
         }
 

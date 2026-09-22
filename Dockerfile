@@ -24,10 +24,8 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www
 
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-interaction --prefer-dist --no-progress --optimize-autoloader
-
 COPY . .
+RUN composer install --no-dev --no-interaction --prefer-dist --no-progress --optimize-autoloader
 
 RUN rm -f /etc/nginx/sites-enabled/default \
     && mkdir -p /run/php /var/www/storage /var/www/bootstrap/cache \

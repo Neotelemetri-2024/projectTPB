@@ -16,3 +16,4 @@ public/storage
 Dockerfile
 compose*.yaml
 *.log
+# halo

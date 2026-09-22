@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +20,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Keep redirects, forms, and Vite URLs on APP_URL, including port 8001.
+        if ($rootUrl = config('app.url')) {
+            URL::forceRootUrl($rootUrl);
+        }
+
         // Guard: jangan pernah jalankan test/migrate:fresh di database non-testing (mis. `tpb`).
         if ($this->app->environment('testing')) {
             $database = (string) config('database.connections.' . config('database.default') . '.database');

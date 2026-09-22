@@ -106,7 +106,11 @@ Contoh bagian penting:
 ```dotenv
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://DOMAIN-TPB
+# Gunakan URL publik aplikasi, termasuk port jika diakses langsung tanpa reverse proxy.
+# Lokal/Docker langsung:
+APP_URL=http://SERVER_IP:8001
+# Production melalui reverse proxy HTTPS:
+# APP_URL=https://DOMAIN-TPB
 APP_KEY=base64:ISI_APP_KEY_PRODUCTION
 
 DB_CONNECTION=mysql
@@ -202,6 +206,37 @@ docker compose logs -f portaltpb-app
 ```
 
 Jika nama service berbeda pada Compose, gunakan nama service yang terlihat dari `docker compose ps`.
+
+### Catatan URL dan redirect tanpa port
+
+Container mendengarkan pada port `80`, sedangkan port host dipublikasikan sebagai `8001:80`. Karena itu, `APP_URL` wajib menyertakan port publik saat aplikasi diakses langsung:
+
+```dotenv
+APP_URL=http://SERVER_IP:8001
+```
+
+Portal TPB menggunakan `URL::forceRootUrl(config('app.url'))` di `AppServiceProvider` agar URL redirect, action form login, dan URL asset Vite tetap menggunakan port `8001`. Setelah mengubah `.env`, bersihkan cache Laravel:
+
+```bash
+docker compose exec portaltpb-app php artisan optimize:clear
+```
+
+Jika perubahan terjadi pada `Dockerfile`, konfigurasi Nginx, atau `AppServiceProvider`, lakukan rebuild image:
+
+```bash
+docker compose down --remove-orphans
+docker compose build --no-cache
+docker compose up -d
+docker compose exec portaltpb-app php artisan optimize:clear
+```
+
+Verifikasi URL yang dihasilkan:
+
+```bash
+curl http://SERVER_IP:8001/login
+```
+
+URL asset dan action form harus menggunakan `:8001`, misalnya `http://SERVER_IP:8001/build/assets/...` dan `http://SERVER_IP:8001/login`, bukan `http://SERVER_IP/build/assets/...` atau `http://SERVER_IP/login`.
 
 ## 9. Verifikasi aplikasi
 

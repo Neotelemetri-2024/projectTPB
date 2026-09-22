@@ -1,7 +1,7 @@
 services:
-    projecttpb-app:
-        container_name: projecttpb-app
-        image: projecttpb
+    portaltpb-app:
+        container_name: portaltpb-app
+        image: portaltpb
         restart: unless-stopped
         build:
             context: .
@@ -16,8 +16,8 @@ services:
         extra_hosts:
             - 'host.docker.internal:host-gateway'
         networks:
-            - projecttpb-network
+            - portaltpb-network
 
 networks:
-    projecttpb-network:
+    portaltpb-network:
         driver: bridge

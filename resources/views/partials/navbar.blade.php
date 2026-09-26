@@ -24,18 +24,11 @@
                 </a>
             </div>
 
-            <!-- Bagian kanan (notifications & profile) -->
+            <!-- Bagian kanan (profile) -->
             <div class="flex items-center space-x-3">
-                <!-- Notification button -->
-                <button type="button"
-                    class="notification-button p-2 text-gray-500 rounded-lg hover:text-gray-900 hover:bg-gray-100 transition-colors">
-
-                </button>
-
-                <!-- Profile dropdown -->
-                <div class="relative">
-                    <button type="button" class="flex items-center space-x-3 focus:outline-none" id="user-menu-button"
-                        data-dropdown-toggle="user-dropdown">
+                <!-- Profile dropdown (daisyUI) -->
+                <div class="dropdown dropdown-end">
+                    <button type="button" class="flex items-center space-x-3 focus:outline-none" id="user-menu-button">
                         <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
                             <svg class="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
@@ -52,7 +45,8 @@
                     </button>
 
                     <!-- Dropdown menu -->
-                    <div class="absolute right-0 z-50 hidden w-48 mt-2 origin-top-right bg-white rounded-lg shadow-lg"
+                    <div tabindex="0"
+                        class="mt-2 z-50 w-48 bg-white rounded-lg shadow-lg dropdown-content border border-gray-200"
                         id="user-dropdown">
                         <div class="p-4 border-b border-gray-100">
                             <span class="block text-sm font-semibold text-gray-900">{{ auth()->user()->name }}</span>

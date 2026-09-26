@@ -2,7 +2,9 @@
 
 @import "tailwindcss";
 
-@import "flowbite/src/themes/default";
+@plugin "daisyui" {
+    themes: light --default;
+}
 
 /* Toastify styles */
 @import "toastify-js/src/toastify.css";

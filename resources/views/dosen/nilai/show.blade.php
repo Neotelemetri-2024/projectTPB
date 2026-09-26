@@ -418,20 +418,10 @@
     </div>
 </div>
 
-<!-- Modal Peringatan Perubahan Belum Disimpan -->
-<x-confirm-modal
-    id="unsaved-changes-modal"
-    title="Perubahan Belum Disimpan"
-    message="Anda memiliki perubahan nilai yang belum disimpan. Jika Anda meninggalkan halaman ini, semua perubahan akan hilang."
-    type="warning"
-    action="#"
-    confirmText="Tinggalkan Halaman"
-    cancelText="Tetap di Halaman" />
-
 <!-- Modal Import Excel -->
-<div id="import-modal" tabindex="-1" aria-hidden="true" class="overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center min-h-screen w-full hidden transition-opacity duration-300 ease-out" style="background: rgba(0,0,0,0.6);">
-    <div class="relative p-4 w-full max-w-md max-h-full transform transition-all duration-300 ease-out scale-95 opacity-0" data-modal-content>
-        <div class="relative bg-white rounded-xl border border-gray-200 animate-in fade-in slide-in-from-top-4 duration-300">
+<div id="import-modal" tabindex="-1" role="dialog" aria-modal="true" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box p-0 bg-white rounded-xl shadow-xl max-w-md" data-modal-content>
+        <div>
             <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t">
                 <h3 class="text-lg font-semibold text-gray-900">
                     <svg class="w-5 h-5 mr-2 inline-block text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -439,7 +429,7 @@
                     </svg>
                     Import Nilai dari Excel
                 </h3>
-                <button type="button" onclick="hideImportModal()" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center transition-colors duration-200">
+                <button type="button" data-modal-hide="import-modal" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center transition-colors duration-200">
                     <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
                     </svg>
@@ -495,25 +485,30 @@
                 </div>
 
                 <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
-                    <button type="button" onclick="hideImportModal()" class="bg-gray-600 hover:bg-gray-700 text-white focus:ring-4 focus:outline-none focus:ring-gray-300 rounded-lg text-sm font-medium px-5 py-2.5 focus:z-10 transition-colors duration-200">
+                    <button type="button" data-modal-hide="import-modal" class="bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium px-5 py-2.5 transition-colors duration-200">
                         Batal
                     </button>
-                    <button type="submit" id="import-submit-btn" class="text-white bg-amber-600 hover:bg-amber-700 focus:ring-4 focus:outline-none focus:ring-amber-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-colors duration-200">
-                        <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <button type="submit" id="import-submit-btn" class="text-white bg-amber-600 hover:bg-amber-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-colors duration-200">
+                        <svg data-icon class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                         </svg>
-                        Import
+                        <svg data-spinner class="hidden w-4 h-4 mr-2 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span data-submit-text>Import</span>
                     </button>
                 </div>
             </form>
         </div>
     </div>
+    <button type="button" class="modal-backdrop" data-modal-backdrop data-modal-hide="import-modal" aria-label="Close"></button>
 </div>
 
 <!-- Detail Nilai Modal -->
-<div id="detail-modal" class="fixed inset-0 overflow-y-auto overflow-x-hidden justify-center items-center min-h-screen w-full z-50 hidden" style="background: rgba(0,0,0,0.6); display: none;">
-    <div class="relative p-4 w-full max-w-6xl max-h-full transform transition-all duration-300 ease-out modal-content scale-95 opacity-0">
-        <div class="relative bg-white rounded-xl border border-gray-200">
+<div id="detail-modal" tabindex="-1" role="dialog" aria-modal="true" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box p-0 bg-white rounded-xl shadow-xl max-w-6xl" data-modal-content>
+        <div>
             <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t">
                 <h3 class="text-lg font-semibold text-gray-900" id="detail-modal-title">Detail Nilai Mahasiswa</h3>
                 <button type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center transition-colors duration-200" data-modal-hide="detail-modal">
@@ -533,6 +528,7 @@
             </div>
         </div>
     </div>
+    <button type="button" class="modal-backdrop" data-modal-backdrop data-modal-hide="detail-modal" aria-label="Close"></button>
 </div>
 
 <!-- Notifikasi Import Results -->
@@ -549,9 +545,9 @@
 
 @if(session('created_students'))
 <!-- Created Students Modal -->
-<div id="created-students-modal" tabindex="-1" aria-hidden="true" class="overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center min-h-screen w-full flex transition-opacity duration-300 ease-out" style="background: rgba(0,0,0,0.6);">
-    <div class="relative p-4 w-full max-w-4xl max-h-full transform transition-all duration-300 ease-out scale-100 opacity-100">
-        <div class="relative bg-white rounded-xl border border-gray-200 animate-in fade-in slide-in-from-top-4 duration-300">
+<div id="created-students-modal" tabindex="-1" role="dialog" aria-modal="true" class="modal modal-open">
+    <div class="modal-box p-0 bg-white rounded-xl shadow-xl max-w-4xl" data-modal-content>
+        <div>
             <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t">
                 <h3 class="text-lg font-semibold text-green-900">
                     <svg class="w-5 h-5 mr-2 inline-block text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -559,7 +555,7 @@
                     </svg>
                     Akun Mahasiswa Baru Dibuat
                 </h3>
-                <button type="button" onclick="hideCreatedStudentsModal()" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center transition-colors duration-200">
+                <button type="button" data-modal-hide="created-students-modal" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center transition-colors duration-200">
                     <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
                     </svg>
@@ -597,7 +593,7 @@
             </div>
 
             <div class="flex items-center justify-end space-x-3 p-4 md:p-5 border-t border-gray-200">
-                <button type="button" onclick="hideCreatedStudentsModal()" class="text-white bg-amber-600 hover:bg-amber-700 focus:ring-4 focus:outline-none focus:ring-amber-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-colors duration-200">
+                <button type="button" data-modal-hide="created-students-modal" class="text-white bg-amber-600 hover:bg-amber-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-colors duration-200">
                     <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
@@ -606,14 +602,15 @@
             </div>
         </div>
     </div>
+    <button type="button" class="modal-backdrop" data-modal-backdrop data-modal-hide="created-students-modal" aria-label="Close"></button>
 </div>
 @endif
 
 @if(session('import_errors'))
 <!-- Import Errors Modal -->
-<div id="import-errors-modal" tabindex="-1" aria-hidden="true" class="overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center min-h-screen w-full flex transition-opacity duration-300 ease-out" style="background: rgba(0,0,0,0.6);">
-    <div class="relative p-4 w-full max-w-2xl max-h-full transform transition-all duration-300 ease-out scale-100 opacity-100">
-        <div class="relative bg-white rounded-xl border border-gray-200 animate-in fade-in slide-in-from-top-4 duration-300">
+<div id="import-errors-modal" tabindex="-1" role="dialog" aria-modal="true" class="modal modal-open">
+    <div class="modal-box p-0 bg-white rounded-xl shadow-xl max-w-2xl" data-modal-content>
+        <div>
             <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t">
                 <h3 class="text-lg font-semibold text-red-900">
                     <svg class="w-5 h-5 mr-2 inline-block text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -621,7 +618,7 @@
                     </svg>
                     Error Import
                 </h3>
-                <button type="button" onclick="hideImportErrorsModal()" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center transition-colors duration-200">
+                <button type="button" data-modal-hide="import-errors-modal" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center transition-colors duration-200">
                     <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6" />
                     </svg>
@@ -663,7 +660,7 @@
             </div>
 
             <div class="flex items-center justify-end space-x-3 p-4 md:p-5 border-t border-gray-200">
-                <button type="button" onclick="hideImportErrorsModal()" class="text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-colors duration-200">
+                <button type="button" data-modal-hide="import-errors-modal" class="text-white bg-red-600 hover:bg-red-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-colors duration-200">
                     <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
@@ -672,6 +669,7 @@
             </div>
         </div>
     </div>
+    <button type="button" class="modal-backdrop" data-modal-backdrop data-modal-hide="import-errors-modal" aria-label="Close"></button>
 </div>
 @endif
 
@@ -686,137 +684,11 @@
     cancelText="Tutup"
     type="warning" />
 
-<!-- Import Modal -->
-<div id="importModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
-    <div class="flex items-center justify-center min-h-screen">
-        <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-lg font-semibold text-gray-900">Import Nilai dari Excel</h3>
-                <button onclick="closeImportModal()" class="text-gray-400 hover:text-gray-600">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-
-            <!-- Import Form -->
-            <div id="importForm">
-                <form action="{{ route('dosen.nilai.import', $tahunAjaranMatkul->id) }}" method="POST" enctype="multipart/form-data" id="excelImportForm">
-                    @csrf
-                    <div class="mb-4">
-                        <label for="excel_file" class="block text-sm font-medium text-gray-700 mb-2">
-                            Pilih File Excel
-                        </label>
-                        <input type="file" name="excel_file" id="excel_file" accept=".xlsx,.xls"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500" required>
-                        <p class="text-xs text-gray-500 mt-1">Format yang didukung: .xlsx, .xls (Maksimal 10MB)</p>
-                    </div>
-
-                    <div class="mb-4">
-                        <a href="{{ route('dosen.nilai.export-template', $tahunAjaranMatkul->id) }}"
-                            class="inline-flex items-center bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-md text-sm font-medium no-underline">
-                            Download Template Excel
-                        </a>
-                    </div>
-
-                    <div class="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                        <h4 class="text-sm font-medium text-gray-900 mb-2">Kelas yang Tersedia:</h4>
-                        <div class="text-sm text-gray-700">
-                            @php
-                            $availableClasses = [];
-                            foreach($tahunAjaranMatkul->kelas as $kelas) {
-                            $availableClasses[] = $kelas->namaKelas;
-                            }
-                            @endphp
-                            {{ implode(', ', $availableClasses) }}
-                        </div>
-                    </div>
-
-                    <div class="flex justify-end space-x-3">
-                        <button type="button" onclick="closeImportModal()"
-                            class="px-4 py-2 text-sm font-medium bg-gray-600 hover:bg-gray-700 text-white">
-                            Batal
-                        </button>
-                        <button type="submit" id="importSubmitBtn"
-                            class="px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500">
-                            Import
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Loading State -->
-            <div id="importLoading" class="hidden">
-                <div class="text-center">
-                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4"></div>
-                    <h4 class="text-lg font-medium text-gray-900 mb-2">Sedang Memproses Import...</h4>
-                    <p class="text-sm text-gray-600 mb-4">Mohon tunggu, jangan tutup halaman ini</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    function openImportModal() {
-        document.getElementById('importModal').classList.remove('hidden');
-        resetImportModal();
-    }
-
-    function closeImportModal() {
-        document.getElementById('importModal').classList.add('hidden');
-        resetImportModal();
-    }
-
-    function resetImportModal() {
-        document.getElementById('importForm').classList.remove('hidden');
-        document.getElementById('importLoading').classList.add('hidden');
-        document.getElementById('excelImportForm').reset();
-    }
-
-    // Handle form submission - direct submit without AJAX
-    document.getElementById('excelImportForm').addEventListener('submit', function(e) {
-        // Get submit button
-        const submitBtn = this.querySelector('button[type="submit"]');
-        const originalBtnText = submitBtn.innerHTML;
-
-        // Show loading state on button
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = `
-        <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        Memproses Import...
-    `;
-
-        // Show loading state
-        document.getElementById('importForm').classList.add('hidden');
-        document.getElementById('importLoading').classList.remove('hidden');
-
-        // Let form submit normally - no preventDefault
-        // The page will reload after submission with flash message
-    });
-
-    // Functions removed - now using direct form submit with flash messages
-</script>
-
 @endsection
 
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize Flowbite modals
-        if (typeof Flowbite !== 'undefined') {
-            // Force re-initialization of all modals
-            const modals = document.querySelectorAll('[data-modal-toggle]');
-            modals.forEach(modal => {
-                if (modal.id) {
-                    console.log('Initializing modal:', modal.id);
-                }
-            });
-        }
-
         // Detail modal functionality
         function showDetailModal(mahasiswaId, nim, nama) {
             const modal = document.getElementById('detail-modal');
@@ -828,16 +700,8 @@
                 // Load detail data
                 loadDetailData(mahasiswaId);
 
-                // Show modal
-                modal.classList.remove('hidden');
-                modal.style.display = 'flex';
-
-                // Add animation classes
-                const modalContent = modal.querySelector('.modal-content');
-                if (modalContent) {
-                    modalContent.classList.add('scale-100', 'opacity-100');
-                    modalContent.classList.remove('scale-95', 'opacity-0');
-                }
+                // Show modal (daisyUI)
+                modal.classList.add('modal-open');
             } else {
                 console.error('Modal elements not found');
             }
@@ -846,16 +710,7 @@
         function hideDetailModal() {
             const modal = document.getElementById('detail-modal');
             if (modal) {
-                const modalContent = modal.querySelector('.modal-content');
-                if (modalContent) {
-                    modalContent.classList.remove('scale-100', 'opacity-100');
-                    modalContent.classList.add('scale-95', 'opacity-0');
-                }
-
-                setTimeout(() => {
-                    modal.classList.add('hidden');
-                    modal.style.display = 'none';
-                }, 300);
+                modal.classList.remove('modal-open');
             }
         }
 
@@ -902,18 +757,10 @@
                 });
         }
 
-        // Close modal when clicking outside
-        document.addEventListener('click', function(e) {
-            const modal = document.getElementById('detail-modal');
-            if (e.target === modal) {
-                hideDetailModal();
-            }
-        });
-
         // Close modal on escape key
         document.addEventListener('keydown', function(e) {
             const modal = document.getElementById('detail-modal');
-            if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
+            if (e.key === 'Escape' && modal && modal.classList.contains('modal-open')) {
                 hideDetailModal();
             }
         });
@@ -974,35 +821,17 @@
         // Import Modal Functions
         function showImportModal() {
             const modal = document.getElementById('import-modal');
-            const modalContent = modal.querySelector('[data-modal-content]');
 
-            if (modal && modalContent) {
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-
-                // Trigger animation
-                setTimeout(() => {
-                    modal.classList.remove('bg-opacity-0');
-                    modal.classList.add('bg-opacity-10');
-                    modalContent.classList.remove('scale-95', 'opacity-0');
-                    modalContent.classList.add('scale-100', 'opacity-100');
-                }, 10);
+            if (modal) {
+                modal.classList.add('modal-open');
             }
         }
 
         function hideImportModal() {
             const modal = document.getElementById('import-modal');
-            const modalContent = modal.querySelector('[data-modal-content]');
 
-            if (modal && modalContent) {
-                modalContent.classList.add('scale-95', 'opacity-0');
-                modalContent.classList.remove('scale-100', 'opacity-100');
-                modal.classList.remove('bg-opacity-10');
-                modal.classList.add('bg-opacity-0');
-
-                setTimeout(() => {
-                    modal.classList.add('hidden');
-                }, 300);
+            if (modal) {
+                modal.classList.remove('modal-open');
             }
         }
 
@@ -1846,18 +1675,9 @@
         })();
 
         function showValidationModal(errors) {
-            console.log('showValidationModal called with errors:', errors);
             const modal = document.getElementById('validation-modal');
             const modalMessage = modal.querySelector('p');
             const modalForm = modal.querySelector('form');
-            const modalContent = modal.querySelector('[data-modal-content]');
-
-            console.log('Modal elements found:', {
-                modal,
-                modalMessage,
-                modalForm,
-                modalContent
-            });
 
             if (modal && modalMessage && modalForm) {
                 // Create detailed message with errors and steps
@@ -1899,37 +1719,16 @@
                 // Set form action to CPMK page
                 modalForm.action = "{{ route('dosen.cpmk.index', $tahunAjaranMatkul->id) }}";
 
-                // Show modal using the component's method (same as data-modal-toggle)
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-
-                // Trigger animation (same as component)
-                setTimeout(() => {
-                    modal.classList.remove('bg-opacity-0');
-                    modal.classList.add('bg-opacity-10');
-                    if (modalContent) {
-                        modalContent.classList.remove('scale-95', 'opacity-0');
-                        modalContent.classList.add('scale-100', 'opacity-100');
-                    }
-                }, 10);
+                // Show modal (daisyUI)
+                modal.classList.add('modal-open');
             }
         }
 
         function closeValidationModal() {
             const modal = document.getElementById('validation-modal');
-            const modalContent = modal.querySelector('[data-modal-content]');
 
-            if (modal && modalContent) {
-                // Hide modal with animation (same as component)
-                modalContent.classList.add('scale-95', 'opacity-0');
-                modalContent.classList.remove('scale-100', 'opacity-100');
-                modal.classList.remove('bg-opacity-10');
-                modal.classList.add('bg-opacity-0');
-
-                setTimeout(() => {
-                    modal.classList.add('hidden');
-                    modal.classList.remove('flex');
-                }, 300);
+            if (modal) {
+                modal.classList.remove('modal-open');
             }
         }
 
@@ -1938,26 +1737,6 @@
         window.hideImportModal = hideImportModal;
         window.checkImportValidation = checkImportValidation;
         window.closeValidationModal = closeValidationModal;
-        window.hideCreatedStudentsModal = function() {
-            const modal = document.getElementById('created-students-modal');
-            if (modal) {
-                modal.classList.add('hidden');
-            }
-        };
-        window.hideImportErrorsModal = function() {
-            const modal = document.getElementById('import-errors-modal');
-            if (modal) {
-                modal.classList.add('hidden');
-            }
-        };
-
-        // Close import modal when clicking outside
-        document.addEventListener('click', function(e) {
-            const importModal = document.getElementById('import-modal');
-            if (e.target === importModal) {
-                hideImportModal();
-            }
-        });
 
         // Close import modal on escape key
         document.addEventListener('keydown', function(e) {
@@ -1965,10 +1744,10 @@
             const validationModal = document.getElementById('validation-modal');
 
             if (e.key === 'Escape') {
-                if (importModal && !importModal.classList.contains('hidden')) {
+                if (importModal && importModal.classList.contains('modal-open')) {
                     hideImportModal();
                 }
-                if (validationModal && !validationModal.classList.contains('hidden')) {
+                if (validationModal && validationModal.classList.contains('modal-open')) {
                     closeValidationModal();
                 }
             }
@@ -2055,19 +1834,6 @@
         align-items: center;
         justify-content: center;
         gap: 0.5rem;
-    }
-
-    /* Fix untuk modal detail agar benar-benar center */
-    #detail-modal {
-        display: flex !important;
-        align-items: center;
-        justify-content: center;
-    }
-
-    #detail-modal .modal-content {
-        margin: auto;
-        max-height: 90vh;
-        overflow-y: auto;
     }
 </style>
 @endpush

@@ -2,7 +2,6 @@ import './bootstrap';
 
 import Alpine from 'alpinejs';
 import Toastify from 'toastify-js';
-import 'flowbite';
 
 window.Alpine = Alpine;
 window.Toastify = Toastify;
@@ -212,3 +211,27 @@ window.whenChartReady = function (callback) {
         });
     }
 };
+
+// Global daisyUI modal driver: every [data-modal-toggle] opens the modal with
+// the matching id, every [data-modal-hide] closes it. Works with buttons
+// outside the component markup (e.g. reset button on the grading page).
+document.addEventListener('click', function (e) {
+    const hideTrigger = e.target.closest('[data-modal-hide]');
+    if (hideTrigger) {
+        const modalToHide = document.getElementById(hideTrigger.getAttribute('data-modal-hide'));
+        if (modalToHide && modalToHide.classList.contains('modal')) {
+            e.preventDefault();
+            modalToHide.classList.remove('modal-open');
+            return;
+        }
+    }
+
+    const showTrigger = e.target.closest('[data-modal-toggle]');
+    if (showTrigger) {
+        const modalToShow = document.getElementById(showTrigger.getAttribute('data-modal-toggle'));
+        if (modalToShow && modalToShow.classList.contains('modal')) {
+            e.preventDefault();
+            modalToShow.classList.add('modal-open');
+        }
+    }
+});

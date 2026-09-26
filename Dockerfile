@@ -5,7 +5,7 @@ COPY package.json package-lock.json ./
 RUN npm ci
 COPY resources ./resources
 COPY public ./public
-COPY vite.config.js tailwind.config.js ./
+COPY vite.config.js ./
 RUN npm run build
 
 FROM php:8.3-fpm
@@ -37,6 +37,9 @@ WORKDIR /var/www/html
 COPY . .
 RUN composer install --no-dev --no-interaction --prefer-dist --no-progress --optimize-autoloader
 COPY --from=frontend /app/public/build /var/www/html/public/build
+
+# Remove Vite dev-server marker so the app serves production assets
+RUN rm -f /var/www/html/public/hot
 
 RUN rm -f /etc/nginx/sites-enabled/default \
     && mkdir -p /run/php /var/www/html/storage /var/www/html/bootstrap/cache \

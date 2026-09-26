@@ -505,16 +505,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert('Terjadi kesalahan');
                 });
 
-                // Hide modal using the component's method
-                const modalContent = deleteModal.querySelector('[data-modal-content]');
-                if (modalContent) {
-                    modalContent.classList.add('scale-95', 'opacity-0');
-                    modalContent.classList.remove('scale-100', 'opacity-100');
-                    setTimeout(() => {
-                        deleteModal.classList.add('hidden');
-                        deleteModal.classList.remove('flex');
-                    }, 300);
-                }
+                // Hide modal
+                deleteModal.classList.remove('modal-open');
             }
             // For single delete, let the form submit normally
         });

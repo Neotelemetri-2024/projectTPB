@@ -263,9 +263,9 @@
 @endforeach
 
 <!-- Modal Konfirmasi Bulk Delete -->
-<div id="modal-confirm-bulk-delete" tabindex="-1" aria-hidden="true" class="hidden overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0 z-50 justify-center items-center min-h-screen w-full transition-opacity duration-300 ease-out" style="background: rgba(0,0,0,0.6);">
-    <div class="relative p-4 w-full max-w-md max-h-full transform transition-all duration-300 ease-out scale-95 opacity-0" data-modal-content>
-        <div class="relative bg-white rounded-xl border border-gray-200 animate-in fade-in slide-in-from-top-4 duration-300">
+<div id="modal-confirm-bulk-delete" tabindex="-1" role="dialog" aria-modal="true" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box p-0 bg-white rounded-xl shadow-xl max-w-md">
+        <div>
             <div class="flex items-center justify-between p-4 md:p-5 border-b border-gray-200 rounded-t">
                 <h3 class="text-lg font-semibold text-gray-900">
                     Konfirmasi Hapus Bulk Mahasiswa
@@ -289,10 +289,10 @@
                     </div>
                 </div>
                 <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
-                    <button type="button" class="bg-gray-600 hover:bg-gray-700 text-white focus:ring-4 focus:outline-none focus:ring-gray-300 rounded-lg text-sm font-medium px-5 py-2.5 focus:z-10 transition-colors duration-200" data-modal-hide="modal-confirm-bulk-delete">
+                    <button type="button" class="bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-medium px-5 py-2.5 transition-colors duration-200" data-modal-hide="modal-confirm-bulk-delete">
                         Batal
                     </button>
-                    <button type="button" id="confirm-bulk-delete-submit" class="text-white bg-red-600 hover:bg-red-700 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-colors duration-200">
+                    <button type="button" id="confirm-bulk-delete-submit" class="text-white bg-red-600 hover:bg-red-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-colors duration-200">
                         <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                         </svg>
@@ -302,6 +302,7 @@
             </div>
         </div>
     </div>
+    <button type="button" class="modal-backdrop" data-modal-backdrop data-modal-hide="modal-confirm-bulk-delete" aria-label="Close"></button>
 </div>
 
 <script>
@@ -461,36 +462,19 @@ document.addEventListener('DOMContentLoaded', function() {
     // Show bulk delete modal
     function showBulkDeleteModal() {
         const modal = document.getElementById('modal-confirm-bulk-delete');
-        const modalContent = modal.querySelector('[data-modal-content]');
 
         if (modal) {
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-
-            // Trigger animation
-            setTimeout(() => {
-                modal.classList.remove('bg-opacity-0');
-                modal.classList.add('bg-opacity-10');
-                modalContent.classList.remove('scale-95', 'opacity-0');
-                modalContent.classList.add('scale-100', 'opacity-100');
-            }, 10);
+            modal.classList.add('modal-open');
         }
     }
 
     // Hide bulk delete modal
     function hideBulkDeleteModal() {
         const modal = document.getElementById('modal-confirm-bulk-delete');
-        const modalContent = modal.querySelector('[data-modal-content]');
 
-        modalContent.classList.add('scale-95', 'opacity-0');
-        modalContent.classList.remove('scale-100', 'opacity-100');
-        modal.classList.remove('bg-opacity-10');
-        modal.classList.add('bg-opacity-0');
-
-        setTimeout(() => {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }, 300);
+        if (modal) {
+            modal.classList.remove('modal-open');
+        }
     }
 
     // Handle modal close buttons
@@ -498,19 +482,9 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', hideBulkDeleteModal);
     });
 
-    // Handle modal background click
-    const bulkDeleteModal = document.getElementById('modal-confirm-bulk-delete');
-    if (bulkDeleteModal) {
-        bulkDeleteModal.addEventListener('click', function(e) {
-            if (e.target === bulkDeleteModal) {
-                hideBulkDeleteModal();
-            }
-        });
-    }
-
     // Handle escape key
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && !bulkDeleteModal.classList.contains('hidden')) {
+        if (e.key === 'Escape' && bulkDeleteModal.classList.contains('modal-open')) {
             hideBulkDeleteModal();
         }
     });

@@ -250,16 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Auto show error modal if there are import errors
     const errorModal = document.getElementById('modal-error-dosen');
     if (errorModal) {
-        errorModal.classList.remove('hidden');
-        errorModal.classList.add('flex');
-        
-        const modalContent = errorModal.querySelector('[data-modal-content]');
-        setTimeout(() => {
-            errorModal.classList.remove('bg-opacity-0');
-            errorModal.classList.add('bg-opacity-10');
-            modalContent.classList.remove('scale-95', 'opacity-0');
-            modalContent.classList.add('scale-100', 'opacity-100');
-        }, 10);
+        errorModal.classList.add('modal-open');
     }
 });
 </script>

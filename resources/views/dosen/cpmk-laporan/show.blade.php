@@ -172,8 +172,6 @@
 
 @push('scripts')
 <script>
-window.__chartReadyQueue = window.__chartReadyQueue || [];
-
 const chartData = @json($chartPayload);
 
 function findCategoryLabel(categories, candidates, fallback) {
@@ -244,7 +242,7 @@ function buildGradeBandAnnotations(categories) {
     };
 }
 
-window.__chartReadyQueue.push(function () {
+window.whenChartReady(function () {
     if (!chartData || !chartData.length) {
         console.warn('Tidak ada data chart CPMK');
         return;

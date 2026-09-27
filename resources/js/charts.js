@@ -2,14 +2,17 @@ import ApexCharts from 'apexcharts';
 
 window.ApexCharts = ApexCharts;
 
-window.whenChartReady = function (callback) {
-    const run = () => callback(window.ApexCharts);
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', run);
-    } else {
-        run();
-    }
-};
+// app.js owns the lazy loader. Keep a small fallback for direct bundle usage.
+if (typeof window.whenChartReady !== 'function') {
+    window.whenChartReady = function (callback) {
+        const run = () => callback(window.ApexCharts);
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', run, { once: true });
+        } else {
+            run();
+        }
+    };
+}
 
 window.__apexInstances = window.__apexInstances || {};
 
@@ -30,8 +33,15 @@ window.renderApexChart = function (el, options, key = null) {
     const instanceKey = key || el.id || `apex-${Date.now()}`;
     window.destroyApexChart(instanceKey);
     el.innerHTML = '';
+    if (!window.ApexCharts) {
+        console.error('ApexCharts is not available for', instanceKey);
+        return null;
+    }
     const chart = new ApexCharts(el, options);
-    chart.render();
+    Promise.resolve(chart.render()).catch((error) => {
+        console.error(`Failed to render ApexCharts instance "${instanceKey}"`, error);
+        el.innerHTML = '<div class="p-6 text-center text-sm text-gray-500">Grafik tidak dapat ditampilkan.</div>';
+    });
     window.__apexInstances[instanceKey] = chart;
     return chart;
 };

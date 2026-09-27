@@ -191,13 +191,12 @@ document.addEventListener('click', function(e) {
     }
 });
 
-window.__chartReadyQueue = window.__chartReadyQueue || [];
-window.__chartReadyQueue.push(function () {
+window.whenChartReady(function () {
     const chartData = @json($chartData);
     const el = document.querySelector('#cplAchievementChart');
-    if (!el || typeof ApexCharts === 'undefined') return;
+    if (!el || typeof window.renderApexChart !== 'function') return;
 
-    new ApexCharts(el, {
+    window.renderApexChart(el, {
         chart: {
             type: 'bar',
             height: '100%',
@@ -238,7 +237,7 @@ window.__chartReadyQueue.push(function () {
             borderColor: '#E5E7EB',
             strokeDashArray: 4
         }
-    }).render();
+    }, 'cplAchievementChart');
 });
 </script>
 @endpush

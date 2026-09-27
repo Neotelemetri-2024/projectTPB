@@ -124,13 +124,8 @@
         </div>
                 <div class="p-6">
 
-            <form method="POST" action="#" id="form-bobot-cpmk" style="display:none;">
-                @csrf
-                <!-- Form bobot CPMK dihapus -->
-            </form>
-
             <!-- Tab Content: CPMK Utama -->
-            <div id="tab-content-main-cpmk" class="tab-content">
+            <div id="tab-content-main-cpmk">
                 <div class="overflow-x-auto bg-white rounded-lg">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -158,7 +153,7 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach($mainCpmkList as $cpmk)
+                            @forelse($mainCpmkList as $cpmk)
                             <tr class="hover:bg-gray-50 transition-colors">
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="text-sm font-medium text-amber-700">
@@ -226,14 +221,20 @@
                                 </td>
                                 @endif
                             </tr>
-                            @endforeach
+                            @empty
+                            <tr>
+                                <td colspan="6" class="px-6 py-12 text-center text-sm text-gray-500">
+                                    Tidak ada CPMK utama pada hasil filter ini.
+                                </td>
+                            </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
             </div>
 
             <!-- Tab Content: Sub-CPMK -->
-            <div id="tab-content-sub-cpmk" class="tab-content hidden">
+            <div id="tab-content-sub-cpmk" class="hidden">
                 <div class="overflow-x-auto bg-white rounded-lg">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -264,7 +265,7 @@
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach($subCpmkList as $subCpmk)
+                            @forelse($subCpmkList as $subCpmk)
                             <tr class="hover:bg-gray-50 transition-colors">
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="text-sm font-medium text-gray-900">
@@ -334,7 +335,13 @@
                                 </td>
                                 @endif
                             </tr>
-                            @endforeach
+                            @empty
+                            <tr>
+                                <td colspan="7" class="px-6 py-12 text-center text-sm text-gray-500">
+                                    Tidak ada Sub-CPMK pada hasil filter ini.
+                                </td>
+                            </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
@@ -349,7 +356,6 @@
                 </button>
                 @endif
             </div>
-                </form>
         </div>
 
         <!-- Total Bobot Section -->

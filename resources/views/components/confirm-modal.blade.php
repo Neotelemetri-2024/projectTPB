@@ -96,31 +96,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('{{ $id }}');
 
-    // Show modal with animation via daisyUI modal-open class
-    document.addEventListener('click', function(e) {
-        if (e.target.matches('[data-modal-toggle="{{ $id }}"]') || e.target.closest('[data-modal-toggle="{{ $id }}"]')) {
-            e.preventDefault();
-            modal.classList.add('modal-open');
-        }
-    });
-
-    // Hide modal
-    function hideModal() {
-        modal.classList.remove('modal-open');
-    }
-
-    // Hide on close buttons (incl. backdrop)
-    modal.querySelectorAll('[data-modal-hide="{{ $id }}"]').forEach(btn => {
-        btn.addEventListener('click', hideModal);
-    });
-
-    // Hide on escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && modal.classList.contains('modal-open')) {
-            hideModal();
-        }
-    });
-
     // Tambahkan event untuk tombol confirm link
     document.querySelectorAll('[data-modal-confirm-link]').forEach(btn => {
         btn.addEventListener('click', function() {

@@ -83,6 +83,36 @@ class ReportDashboardPerformanceTest extends TestCase
         $this->assertStringNotContainsString('count(array_filter($nilaiPerMahasiswa', $controller);
     }
 
+    public function test_student_cpl_uses_complete_assessed_course_scores_without_integer_rounding(): void
+    {
+        $controller = $this->source('app/Http/Controllers/CapaianController.php');
+        $view = $this->source('resources/views/mahasiswa/capaian.blade.php');
+
+        $this->assertStringContainsString("whereIn('tahunAjaranMatkulId', \$tamIds)", $controller);
+        $this->assertStringContainsString('$courseScores[]', $controller);
+        $this->assertStringContainsString('array_sum($courseScores) / count($courseScores)', $controller);
+        $this->assertStringContainsString("'nilai_surat' => " . '$total_cpl', $controller);
+        $this->assertStringNotContainsString('(int) round($total_cpl)', $controller);
+        $this->assertStringContainsString("'Belum lengkap'", $controller);
+        $this->assertStringContainsString('rata-rata nilai akhir seluruh mata kuliah asesmen', $view);
+    }
+
+    public function test_student_cpl_uses_average_instead_of_highest_course_score(): void
+    {
+        $controller = $this->source('app/Http/Controllers/CapaianController.php');
+
+        $this->assertStringNotContainsString('max($courseScores)', $controller);
+        $this->assertStringNotContainsString('$totalCpmkArr[]', $controller);
+        $this->assertStringContainsString('$weightTotal = $bobot->sum(\'bobot\')', $controller);
+    }
+
+    public function test_sks_falls_back_to_master_course_when_tam_value_is_missing(): void
+    {
+        $model = $this->source('app/Models/TahunAjaranMatkul.php');
+
+        $this->assertStringContainsString('return $this->sks ?? $this->mataKuliah?->sks ?? 0;', $model);
+    }
+
     private function source(string $path): string
     {
         return file_get_contents(dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $path));

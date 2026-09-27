@@ -171,7 +171,7 @@ class CpmkController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('kodeCpmk', 'like', "%{$search}%")
-                  ->orWhere('deskripsiCpmk', 'like', "%{$search}%");
+                  ->orWhere('deskripsi', 'like', "%{$search}%");
             });
         }
 
@@ -181,20 +181,33 @@ class CpmkController extends Controller
             });
         }
 
+        $perPage = $this->perPage($request);
+        // A stale page parameter after changing filters can produce an empty
+        // collection while the paginator still reports a non-zero total.
+        // Clamp it to the last valid page before splitting the collection into
+        // the two tabs.
+        $totalCpmk = (clone $query)->count();
+        $lastPage = max(1, (int) ceil($totalCpmk / $perPage));
+        $requestedPage = max(1, (int) $request->get('page', 1));
+        $currentPage = min($requestedPage, $lastPage);
+
         $cpmkList = $query->orderBy('kodeCpmk', 'asc')
-            ->paginate($this->perPage($request))
+            ->paginate($perPage, ['*'], 'page', $currentPage)
             ->withQueryString();
 
-        // Separate main CPMK and sub-CPMK
-        $mainCpmkList = $cpmkList->getCollection()->filter(function($cpmk) {
+        // Separate tabs from the complete filtered result. Splitting only the
+        // current paginator page can make the total show data while the active
+        // tab appears empty when that page contains another CPMK category.
+        $allCpmkForTabs = (clone $query)->orderBy('kodeCpmk', 'asc')->get();
+        $mainCpmkList = $allCpmkForTabs->filter(function($cpmk) {
             return $cpmk->parents->count() === 0;
         });
 
-        $subCpmkList = $cpmkList->getCollection()->filter(function($cpmk) {
+        $subCpmkList = $allCpmkForTabs->filter(function($cpmk) {
             return $cpmk->parents->count() > 0;
         });
 
-        $displayedCpmkIds = $cpmkList->getCollection()->pluck('id');
+        $displayedCpmkIds = $allCpmkForTabs->pluck('id');
         $bobotByCpmk = $displayedCpmkIds->isEmpty()
             ? collect()
             : Bobot::with('komponen')
@@ -210,7 +223,7 @@ class CpmkController extends Controller
                 ->groupBy('cpmkId')
                 ->pluck('last_updated_at', 'cpmkId');
 
-        foreach ($cpmkList as $cpmk) {
+        foreach ($allCpmkForTabs as $cpmk) {
             $cpmkBobot = ($bobotByCpmk->get($cpmk->id) ?? collect())
                 ->unique('komponenId')
                 ->values();

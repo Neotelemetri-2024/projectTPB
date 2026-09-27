@@ -75,6 +75,6 @@ class TahunAjaranMatkul extends Model
      */
     public function getSks()
     {
-        return $this->sks ?? $this->mataKuliah->sks ?? 0;
+        return $this->sks ?? $this->mataKuliah?->sks ?? 0;
     }
 }

@@ -205,6 +205,22 @@ class CapaianController extends Controller
         $scope = app(CplAssessmentScope::class);
         $kurikulumId = $kurikulumId ? (int) $kurikulumId : null;
 
+        $enrollments = \App\Models\KelasMahasiswa::query()
+            ->where('mahasiswaId', $mahasiswaId)
+            ->with('kelas.tahunAjaranMatkul.mataKuliah')
+            ->get()
+            ->filter(function ($enrollment) use ($tahunAjaranId) {
+                $tam = $enrollment->kelas?->tahunAjaranMatkul;
+                return $tam && (!$tahunAjaranId || (int) $tam->tahunAjaranId === (int) $tahunAjaranId);
+            });
+
+        $tamByMataKuliah = $enrollments
+            ->map(fn ($enrollment) => $enrollment->kelas->tahunAjaranMatkul)
+            ->filter()
+            ->unique('id')
+            ->groupBy('mataKuliahId');
+        $tamIds = $tamByMataKuliah->flatten()->pluck('id')->unique()->values();
+
         $cplQuery = Cpl::with([
             'cpmk' => fn ($q) => $q->orderBy('kodeCpmk')->with(['cpmkMatKul.mataKuliah', 'cpmkMatKul.tahunAjaranMatkul']),
         ])->orderBy('kodeCpl');
@@ -214,22 +230,21 @@ class CapaianController extends Controller
         }
 
         $cplList = $cplQuery->get();
-        $allCpmkIds = $cplList->flatMap(fn ($cpl) => $cpl->cpmk->pluck('id'))->unique()->values();
         $assessedPairs = $scope->assessedPairs($kurikulumId);
 
-        $bobotByCpmk = Bobot::query()
-            ->when($tahunAjaranId, fn ($q) => $q->where('tahunAjaranId', $tahunAjaranId))
-            ->when($allCpmkIds->isNotEmpty(), fn ($q) => $q->whereIn('cpmkId', $allCpmkIds))
+        $bobotByTam = Bobot::query()
+            ->whereIn('tahunAjaranMatkulId', $tamIds)
             ->get()
-            ->groupBy('cpmkId');
+            ->groupBy('tahunAjaranMatkulId');
 
-        $allBobotIds = $bobotByCpmk->flatten()->pluck('id')->unique()->values();
+        $allBobotIds = $bobotByTam->flatten()->pluck('id')->unique()->values();
 
         $nilaiByBobot = Nilai::with(['bobot', 'tahunAjaranMatkul'])
             ->where('mahasiswaId', $mahasiswaId)
+            ->whereIn('tahunAjaranMatkulId', $tamIds)
             ->when($allBobotIds->isNotEmpty(), fn ($q) => $q->whereIn('bobotId', $allBobotIds))
             ->get()
-            ->groupBy('bobotId');
+            ->keyBy('bobotId');
 
         $cplData = [];
 
@@ -237,11 +252,11 @@ class CapaianController extends Controller
             $nilaiMinimal = (float) ($cpl->nilaiMinimal ?? 55);
 
             $cpmkData = [];
-            $totalCpmkArr = [];
-            $missingCpmkCount = 0;
+            $courseScores = [];
+            $incompleteCourseCount = 0;
+            $assessedCourseCount = 0;
 
             foreach ($cpl->cpmk as $cpmk) {
-                $bobotIds = ($bobotByCpmk->get($cpmk->id) ?? collect())->pluck('id');
                 $assessedLinks = $cpmk->cpmkMatKul->filter(function ($matkulRel) use ($cpl, $assessedPairs) {
                     $mkId = $matkulRel->mataKuliah->id
                         ?? $matkulRel->tahunAjaranMatkul->mataKuliahId
@@ -259,31 +274,27 @@ class CapaianController extends Controller
                     $matkul = $matkulRel->mataKuliah;
                     $mkId = (int) ($matkul->id ?? $matkulRel->tahunAjaranMatkul->mataKuliahId ?? 0);
 
-                    $nilaiCpmkTotal = 0;
-                    $bobotCpmkTotal = 0;
-
-                    foreach ($bobotIds as $bobotId) {
-                        foreach ($nilaiByBobot->get($bobotId, collect()) as $nilai) {
-                            $nilaiMkId = (int) ($nilai->tahunAjaranMatkul->mataKuliahId ?? 0);
-                            if ($nilaiMkId !== $mkId) {
-                                continue;
-                            }
-                            if ($nilai->bobot && $nilai->bobot->bobot > 0) {
-                                $nilaiCpmkTotal += ($nilai->nilai * $nilai->bobot->bobot);
-                                $bobotCpmkTotal += $nilai->bobot->bobot;
-                            }
-                        }
+                    $tam = $tamByMataKuliah->get($mkId, collect())
+                        ->first(fn ($item) => isset($assessedPairs[$cpl->id][$mkId]));
+                    if (!$tam) {
+                        continue;
                     }
 
-                    $nilaiCpmk = $bobotCpmkTotal > 0 ? $nilaiCpmkTotal / $bobotCpmkTotal : null;
+                    $bobot = $bobotByTam->get($tam->id, collect());
+                    $positiveBobot = $bobot->filter(fn ($item) => (float) $item->bobot > 0)->values();
+                    $nilaiForCpmk = $positiveBobot->filter(fn ($item) => (int) $item->cpmkId === (int) $cpmk->id);
+                    $nilaiCpmkComplete = $nilaiForCpmk->isNotEmpty()
+                        && $nilaiForCpmk->every(fn ($item) => $nilaiByBobot->has($item->id));
+                    $nilaiCpmkTotal = $nilaiForCpmk->sum(fn ($item) => ($nilaiByBobot->get($item->id)?->nilai ?? 0) * (float) $item->bobot);
+                    $bobotCpmkTotal = $nilaiForCpmk->sum('bobot');
+                    $nilaiCpmk = $nilaiCpmkComplete && $bobotCpmkTotal > 0
+                        ? $nilaiCpmkTotal / $bobotCpmkTotal
+                        : null;
                     if ($nilaiCpmk !== null) {
                         $cpmkHasAnyScore = true;
                     }
 
-                    $total = $nilaiCpmk !== null ? round($nilaiCpmk, 2) : null;
-                    if ($total !== null && is_numeric($total)) {
-                        $totalCpmkArr[] = $total;
-                    }
+                    $total = $nilaiCpmk;
 
                     $status_capaian = ($total !== null && $total >= $nilaiMinimal) ? 'Tercapai' : 'Belum Tercapai';
                     $cpmkData[] = [
@@ -292,7 +303,7 @@ class CapaianController extends Controller
                         'deskripsi' => $cpmk->deskripsi,
                         'kode_mk' => $matkul ? $matkul->kodeMatkul : '-',
                         'nama_mk' => $matkul ? $matkul->namaMatkul : '-',
-                        'nilai' => $nilaiCpmk !== null ? round($nilaiCpmk, 2) : '-',
+                        'nilai' => $nilaiCpmk !== null ? $nilaiCpmk : '-',
                         'total' => $total !== null ? $total : '-',
                         'status_capaian' => $total !== null ? $status_capaian : '-',
                         'diases' => true,
@@ -300,17 +311,42 @@ class CapaianController extends Controller
                 }
 
                 if (!$cpmkHasAnyScore) {
-                    $missingCpmkCount++;
+                    continue;
                 }
             }
 
-            $total_cpl = count($totalCpmkArr) > 0 ? max($totalCpmkArr) : '-';
+            foreach (($assessedPairs[$cpl->id] ?? []) as $mkId => $_) {
+                $tam = $tamByMataKuliah->get((int) $mkId, collect())->first();
+                if (!$tam) {
+                    continue;
+                }
 
-            // Status mengikuti nilai CPL yang ditampilkan (CPMK pendukung tertinggi).
-            // Kelengkapan nilai dilacak terpisah lewat nilai_lengkap / missing_cpmk_count.
-            $status_cpl = ($total_cpl !== '-' && is_numeric($total_cpl) && (float) $total_cpl >= $nilaiMinimal)
-                ? 'Tercapai'
-                : 'Belum Tercapai';
+                $assessedCourseCount++;
+                $bobot = $bobotByTam->get($tam->id, collect())
+                    ->filter(fn ($item) => (float) $item->bobot > 0)
+                    ->values();
+                $complete = $bobot->isNotEmpty() && $bobot->every(fn ($item) => $nilaiByBobot->has($item->id));
+                if (!$complete) {
+                    $incompleteCourseCount++;
+                    continue;
+                }
+
+                $weightTotal = $bobot->sum('bobot');
+                if ($weightTotal > 0) {
+                    $courseScores[] = $bobot->sum(fn ($item) => (float) $nilaiByBobot->get($item->id)->nilai * (float) $item->bobot) / $weightTotal;
+                }
+            }
+
+            $hasIncomplete = $assessedCourseCount === 0 || $incompleteCourseCount > 0 || count($courseScores) < $assessedCourseCount;
+            $total_cpl = !$hasIncomplete && $courseScores !== []
+                ? array_sum($courseScores) / count($courseScores)
+                : '-';
+
+            // Status mengikuti rata-rata nilai akhir seluruh mata kuliah asesmen.
+            // Nilai parsial tidak dipakai; kelengkapan dilacak terpisah.
+            $status_cpl = $hasIncomplete
+                ? 'Belum lengkap'
+                : (($total_cpl !== '-' && (float) $total_cpl >= $nilaiMinimal) ? 'Tercapai' : 'Belum tercapai');
 
             $cplData[] = [
                 'id' => $cpl->id,
@@ -319,10 +355,10 @@ class CapaianController extends Controller
                 'cpmk' => $cpmkData,
                 'total_cpl' => $total_cpl,
                 'nilai_minimal' => $nilaiMinimal,
-                'nilai_surat' => is_numeric($total_cpl) ? (int) round($total_cpl) : '-',
+                'nilai_surat' => $total_cpl,
                 'status_cpl' => $status_cpl,
-                'missing_cpmk_count' => $missingCpmkCount,
-                'nilai_lengkap' => $missingCpmkCount === 0,
+                'missing_cpmk_count' => $incompleteCourseCount,
+                'nilai_lengkap' => !$hasIncomplete,
             ];
         }
 

@@ -46,6 +46,17 @@
         </div>
     </div>
 
+    @if($errors->any())
+        <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            <p class="font-semibold">CPMK belum dapat disimpan:</p>
+            <ul class="mt-1 list-disc list-inside space-y-0.5">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <!-- Form -->
     <div class="bg-white border border-gray-200 rounded-xl">
         <div class="p-6 border-b border-gray-200">

@@ -189,10 +189,12 @@ window.showToast = function(message, type = 'success') {
     }).showToast();
 };
 
-// Load the chart bundle only on pages that request it.
+// Load the chart bundle only on pages that request it. Keep one stable loader
+// so page scripts never need to know whether ApexCharts is already available.
 window.__chartReadyQueue = window.__chartReadyQueue || [];
 let chartModulePromise = null;
 window.whenChartReady = function (callback) {
+    if (typeof callback !== 'function') return;
     const run = () => callback(window.ApexCharts);
     if (window.ApexCharts) {
         if (document.readyState === 'loading') {
@@ -207,31 +209,62 @@ window.whenChartReady = function (callback) {
     if (!chartModulePromise) {
         chartModulePromise = import('./charts.js').catch((error) => {
             chartModulePromise = null;
-            console.error('Unable to load chart module', error);
+            console.error('Unable to load chart module. Charts will remain unavailable.', error);
+            window.__chartReadyError = error;
         });
     }
 };
 
-// Global daisyUI modal driver: every [data-modal-toggle] opens the modal with
-// the matching id, every [data-modal-hide] closes it. Works with buttons
-// outside the component markup (e.g. reset button on the grading page).
+function openGlobalModal(modal) {
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    if (modal.classList.contains('modal')) modal.classList.add('modal-open');
+    modal.setAttribute('aria-hidden', 'false');
+}
+
+function closeGlobalModal(modal) {
+    if (!modal) return;
+    modal.classList.remove('modal-open');
+    if (!modal.classList.contains('modal')) modal.classList.add('hidden');
+    modal.setAttribute('aria-hidden', 'true');
+}
+
+function resolveModalTarget(value) {
+    if (!value) return null;
+    const id = value.startsWith('#') ? value.slice(1) : value;
+    return document.getElementById(id) || document.querySelector(value);
+}
+
+// Global modal driver. Supports both DaisyUI modals and legacy hidden modals.
 document.addEventListener('click', function (e) {
     const hideTrigger = e.target.closest('[data-modal-hide]');
     if (hideTrigger) {
-        const modalToHide = document.getElementById(hideTrigger.getAttribute('data-modal-hide'));
-        if (modalToHide && modalToHide.classList.contains('modal')) {
+        const modalToHide = resolveModalTarget(hideTrigger.getAttribute('data-modal-hide'));
+        if (modalToHide) {
             e.preventDefault();
-            modalToHide.classList.remove('modal-open');
+            closeGlobalModal(modalToHide);
             return;
         }
     }
 
-    const showTrigger = e.target.closest('[data-modal-toggle]');
+    const showTrigger = e.target.closest('[data-modal-toggle], [data-modal-target]');
     if (showTrigger) {
-        const modalToShow = document.getElementById(showTrigger.getAttribute('data-modal-toggle'));
-        if (modalToShow && modalToShow.classList.contains('modal')) {
+        const targetId = showTrigger.getAttribute('data-modal-toggle') || showTrigger.getAttribute('data-modal-target');
+        const modalToShow = resolveModalTarget(targetId);
+        if (modalToShow) {
             e.preventDefault();
-            modalToShow.classList.add('modal-open');
+            openGlobalModal(modalToShow);
         }
     }
+
+    const backdrop = e.target.closest('[data-modal-backdrop]');
+    if (backdrop && e.target === backdrop) {
+        const modal = backdrop.closest('[role="dialog"], .modal');
+        if (modal) closeGlobalModal(modal);
+    }
+});
+
+document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    document.querySelectorAll('.modal.modal-open, [role="dialog"][aria-hidden="false"]').forEach(closeGlobalModal);
 });

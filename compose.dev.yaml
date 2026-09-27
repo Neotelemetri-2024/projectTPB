@@ -1,0 +1,40 @@
+services:
+  portaltpb-app-dev:
+    container_name: portaltpb-app-dev
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8001:80"
+    environment:
+      DB_HOST: host.docker.internal
+    volumes:
+      - ./:/var/www/html:cached
+      - portaltpb-dev-vendor:/var/www/html/vendor
+      - ./storage:/var/www/html/storage:cached
+      - ./.env:/var/www/html/.env:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - portaltpb-dev-network
+
+  portaltpb-vite-dev:
+    image: node:20-alpine
+    container_name: portaltpb-vite-dev
+    working_dir: /var/www/html
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./:/var/www/html:cached
+      - portaltpb-dev-node-modules:/var/www/html/node_modules
+    networks:
+      - portaltpb-dev-network
+
+volumes:
+  portaltpb-dev-vendor:
+  portaltpb-dev-node-modules:
+
+networks:
+  portaltpb-dev-network:
+    driver: bridge

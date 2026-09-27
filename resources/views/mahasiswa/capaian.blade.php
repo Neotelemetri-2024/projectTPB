@@ -55,8 +55,8 @@
             <div>
                 <h2 class="text-base font-semibold text-gray-900">Rincian Capaian Pembelajaran Lulusan</h2>
                 <p class="text-sm text-gray-500 mt-0.5">
-                    Status diambil dari nilai CPMK pendukung tertinggi.
-                    Keterangan <span class="text-amber-700 font-medium">Nilai belum lengkap</span> berarti masih ada CPMK tanpa nilai.
+                    Nilai CPL dihitung dari rata-rata nilai akhir seluruh mata kuliah asesmen.
+                    Keterangan <span class="text-amber-700 font-medium">Belum lengkap</span> berarti masih ada komponen mata kuliah yang belum dinilai.
                 </p>
             </div>
             <form method="GET" action="{{ route('mahasiswa.capaian') }}" class="flex flex-wrap items-end gap-2">
@@ -116,6 +116,8 @@
                             <td class="px-4 py-3 text-center">
                                 @if($cpl['status_cpl'] === 'Tercapai')
                                     <span class="text-sm font-medium text-emerald-700">Tercapai</span>
+                                @elseif($cpl['status_cpl'] === 'Belum lengkap')
+                                    <span class="text-sm font-medium text-amber-700">Belum lengkap</span>
                                 @else
                                     <span class="text-sm font-medium text-red-700">Belum</span>
                                 @endif

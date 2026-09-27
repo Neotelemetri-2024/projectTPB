@@ -342,6 +342,7 @@
                                 <th>Kode CPL</th>
                                 <th>Deskripsi Capaian Pembelajaran</th>
                                 <th>Nilai</th>
+                                <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -351,10 +352,11 @@
                                     <td class="kode">{{ $cpl['kode'] }}</td>
                                     <td class="desc">{{ $cpl['deskripsi'] }}</td>
                                     <td class="nilai">{{ $cpl['nilai_surat'] }}</td>
+                                    <td class="nilai">{{ $cpl['status_cpl'] }}</td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="center">Belum ada data CPL</td>
+                                    <td colspan="5" class="center">Belum ada data CPL</td>
                                 </tr>
                             @endforelse
                         </tbody>

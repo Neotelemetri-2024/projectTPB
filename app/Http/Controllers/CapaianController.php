@@ -7,6 +7,7 @@ use App\Models\Cpl;
 use App\Models\Bobot;
 use App\Models\Nilai;
 use App\Services\CplAssessmentScope;
+use App\Services\CplAssessmentCalculator;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 
@@ -252,9 +253,7 @@ class CapaianController extends Controller
             $nilaiMinimal = (float) ($cpl->nilaiMinimal ?? 55);
 
             $cpmkData = [];
-            $courseScores = [];
-            $incompleteCourseCount = 0;
-            $assessedCourseCount = 0;
+            $assessedCourses = [];
 
             foreach ($cpl->cpmk as $cpmk) {
                 $assessedLinks = $cpmk->cpmkMatKul->filter(function ($matkulRel) use ($cpl, $assessedPairs) {
@@ -284,11 +283,15 @@ class CapaianController extends Controller
                     $positiveBobot = $bobot->filter(fn ($item) => (float) $item->bobot > 0)->values();
                     $nilaiForCpmk = $positiveBobot->filter(fn ($item) => (int) $item->cpmkId === (int) $cpmk->id);
                     $nilaiCpmkComplete = $nilaiForCpmk->isNotEmpty()
-                        && $nilaiForCpmk->every(fn ($item) => $nilaiByBobot->has($item->id));
+                        && $nilaiForCpmk->every(function ($item) use ($nilaiByBobot) {
+                            $nilai = $nilaiByBobot->get($item->id);
+
+                            return $nilai && $nilai->nilai !== null;
+                        });
                     $nilaiCpmkTotal = $nilaiForCpmk->sum(fn ($item) => ($nilaiByBobot->get($item->id)?->nilai ?? 0) * (float) $item->bobot);
                     $bobotCpmkTotal = $nilaiForCpmk->sum('bobot');
                     $nilaiCpmk = $nilaiCpmkComplete && $bobotCpmkTotal > 0
-                        ? $nilaiCpmkTotal / $bobotCpmkTotal
+                        ? round($nilaiCpmkTotal / $bobotCpmkTotal, 2)
                         : null;
                     if ($nilaiCpmk !== null) {
                         $cpmkHasAnyScore = true;
@@ -321,32 +324,18 @@ class CapaianController extends Controller
                     continue;
                 }
 
-                $assessedCourseCount++;
                 $bobot = $bobotByTam->get($tam->id, collect())
                     ->filter(fn ($item) => (float) $item->bobot > 0)
                     ->values();
-                $complete = $bobot->isNotEmpty() && $bobot->every(fn ($item) => $nilaiByBobot->has($item->id));
-                if (!$complete) {
-                    $incompleteCourseCount++;
-                    continue;
-                }
-
-                $weightTotal = $bobot->sum('bobot');
-                if ($weightTotal > 0) {
-                    $courseScores[] = $bobot->sum(fn ($item) => (float) $nilaiByBobot->get($item->id)->nilai * (float) $item->bobot) / $weightTotal;
-                }
+                $assessedCourses[] = $bobot->map(fn ($item) => [
+                    'weight' => (float) $item->bobot,
+                    'score' => $nilaiByBobot->get($item->id)?->nilai,
+                ])->all();
             }
 
-            $hasIncomplete = $assessedCourseCount === 0 || $incompleteCourseCount > 0 || count($courseScores) < $assessedCourseCount;
-            $total_cpl = !$hasIncomplete && $courseScores !== []
-                ? array_sum($courseScores) / count($courseScores)
-                : '-';
-
-            // Status mengikuti rata-rata nilai akhir seluruh mata kuliah asesmen.
-            // Nilai parsial tidak dipakai; kelengkapan dilacak terpisah.
-            $status_cpl = $hasIncomplete
-                ? 'Belum lengkap'
-                : (($total_cpl !== '-' && (float) $total_cpl >= $nilaiMinimal) ? 'Tercapai' : 'Belum tercapai');
+            $assessmentResult = app(CplAssessmentCalculator::class)->calculate($assessedCourses, $nilaiMinimal);
+            $total_cpl = $assessmentResult['score'];
+            $hasIncomplete = !$assessmentResult['complete'];
 
             $cplData[] = [
                 'id' => $cpl->id,
@@ -356,8 +345,8 @@ class CapaianController extends Controller
                 'total_cpl' => $total_cpl,
                 'nilai_minimal' => $nilaiMinimal,
                 'nilai_surat' => $total_cpl,
-                'status_cpl' => $status_cpl,
-                'missing_cpmk_count' => $incompleteCourseCount,
+                'status_cpl' => $assessmentResult['status'],
+                'missing_cpmk_count' => $assessmentResult['missing_course_count'],
                 'nilai_lengkap' => !$hasIncomplete,
             ];
         }

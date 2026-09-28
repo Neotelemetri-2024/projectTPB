@@ -118,12 +118,15 @@ class TahunAjaranMatkulController extends Controller
             return back()->withErrors(['mataKuliahId' => 'Mata kuliah ini sudah ada di tahun ajaran yang dipilih. Silakan pilih mata kuliah lain atau tahun ajaran lain.'])->withInput();
         }
 
+        $mataKuliah = MataKuliah::findOrFail($request->mataKuliahId);
+
         DB::beginTransaction();
         try {
             $tahunAjaranMatkul = TahunAjaranMatkul::create([
                 'tahunAjaranId' => $request->tahunAjaranId,
                 'mataKuliahId' => $request->mataKuliahId,
-                'semester' => $request->semester ?? 1
+                'sks' => $mataKuliah->sks,
+                'semester' => $request->semester ?? 1,
             ]);
 
             // Create kelas for each kelas name
@@ -250,6 +253,7 @@ class TahunAjaranMatkulController extends Controller
         ]);
 
         $tahunAjaranMatkul = TahunAjaranMatkul::findOrFail($id);
+        $mataKuliah = MataKuliah::findOrFail($request->mataKuliahId);
 
         // Check if combination already exists (excluding current record)
         $existing = TahunAjaranMatkul::where('tahunAjaranId', $request->tahunAjaranId)
@@ -266,7 +270,8 @@ class TahunAjaranMatkulController extends Controller
             $tahunAjaranMatkul->update([
                 'tahunAjaranId' => $request->tahunAjaranId,
                 'mataKuliahId' => $request->mataKuliahId,
-                'semester' => $request->semester ?? 1
+                'sks' => $mataKuliah->sks,
+                'semester' => $request->semester ?? 1,
             ]);
 
             // Get existing kelas for proper comparison
@@ -758,6 +763,8 @@ class TahunAjaranMatkulController extends Controller
                     $newMatkul = TahunAjaranMatkul::create([
                         'tahunAjaranId' => $request->target_tahun_ajaran_id,
                         'mataKuliahId' => $sourceMatkul->mataKuliahId,
+                        'sks' => $sourceMatkul->getSks(),
+                        'semester' => $sourceMatkul->semester,
                     ]);
 
                     // Duplicate kelas structure

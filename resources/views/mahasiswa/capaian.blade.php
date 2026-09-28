@@ -111,7 +111,7 @@
                             <td class="px-4 py-3 font-semibold text-gray-900">{{ $cpl['kode'] }}</td>
                             <td class="px-4 py-3 text-gray-700 leading-relaxed">{{ $cpl['deskripsi'] }}</td>
                             <td class="px-4 py-3 text-center text-xl font-semibold text-gray-900">
-                                {{ $cpl['nilai_surat'] }}
+                                {{ is_numeric($cpl['nilai_surat']) ? number_format((float) $cpl['nilai_surat'], 2) : $cpl['nilai_surat'] }}
                             </td>
                             <td class="px-4 py-3 text-center">
                                 @if($cpl['status_cpl'] === 'Tercapai')
@@ -155,7 +155,7 @@
                     </div>
                     <div class="flex items-center gap-3 shrink-0">
                         <div class="text-right">
-                            <span class="text-lg font-semibold text-gray-900">{{ $cpl['nilai_surat'] }}</span>
+                            <span class="text-lg font-semibold text-gray-900">{{ is_numeric($cpl['nilai_surat']) ? number_format((float) $cpl['nilai_surat'], 2) : $cpl['nilai_surat'] }}</span>
                             @if(empty($cpl['nilai_lengkap']))
                                 <p class="text-[11px] text-amber-700 leading-tight">Nilai belum lengkap</p>
                             @endif
@@ -198,7 +198,7 @@
                                         <td class="px-3 py-2 font-medium text-gray-900">{{ $cpmk['kode'] }}</td>
                                         <td class="px-3 py-2 text-gray-700">{{ $cpmk['deskripsi'] }}</td>
                                         <td class="px-3 py-2 text-center font-medium {{ is_numeric($cpmk['nilai']) && $cpmk['nilai'] >= ($cpl['nilai_minimal'] ?? 55) ? 'text-emerald-700' : 'text-red-700' }}">
-                                            {{ $cpmk['nilai'] }}
+                                            {{ is_numeric($cpmk['nilai']) ? number_format((float) $cpmk['nilai'], 2) : $cpmk['nilai'] }}
                                         </td>
                                     </tr>
                                     @endforeach

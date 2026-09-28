@@ -42,7 +42,7 @@
         <!-- Form Pencarian -->
         <div class="p-6 border-b border-gray-200">
             <div class="flex flex-col md:flex-row md:items-center gap-3 w-full">
-                <form method="GET" action="" class="flex flex-col md:flex-row md:items-center gap-3 w-full">
+                <form method="GET" action="{{ route('admin.mata-kuliah.index') }}" class="flex flex-col md:flex-row md:items-center gap-3 w-full" data-live-search data-live-search-target="#mata-kuliah-results">
                     <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari nama atau kode mata kuliah..." class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-amber-500 focus:border-amber-500 text-sm bg-gray-50 focus:bg-white transition-colors">
                     <select name="kurikulumId" class="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-amber-500 focus:border-amber-500 text-sm bg-gray-50 focus:bg-white transition-colors">
                         <option value="">Semua Kurikulum</option>
@@ -68,6 +68,7 @@
             </div>
         </div>
 
+        <div id="mata-kuliah-results" data-live-search-results>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
@@ -142,7 +143,7 @@
     </div>
 </div>
 
-<!-- Import Error Messages -->
+        <!-- Import Error Messages -->
 @if(session('import_errors'))
     <x-error-modal 
         id="modal-error"
@@ -320,6 +321,8 @@
         </div>
     </div>
 </div>
+
+        </div>
 
 @endsection
 

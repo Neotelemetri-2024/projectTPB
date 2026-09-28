@@ -1,4 +1,5 @@
 import './bootstrap';
+import './live-search';
 
 import Alpine from 'alpinejs';
 import Toastify from 'toastify-js';
@@ -193,6 +194,20 @@ window.showToast = function(message, type = 'success') {
 // so page scripts never need to know whether ApexCharts is already available.
 window.__chartReadyQueue = window.__chartReadyQueue || [];
 let chartModulePromise = null;
+window.loadChartModule = function () {
+    if (window.ApexCharts) return Promise.resolve();
+    if (!chartModulePromise) {
+        chartModulePromise = import('./charts.js').catch((error) => {
+            chartModulePromise = null;
+            console.error('Unable to load chart module. Charts will remain unavailable.', error);
+            window.__chartReadyError = error;
+            throw error;
+        });
+    }
+
+    return chartModulePromise;
+};
+
 window.whenChartReady = function (callback) {
     if (typeof callback !== 'function') return;
     const run = () => callback(window.ApexCharts);
@@ -206,14 +221,14 @@ window.whenChartReady = function (callback) {
     }
 
     window.__chartReadyQueue.push(callback);
-    if (!chartModulePromise) {
-        chartModulePromise = import('./charts.js').catch((error) => {
-            chartModulePromise = null;
-            console.error('Unable to load chart module. Charts will remain unavailable.', error);
-            window.__chartReadyError = error;
-        });
-    }
+    window.loadChartModule().catch(() => {});
 };
+
+// Dashboard mahasiswa exposes CPL data through the view and needs the chart
+// bundle even though it does not have a page-specific chart script.
+if (window.cplCpmkData) {
+    window.loadChartModule().catch(() => {});
+}
 
 function openGlobalModal(modal) {
     if (!modal) return;

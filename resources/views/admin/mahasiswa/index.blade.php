@@ -26,7 +26,7 @@
             </div>
 
             <!-- Search and Filter Section -->
-            <form method="GET" action="{{ route('admin.mahasiswa.index') }}" class="mt-4">
+            <form method="GET" action="{{ route('admin.mahasiswa.index') }}" class="mt-4" data-live-search data-live-search-target="#mahasiswa-results">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <!-- Search -->
                     <div class="lg:col-span-2">
@@ -93,6 +93,7 @@
             @endif
         </div>
 
+        <div id="mahasiswa-results" data-live-search-results>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
@@ -176,7 +177,7 @@
     </div>
 </div>
 
-<!-- Modal Konfirmasi Hapus -->
+        <!-- Modal Konfirmasi Hapus -->
 @foreach($mahasiswa as $mhs)
     <x-confirm-modal
         :id="'modal-confirm-hapus-' . $mhs->id"
@@ -219,6 +220,8 @@
         </div>
     </div>
 </div>
+
+        </div>
 
 @endsection
 

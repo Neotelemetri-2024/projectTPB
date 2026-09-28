@@ -21,7 +21,7 @@
 
         <!-- Filter dan Search Form -->
         <div class="p-6 border-b border-gray-200">
-            <form method="GET" action="{{ route('dosen.cpmk.index') }}">
+            <form method="GET" action="{{ route('dosen.cpmk.index') }}" data-live-search data-live-search-target="#dosen-cpmk-results">
                 <!-- Reset page to 1 when filtering -->
                 <div class="flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">
                     <!-- Filter dropdowns -->
@@ -70,7 +70,7 @@
             </form>
         </div>
 
-        <div class="p-6">
+        <div id="dosen-cpmk-results" data-live-search-results class="p-6">
             <!-- No Results Message (hidden by default) -->
             <div id="no-results" class="text-center py-12 hidden">
                 <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -135,7 +135,7 @@
                             data-tahun-ajaran-display="{{ $mataKuliah->tahunAjaran->tahun ?? '' }}"
                             data-tahun-ajaran-periode="{{ $mataKuliah->tahunAjaran->periode ?? '' }}"
                             data-jenis="{{ $mataKuliah->mataKuliah->jenis ?? '' }}"
-                            data-sks="{{ $mataKuliah->mataKuliah->sks ?? '' }}"
+                            data-sks="{{ $mataKuliah->getSks() }}"
                             data-created="{{ $mataKuliah->created_at ?? '' }}">
 
                             <!-- Kode Column -->
@@ -155,7 +155,7 @@
                             <!-- SKS Column -->
                             <td class="px-6 py-4 whitespace-nowrap text-center">
                                 <div class="text-sm font-medium text-gray-900">
-                                    {{ $mataKuliah->mataKuliah->sks ?? '-' }}
+                                    {{ $mataKuliah->getSks() }}
                                 </div>
                             </td>
 

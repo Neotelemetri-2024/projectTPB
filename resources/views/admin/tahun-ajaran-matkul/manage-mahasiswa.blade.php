@@ -45,7 +45,7 @@
 
         <!-- Filter dan Search Form -->
         <div class="px-5 py-4 border-b border-gray-200">
-            <form method="GET" action="{{ route('admin.tahun-ajaran-matkul.manage-mahasiswa', $tahunAjaranMatkul->id) }}">
+            <form method="GET" action="{{ route('admin.tahun-ajaran-matkul.manage-mahasiswa', $tahunAjaranMatkul->id) }}" data-live-search data-live-search-target="#available-tam-mahasiswa-results">
                 <div class="flex flex-col md:flex-row gap-3 items-end">
                     <div class="flex-shrink-0 w-full md:w-48">
                         <label class="block text-[11px] font-medium text-gray-500 mb-1">Filter Tahun Masuk</label>
@@ -107,6 +107,7 @@
                 </div>
             </div>
 
+            <div id="available-tam-mahasiswa-results" data-live-search-results>
             <!-- Table -->
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
@@ -161,7 +162,8 @@
             </div>
         </div>
     </div>
-</div>
+        </div>
+        </div>
 
 <!-- Confirm Add Modal -->
 <x-confirm-modal

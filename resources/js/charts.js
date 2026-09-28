@@ -1,4 +1,5 @@
 import ApexCharts from 'apexcharts';
+import { onDomReady } from './dom-ready.js';
 
 window.ApexCharts = ApexCharts;
 
@@ -289,7 +290,7 @@ function renderCplCharts() {
     chartElements.forEach((element) => observer.observe(element));
 }
 
-document.addEventListener('DOMContentLoaded', renderCplCharts, { once: true });
+onDomReady(renderCplCharts);
 
 // Flush queued chart callbacks only after helpers (renderApexChart, etc.) exist.
 const pendingChartReady = Array.isArray(window.__chartReadyQueue)

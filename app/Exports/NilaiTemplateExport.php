@@ -122,7 +122,7 @@ class NilaiTemplateSheet implements FromCollection, WithHeadings, WithMapping, W
             'Mata Kuliah: ' . $this->tahunAjaranMatkul->mataKuliah->namaMatkul,
             'Kode: ' . $this->tahunAjaranMatkul->mataKuliah->kodeMatkul,
             'Tahun Ajaran: ' . $this->tahunAjaranMatkul->tahunAjaran->tahun . ' - ' . $this->tahunAjaranMatkul->tahunAjaran->periode,
-            'SKS: ' . $this->tahunAjaranMatkul->mataKuliah->sks,
+            'SKS: ' . $this->tahunAjaranMatkul->getSks(),
             'Kelas Tersedia: ' . $availableClasses,
         ];
 

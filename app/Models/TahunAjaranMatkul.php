@@ -18,6 +18,11 @@ class TahunAjaranMatkul extends Model
         'semester'
     ];
 
+    protected $casts = [
+        'sks' => 'integer',
+        'semester' => 'integer',
+    ];
+
     public function tahunAjaran()
     {
         return $this->belongsTo(TahunAjaran::class, 'tahunAjaranId');
@@ -75,6 +80,14 @@ class TahunAjaranMatkul extends Model
      */
     public function getSks()
     {
-        return $this->sks ?? $this->mataKuliah?->sks ?? 0;
+        $tamSks = is_numeric($this->sks) ? (int) $this->sks : 0;
+
+        if ($tamSks > 0) {
+            return $tamSks;
+        }
+
+        $masterSks = $this->mataKuliah?->sks;
+
+        return is_numeric($masterSks) ? max(0, (int) $masterSks) : 0;
     }
 }

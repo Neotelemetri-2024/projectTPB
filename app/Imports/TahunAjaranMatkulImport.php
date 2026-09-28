@@ -138,6 +138,10 @@ class TahunAjaranMatkulImport implements ToModel, WithHeadingRow, WithValidation
                 'semester' => $semester,
             ]);
 
+            if ((int) $tahunAjaranMatkul->sks <= 0 && (int) $mataKuliahModel->sks > 0) {
+                $tahunAjaranMatkul->update(['sks' => $mataKuliahModel->sks]);
+            }
+
             // Cari atau buat kelas
             $kelas = Kelas::firstOrCreate([
                 'tahunAjaranMatkulId' => $tahunAjaranMatkul->id,
@@ -348,4 +352,4 @@ class TahunAjaranMatkulImport implements ToModel, WithHeadingRow, WithValidation
     {
         return 4; // Mulai dari baris 4 (setelah header)
     }
-} 
+}

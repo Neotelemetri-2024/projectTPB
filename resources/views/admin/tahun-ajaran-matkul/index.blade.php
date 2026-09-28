@@ -68,7 +68,7 @@
 
         <!-- Filter dan Search -->
         <div class="px-5 py-4 border-b border-gray-200">
-            <form method="GET" action="{{ route('admin.tahun-ajaran-matkul.index') }}">
+            <form method="GET" action="{{ route('admin.tahun-ajaran-matkul.index') }}" data-live-search data-live-search-target="#table-container">
                 <div class="flex flex-col md:flex-row gap-3 items-end">
                     <div class="flex-shrink-0 w-full md:w-48">
                         <label class="block text-[11px] font-medium text-gray-500 mb-1">Filter Tahun Ajaran</label>
@@ -277,85 +277,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-</script>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('search-input');
-    const searchLoading = document.getElementById('search-loading');
-    const tableContainer = document.getElementById('table-container');
-    const tahunAjaranSelect = document.querySelector('select[name="tahun_ajaran_id"]');
-    if (!searchInput || !tableContainer) return;
-
-    let debounceTimer = null;
-    let currentController = null;
-
-    function buildUrl(page) {
-        const url = new URL(window.location.href);
-        url.searchParams.set('search', searchInput.value.trim());
-        if (tahunAjaranSelect && tahunAjaranSelect.value) {
-            url.searchParams.set('tahun_ajaran_id', tahunAjaranSelect.value);
-        }
-        if (page) {
-            url.searchParams.set('page', page);
-        } else {
-            url.searchParams.delete('page');
-        }
-        return url;
-    }
-
-    function fetchResults(url, pushState) {
-        if (currentController) currentController.abort();
-        currentController = new AbortController();
-
-        if (searchLoading) searchLoading.classList.remove('hidden');
-
-        fetch(url.toString(), {
-            credentials: 'same-origin',
-            signal: currentController.signal,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'text/html'
-            }
-        })
-        .then(res => res.text())
-        .then(html => {
-            tableContainer.innerHTML = html;
-            initTableInteractions();
-            if (pushState) {
-                window.history.replaceState({}, '', url.toString());
-            }
-        })
-        .catch(err => {
-            if (err.name !== 'AbortError') {
-                console.error('Search error:', err);
-            }
-        })
-        .finally(() => {
-            if (searchLoading) searchLoading.classList.add('hidden');
-        });
-    }
-
-    searchInput.addEventListener('input', function() {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-            fetchResults(buildUrl(null), true);
-        }, 400);
-    });
-
-    // Intercept pagination link clicks inside the table container for live search too
-    tableContainer.addEventListener('click', function(e) {
-        const link = e.target.closest('a');
-        if (!link) return;
-        const href = link.getAttribute('href');
-        if (!href) return;
-        // Only intercept pagination links (they point to the same route)
-        if (link.closest('nav') || link.closest('[aria-label="Pagination"]') || link.classList.contains('page-link')) {
-            e.preventDefault();
-            fetchResults(new URL(href, window.location.href), true);
-        }
-    });
-});
+document.addEventListener('live-search:updated', initTableInteractions);
 </script>
 
 <script>

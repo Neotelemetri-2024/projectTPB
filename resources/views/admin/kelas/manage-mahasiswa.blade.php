@@ -38,7 +38,7 @@
             @endif
 
             <!-- Search Form -->
-            <form method="GET" action="{{ route('admin.kelas.manage-mahasiswa', $kelas->id) }}" class="mb-6">
+            <form method="GET" action="{{ route('admin.kelas.manage-mahasiswa', $kelas->id) }}" class="mb-6" data-live-search data-live-search-target="#available-mahasiswa-results">
                 <div class="flex gap-4 items-end">
                     <div class="flex-1">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Cari Mahasiswa</label>
@@ -101,6 +101,7 @@
                     </div>
                 </div>
                 <div class="p-4">
+                    <div id="available-mahasiswa-results" data-live-search-results>
                     @if($availableMahasiswas->count() > 0)
                         <form id="mahasiswa-form" action="{{ route('admin.kelas.bulk-add-mahasiswa', $kelas->id) }}" method="POST">
                             @csrf
@@ -170,6 +171,7 @@
                             <p class="text-sm text-gray-500">Tidak ada mahasiswa tersedia untuk ditambahkan</p>
                         </div>
                     @endif
+                    </div>
                 </div>
             </div>
         </div>

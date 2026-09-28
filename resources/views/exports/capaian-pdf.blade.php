@@ -331,8 +331,11 @@
                 </td>
                 <td class="col-right">
                     <p class="right-intro">
-                        Berdasarkan hasil evaluasi pembelajaran, mahasiswa yang bersangkutan telah mencapai
-                        Capaian Pembelajaran Lulusan (CPL) dengan rincian sebagai berikut:
+                        @if(collect($cplData)->contains(fn ($cpl) => $cpl['status_cpl'] === 'Belum lengkap'))
+                            Nilai assessment CPL berikut belum lengkap. Nilai akhir dan status ketercapaian akan tersedia setelah seluruh nilai masuk:
+                        @else
+                            Berdasarkan hasil evaluasi pembelajaran, berikut nilai dan status Capaian Pembelajaran Lulusan (CPL):
+                        @endif
                     </p>
 
                     <table class="cpl-table">
@@ -351,7 +354,7 @@
                                     <td class="no">{{ $i + 1 }}</td>
                                     <td class="kode">{{ $cpl['kode'] }}</td>
                                     <td class="desc">{{ $cpl['deskripsi'] }}</td>
-                                    <td class="nilai">{{ $cpl['nilai_surat'] }}</td>
+                                    <td class="nilai">{{ is_numeric($cpl['nilai_surat']) ? number_format((float) $cpl['nilai_surat'], 2) : $cpl['nilai_surat'] }}</td>
                                     <td class="nilai">{{ $cpl['status_cpl'] }}</td>
                                 </tr>
                             @empty

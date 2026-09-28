@@ -72,7 +72,7 @@
                         <div class="space-y-3">
                             <div class="flex">
                                 <span class="w-16 text-sm font-medium text-gray-500">SKS:</span>
-                                <span class="text-sm text-gray-900">{{ $tahunAjaranMatkul->mataKuliah->sks }}</span>
+                                <span class="text-sm text-gray-900">{{ $tahunAjaranMatkul->getSks() }}</span>
                             </div>
                             <div class="flex">
                                 <span class="w-16 text-sm font-medium text-gray-500">Jenis:</span>

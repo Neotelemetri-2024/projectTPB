@@ -42,7 +42,7 @@
             </div>
             
             <!-- Search and Filter Section -->
-            <form method="GET" action="{{ route('admin.dosen.index') }}" class="mt-4">
+            <form method="GET" action="{{ route('admin.dosen.index') }}" class="mt-4" data-live-search data-live-search-target="#dosen-results">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <!-- Search -->
                     <div class="lg:col-span-2">
@@ -82,6 +82,7 @@
             @endif
         </div>
         
+        <div id="dosen-results" data-live-search-results>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
@@ -154,7 +155,7 @@
     </div>
 </div>
 
-<!-- Modal Konfirmasi Hapus -->
+        <!-- Modal Konfirmasi Hapus -->
 @foreach($dosen as $dsn)
     <x-confirm-modal 
         :id="'modal-confirm-hapus-' . $dsn->id"
@@ -241,6 +242,8 @@
         </div>
     </div>
 </div>
+
+        </div>
 
 @endsection 
 

@@ -78,7 +78,7 @@
 
         <div class="bg-white border border-gray-200 rounded-xl px-4 py-3">
             <p class="text-[11px] uppercase tracking-wide text-gray-500">SKS</p>
-            <p class="text-2xl font-semibold text-gray-900 mt-0.5">{{ $tahunAjaranMatkul->mataKuliah->sks ?? '-' }}</p>
+            <p class="text-2xl font-semibold text-gray-900 mt-0.5">{{ $tahunAjaranMatkul->getSks() }}</p>
         </div>
 
         <div class="bg-white border border-gray-200 rounded-xl px-4 py-3">
@@ -148,7 +148,7 @@
 
         <!-- Search Form -->
         <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
-            <form method="GET" action="{{ request()->url() }}" class="flex items-center gap-4">
+            <form method="GET" action="{{ request()->url() }}" class="flex items-center gap-4" data-live-search data-live-search-target="#nilai-mahasiswa-results">
                 <!-- Preserve existing parameters -->
                 @if(request('tab'))
                 <input type="hidden" name="tab" value="{{ request('tab') }}">
@@ -220,7 +220,7 @@
             <p id="import-progress-detail" class="text-xs text-gray-600 mt-2">Menginisialisasi import...</p>
         </div>
 
-        <div class="p-6">
+        <div id="nilai-mahasiswa-results" data-live-search-results class="p-6">
             @if($mahasiswa->isEmpty())
             <div class="text-center py-12">
                 <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

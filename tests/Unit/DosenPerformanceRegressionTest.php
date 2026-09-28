@@ -52,8 +52,11 @@ class DosenPerformanceRegressionTest extends TestCase
     {
         $view = $this->projectFile('resources/views/dosen/cpmk-laporan/show.blade.php');
 
-        $this->assertStringContainsString('window.whenChartReady(function () {', $view);
+        $this->assertStringContainsString("document.addEventListener('DOMContentLoaded'", $view);
+        $this->assertStringContainsString("typeof window.whenChartReady !== 'function'", $view);
         $this->assertStringContainsString('window.renderApexChart', $view);
+        $this->assertStringContainsString('histogram_data', $view);
+        $this->assertStringContainsString('data?.distribution || {}', $view);
         $this->assertStringNotContainsString('window.__chartReadyQueue.push(function () {', $view);
     }
 

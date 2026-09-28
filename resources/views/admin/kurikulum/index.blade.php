@@ -19,7 +19,7 @@
         </div>
 
         <div class="p-6 border-b border-gray-200">
-            <form method="GET" action="" class="flex flex-col md:flex-row md:items-center gap-3 w-full">
+            <form method="GET" action="{{ route('admin.kurikulum.index') }}" class="flex flex-col md:flex-row md:items-center gap-3 w-full" data-live-search data-live-search-target="#kurikulum-results">
                 <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari kode atau nama kurikulum..." class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-amber-500 focus:border-amber-500 text-sm bg-gray-50 focus:bg-white transition-colors">
                 <button type="submit" class="px-6 py-2.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 focus:ring-4 focus:ring-amber-300 text-sm font-medium transition-colors">
                     Cari
@@ -30,6 +30,7 @@
             </form>
         </div>
 
+        <div id="kurikulum-results" data-live-search-results>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
@@ -109,7 +110,10 @@
     </div>
 </div>
 
-@foreach($kurikulum as $item)
+        </div>
+    </div>
+
+    @foreach($kurikulum as $item)
     <x-confirm-modal
         :id="'modal-confirm-hapus-' . $item->id"
         title="Konfirmasi Hapus Kurikulum"

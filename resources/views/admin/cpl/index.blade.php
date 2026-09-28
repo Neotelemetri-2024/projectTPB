@@ -21,7 +21,7 @@
         <!-- Form Pencarian -->
         <div class="p-6 border-b border-gray-200">
             <div class="flex flex-col md:flex-row md:items-center gap-3 w-full">
-                <form method="GET" action="" class="flex flex-col md:flex-row md:items-center gap-3 w-full">
+                <form method="GET" action="{{ route('admin.cpl.index') }}" class="flex flex-col md:flex-row md:items-center gap-3 w-full" data-live-search data-live-search-target="#cpl-results">
                     <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari kode atau deskripsi CPL..." class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-amber-500 focus:border-amber-500 text-sm bg-gray-50 focus:bg-white transition-colors">
                     <button type="submit" class="px-6 py-2.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 focus:ring-4 focus:ring-amber-300 text-sm font-medium transition-colors">
                         <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -41,6 +41,7 @@
             </div>
         </div>
 
+        <div id="cpl-results" data-live-search-results>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
@@ -115,7 +116,7 @@
     </div>
 </div>
 
-<!-- Modal Konfirmasi Hapus -->
+    <!-- Modal Konfirmasi Hapus -->
 @foreach($cpl as $item)
     <x-confirm-modal 
         :id="'modal-confirm-hapus-' . $item->id"
@@ -125,5 +126,8 @@
         method="DELETE"
     />
 @endforeach
+
+        </div>
+    </div>
 
 @endsection

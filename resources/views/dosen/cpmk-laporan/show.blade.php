@@ -242,46 +242,39 @@ function buildGradeBandAnnotations(categories) {
     };
 }
 
-window.whenChartReady(function () {
-    if (!chartData || !chartData.length) {
+function initCpmkCharts() {
+    if (!Array.isArray(chartData) || !chartData.length) {
         console.warn('Tidak ada data chart CPMK');
         return;
     }
 
+    if (typeof window.renderApexChart !== 'function') {
+        console.error('Gagal merender chart CPMK: ApexCharts loader tidak tersedia.');
+        return;
+    }
+
     chartData.forEach((data, index) => {
+        const distribution = data?.distribution || {};
+        const gradeData = ['U', 'C', 'E', 'X'].map((grade) => ({
+            percentage: Number(distribution[grade]?.percentage || 0),
+            color: distribution[grade]?.color || '#9CA3AF',
+        }));
         const pieId = `pie-chart-${index}`;
         const pieEl = document.getElementById(pieId);
         if (pieEl) {
-            window.renderApexChart(pieEl, {
-                chart: {
-                    type: 'pie',
-                    height: '100%',
-                    toolbar: { show: false },
-                },
-                series: [
-                    data.distribution.U.percentage,
-                    data.distribution.C.percentage,
-                    data.distribution.E.percentage,
-                    data.distribution.X.percentage,
-                ],
-                labels: ['U', 'C', 'E', 'X'],
-                colors: [
-                    data.distribution.U.color,
-                    data.distribution.C.color,
-                    data.distribution.E.color,
-                    data.distribution.X.color,
-                ],
-                legend: {
-                    position: 'right',
-                },
-                stroke: {
-                    width: 2,
-                    colors: ['#ffffff'],
-                },
-                dataLabels: {
-                    enabled: true,
-                },
-            }, pieId);
+            try {
+                window.renderApexChart(pieEl, {
+                    chart: { type: 'pie', height: '100%', toolbar: { show: false } },
+                    series: gradeData.map((grade) => grade.percentage),
+                    labels: ['U', 'C', 'E', 'X'],
+                    colors: gradeData.map((grade) => grade.color),
+                    legend: { position: 'right' },
+                    stroke: { width: 2, colors: ['#ffffff'] },
+                    dataLabels: { enabled: true },
+                }, pieId);
+            } catch (error) {
+                console.error(`Gagal merender pie chart CPMK ${index}.`, error);
+            }
         }
 
         const histogramId = `histogram-${index}`;
@@ -292,47 +285,40 @@ window.whenChartReady(function () {
             const counts = histogramRows.map((item) => item.count);
             const maxCount = counts.length ? Math.max(...counts) : 0;
 
-            window.renderApexChart(histogramEl, {
-                chart: {
-                    type: 'area',
-                    height: '100%',
-                    toolbar: { show: false },
-                },
-                series: [{
-                    name: 'Frekuensi',
-                    data: counts,
-                }],
-                colors: ['#F97316'],
-                stroke: {
-                    curve: 'smooth',
-                    width: 3,
+            try {
+                window.renderApexChart(histogramEl, {
+                    chart: { type: 'area', height: '100%', toolbar: { show: false } },
+                    series: [{ name: 'Frekuensi', data: counts }],
                     colors: ['#F97316'],
-                },
-                fill: {
-                    type: 'solid',
-                    opacity: 0.1,
-                },
-                markers: {
-                    size: 4,
-                    colors: ['#F97316'],
-                    strokeColors: '#ffffff',
-                    strokeWidth: 2,
-                },
-                xaxis: {
-                    categories,
-                    title: { text: 'Range Nilai CPMK' },
-                },
-                yaxis: {
-                    min: 0,
-                    max: maxCount + 5,
-                    title: { text: 'Frekuensi' },
-                },
-                legend: { show: false },
-                dataLabels: { enabled: false },
-                annotations: buildGradeBandAnnotations(categories),
-            }, histogramId);
+                    stroke: { curve: 'smooth', width: 3, colors: ['#F97316'] },
+                    fill: { type: 'solid', opacity: 0.1 },
+                    markers: { size: 4, colors: ['#F97316'], strokeColors: '#ffffff', strokeWidth: 2 },
+                    xaxis: { categories, title: { text: 'Range Nilai CPMK' } },
+                    yaxis: { min: 0, max: maxCount + 5, title: { text: 'Frekuensi' } },
+                    legend: { show: false },
+                    dataLabels: { enabled: false },
+                    annotations: buildGradeBandAnnotations(categories),
+                }, histogramId);
+            } catch (error) {
+                console.error(`Gagal merender histogram CPMK ${index}.`, error);
+            }
         }
     });
-});
+}
+
+function loadCpmkChartsWhenReady() {
+    if (typeof window.whenChartReady !== 'function') {
+        console.error('Gagal memuat chart CPMK: chart loader belum tersedia.');
+        return;
+    }
+
+    window.whenChartReady(initCpmkCharts);
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadCpmkChartsWhenReady, { once: true });
+} else {
+    loadCpmkChartsWhenReady();
+}
 </script>
 @endpush

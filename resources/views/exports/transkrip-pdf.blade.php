@@ -260,6 +260,10 @@
         </tbody>
     </table>
 
+    <p style="font-size: 9px; margin-top: 6px;">
+        Keterangan Nilai Mutu: U = nilai di bawah 60; C = 60–74; E = 75–89; X = 90 ke atas.
+    </p>
+
     <div class="signature-section">
         <div style="text-align: right; margin-top: 40px;">
             <p>{{ config('institution.kota') }}, {{ date('d') }} {{ \Carbon\Carbon::now()->locale('id')->translatedFormat('F') }} {{ date('Y') }}</p>

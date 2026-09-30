@@ -115,6 +115,9 @@
                     Export PDF
                 </a>
             </div>
+            <p class="mt-3 text-xs text-gray-500">
+                Nilai Mutu: U = di bawah 60, C = 60–74, E = 75–89, X = 90 ke atas.
+            </p>
         </div>
 
         <div class="overflow-x-auto">

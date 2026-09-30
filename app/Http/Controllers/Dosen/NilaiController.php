@@ -312,17 +312,18 @@ class NilaiController extends Controller
         $studentSummaries = $mahasiswa->mapWithKeys(function ($student) use ($kelasMahasiswaMap, $kelasMahasiswaData, $nilaiData, $tahunAjaranMatkul) {
             $kelasMahasiswa = $kelasMahasiswaData->get($student->id);
             $kelas = optional($kelasMahasiswaMap->get($student->id))->kelas;
-            $totalNilai = $kelasMahasiswa ? $kelasMahasiswa->getRawOriginal('totalNilai') : null;
-            $grade = $kelasMahasiswa ? $kelasMahasiswa->getRawOriginal('grade') : null;
-
-            if ($totalNilai === null || $grade === null) {
-                $totalNilai = $nilaiData->where('mahasiswaId', $student->id)->sum(function ($nilai) {
-                    return $nilai->bobot && $nilai->bobot->bobot > 0
-                        ? $nilai->nilai * $nilai->bobot->bobot / 100
-                        : 0;
-                });
-                $grade = $this->gradeForTotal($totalNilai);
-            }
+            $studentTamId = $kelas?->tahunAjaranMatkulId ?? $tahunAjaranMatkul->id;
+            $studentNilai = $nilaiData
+                ->where('mahasiswaId', $student->id)
+                ->where('tahunAjaranMatkulId', $studentTamId);
+            $totalNilai = $studentNilai->sum(function ($nilai) {
+                return $nilai->bobot && $nilai->bobot->bobot > 0
+                    ? $nilai->nilai * $nilai->bobot->bobot / 100
+                    : 0;
+            });
+            $hasScores = $studentNilai->contains(fn ($nilai) => $nilai->bobot && $nilai->bobot->bobot > 0);
+            $totalNilai = $hasScores ? $totalNilai : null;
+            $grade = $totalNilai !== null ? $this->gradeForTotal($totalNilai) : null;
 
             return [$student->id => [
                 'kelasNama' => $kelas->namaKelas ?? 'Default',

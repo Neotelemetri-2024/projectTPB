@@ -52,7 +52,7 @@ class CapaianController extends Controller
         $akademik = $this->buildAcademicSummary($mahasiswa);
         $institution = config('institution');
 
-        $kurikulumLabel = 'Semua Kurikulum';
+        $kurikulumLabel = $akademik['kurikulum'];
         if ($kurikulumId) {
             $kurikulumLabel = \App\Models\Kurikulum::find($kurikulumId)?->nama ?? $kurikulumLabel;
         }
@@ -132,33 +132,72 @@ class CapaianController extends Controller
     private function buildAcademicSummary($mahasiswa): array
     {
         $mkDiambil = $mahasiswa->kelasMahasiswa()
-            ->with('kelas.tahunAjaranMatkul.mataKuliah')
+            ->with('kelas.tahunAjaranMatkul.mataKuliah.kurikulumRef')
             ->get();
+
+        $kurikulumNama = $mkDiambil
+            ->map(fn ($km) => $km->kelas?->tahunAjaranMatkul?->mataKuliah?->kurikulumRef?->nama)
+            ->filter()
+            ->unique()
+            ->values();
+
+        $tamIds = $mkDiambil
+            ->map(fn ($km) => $km->kelas?->tahunAjaranMatkul?->id)
+            ->filter()
+            ->unique()
+            ->values();
+        $bobotByTam = Bobot::query()->whereIn('tahunAjaranMatkulId', $tamIds)->get()->groupBy('tahunAjaranMatkulId');
+        $nilaiByTam = Nilai::query()
+            ->where('mahasiswaId', $mahasiswa->id)
+            ->whereIn('tahunAjaranMatkulId', $tamIds)
+            ->get()
+            ->groupBy('tahunAjaranMatkulId')
+            ->map(fn ($rows) => $rows->keyBy('bobotId'));
 
         $totalSks = 0;
         $totalNilaiBobot = 0;
-        $sksLulus = 0;
 
         foreach ($mkDiambil as $km) {
             $nilaiAkhir = $km->getRawOriginal('totalNilai');
-            $sks = $km->kelas->tahunAjaranMatkul->getSks() ?? 0;
+            $tam = $km->kelas?->tahunAjaranMatkul;
+            $sks = $tam?->getSks() ?? 0;
+
+            if ($nilaiAkhir === null && $tam) {
+                $weightedTotal = 0;
+                $weightTotal = 0;
+                $nilaiLookup = $nilaiByTam->get($tam->id, collect());
+                foreach ($bobotByTam->get($tam->id, collect()) as $item) {
+                    $nilai = $nilaiLookup->get($item->id);
+                    if ($nilai && $item->bobot > 0) {
+                        $weightedTotal += $nilai->nilai * $item->bobot;
+                        $weightTotal += $item->bobot;
+                    }
+                }
+                $nilaiAkhir = $weightTotal > 0 ? round($weightedTotal / $weightTotal, 2) : null;
+            }
+
+            // Match transcript totals: courses without a recorded final grade
+            // do not contribute to either the credit total or the GPA divisor.
+            if ($nilaiAkhir === null) {
+                continue;
+            }
+
             $bobot = $this->nilaiToBobot($nilaiAkhir);
 
             $totalSks += $sks;
             $totalNilaiBobot += ($bobot * $sks);
-
-            if ($nilaiAkhir !== null && (float) $nilaiAkhir >= 40) {
-                $sksLulus += $sks;
-            }
         }
 
         $ipk = $totalSks > 0 ? round($totalNilaiBobot / $totalSks, 2) : null;
 
         return [
             'ipk' => $ipk,
-            'total_sks' => $sksLulus > 0 ? $sksLulus : $totalSks,
+            'total_sks' => $totalSks,
             'predikat' => $this->predikatFromIpk($ipk),
             'gelar' => config('institution.gelar', 'S.T'),
+            'kurikulum' => $kurikulumNama->count() === 1
+                ? $kurikulumNama->first()
+                : ($kurikulumNama->count() > 1 ? 'Beragam Kurikulum' : 'Tidak diketahui'),
         ];
     }
 
@@ -169,15 +208,22 @@ class CapaianController extends Controller
         }
 
         $nilaiAkhir = (float) $nilaiAkhir;
-        if ($nilaiAkhir >= 80) return 4;
-        if ($nilaiAkhir >= 75) return 3.75;
-        if ($nilaiAkhir >= 70) return 3.5;
-        if ($nilaiAkhir >= 65) return 3;
-        if ($nilaiAkhir >= 60) return 2.75;
-        if ($nilaiAkhir >= 55) return 2.5;
-        if ($nilaiAkhir >= 50) return 2;
-        if ($nilaiAkhir >= 40) return 1;
-        return 0;
+        $grade = match (true) {
+            $nilaiAkhir >= 80 => 'A',
+            $nilaiAkhir >= 75 => 'A-',
+            $nilaiAkhir >= 70 => 'B+',
+            $nilaiAkhir >= 65 => 'B',
+            $nilaiAkhir >= 60 => 'B-',
+            $nilaiAkhir >= 55 => 'C+',
+            $nilaiAkhir >= 50 => 'C',
+            $nilaiAkhir >= 40 => 'D',
+            default => 'E',
+        };
+
+        return [
+            'A' => 4.0, 'A-' => 3.7, 'B+' => 3.3, 'B' => 3.0,
+            'B-' => 2.7, 'C+' => 2.3, 'C' => 2.0, 'D' => 1.0, 'E' => 0.0,
+        ][$grade];
     }
 
     private function predikatFromIpk(?float $ipk): string
@@ -261,6 +307,10 @@ class CapaianController extends Controller
                         ?? $matkulRel->tahunAjaranMatkul->mataKuliahId
                         ?? null;
                     return $mkId && isset($assessedPairs[$cpl->id][(int) $mkId]);
+                })->unique(function ($matkulRel) {
+                    return (int) ($matkulRel->mataKuliah->id
+                        ?? $matkulRel->tahunAjaranMatkul->mataKuliahId
+                        ?? 0);
                 });
 
                 if ($assessedLinks->isEmpty()) {

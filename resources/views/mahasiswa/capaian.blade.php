@@ -8,7 +8,7 @@
                 <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Capaian Pembelajaran</h1>
                 <p class="text-sm text-gray-500 mt-1">Ringkasan CPL mahasiswa dan unduhan surat keterangan.</p>
             </div>
-            <a href="{{ route('mahasiswa.capaian.export-pdf', request()->only(['kurikulum_id'])) }}"
+            <a href="{{ route('mahasiswa.capaian.export-pdf', ['kurikulum_id' => $kurikulumId]) }}"
                class="inline-flex items-center justify-center px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm rounded-md">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -33,7 +33,7 @@
                         <p class="text-2xl font-semibold text-gray-900 mt-0.5">{{ $akademik['ipk'] !== null ? number_format($akademik['ipk'], 2) : '-' }}</p>
                     </div>
                     <div class="border border-gray-200 rounded-xl px-4 py-3">
-                        <p class="text-[11px] uppercase tracking-wide text-gray-500">SKS Lulus</p>
+                        <p class="text-[11px] uppercase tracking-wide text-gray-500">SKS Dinilai</p>
                         <p class="text-2xl font-semibold text-gray-900 mt-0.5">{{ $akademik['total_sks'] }}</p>
                     </div>
                     <div class="border border-gray-200 rounded-xl px-4 py-3">
@@ -64,7 +64,9 @@
                     <label for="kurikulum_id" class="block text-[11px] font-medium text-gray-500 mb-1">Kurikulum</label>
                     <select name="kurikulum_id" id="kurikulum_id" onchange="this.form.submit()"
                         class="border border-gray-300 text-gray-900 text-sm rounded-md focus:ring-amber-600 focus:border-amber-600 block w-44 p-2">
-                        <option value="">Semua Kurikulum</option>
+                        @if($kurikulumList->isEmpty())
+                            <option value="">Belum ada kurikulum mata kuliah</option>
+                        @endif
                         @foreach($kurikulumList as $kur)
                             <option value="{{ $kur->id }}" {{ (string) $kurikulumId === (string) $kur->id ? 'selected' : '' }}>
                                 {{ $kur->nama }}
@@ -141,7 +143,7 @@
     <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <div class="px-5 py-4 border-b border-gray-200">
             <h2 class="text-base font-semibold text-gray-900">Detail CPMK pendukung</h2>
-            <p class="text-sm text-gray-500 mt-0.5">Buka tiap CPL untuk melihat mata kuliah dan nilai CPMK.</p>
+            <p class="text-sm text-gray-500 mt-0.5">Buka tiap CPL untuk melihat kontribusi nilai CPMK sesuai detail dosen.</p>
         </div>
 
         <div class="divide-y divide-gray-100">
@@ -175,7 +177,7 @@
                                     <th class="px-3 py-2 text-left font-medium text-gray-500">Mata Kuliah</th>
                                     <th class="px-3 py-2 text-left font-medium text-gray-500">CPMK</th>
                                     <th class="px-3 py-2 text-left font-medium text-gray-500">Deskripsi</th>
-                                    <th class="px-3 py-2 text-center font-medium text-gray-500">Nilai</th>
+                                    <th class="px-3 py-2 text-center font-medium text-gray-500">Kontribusi CPMK</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100">
@@ -197,7 +199,7 @@
                                         @endif
                                         <td class="px-3 py-2 font-medium text-gray-900">{{ $cpmk['kode'] }}</td>
                                         <td class="px-3 py-2 text-gray-700">{{ $cpmk['deskripsi'] }}</td>
-                                        <td class="px-3 py-2 text-center font-medium {{ is_numeric($cpmk['nilai']) && $cpmk['nilai'] >= ($cpl['nilai_minimal'] ?? 55) ? 'text-emerald-700' : 'text-red-700' }}">
+                                        <td class="px-3 py-2 text-center font-medium {{ $cpmk['status_capaian'] === 'Tercapai' ? 'text-emerald-700' : 'text-gray-700' }}">
                                             {{ is_numeric($cpmk['nilai']) ? number_format((float) $cpmk['nilai'], 2) : $cpmk['nilai'] }}
                                         </td>
                                     </tr>

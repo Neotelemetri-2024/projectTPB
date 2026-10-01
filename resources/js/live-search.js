@@ -75,6 +75,10 @@ function createLiveSearch(form) {
             const nextTarget = documentFragment.querySelector(targetSelector);
             // Some existing endpoints (notably Tahun Ajaran-Matkul) already
             // return the result partial for XMLHttpRequest callers.
+            if (!nextTarget && (response.redirected || /<!doctype html|<html\b/i.test(html))) {
+                window.location.assign(response.url || url.toString());
+                return;
+            }
             target.innerHTML = nextTarget ? nextTarget.innerHTML : html;
             target.dispatchEvent(new CustomEvent('live-search:updated', { bubbles: true }));
             if (updateHistory) window.history.replaceState({}, '', url.toString());
@@ -97,7 +101,9 @@ function createLiveSearch(form) {
         if (!link || !link.href || link.target === '_blank') return;
 
         const linkUrl = new URL(link.href, window.location.origin);
-        if (linkUrl.origin !== window.location.origin) return;
+        const formUrl = new URL(form.action || window.location.href, window.location.origin);
+        if (linkUrl.origin !== window.location.origin || linkUrl.pathname !== formUrl.pathname) return;
+        if (!PAGE_PARAMETERS.some((parameter) => linkUrl.searchParams.has(parameter))) return;
 
         event.preventDefault();
         replaceResults(linkUrl);
@@ -118,4 +124,3 @@ if (document.readyState === 'loading') {
 } else {
     initLiveSearch();
 }
-

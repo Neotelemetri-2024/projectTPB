@@ -20,11 +20,11 @@
     </nav>
 
     <!-- Header -->
-    <div class="bg-white border border-gray-200 rounded-xl">
+    <div class="bg-white border border-gray-200 rounded-xl min-w-0">
         <div class="p-6 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-xl font-semibold text-gray-900">CPMK - {{ $tahunAjaranMatkul->mataKuliah->namaMatkul }}</h1>
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div class="min-w-0">
+                    <h1 class="text-xl font-semibold text-gray-900 break-words">CPMK - {{ $tahunAjaranMatkul->mataKuliah->namaMatkul }}</h1>
                     <p class="text-gray-600 mt-1">{{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }}-{{ $tahunAjaranMatkul->mataKuliah->kurikulum }} • {{ $tahunAjaranMatkul->tahunAjaran->tahun }} - {{ $tahunAjaranMatkul->tahunAjaran->periode }}</p>
                 </div>
                 <div class="flex items-center">
@@ -78,7 +78,7 @@
         </div>
 
         <!-- Search dan Filter Form -->
-        <div class="p-6">
+        <div class="p-4 md:p-6 min-w-0">
             <form method="GET" action="{{ route('dosen.cpmk.show', $tahunAjaranMatkul->id) }}">
                 <div class="flex flex-col sm:flex-row gap-4">
                     <div class="flex-1">
@@ -106,7 +106,7 @@
     </div>
 
     <!-- Content -->
-    <div class="bg-white border border-gray-200 rounded-xl">
+    <div class="bg-white border border-gray-200 rounded-xl min-w-0">
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <div class="flex space-x-2">
@@ -122,11 +122,11 @@
                 @endphp
             </div>
         </div>
-                <div class="p-6">
+        <div class="p-4 md:p-6 min-w-0">
 
             <!-- Tab Content: CPMK Utama -->
             <div id="tab-content-main-cpmk">
-                <div class="overflow-x-auto bg-white rounded-lg">
+                <div class="max-w-full overflow-x-auto bg-white rounded-lg">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
@@ -136,7 +136,7 @@
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Deskripsi
                                 </th>
-                                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                                     CPL Terkait
                                 </th>
                                 <th scope="col" class="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -235,7 +235,7 @@
 
             <!-- Tab Content: Sub-CPMK -->
             <div id="tab-content-sub-cpmk" class="hidden">
-                <div class="overflow-x-auto bg-white rounded-lg">
+                <div class="max-w-full overflow-x-auto bg-white rounded-lg">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
@@ -248,7 +248,7 @@
                                 <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Parents
                                 </th>
-                                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                                     CPL Terkait
                                 </th>
                                 <th scope="col" class="px-6 py-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">

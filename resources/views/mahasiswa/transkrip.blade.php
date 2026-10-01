@@ -35,12 +35,12 @@
                         <div class="flex justify-between">
                             <span class="text-sm font-medium text-gray-500">
                                 @if($periodeTerpilih === 'all')
-                                    Total SKS diambil
+                                    Total SKS dinilai
                                 @else
-                                    Jumlah SKS diambil
+                                    Jumlah SKS dinilai
                                 @endif
                             </span>
-                            <span class="text-sm text-gray-900">{{ collect($matkulDiambil)->sum('sks') }}</span>
+                            <span class="text-sm text-gray-900">{{ $totalSks }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-sm font-medium text-gray-500">
@@ -61,31 +61,7 @@
                                 @endif
                             </span>
                             <span class="text-sm font-semibold text-gray-900">
-                                @php
-                                    $totalBobot = 0;
-                                    $totalSks = 0;
-                                    foreach($matkulDiambil as $mk) {
-                                        if($mk['grade'] && $mk['grade'] !== '-') {
-                                            $bobot = 0;
-                                            switch($mk['grade']) {
-                                                case 'A': $bobot = 4.0; break;
-                                                case 'A-': $bobot = 3.7; break;
-                                                case 'B+': $bobot = 3.3; break;
-                                                case 'B': $bobot = 3.0; break;
-                                                case 'B-': $bobot = 2.7; break;
-                                                case 'C+': $bobot = 2.3; break;
-                                                case 'C': $bobot = 2.0; break;
-                                                case 'C-': $bobot = 1.7; break;
-                                                case 'D': $bobot = 1.0; break;
-                                                case 'E': $bobot = 0.0; break;
-                                            }
-                                            $totalBobot += $bobot * $mk['sks'];
-                                            $totalSks += $mk['sks'];
-                                        }
-                                    }
-                                    $ipk = $totalSks > 0 ? round($totalBobot / $totalSks, 2) : 0.00;
-                                @endphp
-                                {{ number_format($ipk, 2) }}
+                                {{ $ipk !== null ? number_format($ipk, 2) : '-' }}
                             </span>
                         </div>
                     </div>
@@ -116,7 +92,7 @@
                 </a>
             </div>
             <p class="mt-3 text-xs text-gray-500">
-                Nilai Mutu: U = di bawah 60, C = 60–74, E = 75–89, X = 90 ke atas.
+                <strong>Arti Nilai Mutu:</strong> kategori berdasarkan nilai akhir. U = di bawah 60; C = 60 sampai kurang dari 75; E = 75 sampai kurang dari 90; X = 90 ke atas. Kode ini berbeda dari huruf Grade.
             </p>
         </div>
 

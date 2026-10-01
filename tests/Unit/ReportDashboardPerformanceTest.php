@@ -131,7 +131,8 @@ class ReportDashboardPerformanceTest extends TestCase
         $calculator = $this->source('app/Services/CplAssessmentCalculator.php');
         $this->assertStringContainsString('CplAssessmentCalculator::class)->calculate($assessedCourses, $nilaiMinimal)', $controller);
         $this->assertStringContainsString("\$component['score'] !== null", $calculator);
-        $this->assertStringContainsString('round($nilaiCpmkTotal / $bobotCpmkTotal, 2)', $controller);
+        $this->assertStringContainsString('round($nilaiCpmkTotal / 100, 2)', $controller);
+        $this->assertStringContainsString("foreach (\$cpl->cpmk->unique('id') as \$cpmk)", $controller);
         $this->assertStringContainsString('round($weightedTotal / $totalWeight, 2)', $calculator);
         $this->assertStringContainsString('round(array_sum($courseScores) / count($courseScores), 2)', $calculator);
         $this->assertStringContainsString('number_format((float) $cpl[\'nilai_surat\'], 2)', $this->source('resources/views/exports/capaian-pdf.blade.php'));

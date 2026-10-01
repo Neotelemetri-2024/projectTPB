@@ -223,7 +223,7 @@
                 <!-- Row untuk indeks prestasi (2 kolom) -->
                 <tr style="background-color: #f0f0f0;">
                     <td colspan="5" class="center"><strong>Indeks Prestasi</strong></td>
-                    <td colspan="5" class="center"><strong>{{ number_format($ipk, 2) }}</strong></td>
+                    <td colspan="5" class="center"><strong>{{ $ipk !== null ? number_format($ipk, 2) : '-' }}</strong></td>
                 </tr>
 
             @else
@@ -254,14 +254,14 @@
                 <!-- Row untuk indeks prestasi (1 kolom) -->
                 <tr style="background-color: #f0f0f0;">
                     <td colspan="2" class="center"><strong>Indeks Prestasi</strong></td>
-                    <td colspan="3" class="center"><strong>{{ number_format($ipk, 2) }}</strong></td>
+                    <td colspan="3" class="center"><strong>{{ $ipk !== null ? number_format($ipk, 2) : '-' }}</strong></td>
                 </tr>
             @endif
         </tbody>
     </table>
 
-    <p style="font-size: 9px; margin-top: 6px;">
-        Keterangan Nilai Mutu: U = nilai di bawah 60; C = 60–74; E = 75–89; X = 90 ke atas.
+    <p style="font-size: 10px; line-height: 1.4; margin-top: 12px; padding: 7px; border: 1px solid #999;">
+        <strong>Arti Nilai Mutu:</strong> kategori berdasarkan nilai akhir. U = di bawah 60; C = 60 sampai kurang dari 75; E = 75 sampai kurang dari 90; X = 90 ke atas. Kode ini berbeda dari huruf Grade.
     </p>
 
     <div class="signature-section">

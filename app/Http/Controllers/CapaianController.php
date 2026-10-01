@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Cpl;
+use App\Models\Kurikulum;
 use App\Models\Bobot;
 use App\Models\Nilai;
 use App\Services\CplAssessmentScope;
@@ -18,7 +19,8 @@ class CapaianController extends Controller
         $user = auth()->user();
         $mahasiswa = $user->mahasiswa;
         $tahunAjaranId = $request->input('tahun_ajaran_id');
-        $kurikulumId = $request->input('kurikulum_id');
+        $kurikulumList = $this->studentKurikulumList($mahasiswa->id);
+        $kurikulumId = $this->selectedKurikulumId($kurikulumList, $request->input('kurikulum_id'));
         $cplIdTerpilih = $request->input('cpl_id');
 
         $cplList = Cpl::orderBy('kodeCpl')->get();
@@ -26,8 +28,7 @@ class CapaianController extends Controller
         $akademik = $this->buildAcademicSummary($mahasiswa);
 
         $scope = app(CplAssessmentScope::class);
-        $kurikulumList = $scope->kurikulumList();
-        $hasAssessedMatkul = $scope->hasExplicitAssessment($kurikulumId ? (int) $kurikulumId : null);
+        $hasAssessedMatkul = $kurikulumId !== null && $scope->hasExplicitAssessment($kurikulumId);
 
         return view('mahasiswa.capaian', [
             'mahasiswa' => $mahasiswa,
@@ -46,16 +47,14 @@ class CapaianController extends Controller
     {
         $user = auth()->user();
         $mahasiswa = $user->mahasiswa;
-        $kurikulumId = $request->input('kurikulum_id');
+        $kurikulumList = $this->studentKurikulumList($mahasiswa->id);
+        $kurikulumId = $this->selectedKurikulumId($kurikulumList, $request->input('kurikulum_id'));
 
         $cplData = $this->buildCplData($mahasiswa->id, null, null, false, $kurikulumId);
         $akademik = $this->buildAcademicSummary($mahasiswa);
         $institution = config('institution');
 
-        $kurikulumLabel = $akademik['kurikulum'];
-        if ($kurikulumId) {
-            $kurikulumLabel = \App\Models\Kurikulum::find($kurikulumId)?->nama ?? $kurikulumLabel;
-        }
+        $kurikulumLabel = $kurikulumList->firstWhere('id', $kurikulumId)?->nama ?? '-';
 
         $logoPath = public_path('images/logo-unand.png');
         $logoBase64 = is_file($logoPath)
@@ -124,6 +123,23 @@ class CapaianController extends Controller
         ];
 
         return $date->day . ' ' . $bulan[(int) $date->month] . ' ' . $date->year;
+    }
+
+    private function studentKurikulumList(int $mahasiswaId)
+    {
+        return Kurikulum::query()
+            ->whereHas('mataKuliah.tahunAjaranMatkul.kelas.kelasMahasiswa', function ($query) use ($mahasiswaId) {
+                $query->where('mahasiswaId', $mahasiswaId);
+            })
+            ->orderBy('kode')
+            ->get(['id', 'kode', 'nama']);
+    }
+
+    private function selectedKurikulumId($kurikulumList, $requestedId): ?int
+    {
+        $selected = $kurikulumList->firstWhere('id', $requestedId) ?? $kurikulumList->first();
+
+        return $selected?->id;
     }
 
     /**
@@ -269,7 +285,7 @@ class CapaianController extends Controller
         $tamIds = $tamByMataKuliah->flatten()->pluck('id')->unique()->values();
 
         $cplQuery = Cpl::with([
-            'cpmk' => fn ($q) => $q->orderBy('kodeCpmk')->with(['cpmkMatKul.mataKuliah', 'cpmkMatKul.tahunAjaranMatkul']),
+            'cpmk' => fn ($q) => $q->orderBy('kodeCpmk')->with(['children', 'cpmkMatKul.tahunAjaranMatkul.mataKuliah']),
         ])->orderBy('kodeCpl');
 
         if ($cplIdTerpilih) {
@@ -300,73 +316,67 @@ class CapaianController extends Controller
 
             $cpmkData = [];
             $assessedCourses = [];
+            $shownCpmkKeys = [];
 
-            foreach ($cpl->cpmk as $cpmk) {
-                $assessedLinks = $cpmk->cpmkMatKul->filter(function ($matkulRel) use ($cpl, $assessedPairs) {
-                    $mkId = $matkulRel->mataKuliah->id
-                        ?? $matkulRel->tahunAjaranMatkul->mataKuliahId
-                        ?? null;
-                    return $mkId && isset($assessedPairs[$cpl->id][(int) $mkId]);
-                })->unique(function ($matkulRel) {
-                    return (int) ($matkulRel->mataKuliah->id
-                        ?? $matkulRel->tahunAjaranMatkul->mataKuliahId
-                        ?? 0);
-                });
+            foreach ($cpl->cpmk->unique('id') as $cpmk) {
+                // Detail dosen hanya menampilkan CPMK leaf pada kelas/TAM yang bersangkutan.
+                if ($cpmk->children->isNotEmpty()) {
+                    continue;
+                }
+
+                $assessedLinks = $cpmk->cpmkMatKul->filter(function ($matkulRel) use ($cpl, $assessedPairs, $tamIds) {
+                    $tam = $matkulRel->tahunAjaranMatkul;
+                    return $tam
+                        && $tamIds->contains($tam->id)
+                        && isset($assessedPairs[$cpl->id][(int) $tam->mataKuliahId]);
+                })->unique('tahunAjaranMatkulId');
 
                 if ($assessedLinks->isEmpty()) {
                     continue;
                 }
 
-                $cpmkHasAnyScore = false;
-
                 foreach ($assessedLinks as $matkulRel) {
-                    $matkul = $matkulRel->mataKuliah;
-                    $mkId = (int) ($matkul->id ?? $matkulRel->tahunAjaranMatkul->mataKuliahId ?? 0);
-
-                    $tam = $tamByMataKuliah->get($mkId, collect())
-                        ->first(fn ($item) => isset($assessedPairs[$cpl->id][$mkId]));
-                    if (!$tam) {
+                    $tam = $matkulRel->tahunAjaranMatkul;
+                    $detailKey = $tam->id . ':' . $cpmk->id;
+                    if (isset($shownCpmkKeys[$detailKey])) {
                         continue;
                     }
+                    $shownCpmkKeys[$detailKey] = true;
+                    $matkul = $tam->mataKuliah;
+                    $nilaiRecords = $nilaiByBobot->values()->filter(fn ($nilai) =>
+                        (int) $nilai->tahunAjaranMatkulId === (int) $tam->id
+                        && (int) $nilai->cpmkId === (int) $cpmk->id
+                        && $nilai->nilai !== null
+                        && $nilai->bobot
+                        && (float) $nilai->bobot->bobot > 0
+                    );
+                    $bobotCpmkTotal = $nilaiRecords->sum(fn ($nilai) => (float) $nilai->bobot->bobot);
+                    $nilaiCpmkTotal = $nilaiRecords->sum(fn ($nilai) => $nilai->nilai * (float) $nilai->bobot->bobot);
+                    $nilaiRataRata = $bobotCpmkTotal > 0 ? $nilaiCpmkTotal / $bobotCpmkTotal : null;
+                    $kontribusiCpmk = $bobotCpmkTotal > 0 ? round($nilaiCpmkTotal / 100, 2) : null;
 
-                    $bobot = $bobotByTam->get($tam->id, collect());
-                    $positiveBobot = $bobot->filter(fn ($item) => (float) $item->bobot > 0)->values();
-                    $nilaiForCpmk = $positiveBobot->filter(fn ($item) => (int) $item->cpmkId === (int) $cpmk->id);
-                    $nilaiCpmkComplete = $nilaiForCpmk->isNotEmpty()
-                        && $nilaiForCpmk->every(function ($item) use ($nilaiByBobot) {
-                            $nilai = $nilaiByBobot->get($item->id);
-
-                            return $nilai && $nilai->nilai !== null;
-                        });
-                    $nilaiCpmkTotal = $nilaiForCpmk->sum(fn ($item) => ($nilaiByBobot->get($item->id)?->nilai ?? 0) * (float) $item->bobot);
-                    $bobotCpmkTotal = $nilaiForCpmk->sum('bobot');
-                    $nilaiCpmk = $nilaiCpmkComplete && $bobotCpmkTotal > 0
-                        ? round($nilaiCpmkTotal / $bobotCpmkTotal, 2)
-                        : null;
-                    if ($nilaiCpmk !== null) {
-                        $cpmkHasAnyScore = true;
-                    }
-
-                    $total = $nilaiCpmk;
-
-                    $status_capaian = ($total !== null && $total >= $nilaiMinimal) ? 'Tercapai' : 'Belum Tercapai';
                     $cpmkData[] = [
                         'id' => $cpmk->id,
                         'kode' => $cpmk->kodeCpmk,
                         'deskripsi' => $cpmk->deskripsi,
+                        'mata_kuliah_id' => $tam->mataKuliahId,
                         'kode_mk' => $matkul ? $matkul->kodeMatkul : '-',
                         'nama_mk' => $matkul ? $matkul->namaMatkul : '-',
-                        'nilai' => $nilaiCpmk !== null ? $nilaiCpmk : '-',
-                        'total' => $total !== null ? $total : '-',
-                        'status_capaian' => $total !== null ? $status_capaian : '-',
+                        'nilai' => $kontribusiCpmk ?? '-',
+                        'total' => $kontribusiCpmk ?? '-',
+                        'status_capaian' => $nilaiRataRata === null ? '-' : ($nilaiRataRata >= $nilaiMinimal ? 'Tercapai' : 'Belum Tercapai'),
                         'diases' => true,
                     ];
                 }
-
-                if (!$cpmkHasAnyScore) {
-                    continue;
-                }
             }
+
+            // Satu kode CPMK per mata kuliah cukup ditampilkan sekali, termasuk
+            // ketika impor lama menyimpan beberapa TAM/tautan untuk matkul yang sama.
+            $cpmkData = collect($cpmkData)
+                ->groupBy(fn ($row) => $row['mata_kuliah_id'] . ':' . $row['kode'])
+                ->map(fn ($rows) => $rows->first(fn ($row) => is_numeric($row['nilai'])) ?? $rows->first())
+                ->values()
+                ->all();
 
             foreach (($assessedPairs[$cpl->id] ?? []) as $mkId => $_) {
                 $tam = $tamByMataKuliah->get((int) $mkId, collect())->first();

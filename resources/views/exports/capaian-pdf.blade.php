@@ -305,7 +305,7 @@
                         <tr>
                             <td class="k">Kurikulum</td>
                             <td class="s">:</td>
-                            <td class="v">{{ $kurikulumLabel ?? 'Semua Kurikulum' }}</td>
+                            <td class="v">{{ $kurikulumLabel }}</td>
                         </tr>
                         <tr>
                             <td class="k">IPK</td>
@@ -313,7 +313,7 @@
                             <td class="v">{{ $akademik['ipk'] !== null ? number_format($akademik['ipk'], 2) : '-' }}</td>
                         </tr>
                         <tr>
-                            <td class="k">Total SKS Lulus</td>
+                            <td class="k">Total SKS Dinilai</td>
                             <td class="s">:</td>
                             <td class="v">{{ $akademik['total_sks'] }} SKS</td>
                         </tr>

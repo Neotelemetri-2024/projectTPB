@@ -24,7 +24,7 @@ class KHSController extends Controller
         if ($mahasiswa) {
             $kelasMahasiswa = $this->loadEnrollments($mahasiswa);
             $periodes = $this->buildPeriods($kelasMahasiswa);
-            $periodeTerpilih = $request->input('periode_id') ?? ($periodes[1]['id'] ?? 'all');
+            $periodeTerpilih = $request->input('periode_id', 'all');
 
             $filteredKelas = $periodeTerpilih === 'all'
                 ? $kelasMahasiswa
@@ -35,7 +35,9 @@ class KHSController extends Controller
             $matkulDiambil = $this->buildTranscriptRows($mahasiswa->id, $filteredKelas, true);
         }
 
-        return view('mahasiswa.transkrip', compact('matkulDiambil', 'periodes', 'periodeTerpilih', 'mahasiswa'));
+        ['totalSks' => $totalSks, 'ipk' => $ipk] = $this->summarizeRows($matkulDiambil);
+
+        return view('mahasiswa.transkrip', compact('matkulDiambil', 'periodes', 'periodeTerpilih', 'mahasiswa', 'totalSks', 'ipk'));
     }
 
     public function exportPDF()
@@ -52,15 +54,7 @@ class KHSController extends Controller
             false
         );
 
-        $totalBobot = 0;
-        $totalSks = 0;
-        foreach ($matkulDiambil as $row) {
-            if ($row['grade'] && $row['grade'] !== '-') {
-                $totalBobot += $this->gradePoint($row['grade']) * $row['sks'];
-                $totalSks += $row['sks'];
-            }
-        }
-        $ipk = $totalSks > 0 ? round($totalBobot / $totalSks, 2) : 0.00;
+        ['totalSks' => $totalSks, 'ipk' => $ipk] = $this->summarizeRows($matkulDiambil);
 
         $html = view('exports.transkrip-pdf', compact(
             'mahasiswa',
@@ -247,5 +241,23 @@ class KHSController extends Controller
             'B-' => 2.7, 'C+' => 2.3, 'C' => 2.0, 'C-' => 1.7,
             'D' => 1.0, 'E' => 0.0,
         ][$grade] ?? 0.0;
+    }
+
+    private function summarizeRows(array $rows): array
+    {
+        $totalBobot = 0;
+        $totalSks = 0;
+
+        foreach ($rows as $row) {
+            if ($row['grade'] !== null && $row['grade'] !== '-') {
+                $totalBobot += $this->gradePoint($row['grade']) * $row['sks'];
+                $totalSks += $row['sks'];
+            }
+        }
+
+        return [
+            'totalSks' => $totalSks,
+            'ipk' => $totalSks > 0 ? round($totalBobot / $totalSks, 2) : null,
+        ];
     }
 }

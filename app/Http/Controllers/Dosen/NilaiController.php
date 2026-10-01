@@ -1018,9 +1018,26 @@ class NilaiController extends Controller
             // Get mahasiswa data
             $mahasiswa = Mahasiswa::findOrFail($mahasiswaId);
 
+            // Halaman nilai bisa memuat mahasiswa dari beberapa kelas/TAM terkait.
+            // Modal harus membaca kelas mahasiswa yang sama dengan baris tabel.
+            $studentClassId = $request->integer('student_class_id');
+            $studentEnrollment = KelasMahasiswa::with('kelas')
+                ->where('mahasiswaId', $mahasiswaId)
+                ->whereHas('kelas', function ($query) use ($dosen, $tahunAjaranMatkul, $studentClassId) {
+                    $query->whereHas('dosenPengampuKelas', fn ($q) => $q->where('dosenId', $dosen->id))
+                        ->whereHas('tahunAjaranMatkul', fn ($q) => $q
+                            ->where('mataKuliahId', $tahunAjaranMatkul->mataKuliahId)
+                            ->where('tahunAjaranId', $tahunAjaranMatkul->tahunAjaranId));
+                    if ($studentClassId) {
+                        $query->where('tahunAjaranMatkulId', $studentClassId);
+                    }
+                })
+                ->firstOrFail();
+            $detailTamId = $studentEnrollment->kelas->tahunAjaranMatkulId;
+
             // Get all CPMK for this mata kuliah - only leaf CPMK (without children)
             $cpmkList = CpmkMatKul::with(['cpmk.cpl', 'cpmk.children'])
-                ->where('tahunAjaranMatkulId', $id)
+                ->where('tahunAjaranMatkulId', $detailTamId)
                 ->get()
                 ->unique('cpmkId')
                 ->map(function ($cpmkMatKul) {
@@ -1036,12 +1053,12 @@ class NilaiController extends Controller
 
             // Get bobot data
             $bobotData = Bobot::with(['komponen', 'cpmk'])
-                ->where('tahunAjaranMatkulId', $id)
+                ->where('tahunAjaranMatkulId', $detailTamId)
                 ->get();
 
             // Get nilai data for this student
             $nilaiData = Nilai::with(['mahasiswa', 'cpmk', 'bobot.komponen'])
-                ->where('tahunAjaranMatkulId', $id)
+                ->where('tahunAjaranMatkulId', $detailTamId)
                 ->where('mahasiswaId', $mahasiswaId)
                 ->get();
 

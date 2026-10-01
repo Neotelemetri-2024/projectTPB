@@ -44,8 +44,8 @@
     <!-- Header -->
     <div class="bg-white border border-gray-200 rounded-xl">
         <div class="p-6 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-                <div>
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div class="min-w-0">
                     <h1 class="text-xl font-semibold text-gray-900">Nilai Mahasiswa - {{ $tahunAjaranMatkul->mataKuliah->namaMatkul }}</h1>
                     <p class="text-gray-600 mt-1">{{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }}-{{ $tahunAjaranMatkul->mataKuliah->kurikulum }} • {{ $tahunAjaranMatkul->tahunAjaran->tahun }} - {{ $tahunAjaranMatkul->tahunAjaran->periode }}</p>
                 </div>
@@ -101,15 +101,15 @@
     <!-- Students List -->
     <div class="bg-white border border-gray-200 rounded-xl">
         <div class="p-6 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-                <div>
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div class="min-w-0">
                     <h3 class="text-lg font-semibold text-gray-900">Daftar Mahasiswa</h3>
                     <p class="text-gray-600 mt-1">Pilih mahasiswa untuk mengelola nilai</p>
                 </div>
-                <div class="flex items-center space-x-4">
+                <div class="flex flex-wrap items-center gap-2">
                     <!-- Export Template Button -->
                     <a href="{{ route('dosen.nilai.export-template', $tahunAjaranMatkul->id) }}"
-                        class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
+                        class="inline-flex items-center justify-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors duration-200">
                         <svg class="w-4 h-4 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
@@ -338,6 +338,7 @@
                                         <button type="button"
                                             class="btn-detail-nilai px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-xs font-medium rounded transition-colors duration-200"
                                             data-mahasiswa-id="{{ $mhs->id }}"
+                                            data-student-class-id="{{ $studentSummary['studentClassId'] }}"
                                             data-mahasiswa-nama="{{ $mhs->nama }}"
                                             data-nim="{{ $mhs->nim }}">
                                             <svg class="w-3 h-3 mr-1 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -690,7 +691,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Detail modal functionality
-        function showDetailModal(mahasiswaId, nim, nama) {
+        function showDetailModal(mahasiswaId, studentClassId, nim, nama) {
             const modal = document.getElementById('detail-modal');
             const modalTitle = document.getElementById('detail-modal-title');
 
@@ -698,7 +699,7 @@
                 modalTitle.textContent = `Detail Nilai Mahasiswa`;
 
                 // Load detail data
-                loadDetailData(mahasiswaId);
+                loadDetailData(mahasiswaId, studentClassId);
 
                 // Show modal (daisyUI)
                 modal.classList.add('modal-open');
@@ -714,10 +715,10 @@
             }
         }
 
-        function loadDetailData(mahasiswaId) {
+        function loadDetailData(mahasiswaId, studentClassId) {
             // Gunakan URL yang aman untuk HTTPS
             const baseUrl = window.location.protocol + '//' + window.location.host;
-            const url = `${baseUrl}/dosen/nilai/{{ $tahunAjaranMatkul->id }}/detail?mahasiswa_id=${mahasiswaId}`;
+            const url = `${baseUrl}/dosen/nilai/{{ $tahunAjaranMatkul->id }}/detail?mahasiswa_id=${encodeURIComponent(mahasiswaId)}&student_class_id=${encodeURIComponent(studentClassId)}`;
 
             console.log('Loading detail for mahasiswa:', mahasiswaId, 'URL:', url);
 
@@ -782,6 +783,7 @@
                 e.preventDefault();
                 const button = e.target.closest('.btn-detail-nilai');
                 const mahasiswaId = button.getAttribute('data-mahasiswa-id');
+                const studentClassId = button.getAttribute('data-student-class-id');
                 const mahasiswaNama = button.getAttribute('data-mahasiswa-nama');
                 const nim = button.getAttribute('data-nim');
 
@@ -792,7 +794,7 @@
                 });
 
                 // Show detail modal
-                showDetailModal(mahasiswaId, nim, mahasiswaNama);
+                showDetailModal(mahasiswaId, studentClassId, nim, mahasiswaNama);
             }
         });
 
@@ -1002,73 +1004,6 @@
                     </svg>
                     Simpan Semua Nilai
                 `;
-                }
-            }
-        }
-
-        // Function to update nilai display (total nilai and grade)
-        function updateNilaiDisplay(mahasiswaId) {
-            // Get all nilai inputs for this mahasiswa
-            const nilaiInputs = document.querySelectorAll(`input[data-mahasiswa-id="${mahasiswaId}"]`);
-            let totalNilai = 0;
-            let validNilaiCount = 0;
-
-            // Calculate total nilai
-            nilaiInputs.forEach(input => {
-                const nilai = parseFloat(input.value);
-                if (!isNaN(nilai) && nilai >= 0) {
-                    totalNilai += nilai;
-                    validNilaiCount++;
-                }
-            });
-
-            // Calculate average if there are valid nilai
-            const averageNilai = validNilaiCount > 0 ? totalNilai / validNilaiCount : 0;
-
-            // Update total nilai display
-            const totalNilaiCell = document.querySelector(`tr[data-mahasiswa-id="${mahasiswaId}"] td:nth-child(7)`); // Adjust index based on your table structure
-            if (totalNilaiCell) {
-                const totalNilaiSpan = totalNilaiCell.querySelector('span');
-                if (totalNilaiSpan) {
-                    totalNilaiSpan.textContent = averageNilai > 0 ? averageNilai.toFixed(2) : '-';
-                }
-            }
-
-            // Calculate and update grade
-            let grade = '-';
-            if (averageNilai > 0) {
-                if (averageNilai >= 80) grade = 'A';
-                else if (averageNilai >= 75) grade = 'A-';
-                else if (averageNilai >= 70) grade = 'B+';
-                else if (averageNilai >= 65) grade = 'B';
-                else if (averageNilai >= 60) grade = 'B-';
-                else if (averageNilai >= 55) grade = 'C+';
-                else if (averageNilai >= 50) grade = 'C';
-                else if (averageNilai >= 45) grade = 'D';
-                else grade = 'E';
-            }
-
-            // Update grade display
-            const gradeCell = document.querySelector(`tr[data-mahasiswa-id="${mahasiswaId}"] td:nth-child(8)`); // Adjust index based on your table structure
-            if (gradeCell) {
-                const gradeSpan = gradeCell.querySelector('span');
-                if (gradeSpan) {
-                    // Update grade text
-                    gradeSpan.textContent = grade;
-
-                    // Update grade color classes
-                    gradeSpan.className = 'text-sm font-semibold';
-                    if (grade === 'A' || grade === 'A-') {
-                        gradeSpan.classList.add('text-emerald-700');
-                    } else if (grade === 'B+' || grade === 'B' || grade === 'B-') {
-                        gradeSpan.classList.add('text-gray-900');
-                    } else if (grade === 'C+' || grade === 'C') {
-                        gradeSpan.classList.add('text-amber-700');
-                    } else if (grade === 'D') {
-                        gradeSpan.classList.add('text-orange-700');
-                    } else if (grade !== '-') {
-                        gradeSpan.classList.add('text-red-700');
-                    }
                 }
             }
         }
@@ -1332,9 +1267,6 @@
                                 }
                             });
 
-                            // Update total nilai and grade display
-                            updateNilaiDisplay(mahasiswaId);
-
                             // Clear changed values from localStorage after successful save
                             clearChangedValuesFromStorage(mahasiswaId);
 
@@ -1346,6 +1278,7 @@
                             // Auto-exit from edit mode after successful save
                             setTimeout(() => {
                                 exitEditMode();
+                                window.location.reload();
                             }, 1000); // Delay 1 detik agar user bisa lihat pesan sukses
                         } else {
                             if (typeof setButtonLoading === 'function') {

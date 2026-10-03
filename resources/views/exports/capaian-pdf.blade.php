@@ -313,11 +313,6 @@
                             <td class="v">{{ $akademik['ipk'] !== null ? number_format($akademik['ipk'], 2) : '-' }}</td>
                         </tr>
                         <tr>
-                            <td class="k">Total SKS Dinilai</td>
-                            <td class="s">:</td>
-                            <td class="v">{{ $akademik['total_sks'] }} SKS</td>
-                        </tr>
-                        <tr>
                             <td class="k">Predikat</td>
                             <td class="s">:</td>
                             <td class="v accent">{{ $akademik['predikat'] }}</td>
@@ -372,7 +367,6 @@
     <table class="footer-block">
         <tr>
             <td class="akreditasi">
-                <div class="badge">IABEE / BAN-PT</div>
                 <div>{{ $institution['akreditasi'] }}</div>
             </td>
             <td class="ttd" align="right">

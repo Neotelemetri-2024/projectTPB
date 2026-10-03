@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bobot;
+use App\Models\InstitutionSetting;
 use App\Models\Nilai;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -56,11 +57,13 @@ class KHSController extends Controller
 
         ['totalSks' => $totalSks, 'ipk' => $ipk] = $this->summarizeRows($matkulDiambil);
 
+        $institution = InstitutionSetting::details();
         $html = view('exports.transkrip-pdf', compact(
             'mahasiswa',
             'matkulDiambil',
             'totalSks',
-            'ipk'
+            'ipk',
+            'institution'
         ))->render();
 
         $options = new Options();

@@ -3,8 +3,8 @@
         <div class="flex items-center justify-between">
             <!-- Bagian kiri (sidebar toggle & logo) tetap sama -->
             <div class="flex items-center justify-start">
-                <button id="toggleSidebar" aria-expanded="true" aria-controls="sidebar"
-                    class="p-2 text-gray-600 rounded cursor-pointer lg:hidden hover:text-gray-900 hover:bg-gray-100">
+                <button id="toggleSidebar" aria-label="Buka menu" aria-expanded="false" aria-controls="sidebar"
+                    class="p-2 text-gray-600 rounded cursor-pointer sm:hidden hover:text-gray-900 hover:bg-gray-100">
                     <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path fill-rule="evenodd"
                             d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
@@ -18,9 +18,9 @@
                             d="M4 6h16M4 12h16M4 18h7"></path>
                     </svg>
                 </button>
-                <a href="#" class="flex ml-2 md:mr-24">
+                <a href="{{ route('dashboard') }}" class="flex ml-1 sm:ml-2 md:mr-24 min-w-0">
                     <span
-                        class="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap text-amber-700">Portal TPB</span>
+                        class="self-center text-lg font-semibold sm:text-2xl whitespace-nowrap text-amber-700">Portal TPB</span>
                 </a>
             </div>
 

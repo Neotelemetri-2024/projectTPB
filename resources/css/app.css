@@ -18,6 +18,24 @@ body {
     font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
+/* Keep long report tables inside their scroll area on narrow screens. */
+#pageContent,
+#pageContent > div,
+#pageContent .flex-1 {
+    min-width: 0;
+}
+
+@media (max-width: 639px) {
+    #pageContent .overflow-x-auto {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #pageContent select,
+    #pageContent input {
+        max-width: 100%;
+    }
+}
+
 /* Selects & filters — clearer than bare border */
 main select,
 #dashboard-content select,

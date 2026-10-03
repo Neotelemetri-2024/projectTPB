@@ -19,7 +19,8 @@
 
     <!-- Sidebar -->
     @include('partials.sidebar')
-    <div class="p-4 sm:ml-64 pt-20 min-h-screen flex flex-col">
+    <button id="sidebarBackdrop" type="button" aria-label="Tutup menu" class="hidden fixed inset-0 z-20 bg-gray-900/40 sm:hidden"></button>
+    <div id="pageContent" class="p-2 sm:p-4 sm:ml-64 pt-16 sm:pt-20 min-h-screen min-w-0 flex flex-col transition-[margin] duration-300">
         <div class="flex-1">
             @yield('content')
         </div>
@@ -31,7 +32,8 @@
             const sidebar = document.getElementById('sidebar');
             const toggleSidebarMobile = document.getElementById('toggleSidebarMobile');
             const toggleSidebar = document.getElementById('toggleSidebar');
-            const pageContent = document.querySelector('.p-4.sm\\:ml-64');
+            const pageContent = document.getElementById('pageContent');
+            const backdrop = document.getElementById('sidebarBackdrop');
             const dropdownButtons = document.querySelectorAll('[data-collapse-toggle]');
 
             function closeAllDropdowns() {
@@ -111,24 +113,29 @@
                 button.addEventListener('click', handleDropdownClick);
             });
 
-            if (toggleSidebarMobile) {
-                toggleSidebarMobile.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    toggleSidebarView();
-                });
+            if (toggleSidebarMobile) toggleSidebarMobile.addEventListener('click', toggleSidebarView);
+
+            function closeMobileSidebar() {
+                sidebar.classList.add('-translate-x-full');
+                backdrop.classList.add('hidden');
+                toggleSidebar?.setAttribute('aria-expanded', 'false');
+                document.body.classList.remove('overflow-hidden');
             }
 
             if (toggleSidebar) {
-                toggleSidebar.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    sidebar.classList.toggle('-translate-x-full');
+                toggleSidebar.addEventListener('click', function() {
+                    const open = sidebar.classList.toggle('-translate-x-full') === false;
+                    backdrop.classList.toggle('hidden', !open);
+                    toggleSidebar.setAttribute('aria-expanded', String(open));
+                    document.body.classList.toggle('overflow-hidden', open);
                 });
             }
+            backdrop.addEventListener('click', closeMobileSidebar);
+            sidebar.querySelectorAll('a').forEach(link => link.addEventListener('click', closeMobileSidebar));
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMobileSidebar(); });
 
             window.addEventListener('resize', function() {
-                if (window.innerWidth >= 640) {
-                    sidebar.classList.remove('-translate-x-full');
-                }
+                if (window.innerWidth >= 640) closeMobileSidebar();
             });
         });
 

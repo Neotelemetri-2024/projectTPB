@@ -9,10 +9,10 @@
             <p class="text-sm text-gray-500 mt-1">Ringkasan data akademik dan capaian pembelajaran</p>
         </div>
 
-        <div>
+        <div class="w-full sm:w-auto">
             <label for="tahun-ajaran-filter" class="block text-[11px] font-medium text-gray-500 mb-1">Tahun Ajaran</label>
             <select id="tahun-ajaran-filter" onchange="filterDashboard()"
-                    class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2 min-w-[180px] shadow-sm">
+                    class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2 w-full sm:w-auto min-w-[180px] shadow-sm">
                 <option value="">Semua Tahun Ajaran</option>
                 @foreach($tahunAjaranList as $tahunAjaran)
                     <option value="{{ $tahunAjaran->id }}" {{ $selectedTahunAjaranId == $tahunAjaran->id ? 'selected' : '' }}>
@@ -139,6 +139,31 @@ let courseCompletionData = null;
 let courseTypeData = null;
 let topStudentsData = null;
 
+const dashboardChartIds = ['historyChartGanjil', 'historyChartGenap', 'cplChart', 'gradeChart', 'courseTypeChart', 'completionChart', 'topStudentsChart'];
+
+function setChartStatus(message, retry = false) {
+    dashboardChartIds.forEach((id) => {
+        const chart = document.getElementById(id);
+        if (!chart) return;
+        let status = chart.parentElement.querySelector('[data-chart-status]');
+        if (!status) {
+            status = document.createElement('button');
+            status.type = 'button';
+            status.dataset.chartStatus = '';
+            status.className = 'absolute inset-0 z-10 flex items-center justify-center bg-white px-4 text-center text-sm text-gray-500';
+            chart.parentElement.appendChild(status);
+        }
+        status.textContent = message;
+        status.classList.toggle('text-red-600', retry);
+        status.classList.toggle('cursor-pointer', retry);
+        status.onclick = retry ? loadDashboardCharts : null;
+    });
+}
+
+function hideChartStatus() {
+    document.querySelectorAll('[data-chart-status]').forEach((status) => status.remove());
+}
+
 function prepareHistoryFallbacks() {
     if (!chartData || !chartData.labels) return;
     const indexes = { ganjil: [], genap: [] };
@@ -159,6 +184,7 @@ function prepareHistoryFallbacks() {
 }
 
 async function loadDashboardCharts() {
+    setChartStatus('Memuat grafik...');
     const url = new URL(dashboardChartDataUrl, window.location.origin);
     const selected = document.getElementById('tahun-ajaran-filter')?.value || '';
     if (selected) url.searchParams.set('tahun_ajaran_filter', selected);
@@ -178,9 +204,13 @@ async function loadDashboardCharts() {
         topStudentsData = payload.topStudentsData;
         prepareHistoryFallbacks();
         Object.assign(window, payload, { fallbackGanjilData, fallbackGenapData });
+        if (typeof window.loadChartModule !== 'function') throw new Error('Modul grafik tidak tersedia');
+        await window.loadChartModule();
+        hideChartStatus();
         initializeCharts();
     } catch (error) {
         console.error('Gagal memuat data dashboard:', error);
+        setChartStatus('Grafik gagal dimuat. Ketuk untuk mencoba lagi.', true);
     }
 }
 

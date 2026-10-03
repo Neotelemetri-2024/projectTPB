@@ -20,6 +20,7 @@
                     {{ $tahunAjaranMatkul->mataKuliah->kodeMatkul }}-{{ $tahunAjaranMatkul->mataKuliah->kurikulum }}
                     · {{ $tahunAjaranMatkul->tahunAjaran->tahun }} - {{ ucfirst($tahunAjaranMatkul->tahunAjaran->periode) }}
                 </p>
+                <p class="text-sm text-gray-600 mt-1">Dosen: {{ $tahunAjaranMatkul->kelas->flatMap->dosenPengampuKelas->pluck('dosen.nama')->filter()->unique()->implode(', ') ?: '-' }}</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <a href="{{ route('pimpinan.cpmk-report.export-pdf', $tahunAjaranMatkul->id) }}"

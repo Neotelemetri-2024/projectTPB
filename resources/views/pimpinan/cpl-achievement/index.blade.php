@@ -11,7 +11,7 @@
                 <p class="text-sm text-gray-500 mt-1">Nilai minimal & target dari master CPL. Filter hanya menyaring tampilan.</p>
             </div>
             <div class="flex flex-wrap items-end gap-2">
-                <form method="GET" action="{{ route($rolePrefix . '.cpl-achievement.index') }}" class="flex flex-wrap items-end gap-2">
+                <form method="GET" action="{{ route($rolePrefix . '.cpl-achievement.index') }}" class="flex flex-wrap items-end gap-2 w-full lg:w-auto">
                     <div>
                         <label class="block text-[11px] font-medium text-gray-500 mb-1">Tahun Ajaran</label>
                         <select name="tahun_ajaran_id" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2 min-w-[180px] shadow-sm">

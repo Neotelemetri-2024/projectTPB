@@ -16,10 +16,10 @@
                 <h1 class="text-xl font-semibold text-gray-900 tracking-tight">Laporan Pengukuran CPMK</h1>
                 <p class="text-sm text-gray-500 mt-1">Ketercapaian CPMK per mata kuliah</p>
             </div>
-            <form method="GET" action="" class="flex flex-wrap items-end gap-2">
-                <div>
+            <form method="GET" action="" class="flex flex-wrap items-end gap-2 w-full lg:w-auto">
+                <div class="w-full sm:w-auto">
                     <label for="tahun_ajaran_id" class="block text-[11px] font-medium text-gray-500 mb-1">Tahun Ajaran</label>
-                    <select name="tahun_ajaran_id" id="tahun_ajaran_id" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2 min-w-[200px] shadow-sm" onchange="this.form.submit()">
+                    <select name="tahun_ajaran_id" id="tahun_ajaran_id" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg px-3 py-2 w-full sm:w-auto min-w-[200px] shadow-sm" onchange="this.form.submit()">
                         @foreach($tahunAjaranList as $ta)
                             <option value="{{ $ta->id }}" @selected($selectedTahunAjaranId == $ta->id)>
                                 {{ $ta->tahun }} - {{ ucfirst($ta->periode) }}
@@ -80,6 +80,7 @@
                                     @if($matkul->mataKuliah->jenis)
                                         <div class="text-xs text-gray-400 mt-0.5">{{ ucfirst($matkul->mataKuliah->jenis) }}</div>
                                     @endif
+                                    <div class="text-xs text-gray-500 mt-1">Dosen: {{ $matkul->kelas->flatMap->dosenPengampuKelas->pluck('dosen.nama')->filter()->unique()->implode(', ') ?: '-' }}</div>
                                 </td>
                                 <td class="px-4 py-3 text-center text-gray-700">{{ $matkul->kelas->count() }}</td>
                                 <td class="px-4 py-3 text-center text-gray-700">{{ $mhsCount }}</td>

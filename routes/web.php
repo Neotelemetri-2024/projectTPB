@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Admin\MahasiswaController;
 use App\Http\Controllers\Admin\DosenController;
+use App\Http\Controllers\Admin\InstitutionSettingController;
 use App\Http\Controllers\Admin\TahunAjaranController;
 use App\Http\Controllers\Admin\MataKuliahController;
 use App\Http\Controllers\Admin\CplController;
@@ -59,6 +60,8 @@ Route::middleware('auth')->group(function () {
 
     // Admin Dashboard
     Route::middleware('admin')->group(function () {
+        Route::get('/admin/ketua-departemen', [InstitutionSettingController::class, 'edit'])->name('admin.institution-settings.edit');
+        Route::put('/admin/ketua-departemen', [InstitutionSettingController::class, 'update'])->name('admin.institution-settings.update');
         Route::get('/admin/dashboard', [DashboardController::class, 'adminDashboard'])->name('admin.dashboard');
         Route::get('/admin/dashboard/chart-data', [DashboardController::class, 'adminDashboardChartData'])->name('admin.dashboard.chart-data');
 
@@ -242,6 +245,7 @@ Route::middleware('auth')->group(function () {
 
     // Pimpinan Dashboard
     Route::middleware('pimpinan')->group(function () {
+        Route::get('/pimpinan/dosen', [\App\Http\Controllers\Pimpinan\DosenController::class, 'index'])->name('pimpinan.dosen.index');
         Route::get('/pimpinan/dashboard', [DashboardController::class, 'pimpinanDashboard'])->name('pimpinan.dashboard');
         Route::get('/pimpinan/dashboard/chart-data', [DashboardController::class, 'pimpinanDashboardChartData'])->name('pimpinan.dashboard.chart-data');
 

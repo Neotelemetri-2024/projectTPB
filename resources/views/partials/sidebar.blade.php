@@ -1,4 +1,4 @@
-<aside id="sidebar" class="fixed top-0 left-0 z-30 h-screen pt-14 transition-all duration-300 ease-in-out bg-white border-r border-gray-200 w-64" aria-label="Sidebar">
+<aside id="sidebar" class="fixed top-0 left-0 z-30 h-dvh pt-14 transition-transform duration-300 ease-in-out bg-white border-r border-gray-200 w-64 -translate-x-full sm:translate-x-0" aria-label="Sidebar">
     <div class="h-full px-3 pb-4 overflow-y-auto bg-white flex flex-col">
        <ul class="space-y-2 font-medium mt-8 flex-1">
           <li>
@@ -111,6 +111,12 @@
                 <span class="ml-3">Ketercapaian CPL</span>
              </a>
           </li>
+          <li>
+             <a href="{{ route('admin.institution-settings.edit') }}" class="flex items-center p-2 rounded-lg text-gray-900 hover:bg-gray-100 {{ request()->routeIs('admin.institution-settings.*') ? 'bg-amber-100 text-amber-700' : '' }}">
+                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v12m-6-6h12M4 21h16M5 3h14" /></svg>
+                <span class="ml-3">Ketua Departemen</span>
+             </a>
+          </li>
           @endif
           @if (auth()->user()->role === 'dosen')
              <li>
@@ -139,6 +145,12 @@
              </li>
           @endif
           @if(auth()->user()->role === 'pimpinan')
+             <li>
+                <a href="{{ route('pimpinan.dosen.index') }}" class="flex items-center p-2 rounded-lg text-gray-900 hover:bg-gray-100 {{ request()->routeIs('pimpinan.dosen.*') ? 'bg-amber-100 text-amber-700' : '' }}">
+                   <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zm-11 14a7 7 0 0114 0H5z" /></svg>
+                   <span class="ml-3">Daftar Dosen</span>
+                </a>
+             </li>
              <li>
                 <a href="{{ route('pimpinan.cpmk-report.index') }}" class="flex items-center p-2 rounded-lg group transition-colors duration-200 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('pimpinan.cpmk-report.*') ? 'bg-amber-100 text-amber-700' : '' }}">
                    <svg class="w-5 h-5 transition duration-75 text-gray-500 group-hover:text-gray-900 {{ request()->routeIs('pimpinan.cpmk-report.*') ? 'text-amber-700' : '' }}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">

@@ -270,8 +270,8 @@
             <p style="margin-top: 4px;">Ketua Departemen</p>
             <div class="signature-box">
                 <div style="margin-top: 80px; border-top: 1px solid #000; padding-top: 5px;">
-                    <strong>{{ config('institution.ketua_nama') }}</strong><br>
-                    <strong>NIP. {{ config('institution.ketua_nip') }}</strong>
+                    <strong>{{ $institution['ketua_nama'] }}</strong><br>
+                    <strong>NIP. {{ $institution['ketua_nip'] }}</strong>
                 </div>
             </div>
         </div>

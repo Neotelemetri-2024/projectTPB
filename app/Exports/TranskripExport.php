@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\Models\InstitutionSetting;
 use Illuminate\Contracts\View\View;
 
 class TranskripExport
@@ -26,6 +27,7 @@ class TranskripExport
             'matkulDiambil' => $this->matkulDiambil,
             'totalSks' => $this->totalSks,
             'ipk' => $this->ipk,
+            'institution' => InstitutionSetting::details(),
         ]);
     }
 }

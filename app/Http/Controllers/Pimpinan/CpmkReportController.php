@@ -29,7 +29,7 @@ class CpmkReportController extends Controller
             ->with([
                 'mataKuliah',
                 'cpmkMatKul.cpmk',
-                'kelas' => fn ($q) => $q->withCount('kelasMahasiswa'),
+                'kelas' => fn ($q) => $q->withCount('kelasMahasiswa')->with('dosenPengampuKelas.dosen'),
             ])
             ->orderBy('id')
             ->paginate($this->perPage($request))
@@ -46,7 +46,7 @@ class CpmkReportController extends Controller
     {
         // Pimpinan bisa lihat semua mata kuliah
         $tahunAjaranMatkul = TahunAjaranMatkul::where('id', $tahunAjaranMatkulId)
-            ->with(['mataKuliah.kurikulumRef', 'kelas.kelasMahasiswa.mahasiswa', 'cpmkMatKul.cpmk'])
+            ->with(['mataKuliah.kurikulumRef', 'kelas.kelasMahasiswa.mahasiswa', 'kelas.dosenPengampuKelas.dosen', 'cpmkMatKul.cpmk'])
             ->first();
 
         if (!$tahunAjaranMatkul) {

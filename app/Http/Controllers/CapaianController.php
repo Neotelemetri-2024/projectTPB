@@ -7,6 +7,7 @@ use App\Models\Cpl;
 use App\Models\Kurikulum;
 use App\Models\Bobot;
 use App\Models\Nilai;
+use App\Models\InstitutionSetting;
 use App\Services\CplAssessmentScope;
 use App\Services\CplAssessmentCalculator;
 use Dompdf\Dompdf;
@@ -36,7 +37,7 @@ class CapaianController extends Controller
             'cplList' => $cplList,
             'cplIdTerpilih' => $cplIdTerpilih,
             'akademik' => $akademik,
-            'institution' => config('institution'),
+            'institution' => InstitutionSetting::details(),
             'kurikulumList' => $kurikulumList,
             'kurikulumId' => $kurikulumId,
             'hasAssessedMatkul' => $hasAssessedMatkul,
@@ -52,7 +53,7 @@ class CapaianController extends Controller
 
         $cplData = $this->buildCplData($mahasiswa->id, null, null, false, $kurikulumId);
         $akademik = $this->buildAcademicSummary($mahasiswa);
-        $institution = config('institution');
+        $institution = InstitutionSetting::details();
 
         $kurikulumLabel = $kurikulumList->firstWhere('id', $kurikulumId)?->nama ?? '-';
 

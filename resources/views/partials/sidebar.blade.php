@@ -45,7 +45,7 @@
                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
                 </svg>
              </button>
-               <ul id="dropdown-master" class="py-2 space-y-1 {{ request()->routeIs('admin.tahun-ajaran.*', 'admin.mata-kuliah.*', 'admin.kurikulum.*', 'admin.cpl.index', 'admin.cpl.create', 'admin.cpl.edit', 'admin.komponen.*') ? '' : 'hidden' }}">
+               <ul id="dropdown-master" class="py-2 space-y-1 {{ request()->routeIs('admin.tahun-ajaran.*', 'admin.mata-kuliah.*', 'admin.kurikulum.*', 'admin.cpl.index', 'admin.cpl.create', 'admin.cpl.edit', 'admin.komponen.*', 'admin.institution-settings.*') ? '' : 'hidden' }}">
                 <li>
                    <a href="{{ route('admin.tahun-ajaran.index') }}" class="flex items-center w-full p-2 rounded-lg pl-11 transition duration-75 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('admin.tahun-ajaran.*') ? 'bg-amber-100 text-amber-700' : '' }}">
 
@@ -72,6 +72,11 @@
                 <li>
                    <a href="{{ route('admin.komponen.index') }}" class="flex items-center w-full p-2 rounded-lg pl-11 transition duration-75 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('admin.komponen.*') ? 'bg-amber-100 text-amber-700' : '' }}">
                       Komponen
+                   </a>
+                </li>
+                <li>
+                   <a href="{{ route('admin.institution-settings.edit') }}" class="flex items-center w-full p-2 rounded-lg pl-11 transition duration-75 text-gray-900 hover:bg-gray-100 {{ request()->routeIs('admin.institution-settings.*') ? 'bg-amber-100 text-amber-700' : '' }}">
+                      Ketua Departemen
                    </a>
                 </li>
 
@@ -109,12 +114,6 @@
                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
                 </svg>
                 <span class="ml-3">Ketercapaian CPL</span>
-             </a>
-          </li>
-          <li>
-             <a href="{{ route('admin.institution-settings.edit') }}" class="flex items-center p-2 rounded-lg text-gray-900 hover:bg-gray-100 {{ request()->routeIs('admin.institution-settings.*') ? 'bg-amber-100 text-amber-700' : '' }}">
-                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v12m-6-6h12M4 21h16M5 3h14" /></svg>
-                <span class="ml-3">Ketua Departemen</span>
              </a>
           </li>
           @endif

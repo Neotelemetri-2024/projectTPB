@@ -191,7 +191,10 @@ document.addEventListener('click', function(e) {
     }
 });
 
-window.whenChartReady(function () {
+function renderCplAchievementChart() {
+    if (typeof window.whenChartReady !== 'function') return;
+
+    window.whenChartReady(function () {
     const chartData = @json($chartData);
     const el = document.querySelector('#cplAchievementChart');
     if (!el || typeof window.renderApexChart !== 'function') return;
@@ -238,6 +241,13 @@ window.whenChartReady(function () {
             strokeDashArray: 4
         }
     }, 'cplAchievementChart');
-});
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', renderCplAchievementChart, { once: true });
+} else {
+    renderCplAchievementChart();
+}
 </script>
 @endpush

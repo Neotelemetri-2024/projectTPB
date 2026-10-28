@@ -174,7 +174,10 @@
 
 @push('scripts')
 <script>
-window.whenChartReady(function () {
+function renderCplLaporanChart() {
+    if (typeof window.whenChartReady !== 'function') return;
+
+    window.whenChartReady(function () {
     const chartData = @json($chartData);
     const el = document.querySelector('#cplLaporanChart');
     if (!el || typeof window.renderApexChart !== 'function') return;
@@ -197,6 +200,13 @@ window.whenChartReady(function () {
         tooltip: { y: { formatter: (v) => v + '%' } },
         grid: { borderColor: '#E5E7EB', strokeDashArray: 4 }
     }, 'cplLaporanChart');
-});
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', renderCplLaporanChart, { once: true });
+} else {
+    renderCplLaporanChart();
+}
 </script>
 @endpush

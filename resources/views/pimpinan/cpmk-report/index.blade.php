@@ -58,6 +58,7 @@
                         <tr class="text-left text-[11px] uppercase tracking-wide text-gray-500 border-b border-gray-200">
                             <th class="px-4 py-3 font-semibold">Kode</th>
                             <th class="px-4 py-3 font-semibold">Mata Kuliah</th>
+                            <th class="px-4 py-3 font-semibold">Dosen Pengampu</th>
                             <th class="px-4 py-3 font-semibold text-center">Kelas</th>
                             <th class="px-4 py-3 font-semibold text-center">Mahasiswa</th>
                             <th class="px-4 py-3 font-semibold text-center">CPMK</th>
@@ -80,7 +81,9 @@
                                     @if($matkul->mataKuliah->jenis)
                                         <div class="text-xs text-gray-400 mt-0.5">{{ ucfirst($matkul->mataKuliah->jenis) }}</div>
                                     @endif
-                                    <div class="text-xs text-gray-500 mt-1">Dosen: {{ $matkul->kelas->flatMap->dosenPengampuKelas->pluck('dosen.nama')->filter()->unique()->implode(', ') ?: '-' }}</div>
+                                </td>
+                                <td class="px-4 py-3 text-gray-700">
+                                    {{ $matkul->kelas->flatMap->dosenPengampuKelas->pluck('dosen.nama')->filter()->unique()->implode(', ') ?: '-' }}
                                 </td>
                                 <td class="px-4 py-3 text-center text-gray-700">{{ $matkul->kelas->count() }}</td>
                                 <td class="px-4 py-3 text-center text-gray-700">{{ $mhsCount }}</td>

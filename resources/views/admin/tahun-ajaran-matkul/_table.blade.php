@@ -1,3 +1,28 @@
+@php
+    $listQuery = [];
+    if (request()->has('tahun_ajaran_id')) {
+        $listQuery['tahun_ajaran_id'] = request('tahun_ajaran_id');
+    } elseif (!empty($selectedTahunAjaranId)) {
+        $listQuery['tahun_ajaran_id'] = $selectedTahunAjaranId;
+    }
+    if (request()->filled('search')) {
+        $listQuery['search'] = request('search');
+    }
+    if (request()->filled('per_page')) {
+        $listQuery['per_page'] = request('per_page');
+    }
+    $destroyQuery = [];
+    if (array_key_exists('tahun_ajaran_id', $listQuery)) {
+        $destroyQuery['return_tahun_ajaran_id'] = $listQuery['tahun_ajaran_id'];
+    }
+    if (isset($listQuery['search'])) {
+        $destroyQuery['return_search'] = $listQuery['search'];
+    }
+    if (isset($listQuery['per_page'])) {
+        $destroyQuery['return_per_page'] = $listQuery['per_page'];
+    }
+    $previousSemester = null;
+@endphp
         <!-- Table -->
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -18,6 +43,12 @@
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse($tahunAjaranMatkuls as $index => $item)
+                    @if($previousSemester !== ($item->semester ?? 1))
+                        @php $previousSemester = $item->semester ?? 1; @endphp
+                        <tr id="semester-{{ $previousSemester }}" class="bg-gray-50 scroll-mt-24">
+                            <td colspan="9" class="px-5 py-2 text-sm font-semibold text-gray-700">Semester {{ $previousSemester }}</td>
+                        </tr>
+                    @endif
                     <tr class="hover:bg-gray-50">
                         <td class="px-5 py-3 whitespace-nowrap">
                             <input type="checkbox" value="{{ $item->id }}" class="item-checkbox w-4 h-4 text-amber-600 bg-gray-100 border-gray-300 rounded focus:ring-amber-500">
@@ -68,7 +99,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                     </svg>
                                 </a>
-                                <a href="{{ route('admin.tahun-ajaran-matkul.edit', $item->id) }}"
+                                <a href="{{ route('admin.tahun-ajaran-matkul.edit', $item->id) }}{{ $listQuery === [] ? '' : '?' . http_build_query($listQuery) }}"
                                     class="inline-flex items-center justify-center bg-amber-600 hover:bg-amber-700 text-white p-1.5 rounded-md" title="Edit">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
@@ -113,6 +144,6 @@
     :id="'modal-confirm-hapus-' . $item->id"
     title="Konfirmasi Hapus"
     :message="'Apakah Anda yakin ingin menghapus mata kuliah ' . $item->mataKuliah->namaMatkul . ' dari tahun ajaran ' . $item->tahunAjaran->tahun . '-' . $item->tahunAjaran->periode . '?'"
-    :action="route('admin.tahun-ajaran-matkul.destroy', $item->id)"
+    :action="route('admin.tahun-ajaran-matkul.destroy', $item->id) . ($destroyQuery === [] ? '' : '?' . http_build_query($destroyQuery))"
     method="DELETE" />
 @endforeach

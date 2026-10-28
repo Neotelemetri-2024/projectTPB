@@ -307,16 +307,6 @@
                             <td class="s">:</td>
                             <td class="v">{{ $kurikulumLabel }}</td>
                         </tr>
-                        <tr>
-                            <td class="k">IPK</td>
-                            <td class="s">:</td>
-                            <td class="v">{{ $akademik['ipk'] !== null ? number_format($akademik['ipk'], 2) : '-' }}</td>
-                        </tr>
-                        <tr>
-                            <td class="k">Predikat</td>
-                            <td class="s">:</td>
-                            <td class="v accent">{{ $akademik['predikat'] }}</td>
-                        </tr>
                     </table>
 
                     <p class="gelar-row">

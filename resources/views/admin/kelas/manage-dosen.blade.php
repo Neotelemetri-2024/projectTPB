@@ -37,6 +37,27 @@
                 </div>
             @endif
 
+            <form method="GET" action="{{ route('admin.kelas.manage-dosen', $kelas->id) }}" class="mb-6" data-live-search data-live-search-target="#available-dosen-results">
+                <div class="flex flex-col sm:flex-row gap-3 items-end">
+                    <div class="flex-1 w-full">
+                        <label for="dosen-search" class="block text-sm font-medium text-gray-700 mb-1">Cari Dosen</label>
+                        <input id="dosen-search" type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama atau NIP dosen..." class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5">
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2.5 rounded-lg flex items-center text-sm">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                            Cari
+                        </button>
+                        <a href="{{ route('admin.kelas.manage-dosen', $kelas->id) }}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2.5 rounded-lg flex items-center text-sm">
+                            Reset
+                        </a>
+                    </div>
+                </div>
+            </form>
+
+            <div id="available-dosen-results" data-live-search-results>
             <!-- Dosen Tersedia -->
             <div class="bg-white rounded-xl border border-gray-200">
                 <div class="p-4 border-b border-gray-200">
@@ -107,23 +128,33 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                 </svg>
                             </div>
-                            <h3 class="text-sm font-medium text-gray-900 mb-2">Semua dosen sudah ditambahkan ke kelas ini</h3>
-                            <p class="text-sm text-gray-500">Tidak ada dosen tersedia untuk ditambahkan</p>
+                            @if(request('search'))
+                                <h3 class="text-sm font-medium text-gray-900 mb-2">Tidak ada dosen yang cocok</h3>
+                                <p class="text-sm text-gray-500">Coba kata kunci nama atau NIP yang lain.</p>
+                            @else
+                                <h3 class="text-sm font-medium text-gray-900 mb-2">Semua dosen sudah ditambahkan ke kelas ini</h3>
+                                <p class="text-sm text-gray-500">Tidak ada dosen tersedia untuk ditambahkan</p>
+                            @endif
                         </div>
                     @endif
                 </div>
+            </div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+function initDosenPicker() {
     const selectAllCheckbox = document.getElementById('select-all');
-    const dosenCheckboxes = document.querySelectorAll('.dosen-checkbox');
     const selectedCountSpan = document.getElementById('selected-count');
     const addSelectedBtn = document.getElementById('add-selected-btn');
     const selectAllBtn = document.getElementById('select-all-btn');
+    const dosenCheckboxes = document.querySelectorAll('.dosen-checkbox');
+
+    if (!selectAllCheckbox || !selectedCountSpan || !addSelectedBtn || !selectAllBtn) {
+        return;
+    }
 
     function updateSelectedCount() {
         const selectedCount = document.querySelectorAll('.dosen-checkbox:checked').length;
@@ -132,13 +163,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function updateSelectAllState() {
-        const totalCheckboxes = dosenCheckboxes.length;
+        const boxes = document.querySelectorAll('.dosen-checkbox');
         const checkedCheckboxes = document.querySelectorAll('.dosen-checkbox:checked').length;
-        
+
         if (checkedCheckboxes === 0) {
             selectAllCheckbox.indeterminate = false;
             selectAllCheckbox.checked = false;
-        } else if (checkedCheckboxes === totalCheckboxes) {
+        } else if (checkedCheckboxes === boxes.length) {
             selectAllCheckbox.indeterminate = false;
             selectAllCheckbox.checked = true;
         } else {
@@ -146,16 +177,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Select all functionality
     selectAllCheckbox.addEventListener('change', function() {
-        dosenCheckboxes.forEach(checkbox => {
+        document.querySelectorAll('.dosen-checkbox').forEach(checkbox => {
             checkbox.checked = this.checked;
         });
         updateSelectedCount();
         updateSelectAllState();
     });
 
-    // Individual checkbox change
     dosenCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function() {
             updateSelectedCount();
@@ -163,25 +192,25 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Select all button
     selectAllBtn.addEventListener('click', function() {
-        const allChecked = Array.from(dosenCheckboxes).every(cb => cb.checked);
-        dosenCheckboxes.forEach(checkbox => {
+        const boxes = Array.from(document.querySelectorAll('.dosen-checkbox'));
+        const allChecked = boxes.length > 0 && boxes.every(cb => cb.checked);
+        boxes.forEach(checkbox => {
             checkbox.checked = !allChecked;
         });
         selectAllCheckbox.checked = !allChecked;
         selectAllCheckbox.indeterminate = false;
         updateSelectedCount();
         updateSelectAllState();
-        
-        // Update button text
         this.textContent = allChecked ? 'Pilih Semua' : 'Hapus Semua';
     });
 
-    // Initial state
     updateSelectedCount();
     updateSelectAllState();
-});
+}
+
+document.addEventListener('DOMContentLoaded', initDosenPicker);
+document.addEventListener('live-search:updated', initDosenPicker);
 </script>
 
 @endsection 

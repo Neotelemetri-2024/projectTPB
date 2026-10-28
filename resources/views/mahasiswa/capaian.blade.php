@@ -27,16 +27,8 @@
                     <p class="text-sm text-gray-600 mt-3">{{ $institution['prodi'] }}</p>
                     <p class="text-sm text-gray-600">{{ $institution['fakultas'] }}</p>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div class="border border-gray-200 rounded-xl px-4 py-3">
-                        <p class="text-[11px] uppercase tracking-wide text-gray-500">IPK</p>
-                        <p class="text-2xl font-semibold text-gray-900 mt-0.5">{{ $akademik['ipk'] !== null ? number_format($akademik['ipk'], 2) : '-' }}</p>
-                    </div>
-                    <div class="border border-gray-200 rounded-xl px-4 py-3">
-                        <p class="text-[11px] uppercase tracking-wide text-gray-500">Predikat</p>
-                        <p class="text-base font-semibold text-gray-900 mt-1">{{ $akademik['predikat'] }}</p>
-                    </div>
-                    <div class="border border-gray-200 rounded-xl px-4 py-3">
+                <div>
+                    <div class="border border-gray-200 rounded-xl px-4 py-3 max-w-xs">
                         <p class="text-[11px] uppercase tracking-wide text-gray-500">Gelar</p>
                         <p class="text-base font-semibold text-gray-900 mt-1">{{ $akademik['gelar'] }}</p>
                     </div>

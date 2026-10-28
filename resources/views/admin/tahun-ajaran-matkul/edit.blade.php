@@ -42,6 +42,11 @@
             <form action="{{ route('admin.tahun-ajaran-matkul.update', $tahunAjaranMatkul->id) }}" method="POST" class="space-y-4" id="editForm">
                 @csrf
                 @method('PUT')
+                <input type="hidden" name="return_tahun_ajaran_id" value="{{ old('return_tahun_ajaran_id', request()->has('tahun_ajaran_id') ? request('tahun_ajaran_id') : $tahunAjaranMatkul->tahunAjaranId) }}">
+                <input type="hidden" name="return_search" value="{{ old('return_search', request('search')) }}">
+                @if(old('return_per_page', request('per_page')))
+                    <input type="hidden" name="return_per_page" value="{{ old('return_per_page', request('per_page')) }}">
+                @endif
 
                 {{-- ============================== --}}
                 {{-- STEP 1: Informasi Mata Kuliah --}}

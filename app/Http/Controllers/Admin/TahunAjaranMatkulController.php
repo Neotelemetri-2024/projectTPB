@@ -24,43 +24,20 @@ class TahunAjaranMatkulController extends Controller
 {
     public function index(Request $request)
     {
-        $query = TahunAjaranMatkul::with([
-            'tahunAjaran',
-            'mataKuliah',
-            'kelas.dosenPengampuKelas.dosen',
-            'kelas.kelasMahasiswa.mahasiswa'
-        ]);
-
         // Get the latest tahun ajaran for default filter
         $latestTahunAjaran = TahunAjaran::orderBy('tahun', 'desc')->orderBy('periode', 'desc')->first();
 
-        // Set default filter to latest tahun ajaran if no filter is selected
-        // Check if tahun_ajaran_id parameter exists in request (even if empty)
+        // Set default filter to latest tahun ajaran if no filter is selected.
+        // An empty tahun_ajaran_id means "Semua Tahun Ajaran".
         if ($request->has('tahun_ajaran_id')) {
-            // Parameter exists, use the value (could be empty for "Semua Tahun Ajaran")
             $selectedTahunAjaranId = $request->tahun_ajaran_id;
         } else {
-            // Parameter doesn't exist, use default (latest tahun ajaran)
             $selectedTahunAjaranId = $latestTahunAjaran ? $latestTahunAjaran->id : null;
         }
 
-        // Filter by tahun ajaran (only if selectedTahunAjaranId is not empty)
-        if ($selectedTahunAjaranId) {
-            $query->where('tahunAjaranId', $selectedTahunAjaranId);
-        }
+        $tahunAjaranMatkuls = $this->tahunAjaranMatkulIndexQuery($selectedTahunAjaranId, $request->input('search'))
+            ->paginate($this->perPage($request));
 
-        // Search by mata kuliah
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->whereHas('mataKuliah', function ($q) use ($search) {
-                $q->where('namaMatkul', 'like', "%{$search}%")
-                    ->orWhere('kodeMatkul', 'like', "%{$search}%");
-            });
-        }
-
-        $tahunAjaranMatkuls = $query->orderBy('created_at', 'desc')->paginate($this->perPage($request));
-
-        // Append query parameters to pagination links
         $tahunAjaranMatkuls->appends($request->query());
 
         // Order tahun ajaran by latest first
@@ -69,7 +46,7 @@ class TahunAjaranMatkulController extends Controller
         $dosens = Dosen::all();
 
         if ($request->ajax() || $request->wantsJson()) {
-            return view('admin.tahun-ajaran-matkul._table', compact('tahunAjaranMatkuls'));
+            return view('admin.tahun-ajaran-matkul._table', compact('tahunAjaranMatkuls', 'selectedTahunAjaranId'));
         }
 
         return view('admin.tahun-ajaran-matkul.index', compact('tahunAjaranMatkuls', 'tahunAjarans', 'mataKuliahs', 'dosens', 'selectedTahunAjaranId'));
@@ -338,16 +315,19 @@ class TahunAjaranMatkulController extends Controller
             }
 
             DB::commit();
-            return redirect()->route('admin.tahun-ajaran-matkul.index')->with('success', 'Data berhasil diperbarui.');
+            return $this->redirectToTahunAjaranMatkulIndex($request, $tahunAjaranMatkul->tahunAjaranId, $tahunAjaranMatkul->semester)
+                ->with('success', 'Data berhasil diperbarui.');
         } catch (\Exception $e) {
             DB::rollback();
             return back()->withErrors(['error' => 'Terjadi kesalahan saat memperbarui data: ' . $e->getMessage()]);
         }
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $tahunAjaranMatkul = TahunAjaranMatkul::findOrFail($id);
+        $returnTahunAjaranId = $tahunAjaranMatkul->tahunAjaranId;
+        $returnSemester = $tahunAjaranMatkul->semester;
 
         DB::beginTransaction();
         try {
@@ -369,7 +349,8 @@ class TahunAjaranMatkulController extends Controller
             $tahunAjaranMatkul->delete();
 
             DB::commit();
-            return redirect()->route('admin.tahun-ajaran-matkul.index')->with('success', 'Data berhasil dihapus.');
+            return $this->redirectToTahunAjaranMatkulIndex($request, $returnTahunAjaranId, $returnSemester)
+                ->with('success', 'Data berhasil dihapus.');
         } catch (\Exception $e) {
             DB::rollback();
             return back()->withErrors(['error' => 'Terjadi kesalahan saat menghapus data: ' . $e->getMessage()]);
@@ -386,6 +367,8 @@ class TahunAjaranMatkulController extends Controller
         DB::beginTransaction();
         try {
             $tahunAjaranMatkuls = TahunAjaranMatkul::whereIn('id', $request->ids)->get();
+            $returnTahunAjaranId = $tahunAjaranMatkuls->first()->tahunAjaranId ?? null;
+            $returnSemester = $tahunAjaranMatkuls->min('semester');
 
             foreach ($tahunAjaranMatkuls as $tahunAjaranMatkul) {
                 // 1. Delete nilai records (if any)
@@ -406,7 +389,8 @@ class TahunAjaranMatkulController extends Controller
             }
 
             DB::commit();
-            return redirect()->route('admin.tahun-ajaran-matkul.index')->with('success', count($request->ids) . ' data berhasil dihapus.');
+            return $this->redirectToTahunAjaranMatkulIndex($request, $returnTahunAjaranId, $returnSemester)
+                ->with('success', count($request->ids) . ' data berhasil dihapus.');
         } catch (\Exception $e) {
             DB::rollback();
             return back()->withErrors(['error' => 'Terjadi kesalahan saat menghapus data terpilih: ' . $e->getMessage()]);
@@ -797,5 +781,79 @@ class TahunAjaranMatkulController extends Controller
                 ->with('error', 'Gagal menduplikasi data: ' . $e->getMessage())
                 ->withInput();
         }
+    }
+
+    private function tahunAjaranMatkulIndexQuery($tahunAjaranId, ?string $search)
+    {
+        $query = TahunAjaranMatkul::query()
+            ->select('tahun_ajaran_matkul.*')
+            ->with([
+                'tahunAjaran',
+                'mataKuliah',
+                'kelas.dosenPengampuKelas.dosen',
+                'kelas.kelasMahasiswa.mahasiswa',
+            ])
+            ->join('mata_kuliah', 'mata_kuliah.id', '=', 'tahun_ajaran_matkul.mataKuliahId')
+            ->orderByRaw('COALESCE(tahun_ajaran_matkul.semester, 1)')
+            ->orderBy('mata_kuliah.namaMatkul');
+
+        if ($tahunAjaranId) {
+            $query->where('tahun_ajaran_matkul.tahunAjaranId', $tahunAjaranId);
+        }
+
+        if ($search !== null && $search !== '') {
+            $query->where(function ($inner) use ($search) {
+                $inner->where('mata_kuliah.namaMatkul', 'like', "%{$search}%")
+                    ->orWhere('mata_kuliah.kodeMatkul', 'like', "%{$search}%");
+            });
+        }
+
+        return $query;
+    }
+
+    private function redirectToTahunAjaranMatkulIndex(Request $request, $tahunAjaranId, $semester)
+    {
+        if ($request->exists('return_tahun_ajaran_id')) {
+            $tahunAjaranId = $request->input('return_tahun_ajaran_id');
+        }
+        if ($tahunAjaranId === '') {
+            $tahunAjaranId = null;
+        }
+
+        $search = $request->input('return_search');
+        $semester = max(1, (int) ($semester ?: 1));
+        $perPage = $this->listingPerPage($request);
+
+        $before = $this->tahunAjaranMatkulIndexQuery($tahunAjaranId, $search)
+            ->whereRaw('COALESCE(tahun_ajaran_matkul.semester, 1) < ?', [$semester])
+            ->count();
+        $page = intdiv($before, $perPage) + 1;
+
+        $params = [];
+        if ($tahunAjaranId !== null && $tahunAjaranId !== '') {
+            $params['tahun_ajaran_id'] = $tahunAjaranId;
+        } elseif ($request->exists('return_tahun_ajaran_id')) {
+            $params['tahun_ajaran_id'] = '';
+        }
+        if (is_string($search) && $search !== '') {
+            $params['search'] = $search;
+        }
+        if ($page > 1) {
+            $params['page'] = $page;
+        }
+        if ($perPage !== 10) {
+            $params['per_page'] = $perPage;
+        }
+
+        return redirect()
+            ->route('admin.tahun-ajaran-matkul.index', $params)
+            ->withFragment('semester-' . $semester);
+    }
+
+    private function listingPerPage(Request $request): int
+    {
+        $value = (int) $request->input('return_per_page', $request->query('per_page', 10));
+
+        return in_array($value, [10, 25, 50, 100], true) ? $value : 10;
     }
 }

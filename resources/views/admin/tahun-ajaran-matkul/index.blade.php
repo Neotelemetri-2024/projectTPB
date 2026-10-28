@@ -199,6 +199,11 @@
             <form id="form-bulk-delete" action="{{ route('admin.tahun-ajaran-matkul.bulk-destroy') }}" method="POST">
                 @csrf
                 @method('DELETE')
+                <input type="hidden" name="return_tahun_ajaran_id" value="{{ request()->has('tahun_ajaran_id') ? request('tahun_ajaran_id') : $selectedTahunAjaranId }}">
+                <input type="hidden" name="return_search" value="{{ request('search') }}">
+                @if(request()->filled('per_page'))
+                    <input type="hidden" name="return_per_page" value="{{ request('per_page') }}">
+                @endif
                 <div id="bulk-delete-inputs"></div>
                 <button type="submit" class="text-white bg-red-600 hover:bg-red-800 focus:outline-none font-medium rounded-md text-sm inline-flex items-center justify-center px-5 py-2.5 text-center">
                     <svg data-spinner class="hidden w-4 h-4 mr-2 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

@@ -140,6 +140,58 @@
             {{ $mataKuliah->links() }}
         </div>
         @endif
+
+        @foreach($mataKuliah as $mk)
+            <x-form-modal
+                :id="'modal-edit-' . $mk->id"
+                title="Edit Mata Kuliah"
+                :action="route('admin.mata-kuliah.update', $mk->id)"
+                method="PUT"
+                submit-text="Update"
+            >
+                <div class="grid gap-4 mb-4 grid-cols-2">
+                    <div>
+                        <label for="kodeMatkul_{{ $mk->id }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kode Mata Kuliah</label>
+                        <input type="text" name="kodeMatkul" id="kodeMatkul_{{ $mk->id }}" value="{{ $mk->kodeMatkul }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="MK001" required>
+                    </div>
+                    <div>
+                        <label for="kurikulumId_{{ $mk->id }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kurikulum</label>
+                        <select name="kurikulumId" id="kurikulumId_{{ $mk->id }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:text-white" required>
+                            <option value="">Pilih Kurikulum</option>
+                            @foreach($kurikulumList as $kur)
+                                <option value="{{ $kur->id }}" {{ (string) old('kurikulumId', $mk->kurikulumId) === (string) $kur->id ? 'selected' : '' }}>{{ $kur->nama }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-span-2">
+                        <label for="namaMatkul_{{ $mk->id }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nama Mata Kuliah</label>
+                        <input type="text" name="namaMatkul" id="namaMatkul_{{ $mk->id }}" value="{{ $mk->namaMatkul }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="Pemrograman Web" required>
+                    </div>
+                    <div class="col-span-2">
+                        <label for="jenis_{{ $mk->id }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Jenis</label>
+                        <select name="jenis" id="jenis_{{ $mk->id }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" required>
+                            <option value="">Pilih Jenis</option>
+                            <option value="wajib" {{ (old('jenis', $mk->jenis) == 'wajib') ? 'selected' : '' }}>Wajib</option>
+                            <option value="pilihan" {{ (old('jenis', $mk->jenis) == 'pilihan') ? 'selected' : '' }}>Pilihan</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2">
+                        <label for="sks_{{ $mk->id }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">SKS</label>
+                        <input type="number" name="sks" id="sks_{{ $mk->id }}" value="{{ $mk->sks }}" min="0" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="3" required>
+                    </div>
+                </div>
+            </x-form-modal>
+        @endforeach
+
+        @foreach($mataKuliah as $mk)
+            <x-confirm-modal
+                :id="'modal-confirm-hapus-' . $mk->id"
+                title="Konfirmasi Hapus Mata Kuliah"
+                :message="'Apakah Anda yakin ingin menghapus mata kuliah ' . $mk->namaMatkul . ' (' . $mk->kodeMatkul . ')?'"
+                :action="route('admin.mata-kuliah.destroy', $mk->id)"
+                method="DELETE"
+            />
+        @endforeach
     </div>
 </div>
 
@@ -235,60 +287,6 @@
     </div>
 </x-form-modal>
 
-<!-- Modal Edit Mata Kuliah -->
-@foreach($mataKuliah as $mk)
-    <x-form-modal 
-        :id="'modal-edit-' . $mk->id"
-        title="Edit Mata Kuliah"
-        :action="route('admin.mata-kuliah.update', $mk->id)"
-        method="PUT"
-        submit-text="Update"
-    >
-        <div class="grid gap-4 mb-4 grid-cols-2">
-            <div>
-                <label for="kodeMatkul_{{ $mk->id }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kode Mata Kuliah</label>
-                <input type="text" name="kodeMatkul" id="kodeMatkul_{{ $mk->id }}" value="{{ $mk->kodeMatkul }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="MK001" required>
-            </div>
-            <div>
-                <label for="kurikulumId_{{ $mk->id }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Kurikulum</label>
-                <select name="kurikulumId" id="kurikulumId_{{ $mk->id }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:text-white" required>
-                    <option value="">Pilih Kurikulum</option>
-                    @foreach($kurikulumList as $kur)
-                        <option value="{{ $kur->id }}" {{ (string) old('kurikulumId', $mk->kurikulumId) === (string) $kur->id ? 'selected' : '' }}>{{ $kur->nama }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="col-span-2">
-                <label for="namaMatkul_{{ $mk->id }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nama Mata Kuliah</label>
-                <input type="text" name="namaMatkul" id="namaMatkul_{{ $mk->id }}" value="{{ $mk->namaMatkul }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="Pemrograman Web" required>
-            </div>
-            <div class="col-span-2">
-                <label for="jenis_{{ $mk->id }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Jenis</label>
-                <select name="jenis" id="jenis_{{ $mk->id }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" required>
-                    <option value="">Pilih Jenis</option>
-                    <option value="wajib" {{ (old('jenis', $mk->jenis) == 'wajib') ? 'selected' : '' }}>Wajib</option>
-                    <option value="pilihan" {{ (old('jenis', $mk->jenis) == 'pilihan') ? 'selected' : '' }}>Pilihan</option>
-                </select>
-            </div>
-            <div class="col-span-2">
-                <label for="sks_{{ $mk->id }}" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">SKS</label>
-                <input type="number" name="sks" id="sks_{{ $mk->id }}" value="{{ $mk->sks }}" min="0" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white" placeholder="3" required>
-            </div>
-        </div>
-    </x-form-modal>
-@endforeach
-
-<!-- Modal Konfirmasi Hapus -->
-@foreach($mataKuliah as $mk)
-    <x-confirm-modal 
-        :id="'modal-confirm-hapus-' . $mk->id"
-        title="Konfirmasi Hapus Mata Kuliah"
-        :message="'Apakah Anda yakin ingin menghapus mata kuliah ' . $mk->namaMatkul . ' (' . $mk->kodeMatkul . ')?'"
-        :action="route('admin.mata-kuliah.destroy', $mk->id)"
-        method="DELETE"
-    />
-@endforeach
-
 <!-- Modal Bulk Delete -->
 <div id="modal-bulk-delete" tabindex="-1" class="fixed top-0 left-0 right-0 z-50 hidden p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[calc(100%-1rem)] max-h-full flex items-center justify-center bg-gray-900/50">
     <div class="relative w-full max-w-md max-h-full">
@@ -339,25 +337,21 @@ document.addEventListener('DOMContentLoaded', function() {
 @endif
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+function initMataKuliahSelection() {
     const selectAllCheckbox = document.getElementById('selectAll');
     const matkulCheckboxes = document.querySelectorAll('.matkul-checkbox');
     const btnBulkDelete = document.getElementById('btn-bulk-delete');
-    const bulkDeleteInputs = document.getElementById('bulk-delete-inputs');
+    if (!btnBulkDelete) return;
 
     function updateBulkDeleteButton() {
         const checkedCount = document.querySelectorAll('.matkul-checkbox:checked').length;
-        if (checkedCount > 0) {
-            btnBulkDelete.classList.remove('hidden');
-        } else {
-            btnBulkDelete.classList.add('hidden');
-        }
+        btnBulkDelete.classList.toggle('hidden', checkedCount === 0);
     }
 
     if (selectAllCheckbox) {
         selectAllCheckbox.addEventListener('change', function() {
-            matkulCheckboxes.forEach(checkbox => {
-                checkbox.checked = this.checked;
+            document.querySelectorAll('.matkul-checkbox').forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
             });
             updateBulkDeleteButton();
         });
@@ -365,15 +359,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
     matkulCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function() {
-            const allChecked = document.querySelectorAll('.matkul-checkbox:checked').length === matkulCheckboxes.length;
-            selectAllCheckbox.checked = allChecked;
+            const boxes = document.querySelectorAll('.matkul-checkbox');
+            const checked = document.querySelectorAll('.matkul-checkbox:checked');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = boxes.length > 0 && checked.length === boxes.length;
+            }
             updateBulkDeleteButton();
         });
     });
 
+    updateBulkDeleteButton();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initMataKuliahSelection();
+
+    const bulkDeleteInputs = document.getElementById('bulk-delete-inputs');
     const formBulkDelete = document.getElementById('form-bulk-delete');
     if (formBulkDelete) {
-        formBulkDelete.addEventListener('submit', function(e) {
+        formBulkDelete.addEventListener('submit', function() {
             bulkDeleteInputs.innerHTML = '';
             document.querySelectorAll('.matkul-checkbox:checked').forEach(checkbox => {
                 const input = document.createElement('input');
@@ -388,11 +392,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     submitBtn.disabled = true;
                     submitBtn.classList.add('cursor-not-allowed', 'opacity-75');
                     const spinner = submitBtn.querySelector('[data-spinner]');
-                    const text = submitBtn.querySelector('[data-submit-text]');
                     if (spinner) spinner.classList.remove('hidden');
                 }, 10);
             }
         });
     }
 });
+
+document.addEventListener('live-search:updated', initMataKuliahSelection);
 </script>

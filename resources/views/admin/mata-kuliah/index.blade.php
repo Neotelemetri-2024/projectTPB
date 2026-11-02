@@ -151,12 +151,12 @@
             >
                 <div class="grid gap-4 mb-4 grid-cols-2">
                     <div>
-                        <label for="kodeMatkul_{{ $mk->id }}" class="block mb-2 text-sm font-medium text-gray-900">Kode Mata Kuliah</label>
-                        <input type="text" name="kodeMatkul" id="kodeMatkul_{{ $mk->id }}" value="{{ $mk->kodeMatkul }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5" placeholder="MK001" required>
+                        <label for="kodeMatkul_{{ $mk->id }}" class="block mb-2 text-sm font-medium text-gray-900" style="display:block;margin-bottom:0.5rem;color:#111827;font-size:0.875rem;font-weight:500;">Kode Mata Kuliah</label>
+                        <input type="text" name="kodeMatkul" id="kodeMatkul_{{ $mk->id }}" value="{{ $mk->kodeMatkul }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5" style="display:block;width:100%;background:#f9fafb;color:#111827;border:1px solid #d1d5db;border-radius:0.5rem;padding:0.625rem;color-scheme:light;" placeholder="MK001" required>
                     </div>
                     <div>
-                        <label for="kurikulumId_{{ $mk->id }}" class="block mb-2 text-sm font-medium text-gray-900">Kurikulum</label>
-                        <select name="kurikulumId" id="kurikulumId_{{ $mk->id }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5" required>
+                        <label for="kurikulumId_{{ $mk->id }}" class="block mb-2 text-sm font-medium text-gray-900" style="display:block;margin-bottom:0.5rem;color:#111827;font-size:0.875rem;font-weight:500;">Kurikulum</label>
+                        <select name="kurikulumId" id="kurikulumId_{{ $mk->id }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5" style="display:block;width:100%;background:#f9fafb;color:#111827;border:1px solid #d1d5db;border-radius:0.5rem;padding:0.625rem;color-scheme:light;" required>
                             <option value="">Pilih Kurikulum</option>
                             @foreach($kurikulumList as $kur)
                                 <option value="{{ $kur->id }}" {{ (string) old('kurikulumId', $mk->kurikulumId) === (string) $kur->id ? 'selected' : '' }}>{{ $kur->nama }}</option>
@@ -164,20 +164,20 @@
                         </select>
                     </div>
                     <div class="col-span-2">
-                        <label for="namaMatkul_{{ $mk->id }}" class="block mb-2 text-sm font-medium text-gray-900">Nama Mata Kuliah</label>
-                        <input type="text" name="namaMatkul" id="namaMatkul_{{ $mk->id }}" value="{{ $mk->namaMatkul }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5" placeholder="Pemrograman Web" required>
+                        <label for="namaMatkul_{{ $mk->id }}" class="block mb-2 text-sm font-medium text-gray-900" style="display:block;margin-bottom:0.5rem;color:#111827;font-size:0.875rem;font-weight:500;">Nama Mata Kuliah</label>
+                        <input type="text" name="namaMatkul" id="namaMatkul_{{ $mk->id }}" value="{{ $mk->namaMatkul }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5" style="display:block;width:100%;background:#f9fafb;color:#111827;border:1px solid #d1d5db;border-radius:0.5rem;padding:0.625rem;color-scheme:light;" placeholder="Pemrograman Web" required>
                     </div>
                     <div class="col-span-2">
-                        <label for="jenis_{{ $mk->id }}" class="block mb-2 text-sm font-medium text-gray-900">Jenis</label>
-                        <select name="jenis" id="jenis_{{ $mk->id }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5" required>
+                        <label for="jenis_{{ $mk->id }}" class="block mb-2 text-sm font-medium text-gray-900" style="display:block;margin-bottom:0.5rem;color:#111827;font-size:0.875rem;font-weight:500;">Jenis</label>
+                        <select name="jenis" id="jenis_{{ $mk->id }}" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5" style="display:block;width:100%;background:#f9fafb;color:#111827;border:1px solid #d1d5db;border-radius:0.5rem;padding:0.625rem;color-scheme:light;" required>
                             <option value="">Pilih Jenis</option>
                             <option value="wajib" {{ (old('jenis', $mk->jenis) == 'wajib') ? 'selected' : '' }}>Wajib</option>
                             <option value="pilihan" {{ (old('jenis', $mk->jenis) == 'pilihan') ? 'selected' : '' }}>Pilihan</option>
                         </select>
                     </div>
                     <div class="col-span-2">
-                        <label for="sks_{{ $mk->id }}" class="block mb-2 text-sm font-medium text-gray-900">SKS</label>
-                        <input type="number" name="sks" id="sks_{{ $mk->id }}" value="{{ $mk->sks }}" min="0" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5" placeholder="3" required>
+                        <label for="sks_{{ $mk->id }}" class="block mb-2 text-sm font-medium text-gray-900" style="display:block;margin-bottom:0.5rem;color:#111827;font-size:0.875rem;font-weight:500;">SKS</label>
+                        <input type="number" name="sks" id="sks_{{ $mk->id }}" value="{{ $mk->sks }}" min="0" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5" style="display:block;width:100%;background:#f9fafb;color:#111827;border:1px solid #d1d5db;border-radius:0.5rem;padding:0.625rem;color-scheme:light;" placeholder="3" required>
                     </div>
                 </div>
             </x-form-modal>

@@ -69,10 +69,39 @@ main input[type="email"],
 main input[type="number"],
 main input[type="password"],
 .p-4 input[type="text"],
-.p-6 input[type="text"] {
+.p-4 input[type="number"],
+.p-6 input[type="text"],
+.p-6 input[type="number"],
+#pageContent input[type="text"],
+#pageContent input[type="search"],
+#pageContent input[type="email"],
+#pageContent input[type="number"],
+#pageContent input[type="password"] {
     background-color: #fff;
+    color: #111827;
+    color-scheme: light;
     border: 1px solid #d1d5db;
     border-radius: 0.5rem;
     min-height: 2.5rem;
     box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+}
+
+/* Edit modals sit inside search results. OS dark mode was painting their
+   labels and values white, and number fields as dark bars. */
+.modal-box label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #111827;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.25rem;
+}
+
+.modal-box input,
+.modal-box select,
+.modal-box textarea {
+    background-color: #fff;
+    color: #111827;
+    color-scheme: light;
+    border: 1px solid #d1d5db;
 }

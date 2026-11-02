@@ -37,6 +37,7 @@ class ReportDashboardPerformanceTest extends TestCase
         $this->assertStringContainsString('cachedDetailRows($selectedTahunAjaranId, $selectedKurikulum)', $controller);
         $this->assertStringContainsString("where('tam.tahunAjaranId', \$tahunAjaranId)", $controller);
         $this->assertStringContainsString("where('mk.kurikulumId', \$kurikulumId)", $controller);
+        $this->assertStringContainsString("ini_set('memory_limit', '512M')", $controller);
     }
 
     public function test_cpl_achievement_build_and_cache_are_filter_scoped(): void

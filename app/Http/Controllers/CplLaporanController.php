@@ -49,6 +49,10 @@ class CplLaporanController extends Controller
 
     public function exportPdf(Request $request)
     {
+        // 200+ baris detail membuat Dompdf melewati memory_limit bawaan 128MB.
+        @ini_set('memory_limit', '512M');
+        @set_time_limit(180);
+
         $selectedTahunAjaranId = $request->get('tahun_ajaran_id');
         $selectedKurikulum = $request->get('kurikulum');
 
@@ -67,7 +71,7 @@ class CplLaporanController extends Controller
 
         $options = new Options();
         $options->set('isHtml5ParserEnabled', true);
-        $options->set('isPhpEnabled', true);
+        $options->set('defaultFont', 'DejaVu Sans');
 
         $dompdf = new Dompdf($options);
         $html = view('shared.cpl-laporan-pdf', compact(
@@ -80,7 +84,12 @@ class CplLaporanController extends Controller
         $dompdf->setPaper('A4', 'landscape');
         $dompdf->render();
 
-        return $dompdf->stream('Laporan_CPL_' . date('Y-m-d_H-i-s') . '.pdf');
+        $filename = 'Laporan_CPL_' . date('Y-m-d_H-i-s') . '.pdf';
+
+        return response($dompdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 
     private function cachedDetailRows($tahunAjaranId = null, $kurikulum = null): array
